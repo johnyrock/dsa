@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Valid Anagram Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; gap: 0; }
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 8px 0 12px; order: -1; }
+    .panel { padding: 14px; }
+    .caption { min-height: 0; }
+    pre.code { display: none; }
+    .step { min-height: auto; padding: 32px 0 32px 16px; opacity: 1; }
+    header { padding-top: 32px; }
+  }
+</style>
+</head>
+<body>
+
+
+<header>
+  <div class="tag">Easy · Hash Map · LeetCode #242</div>
+  <h1>Valid Anagram, narrated</h1>
+  <p>Scroll through the thinking, from sorting both strings to a single pass of character counting, with the state of the algorithm shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get two strings <code>s</code> and <code>t</code>. Return <code>True</code> if <code>t</code> is an anagram of <code>s</code>, and <code>False</code> otherwise.</p>
+      <p>An anagram uses exactly the same letters as the original, exactly as many times, in any order. Order is the one thing that is allowed to change.</p>
+      <div class="callout">Running example: <code>s = "anagram"</code>, <code>t = "nagaram"</code>. The answer is <code>True</code>: both are one <code>a a a</code>, one <code>n</code>, one <code>g</code>, one <code>r</code>, one <code>m</code>.</div>
+      <p>Notice the phrase <em>exactly as many times</em>. Not "the same set of letters" — the same letters with the same multiplicities. That distinction is the whole problem.</p>
+    </section>
+
+    <section class="step" data-state="sorting">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: sort both strings</h2>
+      <p>If order is the only thing allowed to differ, then destroying the order should make the two strings identical. Sort each one and compare.</p>
+      <pre class="code"><span class="ln">def is_anagram(s, t):</span><span class="ln">    return sorted(s) == sorted(t)</span></pre>
+      <p style="margin-top:14px">This is correct, it is one line, and it is a perfectly good first answer to say out loud. Sorting also handles the length difference for free: two lists of different lengths are never equal.</p>
+      <p>The cost is the sort. Comparison sorting is <strong>O(n log n)</strong> time, and it builds two new lists of characters along the way.</p>
+      <p>But sorting does more work than we asked for. It puts the letters in <em>order</em>, and we do not care about order at all — we throw the ordering away the moment we compare. What do we actually need?</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: what is an anagram, really?</h2>
+      <p>Two strings are anagrams when they have the same <strong>character counts</strong>. "anagram" is not a sequence here, it is a tally: <code>a×3, n×1, g×1, r×1, m×1</code>.</p>
+      <p>So the question is not "do these strings match after sorting?" but <em>"does t have exactly as many of each character as s?"</em></p>
+      <div class="callout">s has three <code>a</code>s. Does t have three <code>a</code>s? It has an <code>n</code>, a <code>g</code>, an <code>r</code>, an <code>m</code> — one of each, same as s. So yes.</div>
+      <p>A tally is a mapping from character to number. That is exactly what a dictionary is, and a dictionary reads and writes in O(1).</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: count, then cancel</h2>
+      <p>Build the tally for <code>s</code> in one pass. Then walk <code>t</code> and cancel one copy of each character against the tally.</p>
+      <ul>
+        <li><strong>Count.</strong> For each character of <code>s</code>, add one to its entry. <code>counts.get(ch, 0) + 1</code> treats an unseen character as zero.</li>
+        <li><strong>Cancel.</strong> For each character of <code>t</code>, if its count is already 0 there is no copy left to give — return <code>False</code>. Otherwise subtract one.</li>
+      </ul>
+      <p>And before either loop, one guard: if the lengths differ, return <code>False</code> immediately. That check costs nothing and it is what lets the second loop end with a bare <code>return True</code>.</p>
+      <p>Two passes, each O(n), each doing O(1) work per character. No sorting, no ordering, no comparisons between the strings themselves.</p>
+    </section>
+
+    <section class="step" data-state="build">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: count s</h2>
+      <p>Lengths first: both strings are 7 characters, so we continue.</p>
+      <p>Now sweep <code>"anagram"</code> left to right. The <code>a</code> at index 0 is new, so its count becomes 1. The <code>n</code> becomes 1, the <code>a</code> at index 2 bumps to 2, then <code>g</code>, <code>r</code>, the third <code>a</code> which bumps to 3, and finally <code>m</code>.</p>
+      <p>One pass later the tally is complete. The string is gone; only the counts matter now.</p>
+    </section>
+
+    <section class="step" data-state="cancel">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: cancel t against the tally</h2>
+      <p>Walk <code>t = "nagaram"</code>. The <code>n</code> has a count of 1, so it is not zero — subtract one, leaving 0. The <code>a</code> drops 3 to 2. The <code>g</code> drops to 0. The next <code>a</code> drops to 1.</p>
+      <p>Then <code>r</code> to 0, the third <code>a</code> to 0, and <code>m</code> to 0. Every lookup found a copy still available, so the loop never returned early.</p>
+      <div class="callout">The loop finishing <em>is</em> the answer. Because the lengths matched, cancelling all of <code>t</code> without running out means every count landed exactly on zero — no leftovers are possible. So <code>return True</code>.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 7</div>
+      <h2>Where it goes wrong</h2>
+      <p>Take <code>s = "rat"</code>, <code>t = "car"</code>. Same length, so the guard passes. The tally is <code>r:1, a:1, t:1</code>.</p>
+      <p>The first character of <code>t</code> is <code>c</code>. <code>counts.get("c", 0)</code> is 0, so there is no <code>c</code> to cancel and we return <code>False</code> after looking at one character. We never reach the <code>a</code> or the <code>r</code>.</p>
+      <div class="callout warn">Use <code>counts.get(ch, 0) == 0</code>, not <code>ch not in counts</code>. Once a character is used up its key is still there with a value of 0, and <code>in</code> would wave it through. That is how <code>s = "aacc"</code>, <code>t = "ccac"</code> sneaks past a buggy version.</div>
+      <p>And the length guard is not decoration. Drop it and try <code>s = "aa"</code>, <code>t = "a"</code>: the single <code>a</code> in <code>t</code> cancels fine, the loop ends, and the function returns <code>True</code> — leaving an unspent <code>a</code> behind. The guard is what makes "the loop finished" mean "everything balanced".</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 8</div>
+      <h2>Time and space</h2>
+      <p>Two loops, each visiting n characters once, each doing an O(1) dictionary read and write. That is <strong>O(n) time</strong> — strictly better than sorting.</p>
+      <p>The dictionary holds one entry per <em>distinct</em> character, not per character. For lowercase English letters that is at most 26 entries no matter how long the strings are, so the space is <strong>O(k)</strong> for an alphabet of size k, which is effectively O(1) here.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Sort both, compare</td><td>O(n log n)</td><td>O(n)</td></tr>
+        <tr><td>Character counts</td><td>O(n)</td><td>O(k), k = alphabet</td></tr>
+      </table>
+      <p>Sorting orders n items to answer a question that never needed order. Counting answers it directly.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 9</div>
+      <h2>The final solution</h2>
+      <p>Eleven lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>if len(s) != len(t)</code> is the guard that makes the ending safe.</li>
+        <li><code>counts = {}</code> is the tally.</li>
+        <li><code>counts[ch] = counts.get(ch, 0) + 1</code> is the counting pass over s.</li>
+        <li><code>if counts.get(ch, 0) == 0</code> is the O(1) check: does s still have this character to give?</li>
+        <li><code>counts[ch] -= 1</code> is the cancellation.</li>
+        <li><code>return True</code> is reached only when every character of t was paid for.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>an anagram is a tally, not a sequence — count s, then spend it on t.</em></div>
+    </section>
+
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>s · t = <span id="target">nagaram</span></h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>counts (character → copies left)</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="valid_anagram.py">valid_anagram.py</a> · <a href="valid_anagram_annotated.py">valid_anagram_annotated.py</a> · <a href="test_valid_anagram.py">test_valid_anagram.py</a> · <a href="notes.md">notes.md</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def is_anagram(s, t):",
+    "    if len(s) != len(t):",
+    "        return False",
+    "    counts = {}",
+    "    for ch in s:",
+    "        counts[ch] = counts.get(ch, 0) + 1",
+    "    for ch in t:",
+    "        if counts.get(ch, 0) == 0:",
+    "            return False",
+    "        counts[ch] -= 1",
+    "    return True"
+  ];
+
+  var S = ["a", "n", "a", "g", "r", "a", "m"];
+  var RAT = ["r", "a", "t"];
+
+  // Each state describes what the sticky panel shows for one step.
+  var STATES = {
+    problem: {
+      caption: "Does t use exactly the same letters as s, the same number of times?",
+      chars: S, t: "nagaram", cur: -1, hits: [], counts: [], meta: "Both strings are 7 characters long.", hl: []
+    },
+    sorting: {
+      caption: "Sorting destroys the order, then compares. Correct, but it does more work than we need.",
+      chars: S, t: "nagaram", cur: -1, hits: [], counts: [], meta: "sorted(s) = <b>a a a g m n r</b> · sorted(t) = <b>a a a g m n r</b>", hl: [],
+      big: "O(n log n)", bigNote: "the sort dominates"
+    },
+    reframe: {
+      caption: "Order is irrelevant. What matters is how many of each character there are.",
+      chars: S, t: "nagaram", cur: -1, hits: [0, 2, 5], counts: [], meta: "s has three <b>a</b>s. Does t have exactly three?", hl: []
+    },
+    idea: {
+      caption: "Tally s in a dictionary, then cancel one copy per character of t.",
+      chars: S, t: "nagaram", cur: -1, hits: [], counts: [], meta: "Guard on length first, then count, then cancel.", hl: [1, 5, 7, 9]
+    },
+    build: {
+      caption: "First pass: walk s and count every character. The tally is now complete.",
+      chars: S, t: "nagaram", cur: 6, hits: [], counts: [["a", 3, "new"], ["n", 1, "new"], ["g", 1, "new"], ["r", 1, "new"], ["m", 1, "new"]], meta: "i = 6, last character <b>m</b> · tally is <b>a×3, n, g, r, m</b>", hl: [5]
+    },
+    cancel: {
+      caption: "Second pass: every character of t found a copy left, so all counts hit zero.",
+      chars: S, t: "nagaram", cur: -1, hits: [0, 1, 2, 3, 4, 5, 6], counts: [["a", 0, "found"], ["n", 0, "found"], ["g", 0, "found"], ["r", 0, "found"], ["m", 0, "found"]], meta: "cancelled <b>n a g a r a m</b> · nothing ran out", hl: [9, 10],
+      big: "True", bigNote: "loop finished with the lengths equal"
+    },
+    pitfall: {
+      caption: "s = \"rat\", t = \"car\". Same length, so the guard passes — but the first character of t already fails.",
+      chars: RAT, t: "car", cur: -1, hits: [], counts: [["r", 1], ["a", 1], ["t", 1]], meta: "ch = <b>c</b> · counts.get(\"c\", 0) = <b>0</b> · no copy to cancel", hl: [7, 8],
+      big: "False", bigNote: "returned after one character of t"
+    },
+    complexity: {
+      caption: "Two passes of O(1) work, and one dictionary entry per distinct character.",
+      chars: S, t: "nagaram", cur: -1, hits: [], counts: [["a", 3], ["n", 1], ["g", 1], ["r", 1], ["m", 1]], meta: "5 distinct characters here, at most 26 for lowercase letters.", hl: [4, 6],
+      big: "O(n) time · O(k) space", bigNote: "versus O(n log n) time for sorting"
+    },
+    final: {
+      caption: "The whole solution.",
+      chars: S, t: "nagaram", cur: -1, hits: [], counts: [], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.t;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.chars.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.cur !== -1 && i > s.cur && s.hits.length === 0) cls += " dim";
+      arr += '<div class="' + cls + '">' + s.chars[i] + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.counts.length === 0) {
+      $("dict").innerHTML = '<span class="empty">{ }  empty</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.counts.length; k++) {
+        var e = s.counts[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " → " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - window.innerHeight * 0.45);
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - window.innerHeight * 0.45);
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+})();
+</script>
+</body>
+</html>

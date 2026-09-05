@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reverse Linked List Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .cell.nil { color: var(--muted); border-style: dashed; }
+  .array .arrow {
+    flex: 0 0 auto; align-self: center; color: var(--muted);
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.05rem;
+  }
+  .array .arrow.broken { color: var(--warn); }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .kv.lost { border-color: var(--warn); background: var(--warn-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; gap: 0; }
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 8px 0 12px; order: -1; }
+    .panel { padding: 14px; }
+    .caption { min-height: 0; }
+    pre.code { display: none; }
+    .step { min-height: auto; padding: 32px 0 32px 16px; opacity: 1; }
+    header { padding-top: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">Easy · Linked List · LeetCode #206</div>
+  <h1>Reverse Linked List, narrated</h1>
+  <p>Scroll through the thinking, from copying the values out into an array to the in-place three-pointer rewiring, with the state of the list shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get <code>head</code>, the first node of a singly linked list. Each node holds a value and a single link called <code>next</code>. Return the head of the same list, reversed.</p>
+      <p>Singly linked means there are no backwards links. From a node you can reach everything after it and nothing before it, and you only ever get one pass in that direction for free.</p>
+      <div class="callout">Running example: <code>1 → 2 → 3 → 4</code>. The answer is <code>4 → 3 → 2 → 1</code>, and the node holding 4 becomes the new head.</div>
+      <p>Notice what the answer is: a <em>node</em>, not a list of values. Whatever we do has to leave real nodes wired up in the new order.</p>
+    </section>
+
+    <section class="step" data-state="naive">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: copy the values out</h2>
+      <p>The most direct idea is to walk the list once, push every value into a Python list, reverse that list, then walk the nodes again writing the values back.</p>
+      <pre class="code"><span class="ln">values = []</span><span class="ln">node = head</span><span class="ln">while node:</span><span class="ln">    values.append(node.val)</span><span class="ln">    node = node.next</span><span class="ln"># then walk again, writing values[::-1] back in</span></pre>
+      <p style="margin-top:14px">This works and it is <strong>O(n)</strong> time. But it allocates an array as big as the list, so it costs <strong>O(n) extra space</strong>, and it never actually reverses anything — it shuffles payloads between nodes that stay wired the same way.</p>
+      <p>The links are the thing the problem is really about. So: can we change the links themselves, in place, using only a couple of variables?</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: reversing is just flipping arrows</h2>
+      <p>A reversed list is the same four nodes with every arrow turned around. Node 1 should point at <code>None</code>, node 2 at node 1, node 3 at node 2, node 4 at node 3.</p>
+      <p>So the whole job is a sequence of single assignments, one per node: <code>curr.next = </code><em>the node before it</em>.</p>
+      <div class="callout warn">But there is a catch. The moment you write <code>curr.next = prev</code>, the old value of <code>curr.next</code> is gone — and that was the only way to reach the rest of the list.</div>
+      <p>Overwrite it blind and the tail becomes unreachable. So the real question is: what do you need to be holding at the instant you flip an arrow?</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: three pointers</h2>
+      <p>Three variables are enough to flip one arrow safely and keep walking:</p>
+      <ul>
+        <li><code>prev</code> — the front of the part already reversed. Starts at <code>None</code>, because the old head must end up pointing at nothing.</li>
+        <li><code>curr</code> — the node being flipped right now. Starts at <code>head</code>.</li>
+        <li><code>next_node</code> — a scratch copy of <code>curr.next</code>, saved <em>before</em> the flip so the rest of the list survives it.</li>
+      </ul>
+      <p>Each iteration is the same four moves, always in this order: <strong>save</strong> <code>next_node = curr.next</code>, <strong>flip</strong> <code>curr.next = prev</code>, then <strong>advance</strong> both <code>prev = curr</code> and <code>curr = next_node</code>.</p>
+      <p>Nothing else is allocated, so the extra space is constant no matter how long the list is.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: flip node 1</h2>
+      <p>Before the loop: <code>prev = None</code>, <code>curr = </code> node 1. The loop condition <code>while curr</code> is true, so we enter.</p>
+      <p>Save <code>next_node = curr.next</code>, which is node 2 — that is our lifeline to the rest of the list. Then flip: <code>curr.next = prev</code> makes node 1 point at <code>None</code>, which is exactly right, since node 1 is going to be the tail.</p>
+      <p>Advance: <code>prev</code> becomes node 1, <code>curr</code> becomes node 2.</p>
+      <div class="callout">The list is now two pieces: the reversed piece <code>None ← 1</code>, and the untouched remainder <code>2 → 3 → 4</code> that <code>curr</code> is standing on.</div>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: flip node 2</h2>
+      <p>Now <code>prev</code> is node 1 and <code>curr</code> is node 2. Same four moves.</p>
+      <p>Save <code>next_node = </code> node 3. Flip <code>curr.next = prev</code>, so node 2 now points back at node 1. Advance: <code>prev</code> becomes node 2, <code>curr</code> becomes node 3.</p>
+      <p>The reversed piece has grown to <code>None ← 1 ← 2</code>, and <code>prev</code> is always sitting on its front — which is why <code>prev</code> is the thing we will return.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: flip node 3</h2>
+      <p>Save <code>next_node = </code> node 4. Flip node 3 to point at node 2. Advance: <code>prev</code> becomes node 3, <code>curr</code> becomes node 4.</p>
+      <p>One more iteration will flip node 4, save <code>next_node = None</code>, and set <code>curr = None</code>. The <code>while curr</code> test then fails and the loop stops.</p>
+      <div class="callout">At that moment <code>prev</code> is node 4, the front of the fully reversed list. <code>return prev</code> — not <code>head</code>, which is now the tail.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>The pitfall: flipping before you save</h2>
+      <p>Swap the first two lines of the body so the flip happens first:</p>
+      <pre class="code"><span class="ln">curr.next = prev        # flip first — wrong</span><span class="ln">next_node = curr.next   # this now reads prev, not the tail</span></pre>
+      <p style="margin-top:14px">On the very first node, <code>curr.next = prev</code> sets node 1's link to <code>None</code>. The next line then reads that same link back, so <code>next_node</code> is <code>None</code>, <code>curr</code> becomes <code>None</code>, and the loop exits after one iteration. The function returns a one-node list and <code>2 → 3 → 4</code> is unreachable — with no error, just silently missing data.</p>
+      <div class="callout warn">Save the way forward before you destroy it. That single ordering is the whole trick of the problem.</div>
+      <p>The two boundary cases need no special handling. Empty list: <code>curr = head = None</code>, the loop never runs, and <code>prev</code> is still <code>None</code> — the correct answer. Single node: one iteration sets its link to <code>None</code> and returns the same node.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Each node is visited exactly once, and the work at each node is three assignments. So the total is <strong>O(n) time</strong>.</p>
+      <p>The only storage is the three pointers, and that does not grow with the list, so it is <strong>O(1) extra space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Copy values out, reverse, write back</td><td>O(n)</td><td>O(n)</td></tr>
+        <tr><td>Recursive flip</td><td>O(n)</td><td>O(n) call stack</td></tr>
+        <tr><td>Iterative three pointers</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>The recursive version reverses the tail first, then does <code>head.next.next = head</code> and <code>head.next = None</code>. It is elegant, but it holds one stack frame per node, so at the 5,000-node constraint it is near Python's recursion limit. Say it as an aside, write the iterative one.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Nine lines including the node class. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>prev = None</code> is the empty reversed part, and the <code>None</code> the old head will point at.</li>
+        <li><code>curr = head</code> starts the walk.</li>
+        <li><code>while curr</code> stops the moment we fall off the end — and never runs at all for an empty list.</li>
+        <li><code>next_node = curr.next</code> is the save, and it must come first.</li>
+        <li><code>curr.next = prev</code> is the flip.</li>
+        <li><code>prev = curr</code> and <code>curr = next_node</code> step both pointers forward together.</li>
+        <li><code>return prev</code> returns the new head, because <code>prev</code> always sits on the front of the reversed part.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>save the next node, flip the arrow backwards, then move both pointers up one.</em></div>
+    </section>
+
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>list · <span id="target">original order</span></h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>pointers</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="reverse_linked_list.py">reverse_linked_list.py</a> · <a href="reverse_linked_list_annotated.py">reverse_linked_list_annotated.py</a> · <a href="test_reverse_linked_list.py">test_reverse_linked_list.py</a> · <a href="notes.md">notes.md</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def reverse_list(head):",
+    "    prev = None",
+    "    curr = head",
+    "    while curr:",
+    "        next_node = curr.next",
+    "        curr.next = prev",
+    "        prev = curr",
+    "        curr = next_node",
+    "    return prev"
+  ];
+
+  // Index 0 is the None sentinel; indices 1..4 are the nodes 1, 2, 3, 4.
+  var NODES = ["∅", 1, 2, 3, 4];
+  var FWD = ["·", "→", "→", "→"];   // original wiring: 1 -> 2 -> 3 -> 4
+  var REV = ["←", "←", "←", "←"];   // fully reversed: None <- 1 <- 2 <- 3 <- 4
+
+  // Each state describes what the sticky panel shows for one step.
+  // cur / prev / nxt are indices into NODES, or -1 for None.
+  var STATES = {
+    problem: {
+      caption: "A singly linked list. Every arrow points one way, and there is no way back.",
+      phase: "original order",
+      nodes: NODES, arrows: FWD, cur: -1, prev: -1, nxt: -1, dim: [],
+      chips: [], meta: "head is the node holding <b>1</b>. Goal: return the node holding <b>4</b>.", hl: []
+    },
+    naive: {
+      caption: "First instinct: copy every value into an array, reverse it, write the values back.",
+      phase: "values copied out",
+      nodes: NODES, arrows: FWD, cur: -1, prev: -1, nxt: -1, dim: [],
+      chips: [["values", "[1, 2, 3, 4]", ""]], meta: "The nodes and their links are untouched — only the payloads move.", hl: [],
+      big: "O(n) space", bigNote: "an array as long as the list"
+    },
+    reframe: {
+      caption: "Reversing is flipping every arrow. But writing curr.next destroys the way forward.",
+      phase: "about to flip node 1",
+      nodes: NODES, arrows: FWD, cur: 1, prev: -1, nxt: -1, dim: [2, 3, 4],
+      chips: [["prev", "None", ""], ["curr", "1", "new"], ["next", "?", "lost"]],
+      meta: "Set <b>1.next = None</b> right now and nodes 2, 3, 4 become unreachable.", hl: [5]
+    },
+    idea: {
+      caption: "Three pointers: prev behind, curr here, next_node saved before the flip.",
+      phase: "before the loop",
+      nodes: NODES, arrows: FWD, cur: 1, prev: -1, nxt: 2, dim: [3, 4],
+      chips: [["prev", "None", ""], ["curr", "1", "new"], ["next", "2", "found"]],
+      meta: "Save, flip, advance — the same four moves every iteration.", hl: [4, 5, 6, 7]
+    },
+    t1: {
+      caption: "Iteration 1. Save next = 2, flip 1 to point at None, then advance both pointers.",
+      phase: "flipping",
+      nodes: NODES, arrows: ["←", "→", "→", "→"], cur: 1, prev: -1, nxt: 2, dim: [3, 4],
+      chips: [["prev", "None", ""], ["curr", "1", "new"], ["next", "2", "found"]],
+      meta: "After the flip: <b>prev = 1</b>, <b>curr = 2</b>. Reversed so far: None &larr; 1", hl: [4, 5, 6, 7]
+    },
+    t2: {
+      caption: "Iteration 2. Save next = 3, flip 2 to point back at 1, then advance.",
+      phase: "flipping",
+      nodes: NODES, arrows: ["←", "←", "→", "→"], cur: 2, prev: 1, nxt: 3, dim: [4],
+      chips: [["prev", "1", ""], ["curr", "2", "new"], ["next", "3", "found"]],
+      meta: "After the flip: <b>prev = 2</b>, <b>curr = 3</b>. Reversed so far: None &larr; 1 &larr; 2", hl: [4, 5, 6, 7]
+    },
+    t3: {
+      caption: "Iteration 3. Save next = 4, flip 3 to point back at 2, then advance.",
+      phase: "flipping",
+      nodes: NODES, arrows: ["←", "←", "←", "→"], cur: 3, prev: 2, nxt: 4, dim: [],
+      chips: [["prev", "2", ""], ["curr", "3", "new"], ["next", "4", "found"]],
+      meta: "After the flip: <b>prev = 3</b>, <b>curr = 4</b>. One iteration left.", hl: [4, 5, 6, 7]
+    },
+    pitfall: {
+      caption: "Flip before saving and next_node reads the link you just overwrote. The tail is lost.",
+      phase: "broken",
+      nodes: NODES, arrows: ["←", "·", "→", "→"], cur: -1, prev: 1, nxt: -1, dim: [2, 3, 4],
+      chips: [["prev", "1", ""], ["curr", "None", "lost"], ["next", "None", "lost"]],
+      meta: "The loop exits after one iteration and 2 &rarr; 3 &rarr; 4 is unreachable.", hl: [4, 5],
+      big: "[1]", bigNote: "silently wrong, no error raised"
+    },
+    complexity: {
+      caption: "One pass, three assignments per node, three variables in total.",
+      phase: "done",
+      nodes: NODES, arrows: REV, cur: -1, prev: 4, nxt: -1, dim: [],
+      chips: [["prev", "4", "found"], ["curr", "None", ""], ["next", "None", ""]],
+      meta: "curr fell off the end, so the loop stopped. prev is the new head.", hl: [3, 4, 5, 6, 7],
+      big: "O(n) time · O(1) space", bigNote: "versus O(n) space for copying the values out"
+    },
+    final: {
+      caption: "The whole solution.",
+      phase: "done",
+      nodes: NODES, arrows: REV, cur: -1, prev: 4, nxt: -1, dim: [],
+      chips: [["prev", "4", "found"]], meta: "<b>return prev</b> hands back the node holding 4.", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+      big: "4 → 3 → 2 → 1", bigNote: "same nodes, every arrow flipped"
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.phase;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.nodes.length; i++) {
+      var cls = "cell";
+      if (i === 0) cls += " nil";
+      if (i === s.cur) cls += " cur";
+      else if (i === s.prev) cls += " hit";
+      else if (s.dim.indexOf(i) !== -1) cls += " dim";
+      var label = "&nbsp;";
+      if (i === s.cur) label = "curr";
+      else if (i === s.prev) label = "prev";
+      else if (i === s.nxt) label = "next";
+      arr += '<div class="' + cls + '">' + s.nodes[i] + '<span class="idx">' + label + '</span></div>';
+      if (i < s.nodes.length - 1) {
+        var a = s.arrows[i];
+        arr += '<span class="arrow' + (a === "·" ? " broken" : "") + '">' + a + "</span>";
+      }
+    }
+    $("array").innerHTML = arr;
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not set yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.chips.length; k++) {
+        var e = s.chips[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - window.innerHeight * 0.45);
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - window.innerHeight * 0.45);
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+})();
+</script>
+</body>
+</html>

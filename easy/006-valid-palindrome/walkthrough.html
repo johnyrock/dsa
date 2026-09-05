@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Valid Palindrome Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  /* gap and cell size are tuned down from the array version: a string panel holds ~15 cells, not 4. */
+  .array { display: flex; gap: 4px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; min-width: 0; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 8px 0 4px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1rem;
+  }
+  .cell .idx { display: block; font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .kv.bad { border-color: var(--warn); background: var(--warn-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; gap: 0; }
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 8px 0 12px; order: -1; }
+    .panel { padding: 14px; }
+    .caption { min-height: 0; }
+    pre.code { display: none; }
+    .step { min-height: auto; padding: 32px 0 32px 16px; opacity: 1; }
+    header { padding-top: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">Easy · Two Pointers · LeetCode #125</div>
+  <h1>Valid Palindrome, narrated</h1>
+  <p>Scroll through the thinking, from the cleaned copy you reach for first to the two pointers that need no copy at all, with the state of the algorithm shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get a string <code>s</code>. Decide whether it reads the same forwards and backwards, ignoring everything that is not a letter or a digit, and treating uppercase and lowercase as the same character.</p>
+      <p>So spaces, commas, colons and apostrophes are invisible, and <code>'N'</code> and <code>'n'</code> are the same letter.</p>
+      <div class="callout">Running example: <code>s = "No 'x' in Nixon"</code>. The alphanumeric characters spell <code>noxinnixon</code>, which is the same read either way, so the answer is <code>True</code>.</div>
+      <p>Two inputs that look like trick questions are not: the empty string <code>""</code> and a string of only punctuation like <code>".,;'"</code> both return <code>True</code>, because there is nothing left that could disagree.</p>
+    </section>
+
+    <section class="step" data-state="naive">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: clean it, then reverse it</h2>
+      <p>The obvious move is to do the two rules literally. Build a new string containing only the lowercased alphanumeric characters, then compare it to its own reverse.</p>
+      <pre class="code"><span class="ln">cleaned = "".join(c.lower() for c in s if c.isalnum())</span><span class="ln">return cleaned == cleaned[::-1]</span></pre>
+      <p style="margin-top:14px">This is correct and it is a perfectly good first answer to say out loud. It is also <strong>O(n) time</strong>, so the time is already optimal.</p>
+      <p>The cost is memory. <code>cleaned</code> is a copy of the input, and <code>cleaned[::-1]</code> is a second copy, so this is <strong>O(n) extra space</strong>. For a 200,000-character input that is two more strings held in memory just to answer a yes/no question.</p>
+      <p>What is the copy actually buying us?</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: what does the comparison really touch?</h2>
+      <p>Comparing a string to its reverse means comparing position 0 with the last position, position 1 with the second-to-last, and so on inward until the two meet in the middle.</p>
+      <p>That is the entire operation: a sequence of <em>mirrored pairs</em>. The reversed copy exists only so that both halves can be read left to right.</p>
+      <div class="callout">In <code>"No 'x' in Nixon"</code>, the first pair is <code>N</code> at index 0 against <code>n</code> at index 14. Nothing in between matters yet.</div>
+      <p>But we can read a string backwards without reversing it — just walk an index down from the end. And the filtering does not need a new string either; it only needs to decide which positions to <em>skip</em>.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: two pointers, skipping in place</h2>
+      <p>Put <code>left</code> on the first character and <code>right</code> on the last, and walk them toward each other. At each step:</p>
+      <ul>
+        <li><strong>Skip</strong> <code>left</code> forward past anything that fails <code>isalnum()</code>.</li>
+        <li><strong>Skip</strong> <code>right</code> backward past anything that fails <code>isalnum()</code>.</li>
+        <li><strong>Compare</strong> the two characters they land on, lowercased. A mismatch answers the whole question: <code>False</code>.</li>
+        <li><strong>Step</strong> both pointers inward and repeat.</li>
+      </ul>
+      <p>Filtering has turned from a string-building step into a movement rule. Nothing is copied, so the extra space is two integers: <strong>O(1)</strong>.</p>
+      <p>When the pointers meet or cross, every mirrored pair has agreed, and the answer is <code>True</code>.</p>
+    </section>
+
+    <section class="step" data-state="t0">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the outermost pair</h2>
+      <p>Start at <code>left = 0</code> and <code>right = 14</code>. Both characters are already alphanumeric, so neither skip loop moves.</p>
+      <p><code>s[0].lower()</code> is <code>'n'</code> and <code>s[14].lower()</code> is <code>'n'</code>. They match, so the pair is settled and both pointers step inward to <code>left = 1</code>, <code>right = 13</code>.</p>
+      <p>There, <code>'o'</code> meets <code>'o'</code> — another match — and the pointers move again, to <code>left = 2</code> and <code>right = 12</code>.</p>
+      <div class="callout">Note what did <em>not</em> happen: no string was built, and the capital <code>N</code> was handled by <code>.lower()</code> at comparison time rather than by rewriting the input.</div>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: the skip</h2>
+      <p>Now <code>left = 2</code>, which is a space, and <code>left = 3</code> is an apostrophe. The inner loop slides <code>left</code> forward twice and stops at index 4, the <code>x</code>.</p>
+      <p>Meanwhile <code>right = 12</code> is already the other <code>x</code>, so its skip loop does nothing. The pair matches.</p>
+      <p>The same thing happens on the way in: the pointers skip <code>'</code>, a space and another space, matching <code>i</code> with <code>i</code> and <code>n</code> with <code>N</code>, until both land on index 9. At that point <code>left &lt; right</code> is false, the loop ends, and the function returns <code>True</code>.</p>
+      <div class="callout">Each pointer only ever moves inward, so between them they visit each position at most once. All that skipping is still one pass.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 7</div>
+      <h2>Where it goes wrong</h2>
+      <p>Take <code>s = "race a car"</code>. The first three pairs match: <code>r</code>/<code>r</code>, <code>a</code>/<code>a</code>, <code>c</code>/<code>c</code>. Then <code>left = 3</code> sits on <code>e</code>, and <code>right = 6</code> is a space, so the right skip loop backs it up to index 5, an <code>a</code>.</p>
+      <p><code>'e' != 'a'</code>, so the answer is <code>False</code> and we return immediately — no need to look at the middle.</p>
+      <div class="callout warn">The off-by-one to watch: both inner skip loops need their own <code>left &lt; right</code> guard. On <code>".,;'"</code> nothing is alphanumeric, so an unguarded loop walks <code>left</code> straight off the end of the string and raises <code>IndexError</code>. With the guard, the pointers stop against each other and the function correctly returns <code>True</code>.</div>
+      <p>The empty string is free: <code>right</code> starts at <code>-1</code>, the outer <code>while left &lt; right</code> is false immediately, and the answer is <code>True</code> with no special case.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 8</div>
+      <h2>Time and space</h2>
+      <p>Every iteration of any loop moves <code>left</code> forward or <code>right</code> backward, and they never move apart. So the total number of moves is bounded by the length of the string: <strong>O(n) time</strong>.</p>
+      <p>The only storage is the two indices. Nothing scales with the input, so the extra space is <strong>O(1)</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Cleaned copy, compare to reverse</td><td>O(n)</td><td>O(n)</td></tr>
+        <tr><td>Two pointers, skip in place</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>Unlike most optimizations, this one buys nothing in time — both are O(n). The win is that the answer no longer requires holding a second copy of a 200,000-character string.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 9</div>
+      <h2>The final solution</h2>
+      <p>Twelve lines, and each one is a step above.</p>
+      <ul>
+        <li><code>left, right = 0, len(s) - 1</code> puts a pointer on each end.</li>
+        <li><code>while left &lt; right</code> is the meet-in-the-middle stopping rule, and the reason <code>""</code> works.</li>
+        <li>The two inner <code>while</code> loops are the filter, expressed as movement instead of a copy.</li>
+        <li><code>s[left].lower() != s[right].lower()</code> is the mirrored-pair comparison, case folded.</li>
+        <li><code>left += 1</code> / <code>right -= 1</code> close the window by one on each side.</li>
+        <li><code>return True</code> is reached only when the pointers met without a mismatch.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>walk inward from both ends, skip what does not count, compare what does.</em></div>
+    </section>
+
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>s = "<span id="input">No 'x' in Nixon</span>"</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3 id="pairsHead">matched pairs (outside in)</h3>
+        <div class="dict" id="pairs"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="valid_palindrome.py">valid_palindrome.py</a> · <a href="valid_palindrome_annotated.py">valid_palindrome_annotated.py</a> · <a href="test_valid_palindrome.py">test_valid_palindrome.py</a> · <a href="notes.md">notes.md</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def is_palindrome(s):",
+    "    left, right = 0, len(s) - 1",
+    "    while left < right:",
+    "        while left < right and not s[left].isalnum():",
+    "            left += 1",
+    "        while left < right and not s[right].isalnum():",
+    "            right -= 1",
+    "        if s[left].lower() != s[right].lower():",
+    "            return False",
+    "        left += 1",
+    "        right -= 1",
+    "    return True"
+  ];
+
+  var S = "No 'x' in Nixon";        // indices 2, 3, 5, 6, 9 are not alphanumeric
+  var SKIPS = [2, 3, 5, 6, 9];
+  var BAD = "race a car";           // indices 4 and 6 are spaces
+
+  // Each state describes what the sticky panel shows for one step.
+  var STATES = {
+    problem: {
+      caption: "Does the string read the same both ways, once punctuation and case are ignored?",
+      s: S, left: -1, right: -1, hits: [], dim: SKIPS, pairs: [],
+      meta: "15 characters, but only the 10 alphanumeric ones count.", hl: []
+    },
+    naive: {
+      caption: "First instinct: build a cleaned copy and compare it to its own reverse.",
+      s: S, left: -1, right: -1, hits: [], dim: SKIPS,
+      pairs: [["cleaned  = noxinnixon", "new"], ["reversed = noxinnixon", "new"]],
+      meta: "Correct, but two extra strings the size of the input.", hl: [],
+      big: "O(n) space", bigNote: "the copy is the only thing costing memory"
+    },
+    reframe: {
+      caption: "Comparing to the reverse is really just comparing mirrored pairs.",
+      s: S, left: 0, right: 14, hits: [], dim: SKIPS, pairs: [],
+      meta: "left = <b>0</b>, right = <b>14</b> · position i against its mirror, walking inward.", hl: [1]
+    },
+    idea: {
+      caption: "Two pointers walk toward each other; each skips non-alphanumerics on its own side.",
+      s: S, left: 0, right: 14, hits: [], dim: SKIPS, pairs: [],
+      meta: "left = <b>0</b>, right = <b>14</b> · skip, compare, step inward. No copy.", hl: [2, 3, 5]
+    },
+    t0: {
+      caption: "left = 0, right = 14. Both are letters already, and 'N'.lower() == 'n'.",
+      s: S, left: 0, right: 14, hits: [], dim: SKIPS,
+      pairs: [["N = n", "found"]],
+      meta: "left = <b>0</b>, right = <b>14</b> · match, so both step inward.", hl: [7, 9, 10]
+    },
+    t1: {
+      caption: "left skipped the space at 2 and the quote at 3 and stopped on x at 4.",
+      s: S, left: 4, right: 12, hits: [0, 1, 13, 14], dim: SKIPS,
+      pairs: [["N = n", "found"], ["o = o", "found"], ["x = x", "found"]],
+      meta: "left = <b>4</b>, right = <b>12</b> · the skip loop moved left twice, right not at all.", hl: [3, 4]
+    },
+    pitfall: {
+      caption: "s = \"race a car\". right skipped the space at 6 and landed on a; e does not match a.",
+      s: BAD, left: 3, right: 5, hits: [0, 1, 2, 7, 8, 9], dim: [4, 6],
+      pairs: [["r = r", "found"], ["a = a", "found"], ["c = c", "found"], ["e ≠ a", "bad"]],
+      meta: "left = <b>3</b>, right = <b>5</b> · one mismatch decides the whole string.", hl: [7, 8],
+      big: "False", bigNote: "returned immediately, middle never read"
+    },
+    complexity: {
+      caption: "Each pointer only moves inward, so together they cross each position at most once.",
+      s: S, left: -1, right: -1, hits: [0, 1, 4, 7, 8, 10, 11, 12, 13, 14], dim: SKIPS,
+      pairs: [["N = n", "found"], ["o = o", "found"], ["x = x", "found"], ["i = i", "found"], ["n = N", "found"]],
+      meta: "Five pairs checked, two integers stored.", hl: [2, 3, 5, 7],
+      big: "O(n) time · O(1) space", bigNote: "versus O(n) space for the cleaned copy"
+    },
+    final: {
+      caption: "The whole solution.",
+      s: S, left: -1, right: -1, hits: [], dim: SKIPS, pairs: [],
+      meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function show(ch) {
+    if (ch === " ") return "␣";   // visible stand-in for a space
+    return ch;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("input").textContent = s.s;
+    $("meta").innerHTML = s.meta;
+    $("pairsHead").textContent = s.head || "matched pairs (outside in)";
+
+    var arr = "";
+    for (var i = 0; i < s.s.length; i++) {
+      var cls = "cell";
+      if (i === s.left || i === s.right) cls += " cur";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.dim.indexOf(i) !== -1) cls += " dim";
+      arr += '<div class="' + cls + '">' + show(s.s[i]) + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.pairs.length === 0) {
+      $("pairs").innerHTML = '<span class="empty">nothing compared yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.pairs.length; k++) {
+        var e = s.pairs[k];
+        d += '<span class="kv' + (e[1] ? " " + e[1] : "") + '">' + e[0] + "</span>";
+      }
+      $("pairs").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - window.innerHeight * 0.45);
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - window.innerHeight * 0.45);
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+})();
+</script>
+</body>
+</html>

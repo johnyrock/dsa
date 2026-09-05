@@ -4,6 +4,7 @@
 
 - You need to answer "have I seen X before?" in O(1) while scanning once.
 - You need to count occurrences or group items by a computed key.
+- If you only need membership and no value, use a [hash set](hash-set.md) instead.
 - A brute-force nested loop is comparing every element against every other; a map often collapses the inner loop.
 
 ## Template
@@ -24,6 +25,7 @@ Check before insert when an element must not match itself.
 | Problem | Difficulty | Note |
 |---------|------------|------|
 | [easy/001 Two Sum](../easy/001-two-sum/) | Easy | value -> index, look up the complement |
+| [easy/002 Valid Anagram](../easy/002-valid-anagram/) | Easy | char -> count, compare the two tallies |
 
 ## Common mistakes
 

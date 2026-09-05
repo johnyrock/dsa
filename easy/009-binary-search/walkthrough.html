@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binary Search Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; gap: 0; }
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 8px 0 12px; order: -1; }
+    .panel { padding: 14px; }
+    .caption { min-height: 0; }
+    pre.code { display: none; }
+    .step { min-height: auto; padding: 32px 0 32px 16px; opacity: 1; }
+    header { padding-top: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">Easy · Binary Search · LeetCode #704</div>
+  <h1>Binary Search, narrated</h1>
+  <p>Scroll through the thinking, from the linear scan to the loop that throws away half the array per comparison, with the state of the algorithm shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get an array of integers <code>nums</code>, already sorted in ascending order, and an integer <code>target</code>. Return the index where <code>target</code> sits, or <code>-1</code> if it is not in the array.</p>
+      <p>Two details matter: the values are distinct, so there is at most one right answer, and the array is <strong>sorted</strong>, which is the only reason this problem is interesting.</p>
+      <div class="callout">Running example: <code>nums = [-1, 0, 3, 5, 9, 12]</code>, <code>target = 9</code>. The answer is <code>4</code> because <code>nums[4] == 9</code>.</div>
+      <p>The question asks for the <em>index</em>, not whether the value is present. So whatever we do, we have to keep track of where we are looking.</p>
+    </section>
+
+    <section class="step" data-state="linear">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: walk the array</h2>
+      <p>The most direct idea is to look at every element from left to right and stop when one equals the target.</p>
+      <pre class="code"><span class="ln">for i, n in enumerate(nums):</span><span class="ln">    if n == target:</span><span class="ln">        return i</span><span class="ln">return -1</span></pre>
+      <p style="margin-top:14px">This is correct and takes about ten seconds to write. But it looks at every element in the worst case, so the running time is <strong>O(n)</strong>. At n = 10,000 that is up to ten thousand comparisons, and the problem explicitly asks for better.</p>
+      <p>Notice what this loop ignores: it never uses the fact that the array is sorted. It treats <code>[-1, 0, 3, 5, 9, 12]</code> exactly the same as a shuffled bag of the same numbers. That is the waste.</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: what does one comparison buy?</h2>
+      <p>In an unsorted array, comparing one element with the target tells you about that element and nothing else. One comparison, one element ruled out.</p>
+      <p>In a <em>sorted</em> array the same comparison says much more. Look at the middle element, <code>nums[2] = 3</code>. It is smaller than 9. Because the array ascends, everything to the <em>left</em> of it is also smaller than 9.</p>
+      <div class="callout">One comparison in the middle rules out three cells at once: indices 0, 1 and 2 are all too small to be 9.</div>
+      <p>So the reframed question is not "is this the target?" but <em>"which half is the target in?"</em>. Sorted means one comparison throws away half the array.</p>
+    </section>
+
+    <section class="step" data-state="loop">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: shrink a window</h2>
+      <p>Keep two indices, <code>lo</code> and <code>hi</code>, marking the slice of the array that could still contain the target. Start with the whole thing: <code>lo = 0</code>, <code>hi = len(nums) - 1</code>. Then repeat:</p>
+      <ul>
+        <li><code>mid = (lo + hi) // 2</code> is the middle of the current window.</li>
+        <li>If <code>nums[mid] == target</code>, return <code>mid</code>. Done.</li>
+        <li>If <code>nums[mid] &lt; target</code>, the target is to the right, so <code>lo = mid + 1</code>.</li>
+        <li>Otherwise the target is to the left, so <code>hi = mid - 1</code>.</li>
+      </ul>
+      <p>Two pieces of that are worth saying out loud. First, the loop condition is <code>while lo &lt;= hi</code>, not <code>&lt;</code>. Since <code>hi</code> is a real index rather than one past the end, <code>lo == hi</code> means the window still holds exactly one unchecked candidate, and it deserves a look.</p>
+      <p>Second, the moves are <code>mid + 1</code> and <code>mid - 1</code>, never plain <code>mid</code>. We already compared <code>nums[mid]</code> and it was not the answer, so excluding it is safe — and it is what guarantees the window gets strictly smaller every pass, which is why the loop terminates.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: first probe</h2>
+      <p>The window starts as the whole array: <code>lo = 0</code>, <code>hi = 5</code>. The middle is <code>mid = (0 + 5) // 2 = 2</code>. Integer division floors, so with six cells <code>mid</code> leans left.</p>
+      <p><code>nums[2] = 3</code>. That is not 9, and it is <em>less</em> than 9, so 9 must live to the right of index 2 if it exists at all.</p>
+      <p>We move <code>lo = mid + 1 = 3</code>. Indices 0, 1 and 2 are gone for good — three cells eliminated by one comparison.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: the window has halved</h2>
+      <p>The live window is now <code>nums[3 .. 5]</code>, which is <code>[5, 9, 12]</code>. Three candidates left out of six.</p>
+      <p>The condition <code>lo &lt;= hi</code> holds (3 ≤ 5), so we go round again and recompute the middle of the <em>new</em> window: <code>mid = (3 + 5) // 2 = 4</code>.</p>
+      <div class="callout"><code>mid</code> is always recomputed from the current <code>lo</code> and <code>hi</code>. It is not a pointer that walks; it is derived state.</div>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: found</h2>
+      <p><code>nums[4] = 9</code>, which equals the target. We return <code>mid</code>, so the answer is <code>4</code>.</p>
+      <p>Two comparisons on a six-element array. The linear scan would have taken five. The gap widens fast: at a thousand elements it is about ten comparisons instead of a thousand.</p>
+      <div class="callout">We never looked at indices 0, 1, 3 or 5. They were eliminated in bulk, not one at a time.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>When the target is not there</h2>
+      <p>Now run the same array with <code>target = 2</code>, which is missing. The window shrinks the same way, it just never lands on a match:</p>
+      <ul>
+        <li><code>lo = 0, hi = 5, mid = 2</code>: <code>nums[2] = 3 &gt; 2</code>, so <code>hi = 1</code>.</li>
+        <li><code>lo = 0, hi = 1, mid = 0</code>: <code>nums[0] = -1 &lt; 2</code>, so <code>lo = 1</code>.</li>
+        <li><code>lo = 1, hi = 1, mid = 1</code>: <code>nums[1] = 0 &lt; 2</code>, so <code>lo = 2</code>.</li>
+      </ul>
+      <p>Now <code>lo = 2</code> is greater than <code>hi = 1</code>. The window is empty, the loop condition fails, and we fall out to <code>return -1</code>. <em>lo crossing hi is the proof of absence.</em></p>
+      <div class="callout warn">This is where <code>while lo &lt; hi</code> bites. Look at the third bullet: the window was one cell wide, <code>lo == hi == 1</code>. With <code>&lt;</code> the loop would have exited right there and never checked index 1. Search that same array for <code>target = 0</code> and the buggy version returns <code>-1</code> even though <code>nums[1]</code> is 0.</div>
+      <p>The rule: <code>hi</code> is an inclusive index, so the comparison must be inclusive too.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Every iteration does a constant amount of work and cuts the window roughly in half: 6 → 3 → 1 → 0. The number of halvings it takes to get from n down to nothing is log₂ n, so the total is <strong>O(log n) time</strong>.</p>
+      <p>Nothing is allocated. Three integers, <code>lo</code>, <code>hi</code> and <code>mid</code>, hold all the state, so it is <strong>O(1) extra space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Linear scan</td><td>O(n)</td><td>O(1)</td></tr>
+        <tr><td>Binary search, iterative</td><td>O(log n)</td><td>O(1)</td></tr>
+        <tr><td>Binary search, recursive</td><td>O(log n)</td><td>O(log n) call stack</td></tr>
+      </table>
+      <p>Unlike the usual trade of memory for speed, this one is free: the sorted input was already paid for, and reading it cleverly costs nothing extra.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Eleven lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>lo, hi = 0, len(nums) - 1</code> opens the window on the whole array, with <code>hi</code> an index that exists.</li>
+        <li><code>while lo &lt;= hi</code> keeps going while at least one candidate is unchecked.</li>
+        <li><code>mid = (lo + hi) // 2</code> is the probe, recomputed from the current window each pass.</li>
+        <li><code>return mid</code> is the only early exit, checked before either move.</li>
+        <li><code>lo = mid + 1</code> and <code>hi = mid - 1</code> discard the impossible half, excluding <code>mid</code> so the window always shrinks.</li>
+        <li><code>return -1</code> is what falling out of the loop means: lo crossed hi, the window is empty.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>sorted means one comparison throws away half the array, so keep halving the window until it is empty.</em></div>
+    </section>
+
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>nums (sorted) · target = <span id="target">9</span></h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>window · lo / mid / hi</h3>
+        <div class="dict" id="pointers"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="binary_search.py">binary_search.py</a> · <a href="binary_search_annotated.py">binary_search_annotated.py</a> · <a href="test_binary_search.py">test_binary_search.py</a> · <a href="notes.md">notes.md</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def search(nums, target):",
+    "    lo, hi = 0, len(nums) - 1",
+    "    while lo <= hi:",
+    "        mid = (lo + hi) // 2",
+    "        if nums[mid] == target:",
+    "            return mid",
+    "        if nums[mid] < target:",
+    "            lo = mid + 1",
+    "        else:",
+    "            hi = mid - 1",
+    "    return -1"
+  ];
+
+  var NUMS = [-1, 0, 3, 5, 9, 12];
+
+  // Each state describes what the sticky panel shows for one step.
+  // lo/hi/mid are indices; -1 means "not set yet", which also switches off the dimming.
+  var STATES = {
+    problem: {
+      caption: "Find the index of 9 in a sorted array of distinct integers.",
+      nums: NUMS, target: 9, lo: -1, hi: -1, mid: -1, ptrs: [], meta: "", hl: []
+    },
+    linear: {
+      caption: "A linear scan checks index 0, then 1, then 2 … ignoring the sorted order.",
+      nums: NUMS, target: 9, lo: -1, hi: -1, mid: 0, ptrs: [], meta: "One comparison rules out <b>one</b> element.", hl: [],
+      big: "O(n)", bigNote: "up to n comparisons"
+    },
+    reframe: {
+      caption: "In a sorted array, one comparison in the middle decides a whole half.",
+      nums: NUMS, target: 9, lo: 0, hi: 5, mid: 2, ptrs: [["lo", 0, "found"], ["mid", 2, "new"], ["hi", 5, "found"]],
+      meta: "nums[2] = 3 &lt; 9, so indices <b>0, 1 and 2</b> are all too small.", hl: [3]
+    },
+    loop: {
+      caption: "lo and hi bound the window that could still contain the target.",
+      nums: NUMS, target: 9, lo: 0, hi: 5, mid: 2, ptrs: [["lo", 0, "found"], ["mid", 2, "new"], ["hi", 5, "found"]],
+      meta: "The window is nums[lo .. hi]. It is non-empty while <b>lo &lt;= hi</b>.", hl: [1, 2, 3]
+    },
+    t1: {
+      caption: "Step 1 · lo = 0, mid = 2, hi = 5.",
+      nums: NUMS, target: 9, lo: 0, hi: 5, mid: 2, ptrs: [["lo", 0, "found"], ["mid", 2, "new"], ["hi", 5, "found"]],
+      meta: "nums[2] = 3 &lt; 9 → search right: <b>lo = mid + 1 = 3</b>", hl: [3, 6, 7]
+    },
+    t2: {
+      caption: "Step 2 · lo = 3, mid = 4, hi = 5. Half the array is already gone.",
+      nums: NUMS, target: 9, lo: 3, hi: 5, mid: 4, ptrs: [["lo", 3, "found"], ["mid", 4, "new"], ["hi", 5, "found"]],
+      meta: "Window nums[3 .. 5] · new <b>mid = (3 + 5) // 2 = 4</b>", hl: [2, 3]
+    },
+    t3: {
+      caption: "Step 3 · nums[mid] == target, so return mid.",
+      nums: NUMS, target: 9, lo: 3, hi: 5, mid: 4, ptrs: [["lo", 3, "found"], ["mid", 4, "new"], ["hi", 5, "found"]],
+      meta: "nums[4] = 9 == target · <b>found at index 4</b>", hl: [4, 5],
+      big: "4", bigNote: "returned after 2 comparisons"
+    },
+    pitfall: {
+      caption: "target = 2 is missing. lo walks past hi and the window empties.",
+      nums: NUMS, target: 2, lo: 2, hi: 1, mid: -1, ptrs: [["lo", 2, "found"], ["mid", "—", ""], ["hi", 1, "found"]],
+      meta: "lo = 2 &gt; hi = 1 → the window is empty, so <b>2 is not in nums</b>.", hl: [2, 10],
+      big: "-1", bigNote: "lo crossing hi is the proof of absence"
+    },
+    complexity: {
+      caption: "Each pass halves the window: 6 → 3 → 1 → 0.",
+      nums: NUMS, target: 9, lo: 0, hi: 5, mid: 2, ptrs: [["lo", 0, "found"], ["mid", 2, "new"], ["hi", 5, "found"]],
+      meta: "Constant work per pass, and the window never grows.", hl: [2, 3],
+      big: "O(log n) time · O(1) space", bigNote: "versus O(n) time for the linear scan"
+    },
+    final: {
+      caption: "The whole solution.",
+      nums: NUMS, target: 9, lo: -1, hi: -1, mid: -1, ptrs: [], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.target;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.nums.length; i++) {
+      var cls = "cell";
+      if (i === s.mid) cls += " cur";
+      else if (i === s.lo || i === s.hi) cls += " hit";
+      else if (s.lo !== -1 && (i < s.lo || i > s.hi)) cls += " dim";
+      arr += '<div class="' + cls + '">' + s.nums[i] + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.ptrs.length === 0) {
+      $("pointers").innerHTML = '<span class="empty">window not opened yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.ptrs.length; k++) {
+        var e = s.ptrs[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("pointers").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - window.innerHeight * 0.45);
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - window.innerHeight * 0.45);
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+})();
+</script>
+</body>
+</html>

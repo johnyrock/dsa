@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Best Time to Buy and Sell Stock Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; gap: 0; }
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 8px 0 12px; order: -1; }
+    .panel { padding: 14px; }
+    .caption { min-height: 0; }
+    pre.code { display: none; }
+    .step { min-height: auto; padding: 32px 0 32px 16px; opacity: 1; }
+    header { padding-top: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">Easy · Sliding Window · LeetCode #121</div>
+  <h1>Best Time to Buy and Sell Stock, narrated</h1>
+  <p>Scroll through the thinking, from the obvious brute force to the one-pass minimum tracker, with the state of the algorithm shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get an array <code>prices</code> where <code>prices[i]</code> is the stock's price on day <code>i</code>. Choose one day to buy and a <em>later</em> day to sell, and return the largest profit.</p>
+      <p>One rule does all the work: the sell day must come after the buy day. And if prices never rise, you simply do not trade, so the answer is 0 rather than a loss.</p>
+      <div class="callout">Running example: <code>prices = [7, 1, 5, 3, 6, 4]</code>. The answer is 5 — buy on day 1 at 1, sell on day 4 at 6.</div>
+      <p>Notice the question asks for the <em>profit</em>, not the days. We never have to remember which days won, only how much they were worth.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every buy/sell pair</h2>
+      <p>The direct idea is to test every possible trade: for each buy day <code>i</code>, try every sell day <code>j</code> after it and keep the largest difference.</p>
+      <pre class="code"><span class="ln">best = 0</span><span class="ln">for i in range(len(prices)):</span><span class="ln">    for j in range(i + 1, len(prices)):</span><span class="ln">        best = max(best, prices[j] - prices[i])</span></pre>
+      <p style="margin-top:14px">This is correct, and it is a fine first answer to say out loud. But there are roughly n² / 2 pairs, so the running time is <strong>O(n²)</strong>. At n = 100,000 that is about five billion subtractions.</p>
+      <p>The inner loop is wasteful in a specific way: for each buy day it rescans the entire future. Flip which loop is in charge and the waste becomes obvious.</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: stand on the sell day</h2>
+      <p>Instead of fixing the buy day and scanning forward, fix the <strong>sell</strong> day and look backward. Stand on day <code>j</code> and ask: <em>"If I sold today, what is the most I could have made?"</em></p>
+      <p>There is only one sensible buy day: the cheapest day anywhere before <code>j</code>. Buying on any other earlier day gives strictly less profit, so no other candidate is worth considering.</p>
+      <div class="callout">On day 4 the price is 6. The cheapest day before it is the 1 on day 1, so selling today is worth 6 − 1 = 5.</div>
+      <p>The brute force answers that question by rescanning the past, which costs O(n) each time. But the cheapest day so far is something we can just carry along.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: carry the minimum with you</h2>
+      <p>Walk the array once, left to right, holding two numbers:</p>
+      <ul>
+        <li><strong><code>min_price</code></strong> — the cheapest price seen so far. Start it at infinity so the first day always replaces it.</li>
+        <li><strong><code>best</code></strong> — the largest profit found so far. Start it at <strong>0</strong>, because doing nothing is always an option.</li>
+      </ul>
+      <p>At each day, either the price is a new low (update <code>min_price</code>) or it is a candidate sale (compare <code>price - min_price</code> against <code>best</code>). Both take O(1).</p>
+      <p>Because we only ever look at a minimum drawn from days already passed, the "buy before you sell" rule is enforced by the direction of the loop itself. There is no ordering check anywhere in the code.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: days 0 and 1</h2>
+      <p>Day 0, price 7. Infinity is beaten, so <code>min_price</code> becomes 7. No sale is considered — we cannot buy and sell on the same day, and the <code>elif</code> makes sure of that.</p>
+      <p>Day 1, price 1. That is cheaper than 7, so <code>min_price</code> becomes 1. Again no sale: this is a buy day, not a sell day.</p>
+      <p><code>best</code> is still 0. Two days in and we have banked nothing, but we now hold the cheapest buy point of the whole array.</p>
+    </section>
+
+    <section class="step" data-state="t4">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: day 4, the peak</h2>
+      <p>Days 2 and 3 (prices 5 and 3) are both above <code>min_price</code>, so each is checked as a sale: 5 − 1 = 4 raises <code>best</code> to 4, then 3 − 1 = 2 does not beat it.</p>
+      <p>Day 4, price 6. It is not below 1, so we take the <code>elif</code> branch: 6 − 1 = <strong>5</strong>, which beats 4. <code>best</code> becomes 5.</p>
+      <p>Day 5, price 4, gives 4 − 1 = 3 and changes nothing. The loop ends and we return <strong>5</strong>.</p>
+      <div class="callout">The green cell is the day we conceptually bought on; the blue cell is where the loop is standing. They never cross, because the green one is always in the past.</div>
+    </section>
+
+    <section class="step" data-state="falling">
+      <div class="n">STEP 7</div>
+      <h2>The pitfall: prices that only fall</h2>
+      <p>Take <code>prices = [7, 6, 4, 3, 1]</code>. Every day is cheaper than the one before, so the <code>if</code> branch fires every single time and the <code>elif</code> never runs.</p>
+      <p>The correct answer is <strong>0</strong>: you decline to trade. A common bug is initialising <code>best</code> to something like <code>-inf</code> or <code>prices[1] - prices[0]</code>, which lets a losing trade become the answer and returns −1.</p>
+      <div class="callout warn">Start <code>best</code> at 0 and never let it go down. Also note the reverse trap: the global minimum here is the <em>last</em> day, and you cannot sell after it. Tracking <code>best</code> separately from <code>min_price</code> is what handles that.</div>
+      <p>The same reasoning covers a single-day array: the loop runs once, takes the <code>if</code> branch, and returns the untouched 0.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 8</div>
+      <h2>Time and space</h2>
+      <p>The loop visits each day once and does one comparison and at most one subtraction per day, so the total is <strong>O(n) time</strong>.</p>
+      <p>We hold two scalars no matter how long the array is, so it is <strong>O(1) extra space</strong> — strictly better than the hash-map style solutions to other array problems.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Brute force, all pairs</td><td>O(n²)</td><td>O(1)</td></tr>
+        <tr><td>One pass, min so far</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>For n = 100,000 this turns about five billion pair checks into one hundred thousand steps, and it costs nothing in memory to do it.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 9</div>
+      <h2>The final solution</h2>
+      <p>Nine lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>min_price = float("inf")</code> is the cheapest buy day so far, primed so day 0 wins.</li>
+        <li><code>best = 0</code> encodes "no trade is always allowed".</li>
+        <li><code>for price in prices</code> is the single forward pass that enforces buy-before-sell.</li>
+        <li><code>if price &lt; min_price</code> is the new-low branch.</li>
+        <li><code>elif price - min_price &gt; best</code> is the reframed question, asked on the sell day.</li>
+        <li><code>return best</code> hands back 0 untouched when prices only fall.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>at each day, the best buy is the cheapest day before it.</em></div>
+    </section>
+
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>prices · blue = today, green = min so far</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>carried state</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="best_time_to_buy_and_sell_stock.py">best_time_to_buy_and_sell_stock.py</a> · <a href="best_time_to_buy_and_sell_stock_annotated.py">best_time_to_buy_and_sell_stock_annotated.py</a> · <a href="test_best_time_to_buy_and_sell_stock.py">test_best_time_to_buy_and_sell_stock.py</a> · <a href="notes.md">notes.md</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def max_profit(prices):",
+    "    min_price = float(\"inf\")",
+    "    best = 0",
+    "    for price in prices:",
+    "        if price < min_price:",
+    "            min_price = price",
+    "        elif price - min_price > best:",
+    "            best = price - min_price",
+    "    return best"
+  ];
+
+  var PRICES = [7, 1, 5, 3, 6, 4];
+
+  // Each state describes what the sticky panel shows for one step.
+  // cur = the day the loop is standing on, hits = the day holding the minimum so far.
+  var STATES = {
+    problem: {
+      caption: "Buy on one day, sell on a later day, and report the biggest profit.",
+      prices: PRICES, cur: -1, hits: [], chips: [], meta: "", hl: []
+    },
+    brute: {
+      caption: "Brute force tries every buy day against every later sell day.",
+      prices: PRICES, cur: 0, hits: [1, 2, 3, 4, 5], chips: [], meta: "i = 0, then j scans 1 … 5, and it repeats for every i.", hl: [],
+      big: "O(n²)", bigNote: "about n² / 2 pair checks"
+    },
+    reframe: {
+      caption: "Stand on the sell day instead: the only buy worth making is the cheapest day before it.",
+      prices: PRICES, cur: 4, hits: [1], chips: [["min price", "1"], ["best profit", "0"]],
+      meta: "Sell on day 4 at 6, buy at the cheapest earlier day: 6 − 1 = <b>5</b>.", hl: [6]
+    },
+    idea: {
+      caption: "Carry two numbers through one forward pass: the minimum so far and the best profit so far.",
+      prices: PRICES, cur: -1, hits: [], chips: [["min price", "inf", "new"], ["best profit", "0", "new"]],
+      meta: "min_price starts at infinity, best starts at 0 so a losing trade is never taken.", hl: [1, 2]
+    },
+    t1: {
+      caption: "Days 0 and 1 are both new lows, so min_price falls to 1 and best stays 0.",
+      prices: PRICES, cur: 1, hits: [1], chips: [["min price", "1", "new"], ["best profit", "0"]],
+      meta: "price = 1 &lt; min_price = 7 · <b>new low, no sale considered</b>", hl: [4, 5]
+    },
+    t4: {
+      caption: "Day 4, price 6. Selling now against the 1 on day 1 gives a profit of 5.",
+      prices: PRICES, cur: 4, hits: [1], chips: [["min price", "1"], ["best profit", "5", "found"]],
+      meta: "6 − 1 = <b>5</b>, which beats the previous best of 4.", hl: [6, 7],
+      big: "5", bigNote: "buy day 1 at 1, sell day 4 at 6"
+    },
+    falling: {
+      caption: "prices = [7, 6, 4, 3, 1]. Every day is a new low, so no sale is ever considered.",
+      prices: [7, 6, 4, 3, 1], cur: 4, hits: [4], chips: [["min price", "1"], ["best profit", "0", "found"]],
+      meta: "The elif never runs. best keeps its starting value.", hl: [2, 8],
+      big: "0", bigNote: "decline to trade, never return a loss"
+    },
+    complexity: {
+      caption: "One pass, O(1) work per day, and only two variables held.",
+      prices: PRICES, cur: -1, hits: [], chips: [["min price", "1"], ["best profit", "5"]],
+      meta: "Nothing grows with the size of the input.", hl: [3, 4, 6],
+      big: "O(n) time · O(1) space", bigNote: "versus O(n²) time for brute force"
+    },
+    final: {
+      caption: "The whole solution.",
+      prices: PRICES, cur: -1, hits: [], chips: [["min price", "1"], ["best profit", "5"]], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.prices.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.cur !== -1 && i > s.cur) cls += " dim";
+      arr += '<div class="' + cls + '">' + s.prices[i] + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.chips.length; k++) {
+        var e = s.chips[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - window.innerHeight * 0.45);
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - window.innerHeight * 0.45);
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+})();
+</script>
+</body>
+</html>

@@ -23,9 +23,20 @@ python3 easy/001-two-sum/test_two_sum.py
 
 ## Index
 
+Problems are chosen by interview frequency: the easy tier of the Blind 75 and NeetCode 150 lists, which are built from what companies actually ask. Folders 002 onward were generated as reference material and are not solved yet, so their first session is a from-scratch attempt.
+
 | # | Problem | Difficulty | Pattern | Solved | Confidence | Next review |
 |---|---------|------------|---------|--------|------------|-------------|
 | easy/001 | [Two Sum](easy/001-two-sum/) | Easy | [hash-map](patterns/hash-map.md) | 2026-09-04 | 4 | 2026-09-25 |
+| easy/002 | [Valid Anagram](easy/002-valid-anagram/) | Easy | [hash-map](patterns/hash-map.md) | - | - | not yet solved |
+| easy/003 | [Contains Duplicate](easy/003-contains-duplicate/) | Easy | [hash-set](patterns/hash-set.md) | - | - | not yet solved |
+| easy/004 | [Valid Parentheses](easy/004-valid-parentheses/) | Easy | [stack](patterns/stack.md) | - | - | not yet solved |
+| easy/005 | [Best Time to Buy and Sell Stock](easy/005-best-time-to-buy-and-sell-stock/) | Easy | [sliding-window](patterns/sliding-window.md) | - | - | not yet solved |
+| easy/006 | [Valid Palindrome](easy/006-valid-palindrome/) | Easy | [two-pointers](patterns/two-pointers.md) | - | - | not yet solved |
+| easy/007 | [Reverse Linked List](easy/007-reverse-linked-list/) | Easy | [linked-list](patterns/linked-list.md) | - | - | not yet solved |
+| easy/008 | [Merge Two Sorted Lists](easy/008-merge-two-sorted-lists/) | Easy | [linked-list](patterns/linked-list.md) | - | - | not yet solved |
+| easy/009 | [Binary Search](easy/009-binary-search/) | Easy | [binary-search](patterns/binary-search.md) | - | - | not yet solved |
+| easy/010 | [Climbing Stairs](easy/010-climbing-stairs/) | Easy | [dynamic-programming](patterns/dynamic-programming.md) | - | - | not yet solved |
 
 ## Due for review
 
@@ -37,7 +48,14 @@ _(Problems whose next review date has passed. Updated at the start of each sessi
 
 | Pattern | Problems |
 |---------|----------|
-| [hash-map](patterns/hash-map.md) | easy/001 |
+| [hash-map](patterns/hash-map.md) | easy/001, easy/002 |
+| [hash-set](patterns/hash-set.md) | easy/003 |
+| [stack](patterns/stack.md) | easy/004 |
+| [sliding-window](patterns/sliding-window.md) | easy/005 |
+| [two-pointers](patterns/two-pointers.md) | easy/006 |
+| [linked-list](patterns/linked-list.md) | easy/007, easy/008 |
+| [binary-search](patterns/binary-search.md) | easy/009 |
+| [dynamic-programming](patterns/dynamic-programming.md) | easy/010 |
 
 ## Layout
 

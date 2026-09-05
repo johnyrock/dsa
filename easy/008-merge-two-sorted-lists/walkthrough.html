@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Merge Two Sorted Lists Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; align-items: center; gap: 6px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  /* linked-list additions: a row label, the arrow glyph between nodes, and the terminating None */
+  .rowlab {
+    flex: 0 0 52px; font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem;
+    color: var(--muted); text-align: right; padding-right: 2px;
+  }
+  .arrow { flex: 0 0 auto; color: var(--muted); font-size: 0.95rem; }
+  .nil { flex: 0 0 auto; color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.85rem; }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 4px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .kv.dummy { color: var(--muted); border-style: dashed; }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; gap: 0; }
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 8px 0 12px; order: -1; }
+    .panel { padding: 14px; }
+    .caption { min-height: 0; }
+    pre.code { display: none; }
+    .step { min-height: auto; padding: 32px 0 32px 16px; opacity: 1; }
+    header { padding-top: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">Easy · Linked List · LeetCode #21</div>
+  <h1>Merge Two Sorted Lists, narrated</h1>
+  <p>Scroll through the thinking, from dumping the values into a Python list and sorting to the one-pass merge with a dummy head, with the state of both lists shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get the heads of two singly linked lists, <code>list1</code> and <code>list2</code>. Each one is already sorted in non-decreasing order. Return the head of one sorted list containing all the nodes.</p>
+      <p>The nodes already exist. The job is to <em>relink</em> them into a single chain, not to build a new one.</p>
+      <div class="callout">Running example: <code>list1 = 1 → 2 → 4</code> and <code>list2 = 1 → 3 → 4</code>. The answer is <code>1 → 1 → 2 → 3 → 4 → 4</code>.</div>
+      <p>A linked list gives you only one move: from a node, follow <code>.next</code>. There is no indexing and no looking backwards, so any solution has to work by walking forwards.</p>
+    </section>
+
+    <section class="step" data-state="naive">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: collect, sort, rebuild</h2>
+      <p>The direct idea is to walk both lists, push every value into a Python list, sort it, then build a fresh chain of nodes from the sorted values.</p>
+      <pre class="code"><span class="ln">values = []</span><span class="ln">for head in (list1, list2):</span><span class="ln">    while head:</span><span class="ln">        values.append(head.val)</span><span class="ln">        head = head.next</span><span class="ln">values.sort()</span><span class="ln"># then rebuild a node for every value</span></pre>
+      <p style="margin-top:14px">This works, and it is a fine thing to say out loud. But the sort costs <strong>O((n + m) log(n + m))</strong>, and the values list plus the new nodes cost <strong>O(n + m)</strong> extra space.</p>
+      <p>Something is being thrown away here. The sort treats the input as an unordered pile of numbers. What did we already know about it?</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: the inputs are already sorted</h2>
+      <p>Both lists arrive sorted. Inside <code>list1</code>, nothing after the head is smaller than the head. The same holds for <code>list2</code>.</p>
+      <p>So the smallest value in the whole merge is not hiding somewhere in the middle. It is either <code>list1</code>'s head or <code>list2</code>'s head, and one comparison tells you which.</p>
+      <div class="callout">The next smallest node is always at one of the two heads. Take it, advance that list, and the same statement is true again.</div>
+      <p>That is the whole algorithm. No sort, and no need to look at a node more than once.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: a dummy head and a tail pointer</h2>
+      <p>Repeatedly taking the smaller head means appending to the end of a growing result. To append in O(1) we keep <code>tail</code>, a pointer to the last node attached so far.</p>
+      <p>But the very first append has no last node to attach to, so a naive version needs a special case: "if the result is empty, set <code>head</code>, otherwise set <code>tail.next</code>." That branch is where off-by-one bugs live.</p>
+      <ul>
+        <li><strong>The trick:</strong> start with a throwaway node, <code>dummy</code>, and set <code>tail = dummy</code>.</li>
+        <li>Now the result is never empty, so every append is the same line: <code>tail.next = node</code>.</li>
+        <li>At the end the real head is <code>dummy.next</code>, and the dummy is discarded.</li>
+      </ul>
+      <div class="callout">The dummy buys uniformity: one code path instead of a first-node case and an every-other-node case.</div>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: first comparison</h2>
+      <p>Both heads are 1. The test is <code>list1.val &lt;= list2.val</code>, so 1 ≤ 1 is true and we take from <code>list1</code>.</p>
+      <p><code>tail.next = list1</code> hangs that node off the dummy, <code>list1 = list1.next</code> steps past it, and <code>tail = tail.next</code> moves the tail onto it.</p>
+      <div class="callout">Using <code>&lt;=</code> rather than <code>&lt;</code> means ties go to <code>list1</code>, which keeps equal values in their original relative order. The merge is stable.</div>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: second comparison</h2>
+      <p>Now the heads are 2 from <code>list1</code> and 1 from <code>list2</code>. This time 2 ≤ 1 is false, so the <code>else</code> branch runs and we take from <code>list2</code>.</p>
+      <p>The merged chain is <code>1 → 1</code>, and <code>list2</code> has advanced to 3.</p>
+      <p>Nothing about the loop body changed. Only which of the two pointers moved.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: third comparison</h2>
+      <p>Heads are 2 and 3. 2 ≤ 3, so <code>list1</code> gives up its node again and the merged chain becomes <code>1 → 1 → 2</code>.</p>
+      <p>Carry on the same way: 4 versus 3 takes the 3, then 4 versus 4 takes <code>list1</code>'s 4 and empties <code>list1</code>. The loop condition <code>while list1 and list2</code> is now false and the loop stops.</p>
+      <p>At that moment <code>list2</code> still points at a 4. Which is exactly the case the next step is about.</p>
+    </section>
+
+    <section class="step" data-state="leftover">
+      <div class="n">STEP 8</div>
+      <h2>The pitfall: the leftover tail</h2>
+      <p>The loop exits as soon as <em>either</em> list runs out, so it almost always leaves nodes behind in the other one. On the running example that is a lone 4 in <code>list2</code>.</p>
+      <p>Stopping there returns <code>1 → 1 → 2 → 3 → 4</code> and silently drops the last node. The fix is one line after the loop:</p>
+      <pre class="code"><span class="ln">tail.next = list1 or list2</span></pre>
+      <div class="callout warn">The leftover is already sorted and every value in it is at least as large as everything merged so far, so one link attaches the whole remainder. No loop needed.</div>
+      <p>The same line handles the empty-input cases for free. If <code>list1</code> is <code>None</code> the loop never runs, <code>tail</code> is still the dummy, and <code>tail.next = list2</code> makes the answer just <code>list2</code>. If both are <code>None</code> it sets <code>None</code> and <code>dummy.next</code> is <code>None</code>.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Every iteration of the loop consumes exactly one node and never revisits it, so the loop runs at most n + m times with O(1) work inside. The final attachment is a single assignment. That is <strong>O(n + m) time</strong>.</p>
+      <p>The only new object is the dummy node, and the nodes themselves are spliced in place rather than copied, so the extra space is <strong>O(1)</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Collect values, sort, rebuild</td><td>O((n + m) log(n + m))</td><td>O(n + m)</td></tr>
+        <tr><td>Two pointers with a dummy head</td><td>O(n + m)</td><td>O(1)</td></tr>
+      </table>
+      <p>Sorting cannot beat this, because the sorted order was information we were handed for free.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Thirteen lines, and every one of them maps to a step above.</p>
+      <ul>
+        <li><code>dummy = ListNode()</code> and <code>tail = dummy</code> set up the append-without-a-special-case trick.</li>
+        <li><code>while list1 and list2</code> runs only while there is an actual comparison to make.</li>
+        <li><code>if list1.val &lt;= list2.val</code> is the reframed question: which head is the next smallest?</li>
+        <li><code>tail.next = …</code> then <code>list1 = list1.next</code> splices one node out and onto the result.</li>
+        <li><code>tail = tail.next</code> keeps the tail pointing at the real end. Forget it and the next append overwrites this one.</li>
+        <li><code>tail.next = list1 or list2</code> attaches the leftover, and covers both empty-input cases.</li>
+        <li><code>return dummy.next</code> skips the placeholder and returns the real head.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>both lists are sorted, so the next node is always the smaller head; a dummy makes every append look the same.</em></div>
+    </section>
+
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>list1 · list2 — heads under comparison</h3>
+        <div class="array" id="row1"></div>
+        <div class="array" id="row2"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>merged so far (dummy → tail)</h3>
+        <div class="dict" id="merged"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="merge_two_sorted_lists.py">merge_two_sorted_lists.py</a> · <a href="merge_two_sorted_lists_annotated.py">merge_two_sorted_lists_annotated.py</a> · <a href="test_merge_two_sorted_lists.py">test_merge_two_sorted_lists.py</a> · <a href="notes.md">notes.md</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def merge_two_lists(list1, list2):",
+    "    dummy = ListNode()",
+    "    tail = dummy",
+    "    while list1 and list2:",
+    "        if list1.val <= list2.val:",
+    "            tail.next = list1",
+    "            list1 = list1.next",
+    "        else:",
+    "            tail.next = list2",
+    "            list2 = list2.next",
+    "        tail = tail.next",
+    "    tail.next = list1 or list2",
+    "    return dummy.next"
+  ];
+
+  var L1 = [1, 2, 4];
+  var L2 = [1, 3, 4];
+
+  // Each state describes what the sticky panel shows for one step.
+  // cur1 / cur2 are the head nodes being compared, done1 / done2 count the nodes
+  // already spliced out of each list, merged is the chain hanging off the dummy.
+  var STATES = {
+    problem: {
+      caption: "Two lists, each already sorted. Relink their nodes into one sorted chain.",
+      l1: L1, l2: L2, cur1: -1, cur2: -1, done1: 0, done2: 0, merged: [],
+      meta: "Answer: <b>1 → 1 → 2 → 3 → 4 → 4</b>, built from these six nodes.", hl: []
+    },
+    naive: {
+      caption: "First instinct: read all six values out, sort them, build a new chain.",
+      l1: L1, l2: L2, cur1: -1, cur2: -1, done1: 0, done2: 0, merged: [],
+      meta: "values = [1, 2, 4, 1, 3, 4] → sort → rebuild. Throws away the order we were given.", hl: [],
+      big: "O((n+m) log(n+m))", bigNote: "plus O(n+m) space for the values and new nodes"
+    },
+    reframe: {
+      caption: "Both lists are sorted, so the next smallest node is one of the two heads.",
+      l1: L1, l2: L2, cur1: 0, cur2: 0, done1: 0, done2: 0, merged: [],
+      meta: "Only <b>1</b> and <b>1</b> can be next. Nothing deeper in either list can beat them.", hl: [4]
+    },
+    idea: {
+      caption: "A dummy node sits in front of the result so the first append is not a special case.",
+      l1: L1, l2: L2, cur1: 0, cur2: 0, done1: 0, done2: 0, merged: [],
+      meta: "tail starts on the dummy, so <b>tail.next = node</b> works even when nothing is attached.", hl: [1, 2]
+    },
+    t1: {
+      caption: "Compare 1 and 1. 1 ≤ 1, so list1's node goes first. Merged: 1.",
+      l1: L1, l2: L2, cur1: 0, cur2: 0, done1: 0, done2: 0, merged: [[1, "new"]],
+      meta: "1 ≤ 1 → <b>take from list1</b> · list1 advances to 2, tail moves onto the 1.", hl: [4, 5, 6, 10]
+    },
+    t2: {
+      caption: "Compare 2 and 1. 2 ≤ 1 is false, so list2's node goes next. Merged: 1 → 1.",
+      l1: L1, l2: L2, cur1: 1, cur2: 0, done1: 1, done2: 0, merged: [[1, ""], [1, "new"]],
+      meta: "2 ≤ 1 is false → <b>take from list2</b> · list2 advances to 3.", hl: [7, 8, 9, 10]
+    },
+    t3: {
+      caption: "Compare 2 and 3. 2 ≤ 3, so list1 gives up a node again. Merged: 1 → 1 → 2.",
+      l1: L1, l2: L2, cur1: 1, cur2: 1, done1: 1, done2: 1, merged: [[1, ""], [1, ""], [2, "new"]],
+      meta: "2 ≤ 3 → <b>take from list1</b> · same loop body, only the pointer that moves changes.", hl: [4, 5, 6, 10]
+    },
+    leftover: {
+      caption: "The loop stops the moment list1 empties, leaving a 4 stranded in list2.",
+      l1: L1, l2: L2, cur1: -1, cur2: 2, done1: 3, done2: 2,
+      merged: [[1, ""], [1, ""], [2, ""], [3, ""], [4, ""], [4, "found"]],
+      meta: "list1 is empty, list2 still holds <b>4</b>. One link, <b>tail.next = list1 or list2</b>, attaches it.", hl: [3, 11]
+    },
+    complexity: {
+      caption: "Each node is compared once, relinked once, and never looked at again.",
+      l1: L1, l2: L2, cur1: -1, cur2: -1, done1: 3, done2: 3,
+      merged: [[1, ""], [1, ""], [2, ""], [3, ""], [4, ""], [4, ""]],
+      meta: "Six nodes in, six loop-or-link steps out. Only the dummy is allocated.", hl: [3, 10, 11],
+      big: "O(n + m) time · O(1) space", bigNote: "versus O((n+m) log(n+m)) time for collect-sort-rebuild"
+    },
+    final: {
+      caption: "The whole solution.",
+      l1: L1, l2: L2, cur1: -1, cur2: -1, done1: 3, done2: 3,
+      merged: [[1, ""], [1, ""], [2, ""], [3, ""], [4, ""], [4, ""]],
+      meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function renderRow(label, vals, cur, done) {
+    var html = '<span class="rowlab">' + label + '</span>';
+    if (vals.length === done) {
+      return html + '<span class="nil">None &nbsp;(empty)</span>';
+    }
+    for (var i = 0; i < vals.length; i++) {
+      var cls = "cell";
+      if (i < done) cls += " dim";
+      else if (i === cur) cls += " cur";
+      html += '<div class="' + cls + '">' + vals[i] + '<span class="idx">' + (i < done ? "merged" : i === cur ? "head" : "") + '</span></div>';
+      if (i < vals.length - 1) html += '<span class="arrow">→</span>';
+    }
+    return html + '<span class="arrow">→</span><span class="nil">None</span>';
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    $("row1").innerHTML = renderRow("list1", s.l1, s.cur1, s.done1);
+    $("row2").innerHTML = renderRow("list2", s.l2, s.cur2, s.done2);
+
+    if (s.merged.length === 0) {
+      $("merged").innerHTML = '<span class="kv dummy">dummy</span><span class="arrow">→</span><span class="empty">nothing attached yet</span>';
+    } else {
+      var d = '<span class="kv dummy">dummy</span><span class="arrow">→</span>';
+      for (var k = 0; k < s.merged.length; k++) {
+        var e = s.merged[k];
+        d += '<span class="kv' + (e[1] ? " " + e[1] : "") + '">' + e[0] + "</span>";
+        if (k < s.merged.length - 1) d += '<span class="arrow">→</span>';
+      }
+      $("merged").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - window.innerHeight * 0.45);
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - window.innerHeight * 0.45);
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+})();
+</script>
+</body>
+</html>

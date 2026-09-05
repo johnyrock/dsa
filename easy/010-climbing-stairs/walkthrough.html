@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Climbing Stairs Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; gap: 0; }
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 8px 0 12px; order: -1; }
+    .panel { padding: 14px; }
+    .caption { min-height: 0; }
+    pre.code { display: none; }
+    .step { min-height: auto; padding: 32px 0 32px 16px; opacity: 1; }
+    header { padding-top: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">Easy · Dynamic Programming · LeetCode #70</div>
+  <h1>Climbing Stairs, narrated</h1>
+  <p>Scroll through the thinking, from the exponential recursion to a loop with two variables, with the state of the algorithm shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>A staircase has <code>n</code> steps. Every move takes you up either 1 step or 2 steps. Count the distinct sequences of moves that land exactly on the top.</p>
+      <p>Order matters: climbing 1 then 2 is a different climb from 2 then 1, even though both cover 3 stairs.</p>
+      <div class="callout">Running example: <code>n = 5</code>. The answer is <strong>8</strong>. Listing them by hand is possible but tedious, which is a hint that we want a formula rather than an enumeration.</div>
+      <p>Notice we are asked for a <em>count</em>, not for the sequences themselves. We never have to build a climb — only add up how many exist.</p>
+    </section>
+
+    <section class="step" data-state="recursion">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: recursion</h2>
+      <p>Think about the very last move you make. It was either a 1-step or a 2-step. If it was a 1-step, you were standing on step <code>n - 1</code> before it; if it was a 2-step, you were on step <code>n - 2</code>. There is no third option.</p>
+      <p>So the number of climbs splits cleanly in two, and we can write it down directly:</p>
+      <pre class="code"><span class="ln">def climb_stairs(n):</span><span class="ln">    if n &lt;= 2:</span><span class="ln">        return n</span><span class="ln">    return climb_stairs(n - 1) + climb_stairs(n - 2)</span></pre>
+      <p style="margin-top:14px">This is correct, and it is a good thing to say out loud in an interview. It is also unusably slow. Each call spawns two more calls, so the call tree roughly doubles at every level: <strong>O(2ⁿ)</strong>.</p>
+      <p>The waste is easy to name. <code>climb_stairs(5)</code> calls <code>climb_stairs(4)</code> and <code>climb_stairs(3)</code> — and <code>climb_stairs(4)</code> calls <code>climb_stairs(3)</code> all over again, from scratch. The same subproblems are recomputed thousands of times. At <code>n = 45</code> this never finishes.</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: how much does step n actually depend on?</h2>
+      <p>The recurrence <code>f(n) = f(n-1) + f(n-2)</code> is right. The recursion is just a bad way to evaluate it, because it walks <em>down</em> from n and rediscovers the bottom of the staircase over and over.</p>
+      <p>So ask the narrower question: <em>"To compute the answer for step n, what do I actually need in hand?"</em></p>
+      <div class="callout">Exactly two numbers: the count for step <code>n - 1</code> and the count for step <code>n - 2</code>. Nothing below them ever matters again.</div>
+      <p>One fix is <strong>memoization</strong>: keep the same recursion but cache each <code>f(k)</code> in a dict the first time it is computed. Every subproblem is then solved once, which drops the time to O(n) — but it still holds n cached values and an n-deep call stack.</p>
+      <p>If we only ever need the last two counts, though, we do not need the cache at all. We can start at the bottom and walk <em>up</em>.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: build upward with two variables</h2>
+      <p>Start from what we can count on our fingers. Step 1 has 1 way (a single 1-step). Step 2 has 2 ways (1+1, or one 2-step). Those are the base cases, and they are the seed of everything above.</p>
+      <p>Hold them in two variables:</p>
+      <ul>
+        <li><code>two_back</code> — the count for the step two below the one we are computing.</li>
+        <li><code>one_back</code> — the count for the step directly below it.</li>
+      </ul>
+      <p>Then for each step from 3 up to n, the new count is <code>two_back + one_back</code>, and both variables shift up one: the old <code>one_back</code> becomes the new <code>two_back</code>.</p>
+      <div class="callout">Look at the counts as they appear: 1, 2, 3, 5, 8, 13 … This is the Fibonacci sequence, shifted by one position. <code>ways(n) = Fib(n + 1)</code>. Recognising that is a nice sanity check, but the reasoning above is what you should be able to rebuild.</div>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: step 3</h2>
+      <p>We enter the loop with <code>two_back = 1</code> (step 1) and <code>one_back = 2</code> (step 2).</p>
+      <p>The count for step 3 is <code>2 + 1 = 3</code>. Check it by hand: 1+1+1, 1+2, 2+1. Three climbs, as promised.</p>
+      <p>Now slide the window. <code>two_back</code> becomes 2 (step 2) and <code>one_back</code> becomes 3 (step 3). The value for step 1 is dropped, and we will never want it again.</p>
+    </section>
+
+    <section class="step" data-state="t4">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: step 4</h2>
+      <p>Same move, one stair higher. The count for step 4 is <code>3 + 2 = 5</code>.</p>
+      <p>Slide again: <code>two_back = 3</code>, <code>one_back = 5</code>.</p>
+      <p>Notice what the panel is <em>not</em> doing. The dimmed cells are drawn so you can see the shape of the table, but the code never allocated an array. Only two integers exist at any moment.</p>
+    </section>
+
+    <section class="step" data-state="t5">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: step 5, the answer</h2>
+      <p>The count for step 5 is <code>5 + 3 = 8</code>. That was the last iteration, because the loop runs up to and including n.</p>
+      <p>When the loop exits, <code>one_back</code> holds the count for step n. That is what we return.</p>
+      <div class="callout">The exponential recursion made thousands of calls to reach this number. The loop made three additions.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: base cases and the loop bounds</h2>
+      <p>Two specific bugs live here, and both pass a casual eyeball.</p>
+      <p><strong>Dropping the base-case guard.</strong> Without <code>if n &lt;= 2: return n</code>, call it with <code>n = 1</code>. The loop <code>range(3, 2)</code> is empty, so nothing runs, and the function returns the seeded <code>one_back = 2</code>. But there is only <strong>1</strong> way to climb a single stair. The seed values are answers for steps 1 and 2, so those two inputs must be handled before the loop, not by it.</p>
+      <p><strong>Starting the loop at the wrong index.</strong> Write <code>range(2, n + 1)</code> instead of <code>range(3, n + 1)</code> and the loop runs one extra time. For <code>n = 5</code> it computes step 6 and returns <strong>13</strong> instead of 8 — a plausible-looking number from the same sequence, which is what makes it nasty.</p>
+      <div class="callout warn">The seeds already cover steps 1 and 2, so the loop's job starts at step 3. Count the iterations for <code>n = 3</code>: it should run exactly once.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>The loop runs from 3 to n, doing one addition and one rebinding each time. That is <strong>O(n) time</strong>. It keeps two integers regardless of how large n gets, so <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Plain recursion</td><td>O(2ⁿ)</td><td>O(n) call stack</td></tr>
+        <tr><td>Recursion + memoization</td><td>O(n)</td><td>O(n) cache + stack</td></tr>
+        <tr><td>Bottom-up, two variables</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>Memoization already fixes the disastrous part — the repeated subproblems. Going bottom-up buys the last improvement, the space, by noticing that a full dp table stores n values when only two are ever read.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Six lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>if n &lt;= 2: return n</code> handles the two base cases the loop cannot produce.</li>
+        <li><code>two_back, one_back = 1, 2</code> seeds the window with steps 1 and 2.</li>
+        <li><code>range(3, n + 1)</code> is the loop bound: start above the seeds, finish on n.</li>
+        <li><code>two_back, one_back = one_back, two_back + one_back</code> is the recurrence and the slide, in one statement. The right-hand side is evaluated before either name is rebound, so no temporary is needed.</li>
+        <li><code>return one_back</code> — after the last iteration, that is the count for step n.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>the ways to reach step n are the ways to reach n−1 plus the ways to reach n−2, so keep only the last two counts.</em></div>
+    </section>
+
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>ways to reach each step · n = <span id="target">5</span></h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>rolling variables</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="climbing_stairs.py">climbing_stairs.py</a> · <a href="climbing_stairs_annotated.py">climbing_stairs_annotated.py</a> · <a href="test_climbing_stairs.py">test_climbing_stairs.py</a> · <a href="notes.md">notes.md</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def climb_stairs(n):",
+    "    if n <= 2:",
+    "        return n",
+    "    two_back, one_back = 1, 2",
+    "    for _ in range(3, n + 1):",
+    "        two_back, one_back = one_back, two_back + one_back",
+    "    return one_back"
+  ];
+
+  var UNKNOWN = [[1, "?"], [2, "?"], [3, "?"], [4, "?"], [5, "?"]];
+  var FULL = [[1, 1], [2, 2], [3, 3], [4, 5], [5, 8]];
+
+  // Each state describes what the sticky panel shows for one step.
+  var STATES = {
+    problem: {
+      caption: "How many distinct ways are there to climb 5 stairs, 1 or 2 at a time?",
+      n: 5, dp: UNKNOWN, cur: 4, hits: [], dim: [0, 1, 2, 3], vars: [],
+      meta: "Order counts: 1+2 and 2+1 are different climbs.", hl: []
+    },
+    recursion: {
+      caption: "The recursion splits step 5 into step 4 and step 3, then splits those the same way.",
+      n: 5, dp: UNKNOWN, cur: 4, hits: [2, 3], dim: [0, 1], vars: [],
+      meta: "ways(5) = ways(4) + ways(3) — and ways(4) recomputes ways(3) from scratch.", hl: [],
+      big: "O(2ⁿ)", bigNote: "the same subproblems solved again and again"
+    },
+    reframe: {
+      caption: "Step n needs exactly two numbers: the counts for n − 1 and n − 2.",
+      n: 5, dp: [[1, 1], [2, 2], [3, "?"], [4, "?"], [5, "?"]], cur: 2, hits: [0, 1], dim: [3, 4], vars: [],
+      meta: "Two known base cases at the bottom; every step above is the sum of the two below it.", hl: []
+    },
+    idea: {
+      caption: "Seed the window with the base cases and build upward instead of recursing downward.",
+      n: 5, dp: [[1, 1], [2, 2]], cur: 1, hits: [0], dim: [],
+      vars: [["one step back", 2, "new"], ["two steps back", 1]],
+      meta: "Before the loop: <b>one step back = ways(2) = 2</b>, <b>two steps back = ways(1) = 1</b>.", hl: [1, 2, 3]
+    },
+    t3: {
+      caption: "Step 3: 2 + 1 = 3. Then the window slides up one.",
+      n: 5, dp: [[1, 1], [2, 2], [3, 3]], cur: 2, hits: [1], dim: [0],
+      vars: [["one step back", 3, "new"], ["two steps back", 2]],
+      meta: "ways(3) = ways(2) + ways(1) = 2 + 1 = <b>3</b>", hl: [5]
+    },
+    t4: {
+      caption: "Step 4: 3 + 2 = 5. The count for step 1 is gone and is never needed again.",
+      n: 5, dp: [[1, 1], [2, 2], [3, 3], [4, 5]], cur: 3, hits: [2], dim: [0, 1],
+      vars: [["one step back", 5, "new"], ["two steps back", 3]],
+      meta: "ways(4) = ways(3) + ways(2) = 3 + 2 = <b>5</b>", hl: [5]
+    },
+    t5: {
+      caption: "Step 5: 5 + 3 = 8. That was the last iteration, so one_back is the answer.",
+      n: 5, dp: FULL, cur: 4, hits: [3], dim: [0, 1, 2],
+      vars: [["one step back", 8, "found"], ["two steps back", 5]],
+      meta: "ways(5) = ways(4) + ways(3) = 5 + 3 = <b>8</b>", hl: [5, 6],
+      big: "8", bigNote: "distinct ways to climb 5 stairs"
+    },
+    pitfall: {
+      caption: "range(2, n + 1) runs one extra time and computes step 6 instead of stopping at 5.",
+      n: 5, dp: [[1, 1], [2, 2], [3, 3], [4, 5], [5, 8], [6, 13]], cur: 5, hits: [4], dim: [0, 1, 2, 3],
+      vars: [["one step back", 13], ["two steps back", 8]],
+      meta: "The seeds already cover steps 1 and 2, so the loop must start at <b>3</b>.", hl: [1, 4],
+      big: "13, not 8", bigNote: "an off-by-one returns the answer for n + 1"
+    },
+    complexity: {
+      caption: "One pass up the stairs, with two integers alive at a time.",
+      n: 5, dp: FULL, cur: 4, hits: [3], dim: [0, 1, 2],
+      vars: [["one step back", 8], ["two steps back", 5]],
+      meta: "The dimmed counts were never stored — they were overwritten as the window moved.", hl: [4, 5],
+      big: "O(n) time · O(1) space", bigNote: "versus O(2ⁿ) time for the plain recursion"
+    },
+    final: {
+      caption: "The whole solution.",
+      n: 5, dp: FULL, cur: -1, hits: [], dim: [],
+      vars: [["one step back", 8, "found"], ["two steps back", 5]],
+      meta: "", hl: [0, 1, 2, 3, 4, 5, 6]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.n;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.dp.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.dim.indexOf(i) !== -1) cls += " dim";
+      arr += '<div class="' + cls + '">' + s.dp[i][1] + '<span class="idx">step ' + s.dp[i][0] + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not seeded yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - window.innerHeight * 0.45);
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - window.innerHeight * 0.45);
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contains Duplicate Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; gap: 0; }
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 8px 0 12px; order: -1; }
+    .panel { padding: 14px; }
+    .caption { min-height: 0; }
+    pre.code { display: none; }
+    .step { min-height: auto; padding: 32px 0 32px 16px; opacity: 1; }
+    header { padding-top: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">Easy · Hash Set · LeetCode #217</div>
+  <h1>Contains Duplicate, narrated</h1>
+  <p>Scroll through the thinking, from all-pairs comparison through sorting to the one-pass hash set, with the state of the algorithm shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get an array of integers <code>nums</code>. Return <code>True</code> if any value appears at least twice, and <code>False</code> if every element is distinct.</p>
+      <p>That is the whole question. You do not have to say <em>which</em> value repeats, or where it repeats, or how many times. One bit of information comes back.</p>
+      <div class="callout">Running example: <code>nums = [1, 2, 3, 1]</code>. The answer is <code>True</code> because the 1 at index 0 shows up again at index 3.</div>
+      <p>Notice how little the answer asks for. A yes/no question can often be answered without doing the full bookkeeping a richer question would need.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instincts: every pair, then sorting</h2>
+      <p>The most direct idea is to take every possible pair of positions and check whether the two values are equal. For each element, compare it against every element after it.</p>
+      <pre class="code"><span class="ln">for i in range(len(nums)):</span><span class="ln">    for j in range(i + 1, len(nums)):</span><span class="ln">        if nums[i] == nums[j]:</span><span class="ln">            return True</span></pre>
+      <p style="margin-top:14px">This is correct, and it is a fine first answer to say out loud. But with n elements there are roughly n² / 2 pairs, so the running time is <strong>O(n²)</strong>. At n = 100,000 that is about five billion comparisons.</p>
+      <p>The obvious improvement is to sort first. Once the array is in order, equal values sit next to each other, so one sweep comparing each element to its neighbour is enough.</p>
+      <pre class="code"><span class="ln">nums.sort()</span><span class="ln">for i in range(1, len(nums)):</span><span class="ln">    if nums[i] == nums[i - 1]:</span><span class="ln">        return True</span></pre>
+      <p style="margin-top:14px">That is <strong>O(n log n)</strong> time and O(1) extra space, which is the right answer if memory is tight. But the sort dominates, and it destroys the original order unless you copy the list first.</p>
+      <div class="callout warn">Sorting to find duplicates does far more work than the question needs. It puts <em>everything</em> in order just to learn whether <em>any</em> two things match. And the brute force rescans the whole tail to answer one small question. What is that question?</div>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: what am I actually asking?</h2>
+      <p>Stand at one element <code>n</code>. The only thing you need to know is: <em>"have I already walked past this exact value?"</em></p>
+      <p>That is a membership question, not a comparison. The brute force answers it by scanning, which costs O(n) each time. Sorting answers it by rearranging, which costs O(n log n) once.</p>
+      <div class="callout">If we could answer "have I seen this value before?" in O(1), the whole thing would collapse to a single pass.</div>
+      <p>And unlike Two Sum, we do not need to remember <em>where</em> a value was. Only that it happened.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: a set of what you have seen</h2>
+      <p>A set answers "is this value in here?" in O(1) on average, the same hashing trick a dictionary uses. Since we do not need an index, a set is the right shape: keys with no values attached.</p>
+      <p>So we walk the array and, at every element, do two things in this order:</p>
+      <ul>
+        <li><strong>Check</strong> whether the value is already in the set. If it is, we have found a repeat and can return <code>True</code> straight away.</li>
+        <li><strong>Add</strong> the current value, so a later element can match against it.</li>
+      </ul>
+      <p>Check before add. If you add first, every element finds itself in the set and the answer is always <code>True</code>.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: indices 0, 1, 2</h2>
+      <p>Start with an empty set. The first value is 1. Is 1 in the set? No, it is empty, so we add it and move on.</p>
+      <p>The value 2 is not in the set either, so it gets added. Same for the 3 at index 2.</p>
+      <p>The set now holds <code>{1, 2, 3}</code>. Each of those checks cost O(1), no matter how big the set has grown. A run of misses is the normal case: the set just keeps growing until a match appears or the array runs out.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: index 3, the hit</h2>
+      <p>The last value is 1. Is 1 in the set? <strong>Yes</strong> — we put it there back at index 0.</p>
+      <p>That settles the question, so we return <code>True</code> immediately. We never add this second 1, and we never look at anything after it.</p>
+      <div class="callout">This early exit is why the explicit loop can beat the one-liner. On <code>[7, 7, …a million more…]</code> the loop stops after two elements; <code>len(set(nums)) != len(nums)</code> builds the entire set first.</div>
+    </section>
+
+    <section class="step" data-state="allunique">
+      <div class="n">STEP 7</div>
+      <h2>The other ending: nothing repeats</h2>
+      <p>Change the input to <code>nums = [1, 2, 3, 4]</code>. Now every check misses. The set fills up completely — one entry per element — and the loop runs off the end of the array.</p>
+      <p>The <code>return False</code> after the loop is doing real work here. It is not a defensive leftover; it is the answer for every distinct array, which is the common case in practice.</p>
+      <div class="callout warn">Forgetting the trailing <code>return False</code> makes the function return <code>None</code> for distinct arrays. <code>None</code> is falsy, so casual tests still pass while the return type is wrong.</div>
+      <p>This is also the worst case for space: the set ends up as large as the input.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 8</div>
+      <h2>Time and space</h2>
+      <p>The loop visits each element at most once. Inside the loop, the membership check and the insert are both O(1) on average. So the total is <strong>O(n) time</strong>.</p>
+      <p>When every value is distinct the set holds all n of them, so it uses <strong>O(n) extra space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Brute force, all pairs</td><td>O(n²)</td><td>O(1)</td></tr>
+        <tr><td>Sort, then scan neighbours</td><td>O(n log n)</td><td>O(1)</td></tr>
+        <tr><td>Hash set, one pass</td><td>O(n)</td><td>O(n)</td></tr>
+      </table>
+      <p>The usual trade: spend memory to buy time. The sorting row is the one to keep in your pocket for when the interviewer says "now do it in O(1) space".</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 9</div>
+      <h2>The final solution</h2>
+      <p>Seven lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>seen = set()</code> is the memory of values already passed.</li>
+        <li><code>if n in seen</code> is the O(1) membership check, the reframed question.</li>
+        <li><code>return True</code> is the early exit, taken the moment a repeat appears.</li>
+        <li><code>seen.add(n)</code> is the store, placed after the check on purpose.</li>
+        <li><code>return False</code> is the answer when the loop finishes untouched.</li>
+      </ul>
+      <p>In real Python you would often just write <code>return len(set(nums)) != len(nums)</code>. It is the same idea compressed: build the set of distinct values, and if fewer came out than went in, something collapsed. It is always O(n) time and O(n) space, with no early exit — so it is the better one-liner and the worse loop.</p>
+      <div class="callout">One-line summary to remember: <em>walk once, and ask the set whether this value has already gone by.</em></div>
+    </section>
+
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>nums · length = <span id="len">4</span></h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>seen (set of values)</h3>
+        <div class="dict" id="seen"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="contains_duplicate.py">contains_duplicate.py</a> · <a href="contains_duplicate_annotated.py">contains_duplicate_annotated.py</a> · <a href="test_contains_duplicate.py">test_contains_duplicate.py</a> · <a href="notes.md">notes.md</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def contains_duplicate(nums):",
+    "    seen = set()",
+    "    for n in nums:",
+    "        if n in seen:",
+    "            return True",
+    "        seen.add(n)",
+    "    return False"
+  ];
+
+  var NUMS = [1, 2, 3, 1];
+  var UNIQ = [1, 2, 3, 4];
+
+  // Each state describes what the sticky panel shows for one step.
+  var STATES = {
+    problem: {
+      caption: "Does any value in nums appear more than once?",
+      nums: NUMS, cur: -1, hits: [], seen: [], meta: "", hl: []
+    },
+    brute: {
+      caption: "Brute force compares every pair. The inner loop rescans everything after i.",
+      nums: NUMS, cur: 0, hits: [1, 2, 3], seen: [], meta: "i = 0, then j scans 1, 2, 3 … and repeats for every i.", hl: [],
+      big: "O(n²) · O(n log n)", bigNote: "all pairs, or sort then scan neighbours"
+    },
+    reframe: {
+      caption: "Each element only asks one thing: have I walked past this value already?",
+      nums: NUMS, cur: 3, hits: [], seen: [], meta: "n = 1 · the question is membership, not comparison.", hl: [3]
+    },
+    idea: {
+      caption: "A set remembers the values we have passed. Membership is O(1) on average.",
+      nums: NUMS, cur: -1, hits: [], seen: [], meta: "Check for the value first, then add the current one.", hl: [3, 5]
+    },
+    t1: {
+      caption: "Indices 0, 1, 2. Every value misses, so every value gets added.",
+      nums: NUMS, cur: 2, hits: [], seen: [[1], [2], [3, "new"]], meta: "3 in seen? <b>no</b> · seen = { 1, 2, 3 }", hl: [5]
+    },
+    t2: {
+      caption: "Index 3, n = 1. Already in seen, so the answer is True.",
+      nums: NUMS, cur: 3, hits: [0], seen: [[1, "found"], [2], [3]], meta: "1 in seen? <b>yes</b> · return immediately, index 3 is never added", hl: [4],
+      big: "True", bigNote: "returned, loop stops here"
+    },
+    allunique: {
+      caption: "nums = [1, 2, 3, 4]. Every check misses and the set fills completely.",
+      nums: UNIQ, cur: -1, hits: [], seen: [[1], [2], [3], [4]], meta: "Loop ran off the end · seen holds all 4 values.", hl: [6],
+      big: "False", bigNote: "the trailing return does the work"
+    },
+    complexity: {
+      caption: "One pass, O(1) work per element.",
+      nums: UNIQ, cur: -1, hits: [], seen: [[1], [2], [3], [4]], meta: "Worst case the set holds every element.", hl: [2, 3, 5],
+      big: "O(n) time · O(n) space", bigNote: "versus O(n²) brute force, O(n log n) sorting"
+    },
+    final: {
+      caption: "The whole solution.",
+      nums: NUMS, cur: -1, hits: [], seen: [], meta: "", hl: [0, 1, 2, 3, 4, 5, 6]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("len").textContent = s.nums.length;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.nums.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.cur !== -1 && i > s.cur && s.hits.length === 0) cls += " dim";
+      arr += '<div class="' + cls + '">' + s.nums[i] + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.seen.length === 0) {
+      $("seen").innerHTML = '<span class="empty">{ }  empty</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.seen.length; k++) {
+        var e = s.seen[k];
+        d += '<span class="kv' + (e[1] ? " " + e[1] : "") + '">' + e[0] + "</span>";
+      }
+      $("seen").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - window.innerHeight * 0.45);
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - window.innerHeight * 0.45);
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+})();
+</script>
+</body>
+</html>
