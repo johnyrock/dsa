@@ -1,13 +1,9 @@
-import pytest
-
 from slug import solve
 
 
-@pytest.mark.parametrize(
-    "args, expected",
-    [
-        # (( ...inputs ), expected),
-    ],
-)
-def test_solve(args, expected):
-    assert solve(*args) == expected
+def test_example_1():
+    assert solve() == None
+
+
+def test_edge_case():
+    assert solve() == None
