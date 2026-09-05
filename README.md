@@ -4,10 +4,10 @@ LeetCode-style practice, organized by difficulty and pattern.
 
 ## How to use
 
+No dependencies. Each problem's test file is a plain script that prints PASS or FAIL per case.
+
 ```bash
-uv sync                          # one-time: creates .venv with pytest
-uv run pytest                    # run every test
-uv run pytest easy/001-two-sum   # run one problem
+python3 easy/001-two-sum/test_two_sum.py
 ```
 
 **Per session:**
@@ -46,7 +46,7 @@ easy/NNN-slug/
   README.md               statement, examples, constraints
   <slug>.py               clean interview version, e.g. two_sum.py
   <slug>_annotated.py     line-by-line commented version
-  test_<slug>.py          pytest cases including edge cases
+  test_<slug>.py          plain script, prints PASS/FAIL per case
   notes.md                attempts, sticking points, key insight, complexity
 medium/NNN-slug/          same shape, numbering restarts per difficulty
 patterns/<name>.md        when to use it, template code, problems that use it
