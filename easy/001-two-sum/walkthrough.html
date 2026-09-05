@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two Sum Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; gap: 0; }
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 8px 0 12px; order: -1; }
+    .panel { padding: 14px; }
+    .caption { min-height: 0; }
+    pre.code { display: none; }
+    .step { min-height: auto; padding: 32px 0 32px 16px; opacity: 1; }
+    header { padding-top: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">Easy · Hash Map · LeetCode #1</div>
+  <h1>Two Sum, narrated</h1>
+  <p>Scroll through the thinking, from the obvious brute force to the one-pass hash map, with the state of the algorithm shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get an array of integers <code>nums</code> and an integer <code>target</code>. Return the indices of the two numbers that add up to <code>target</code>.</p>
+      <p>Two guarantees make life easier: exactly one valid answer exists, and you cannot use the same element twice.</p>
+      <div class="callout">Running example: <code>nums = [2, 7, 11, 15]</code>, <code>target = 9</code>. The answer is <code>[0, 1]</code> because 2 + 7 = 9.</div>
+      <p>Notice the question asks for <em>indices</em>, not the values. That detail shapes what we need to remember later.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every pair</h2>
+      <p>The most direct idea is to pick every possible pair and check whether it sums to the target. For each element, loop over every element after it.</p>
+      <pre class="code"><span class="ln">for i in range(len(nums)):</span><span class="ln">    for j in range(i + 1, len(nums)):</span><span class="ln">        if nums[i] + nums[j] == target:</span><span class="ln">            return [i, j]</span></pre>
+      <p style="margin-top:14px">This is correct, and it is a fine first answer to say out loud. But with n elements there are roughly n² / 2 pairs, so the running time is <strong>O(n²)</strong>. At n = 10,000 that is about fifty million checks.</p>
+      <p>The inner loop is doing something wasteful: it rescans the whole rest of the array to answer one question. What is that question?</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: what am I looking for?</h2>
+      <p>Stand at one element <code>n</code>. There is exactly one value that would complete the pair: <code>target - n</code>. Call it the <strong>complement</strong>.</p>
+      <p>So the inner loop is really asking a yes/no question: <em>"Does the complement exist somewhere else in the array?"</em></p>
+      <div class="callout">For 2 the complement is 9 − 2 = 7. For 7 it is 2. For 11 it is −2. For 15 it is −6.</div>
+      <p>The brute force answers that question by scanning, which costs O(n) each time. If we could answer it in O(1), the whole thing collapses to a single pass.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: remember what you have seen</h2>
+      <p>A dictionary (hash map) answers "have I seen this value?" in O(1) on average. So as we walk the array, we record each value we pass, mapped to its index.</p>
+      <p>Then at every element we do two things, in this order:</p>
+      <ul>
+        <li><strong>Check</strong> whether the complement is already in the dictionary. If it is, we are done.</li>
+        <li><strong>Store</strong> the current value and its index, so a later element can find it.</li>
+      </ul>
+      <p>Why store the index and not just the value? Because the problem asks for indices. The value is the key we look up by, and the index is what we need back.</p>
+    </section>
+
+    <section class="step" data-state="t0">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: index 0</h2>
+      <p>Start with an empty dictionary. The first element is 2, so the complement is 9 − 2 = 7.</p>
+      <p>Is 7 in the dictionary? No, it is empty. So we store <code>2 → 0</code> and move on.</p>
+      <p>Nothing found yet, but the dictionary now knows where a 2 lives.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: index 1</h2>
+      <p>Next element is 7. The complement is 9 − 7 = 2.</p>
+      <p>Is 2 in the dictionary? <strong>Yes</strong>, it maps to index 0. That means the pair is the 2 at index 0 and the 7 at index 1.</p>
+      <p>We return <code>[seen[2], 1]</code>, which is <code>[0, 1]</code>. The earlier index comes first because it is the one we pulled out of the dictionary.</p>
+      <div class="callout">We never looked at 11 or 15. The loop stopped as soon as the answer appeared.</div>
+    </section>
+
+    <section class="step" data-state="selfpair">
+      <div class="n">STEP 7</div>
+      <h2>Why check before storing</h2>
+      <p>The order of the two operations matters. Suppose <code>nums = [4, 1, 7]</code> and <code>target = 8</code>. At index 0 the value is 4 and the complement is also 4.</p>
+      <p>If we stored first and then checked, we would find our own 4 in the dictionary and return <code>[0, 0]</code>, using the same element twice. That is exactly what the problem forbids.</p>
+      <div class="callout warn">Check, <em>then</em> store. The dictionary should only ever contain elements that came <em>before</em> the current one.</div>
+      <p>With the correct order, the 4 finds nothing, gets stored, and the real answer 1 + 7 is found at index 2.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 8</div>
+      <h2>Time and space</h2>
+      <p>The loop visits each element once. Inside the loop, the dictionary lookup and the dictionary insert are both O(1) on average. So the total is <strong>O(n) time</strong>.</p>
+      <p>The dictionary can grow to hold every element if the answer is at the very end, so it uses <strong>O(n) extra space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Brute force, all pairs</td><td>O(n²)</td><td>O(1)</td></tr>
+        <tr><td>Hash map, one pass</td><td>O(n)</td><td>O(n)</td></tr>
+      </table>
+      <p>This is the classic trade: spend memory to buy time. For n = 10,000 it turns fifty million checks into ten thousand.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 9</div>
+      <h2>The final solution</h2>
+      <p>Seven lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>seen = {}</code> is the memory of values already passed.</li>
+        <li><code>complement = target - n</code> is the reframed question.</li>
+        <li><code>if complement in seen</code> is the O(1) check.</li>
+        <li><code>seen[n] = i</code> is the store, placed after the check on purpose.</li>
+        <li><code>return []</code> handles the case where nothing pairs up.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>for each number, ask whether its complement has already been seen.</em></div>
+    </section>
+
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>nums · target = <span id="target">9</span></h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>seen (value → index)</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="two_sum.py">two_sum.py</a> · <a href="two_sum_annotated.py">two_sum_annotated.py</a> · <a href="test_two_sum.py">test_two_sum.py</a> · <a href="notes.md">notes.md</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def two_sum(nums, target):",
+    "    seen = {}",
+    "    for i, n in enumerate(nums):",
+    "        complement = target - n",
+    "        if complement in seen:",
+    "            return [seen[complement], i]",
+    "        seen[n] = i",
+    "    return []"
+  ];
+
+  var NUMS = [2, 7, 11, 15];
+
+  // Each state describes what the sticky panel shows for one step.
+  var STATES = {
+    problem: {
+      caption: "Find two indices whose values add up to 9.",
+      nums: NUMS, target: 9, cur: -1, hits: [], seen: [], meta: "", hl: []
+    },
+    brute: {
+      caption: "Brute force compares every pair. The inner loop rescans everything after i.",
+      nums: NUMS, target: 9, cur: 0, hits: [1, 2, 3], seen: [], meta: "i = 0, then j scans 1, 2, 3 … and repeats for every i.", hl: [],
+      big: "O(n²)", bigNote: "about n² / 2 pair checks"
+    },
+    reframe: {
+      caption: "Each element only needs one specific partner: target − n.",
+      nums: NUMS, target: 9, cur: 0, hits: [], seen: [], meta: "n = 2, so the complement is 9 − 2 = <b>7</b>.", hl: [3]
+    },
+    idea: {
+      caption: "A dictionary remembers values we have passed, mapped to their index.",
+      nums: NUMS, target: 9, cur: -1, hits: [], seen: [], meta: "Check for the complement first, then store the current value.", hl: [4, 6]
+    },
+    t0: {
+      caption: "i = 0, n = 2. Complement 7 is not in seen. Store 2 → 0.",
+      nums: NUMS, target: 9, cur: 0, hits: [], seen: [[2, 0, "new"]], meta: "complement = 9 − 2 = <b>7</b> · <b>not found</b>", hl: [6]
+    },
+    t1: {
+      caption: "i = 1, n = 7. Complement 2 is in seen at index 0. Return [0, 1].",
+      nums: NUMS, target: 9, cur: 1, hits: [0], seen: [[2, 0, "found"]], meta: "complement = 9 − 7 = <b>2</b> · <b>found at index 0</b>", hl: [5],
+      big: "[0, 1]", bigNote: "returned, loop stops here"
+    },
+    selfpair: {
+      caption: "nums = [4, 1, 7], target = 8. At i = 0 the complement of 4 is 4 itself.",
+      nums: [4, 1, 7], target: 8, cur: 0, hits: [], seen: [], meta: "Check first: 4 is not in seen yet, so no self-match. Then store 4 → 0.", hl: [4, 6]
+    },
+    complexity: {
+      caption: "One pass, O(1) work per element.",
+      nums: NUMS, target: 9, cur: -1, hits: [], seen: [[2, 0], [7, 1], [11, 2], [15, 3]], meta: "Worst case the dictionary holds every element.", hl: [2, 4, 6],
+      big: "O(n) time · O(n) space", bigNote: "versus O(n²) time for brute force"
+    },
+    final: {
+      caption: "The whole solution.",
+      nums: NUMS, target: 9, cur: -1, hits: [], seen: [], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.target;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.nums.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.cur !== -1 && i > s.cur && s.hits.length === 0) cls += " dim";
+      arr += '<div class="' + cls + '">' + s.nums[i] + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.seen.length === 0) {
+      $("dict").innerHTML = '<span class="empty">{ }  empty</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.seen.length; k++) {
+        var e = s.seen[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " → " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - window.innerHeight * 0.45);
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - window.innerHeight * 0.45);
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+})();
+</script>
+</body>
+</html>

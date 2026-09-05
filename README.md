@@ -48,6 +48,7 @@ easy/NNN-slug/
   <slug>_annotated.py     line-by-line commented version
   test_<slug>.py          plain script, prints PASS/FAIL per case
   notes.md                attempts, sticking points, key insight, complexity
+  walkthrough.html        optional: scroll-driven narration of the solution, open in a browser
 medium/NNN-slug/          same shape, numbering restarts per difficulty
 patterns/<name>.md        when to use it, template code, problems that use it
 templates/problem/        skeleton copied for each new problem (see templates/README.md)

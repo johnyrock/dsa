@@ -27,6 +27,10 @@ Output: [0, 1]
 - values can be negative
 - exactly one valid answer exists
 
+## Walkthrough
+
+Open [walkthrough.html](walkthrough.html) in a browser for a scroll-driven narration of the solution, from brute force to the one-pass hash map, with complexity.
+
 ## Follow-up
 
 - The brute force is O(n²). Can you do it in one pass?
