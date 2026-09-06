@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notes</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --code-bg: #f3f1ec;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --code-bg: #23262d;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  a { color: var(--accent); }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+  pre { background: var(--code-bg); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55; }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  nav { max-width: 820px; margin: 0 auto; padding: 32px 24px 0; }
+  nav a { display: inline-block; text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  nav a:hover { text-decoration: underline; }
+  nav .path { color: var(--muted); font-size: 0.8rem; font-family: ui-monospace, Menlo, monospace; margin-left: 12px; }
+
+  main { max-width: 820px; margin: 0 auto; padding: 8px 24px 64px; }
+  main h1 { font-size: 2rem; line-height: 1.15; margin: 12px 0 16px; }
+  main h2 { font-size: 1.35rem; margin: 36px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  main h3 { font-size: 1.1rem; margin: 24px 0 8px; }
+  main p, main ul, main ol { margin: 0 0 14px; }
+  main li { margin-bottom: 6px; }
+  main blockquote { margin: 16px 0; padding: 10px 16px; border-left: 4px solid var(--accent); background: var(--accent-soft); border-radius: 6px; }
+  main blockquote p:last-child { margin: 0; }
+  main hr { border: 0; border-top: 1px solid var(--line); margin: 28px 0; }
+  main img { max-width: 100%; }
+
+  .tbl { overflow-x: auto; margin: 8px 0 20px; -webkit-overflow-scrolling: touch; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; white-space: nowrap; }
+  th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .status { color: var(--muted); }
+  .error { border: 1px solid var(--line); border-radius: 12px; padding: 20px; background: var(--panel); }
+
+  @media (max-width: 600px) {
+    nav { padding: 20px 16px 0; }
+    main { padding: 4px 16px 48px; }
+    main h1 { font-size: 1.6rem; }
+    main h2 { font-size: 1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a id="home" href="index.html">← All walkthroughs</a>
+  <span class="path" id="path"></span>
+</nav>
+
+<main id="main">
+  <p class="status">Loading…</p>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script>
+(function () {
+  var main = document.getElementById("main");
+  var params = new URLSearchParams(location.search);
+  var file = params.get("f") || "README.md";
+
+  // Only plain relative paths inside the site, ending in .md.
+  var valid = /^[A-Za-z0-9_\-./]+\.md$/.test(file) && file.indexOf("..") === -1 && file.charAt(0) !== "/";
+  if (!valid) return fail("Not a valid Markdown path: " + file);
+
+  var root = new URL(".", location.href);          // directory that holds md.html
+  var mdUrl = new URL(file, root);                 // the file being rendered
+  var mdDir = new URL(".", mdUrl);                 // its folder, for resolving relative links
+  document.getElementById("path").textContent = file;
+
+  fetch(mdUrl.href)
+    .then(function (r) { if (!r.ok) throw new Error(r.status + " " + r.statusText); return r.text(); })
+    .then(render)
+    .catch(function (e) { fail("Could not load " + file + " (" + e.message + ")."); });
+
+  function render(md) {
+    if (typeof marked === "undefined") return fail("The Markdown renderer did not load. Check your connection and reload.");
+    main.innerHTML = marked.parse(md, { gfm: true });
+
+    var h1 = main.querySelector("h1");
+    var name = h1 ? h1.textContent.trim() : file;
+    document.title = name === "DSA Practice" ? name : name + " · DSA Practice";
+
+    // Tables scroll sideways on narrow screens instead of widening the page.
+    Array.prototype.forEach.call(main.querySelectorAll("table"), function (t) {
+      var wrap = document.createElement("div");
+      wrap.className = "tbl";
+      t.parentNode.insertBefore(wrap, t);
+      wrap.appendChild(t);
+    });
+
+    // Rewrite relative links so they work on the published site:
+    //   something.md      -> rendered through this viewer
+    //   easy/001-two-sum/ -> that problem's walkthrough page
+    Array.prototype.forEach.call(main.querySelectorAll("a[href]"), function (a) {
+      var href = a.getAttribute("href");
+      if (/^([a-z]+:|#|\/)/i.test(href)) return;   // absolute, anchor, or site-root: leave alone
+      var target = new URL(href, mdDir);
+      if (target.origin !== root.origin) return;
+      var rel = target.pathname.slice(root.pathname.length);
+      if (/\.md$/i.test(rel)) {
+        a.setAttribute("href", "md.html?f=" + rel + target.hash);
+      } else if (/\/$/.test(rel)) {
+        a.setAttribute("href", rel + "walkthrough.html");
+      } else {
+        a.setAttribute("href", rel);
+      }
+    });
+  }
+
+  function fail(msg) {
+    main.innerHTML = '<div class="error"><p>' + msg + '</p><p><a href="index.html">Back to all walkthroughs</a></p></div>';
+  }
+})();
+</script>
+</body>
+</html>
