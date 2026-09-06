@@ -26,6 +26,7 @@ Check before insert when an element must not match itself.
 |---------|------------|------|
 | [easy/001 Two Sum](../easy/001-two-sum/) | Easy | value -> index, look up the complement |
 | [easy/002 Valid Anagram](../easy/002-valid-anagram/) | Easy | char -> count, compare the two tallies |
+| [medium/001 Group Anagrams](../medium/001-group-anagrams/) | Medium | letter-count tuple -> bucket of words |
 
 ## Common mistakes
 

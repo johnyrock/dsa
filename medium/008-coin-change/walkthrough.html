@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coin Change Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* coin-change additions: twelve narrow table cells, and coin chips */
+  .array { gap: 4px; }
+  .cell { font-size: 0.95rem; padding: 7px 0 4px; min-width: 0; }
+  .cell.inf { color: var(--muted); }
+  .dict .kv.coin { border-radius: 999px; }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html">← All walkthroughs</a>
+  <div class="tag">Medium · Dynamic Programming · LeetCode #322</div>
+  <h1>Coin Change, narrated</h1>
+  <p>Scroll through the thinking, from the greedy that fails through the exponential recursion to the bottom-up table over amounts, with the state of the algorithm shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You have coin denominations and a target amount, with unlimited coins of each kind. Return the <em>fewest</em> coins that add up to exactly the target, or −1 if no combination does.</p>
+      <div class="callout">Running example: <code>coins = [1, 2, 5]</code>, <code>amount = 11</code>. The answer is 3: 5 + 5 + 1.</div>
+      <p>Two things make this harder than it looks. Some amounts are unreachable, and the obvious greedy strategy is wrong for some coin sets.</p>
+    </section>
+
+    <section class="step" data-state="greedy">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: greedy, largest coin first</h2>
+      <p>Take as many of the biggest coin as fit, then the next biggest, and so on. For 11 with <code>[1, 2, 5]</code> that gives 5, 5, 1: three coins, correct.</p>
+      <p>Now try <code>coins = [1, 3, 4]</code>, <code>amount = 6</code>. Greedy takes a 4, then cannot fit another 4 or a 3, so it takes 1 and 1: <strong>three coins</strong>. But 3 + 3 is two coins.</p>
+      <div class="callout warn">Greedy happens to work for coin systems designed for it, like real currencies. It has no guarantee in general, because grabbing a big coin now can leave a remainder that needs many small coins.</div>
+    </section>
+
+    <section class="step" data-state="recursion">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: the last coin</h2>
+      <p>Look at any optimal pile for amount <code>a</code>. Its last coin is some denomination <code>c</code>. Take it away and what remains must be an optimal pile for <code>a − c</code>; if it were not, we could swap in a better one and beat the "optimal" pile.</p>
+      <div class="callout"><code>fewest(a) = 1 + min over coins c ≤ a of fewest(a − c)</code>, with <code>fewest(0) = 0</code>.</div>
+      <p>Written as plain recursion this is correct but explodes: <code>fewest(11)</code> calls <code>fewest(10)</code>, <code>fewest(9)</code> and <code>fewest(6)</code>, each of which calls three more, and the same amounts get recomputed over and over. Roughly <strong>O(coins<sup>amount</sup>)</strong> without a cache.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: fill a table from 0 upward</h2>
+      <p>There are only <code>amount + 1</code> distinct subproblems: fewest(0) through fewest(amount). Compute them in increasing order and store them in an array <code>dp</code>. When we reach <code>dp[a]</code>, every <code>dp[a − c]</code> it needs is already final.</p>
+      <ul>
+        <li>Start every slot at a sentinel meaning "unreachable". <code>amount + 1</code> works: no real answer needs more coins than that.</li>
+        <li><code>dp[0] = 0</code>: making nothing takes no coins.</li>
+        <li>For each <code>a</code> from 1 to amount, for each coin that fits, <code>dp[a] = min(dp[a], dp[a − c] + 1)</code>.</li>
+        <li>If <code>dp[amount]</code> is still the sentinel, return −1.</li>
+      </ul>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the small amounts</h2>
+      <p><code>dp[1]</code>: only the 1 fits, <code>dp[0] + 1 = 1</code>. <code>dp[2]</code>: the 1 gives <code>dp[1] + 1 = 2</code>, the 2 gives <code>dp[0] + 1 = 1</code>. Take 1. <code>dp[3]</code>: <code>dp[2] + 1 = 2</code> or <code>dp[1] + 1 = 2</code>. Either way 2. <code>dp[4]</code>: 2. <code>dp[5]</code>: the 5 gives <code>dp[0] + 1 = 1</code>.</p>
+      <p>Each slot tries three coins and takes the best. No slot is ever revisited.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: reaching 11</h2>
+      <p>By the time we get to <code>a = 11</code> the table reads <code>[0, 1, 1, 2, 2, 1, 2, 2, 3, 3, 2]</code> for amounts 0 to 10. Try each coin as the last one:</p>
+      <ul>
+        <li>coin 1: <code>dp[10] + 1 = 3</code></li>
+        <li>coin 2: <code>dp[9] + 1 = 4</code></li>
+        <li>coin 5: <code>dp[6] + 1 = 3</code></li>
+      </ul>
+      <p>The minimum is <strong>3</strong>. Following the choices back: 11 → 6 (coin 5) → 1 (coin 5) → 0 (coin 1). That is 5 + 5 + 1.</p>
+    </section>
+
+    <section class="step" data-state="unreachable">
+      <div class="n">STEP 7</div>
+      <h2>The pitfall: unreachable amounts</h2>
+      <p>With <code>coins = [2]</code> and <code>amount = 3</code>: <code>dp[1]</code> has no coin that fits, so it stays at the sentinel. <code>dp[2] = dp[0] + 1 = 1</code>. <code>dp[3] = dp[1] + 1</code>, but <code>dp[1]</code> is the sentinel, so <code>dp[3]</code> stays at the sentinel too.</p>
+      <div class="callout warn">Because the sentinel is <code>amount + 1</code>, adding 1 to it never produces a number that looks like a real answer. Map it back to −1 at the very end, and only there.</div>
+      <p>Two neighbouring traps: forgetting <code>dp[0] = 0</code>, which makes everything unreachable; and indexing <code>dp[a − c]</code> before checking <code>c ≤ a</code>, which in Python silently reads from the end of the list.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 8</div>
+      <h2>Time and space</h2>
+      <p>The table has <code>amount + 1</code> slots and each one tries every coin: <strong>O(amount × coins) time</strong>. The table itself is <strong>O(amount) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Greedy</td><td>O(coins)</td><td>O(1), but wrong in general</td></tr>
+        <tr><td>Plain recursion</td><td>O(coins<sup>amount</sup>)</td><td>O(amount) stack</td></tr>
+        <tr><td>Memoised recursion</td><td>O(amount × coins)</td><td>O(amount) cache + stack</td></tr>
+        <tr><td>Bottom-up table</td><td>O(amount × coins)</td><td>O(amount)</td></tr>
+      </table>
+      <p>At amount = 10,000 and 12 coins that is 120,000 steps, against a recursion that would not finish.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 9</div>
+      <h2>The final solution</h2>
+      <p>Nine lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>INF = amount + 1</code> is the unreachable sentinel that stays an integer.</li>
+        <li><code>dp = [INF] * (amount + 1)</code> and <code>dp[0] = 0</code> set up the table and its base case.</li>
+        <li>The outer loop walks amounts upward so every needed slot is already final.</li>
+        <li>The inner loop tries each coin as the last coin, guarded by <code>c &lt;= a</code>.</li>
+        <li><code>return dp[amount] if dp[amount] != INF else -1</code> maps the sentinel back.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>fewest for a is one more than the fewest for a minus some coin; build the table upward.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>dp[amount] · blue = slot being filled, green = slots consulted</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>coins and choices</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+
+<footer>
+  Source files: <a href="coin_change.py">coin_change.py</a> · <a href="coin_change_annotated.py">coin_change_annotated.py</a> · <a href="test_coin_change.py">test_coin_change.py</a> · <a href="../../md.html?f=medium/008-coin-change/notes.md">notes.md</a> · <a href="../../index.html">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def coin_change(coins, amount):",
+    "    INF = amount + 1",
+    "    dp = [INF] * (amount + 1)",
+    "    dp[0] = 0",
+    "    for a in range(1, amount + 1):",
+    "        for c in coins:",
+    "            if c <= a and dp[a - c] + 1 < dp[a]:",
+    "                dp[a] = dp[a - c] + 1",
+    "    return dp[amount] if dp[amount] != INF else -1"
+  ];
+
+  var X = "∞";
+  var FULL = [0, 1, 1, 2, 2, 1, 2, 2, 3, 3, 2, 3];
+
+  // Each state describes what the sticky panel shows for one step.
+  // dp = table values ("∞" for the sentinel), cur = slot being filled, hits = slots consulted.
+  var STATES = {
+    problem: {
+      caption: "Fewest coins from [1, 2, 5] that make exactly 11.",
+      dp: [0, X, X, X, X, X, X, X, X, X, X, X], cur: 11, hits: [], chips: [["coins", "1, 2, 5"]], meta: "Answer: <b>3</b> (5 + 5 + 1).", hl: []
+    },
+    greedy: {
+      caption: "Greedy on coins [1, 3, 4] for amount 6 takes 4 + 1 + 1. The answer is 3 + 3.",
+      dp: [0, 1, 2, 1, 1, 2, 2], cur: 6, hits: [3], chips: [["greedy", "4 + 1 + 1 = 3 coins"], ["optimal", "3 + 3 = 2 coins", "found"]],
+      meta: "Grabbing the 4 leaves a remainder of 2 that only 1s can fill.", hl: [],
+      big: "3, not 2", bigNote: "greedy has no guarantee for arbitrary coin sets"
+    },
+    recursion: {
+      caption: "fewest(a) = 1 + min(fewest(a − c)). Correct, but plain recursion recomputes the same amounts endlessly.",
+      dp: [0, X, X, X, X, X, X, X, X, X, X, X], cur: 11, hits: [10, 9, 6], chips: [["fewest(11)", "1 + min(f(10), f(9), f(6))"]],
+      meta: "f(10) calls f(9), f(8), f(5); f(9) calls f(8), f(7), f(4) … f(8) is computed again and again.", hl: [],
+      big: "O(coinsᵃᵐᵒᵘⁿᵗ)", bigNote: "without a cache"
+    },
+    idea: {
+      caption: "Only amount + 1 distinct subproblems. Fill them in increasing order in a table.",
+      dp: [0, X, X, X, X, X, X, X, X, X, X, X], cur: -1, hits: [0], chips: [["dp[0]", "0", "new"], ["sentinel", "12 = amount + 1", "new"]],
+      meta: "Every dp[a − c] is final by the time dp[a] needs it.", hl: [1, 2, 3, 4, 5, 6, 7]
+    },
+    t1: {
+      caption: "dp[5]: coin 1 gives dp[4] + 1 = 3, coin 2 gives dp[3] + 1 = 3, coin 5 gives dp[0] + 1 = 1.",
+      dp: [0, 1, 1, 2, 2, 1, X, X, X, X, X, X], cur: 5, hits: [4, 3, 0], chips: [["coin 1", "3"], ["coin 2", "3"], ["coin 5", "1", "found"]],
+      meta: "dp[5] = <b>1</b>. Each slot tries every coin once.", hl: [4, 5, 6, 7]
+    },
+    t2: {
+      caption: "dp[11]: coin 1 → dp[10] + 1 = 3, coin 2 → dp[9] + 1 = 4, coin 5 → dp[6] + 1 = 3. Minimum 3.",
+      dp: FULL, cur: 11, hits: [10, 9, 6], chips: [["coin 1", "3", "found"], ["coin 2", "4"], ["coin 5", "3", "found"]],
+      meta: "Trace back: 11 → 6 → 1 → 0 via coins 5, 5, 1.", hl: [6, 7, 8],
+      big: "3", bigNote: "5 + 5 + 1"
+    },
+    unreachable: {
+      caption: "coins = [2], amount = 3: dp[1] never leaves the sentinel, so neither does dp[3].",
+      dp: [0, X, 1, X], cur: 3, hits: [1], chips: [["dp[3]", "dp[1] + 1 = ∞ + 1"], ["return", "−1", "found"]],
+      meta: "The sentinel is amount + 1, so adding 1 never looks like a real answer.", hl: [1, 8],
+      big: "−1", bigNote: "map the sentinel back only at the end"
+    },
+    complexity: {
+      caption: "amount + 1 slots, each trying every coin.",
+      dp: FULL, cur: -1, hits: [], chips: [["slots", "12"], ["coins per slot", "3"]],
+      meta: "36 cell updates here; 120,000 at the problem's limits.", hl: [4, 5],
+      big: "O(amount × coins) time · O(amount) space", bigNote: "versus exponential for plain recursion"
+    },
+    final: {
+      caption: "The whole solution.",
+      dp: FULL, cur: 11, hits: [], chips: [["dp[11]", "3", "found"]], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.dp.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      if (s.dp[i] === X) cls += " inf";
+      arr += '<div class="' + cls + '">' + s.dp[i] + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.chips.length; k++) {
+        var e = s.chips[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

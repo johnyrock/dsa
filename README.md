@@ -25,7 +25,7 @@ Open `index.html` in a browser for a home page that links to every walkthrough, 
 
 ## Index
 
-Problems are chosen by interview frequency: the easy tier of the Blind 75 and NeetCode 150 lists, which are built from what companies actually ask. Folders 002 onward were generated as reference material and are not solved yet, so their first session is a from-scratch attempt.
+Problems are chosen by interview frequency: the easy and medium tiers of the Blind 75 and NeetCode 150 lists, which are built from what companies actually ask. Folders easy/002 onward and all of medium/ were generated as reference material and are not solved yet, so their first session is a from-scratch attempt.
 
 | # | Problem | Difficulty | Pattern | Solved | Confidence | Next review |
 |---|---------|------------|---------|--------|------------|-------------|
@@ -39,6 +39,16 @@ Problems are chosen by interview frequency: the easy tier of the Blind 75 and Ne
 | easy/008 | [Merge Two Sorted Lists](easy/008-merge-two-sorted-lists/) | Easy | [linked-list](patterns/linked-list.md) | - | - | not yet solved |
 | easy/009 | [Binary Search](easy/009-binary-search/) | Easy | [binary-search](patterns/binary-search.md) | - | - | not yet solved |
 | easy/010 | [Climbing Stairs](easy/010-climbing-stairs/) | Easy | [dynamic-programming](patterns/dynamic-programming.md) | - | - | not yet solved |
+| medium/001 | [Group Anagrams](medium/001-group-anagrams/) | Medium | [hash-map](patterns/hash-map.md) | - | - | not yet solved |
+| medium/002 | [Product of Array Except Self](medium/002-product-of-array-except-self/) | Medium | [prefix-sum](patterns/prefix-sum.md) | - | - | not yet solved |
+| medium/003 | [Longest Substring Without Repeating Characters](medium/003-longest-substring-without-repeating-characters/) | Medium | [sliding-window](patterns/sliding-window.md) | - | - | not yet solved |
+| medium/004 | [3Sum](medium/004-3sum/) | Medium | [two-pointers](patterns/two-pointers.md) | - | - | not yet solved |
+| medium/005 | [Container With Most Water](medium/005-container-with-most-water/) | Medium | [two-pointers](patterns/two-pointers.md) | - | - | not yet solved |
+| medium/006 | [Add Two Numbers](medium/006-add-two-numbers/) | Medium | [linked-list](patterns/linked-list.md) | - | - | not yet solved |
+| medium/007 | [Maximum Subarray](medium/007-maximum-subarray/) | Medium | [dynamic-programming](patterns/dynamic-programming.md) | - | - | not yet solved |
+| medium/008 | [Coin Change](medium/008-coin-change/) | Medium | [dynamic-programming](patterns/dynamic-programming.md) | - | - | not yet solved |
+| medium/009 | [Merge Intervals](medium/009-merge-intervals/) | Medium | [intervals](patterns/intervals.md) | - | - | not yet solved |
+| medium/010 | [Number of Islands](medium/010-number-of-islands/) | Medium | [graph](patterns/graph.md) | - | - | not yet solved |
 
 ## Due for review
 
@@ -50,14 +60,17 @@ _(Problems whose next review date has passed. Updated at the start of each sessi
 
 | Pattern | Problems |
 |---------|----------|
-| [hash-map](patterns/hash-map.md) | easy/001, easy/002 |
+| [hash-map](patterns/hash-map.md) | easy/001, easy/002, medium/001 |
 | [hash-set](patterns/hash-set.md) | easy/003 |
 | [stack](patterns/stack.md) | easy/004 |
-| [sliding-window](patterns/sliding-window.md) | easy/005 |
-| [two-pointers](patterns/two-pointers.md) | easy/006 |
-| [linked-list](patterns/linked-list.md) | easy/007, easy/008 |
+| [sliding-window](patterns/sliding-window.md) | easy/005, medium/003 |
+| [two-pointers](patterns/two-pointers.md) | easy/006, medium/004, medium/005 |
+| [linked-list](patterns/linked-list.md) | easy/007, easy/008, medium/006 |
 | [binary-search](patterns/binary-search.md) | easy/009 |
-| [dynamic-programming](patterns/dynamic-programming.md) | easy/010 |
+| [dynamic-programming](patterns/dynamic-programming.md) | easy/010, medium/007, medium/008 |
+| [prefix-sum](patterns/prefix-sum.md) | medium/002 |
+| [intervals](patterns/intervals.md) | medium/009 |
+| [graph](patterns/graph.md) | medium/010 |
 
 ## Layout
 

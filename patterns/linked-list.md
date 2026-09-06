@@ -35,6 +35,7 @@ return dummy.next
 |---------|------------|------|
 | [easy/007 Reverse Linked List](../easy/007-reverse-linked-list/) | Easy | three pointers, save next first |
 | [easy/008 Merge Two Sorted Lists](../easy/008-merge-two-sorted-lists/) | Easy | dummy head, pick the smaller head, attach the remainder |
+| [medium/006 Add Two Numbers](../medium/006-add-two-numbers/) | Medium | dummy head, walk both lists with a carry, loop while anything is left |
 
 ## Common mistakes
 
@@ -42,3 +43,4 @@ return dummy.next
 - Special-casing the first node instead of using a dummy head.
 - Forgetting to attach the leftover tail after one list runs out.
 - Not handling an empty list or a single node.
+- Looping `while l1 and l2` when the loop should run while *either* has nodes (or a carry is pending).

@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3Sum Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* 3sum additions: the fixed element is blue, the two pointers are green, skipped duplicates are struck through */
+  .cell.skip { opacity: 0.4; text-decoration: line-through; }
+  .dict .kv.trip { margin-bottom: 4px; }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html">← All walkthroughs</a>
+  <div class="tag">Medium · Two Pointers · LeetCode #15</div>
+  <h1>3Sum, narrated</h1>
+  <p>Scroll through the thinking, from the triple loop through sorting to fixing one number and closing two pointers on the rest, with the state of the algorithm shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get an integer array. Return every triplet of values, taken from three different positions, that adds up to zero. The catch is in the second sentence: <strong>no duplicate triplets</strong>. <code>[-1, 0, 1]</code> and <code>[0, 1, -1]</code> are the same answer and may appear only once.</p>
+      <div class="callout">Running example: <code>nums = [-1, 0, 1, 2, -1, -4]</code>. The answer is two triplets: <code>[-1, -1, 2]</code> and <code>[-1, 0, 1]</code>.</div>
+      <p>Notice that <code>-1</code> appears twice in the input and both copies are used in the first triplet, while <code>[-1, 0, 1]</code> can be built from either copy but is reported once. Getting the duplicates right is most of the difficulty.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: three nested loops</h2>
+      <p>Try every <code>i &lt; j &lt; k</code>, check whether the three values sum to zero, and drop the sorted triplet into a set to kill duplicates.</p>
+      <pre class="code"><span class="ln">found = set()</span><span class="ln">for i in range(n):</span><span class="ln">    for j in range(i + 1, n):</span><span class="ln">        for k in range(j + 1, n):</span><span class="ln">            if nums[i] + nums[j] + nums[k] == 0:</span><span class="ln">                found.add(tuple(sorted((nums[i], nums[j], nums[k]))))</span></pre>
+      <p style="margin-top:14px">Correct, but <strong>O(n³)</strong>. With n = 3000 that is roughly 4.5 billion triples. And the duplicate handling is bolted on with a set rather than understood.</p>
+      <p>Two Sum turned O(n²) into O(n) by remembering complements in a hash map. The same trick here gives O(n²), but deduplicating hash-map hits is messy. Sorting gives a cleaner O(n²).</p>
+    </section>
+
+    <section class="step" data-state="sorted">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: sort, then fix one number</h2>
+      <p>Sort the array: <code>[-4, -1, -1, 0, 1, 2]</code>. Order is not part of the answer, so nothing is lost, and two things are gained.</p>
+      <ul>
+        <li>For a fixed first value <code>nums[i]</code>, the remaining question is "find two numbers in the sorted suffix that sum to <code>-nums[i]</code>". That is Two Sum on sorted input, which two pointers solve in one linear pass.</li>
+        <li>Equal values are now neighbours, so "have I used this value already?" is a comparison with the previous element.</li>
+      </ul>
+      <div class="callout">The plan: loop <code>i</code> over possible first values, and for each one run a two-pointer sweep over <code>i+1 … n-1</code>.</div>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: two pointers closing inward</h2>
+      <p>With <code>i</code> fixed, put <code>left = i + 1</code> and <code>right = n - 1</code> and look at <code>total = nums[i] + nums[left] + nums[right]</code>.</p>
+      <ul>
+        <li>Too small? The only way up is a bigger left value: <code>left += 1</code>.</li>
+        <li>Too big? The only way down is a smaller right value: <code>right -= 1</code>.</li>
+        <li>Exactly zero? Record it, then move <em>both</em> pointers, because the current <code>left</code> cannot pair with any other <code>right</code> to hit zero again.</li>
+      </ul>
+      <p>Each step discards one element from consideration for good, so the sweep is O(n). Sorted order is what makes the "only way up / only way down" argument valid.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: i = 0, the −4</h2>
+      <p>Fix <code>nums[0] = -4</code>. Pointers at <code>left = 1</code> (−1) and <code>right = 5</code> (2). Total −3, too small, so <code>left</code> moves right: −1 again, total −3; 0, total −2; 1, total −1. Now <code>left = 5 = right</code> and the sweep ends with nothing found.</p>
+      <p>Nothing pairs with −4 here. That is fine: the outer loop simply moves on.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: i = 1, the first −1</h2>
+      <p>Fix <code>nums[1] = -1</code>, pointers at 2 (−1) and 5 (2). Total 0: <strong>hit</strong>, record <code>[-1, -1, 2]</code>. Move both: <code>left = 3</code> (0), <code>right = 4</code> (1). Total 0 again: <strong>hit</strong>, record <code>[-1, 0, 1]</code>. Move both and the pointers cross.</p>
+      <p>Next, <code>i = 2</code> is also −1, equal to <code>nums[1]</code>. Every triplet starting with −1 has already been found, so <code>continue</code> skips it. Then <code>i = 3</code> is 0; its sweep compares 0 + 1 + 2, too big, and ends. The outer loop stops there, since the last two slots can only ever be the second and third members of a triplet. (The <code>nums[i] &gt; 0</code> break would fire first on inputs whose positives start earlier.)</p>
+      <div class="callout">Two triplets, exactly the expected answer, with no set needed.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 7</div>
+      <h2>The pitfall: skipping the wrong copy</h2>
+      <p>The outer skip must compare with the <em>previous</em> element: <code>nums[i] == nums[i - 1]</code>. Compare with the <em>next</em> one instead and you skip the first −1 in the example, which is the only <code>i</code> that produces <code>[-1, -1, 2]</code>.</p>
+      <div class="callout warn">Skip forward, and <code>[-1, -1, 2]</code> disappears. Skip backward, and the first copy does its work while later copies are ignored.</div>
+      <p>The inner sweep has the same rule after a hit: advance <code>left</code> past values equal to the one just used, guarded by <code>left &lt; right</code> so the pointers cannot run past each other. On <code>[0, 0, 0, 0]</code> this is what keeps the answer to a single <code>[0, 0, 0]</code>.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 8</div>
+      <h2>Time and space</h2>
+      <p>Sorting costs O(n log n). Then there are up to n choices of <code>i</code>, each followed by a two-pointer sweep that is O(n) because every step retires one element. Total <strong>O(n²) time</strong>, and the sort disappears under it.</p>
+      <p>Beyond the output, only a few indices are held: <strong>O(1) extra space</strong>, ignoring the sort's own working memory.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Extra space</th></tr>
+        <tr><td>Three nested loops + set</td><td>O(n³)</td><td>O(number of triplets)</td></tr>
+        <tr><td>Fix i, hash map for the pair</td><td>O(n²)</td><td>O(n) per i, plus dedup set</td></tr>
+        <tr><td>Sort, fix i, two pointers</td><td>O(n²)</td><td>O(1)</td></tr>
+      </table>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 9</div>
+      <h2>The final solution</h2>
+      <p>Twenty lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>nums.sort()</code> enables both the pointer argument and neighbour-based duplicate skipping.</li>
+        <li><code>if nums[i] &gt; 0: break</code> is the early exit once the smallest value is positive.</li>
+        <li><code>if i &gt; 0 and nums[i] == nums[i - 1]: continue</code> skips repeated first values, looking backward.</li>
+        <li>The <code>while left &lt; right</code> loop is Two Sum on sorted input, with the three-way comparison on <code>total</code>.</li>
+        <li>On a hit, both pointers move and the inner <code>while</code> hops over duplicate second values.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>sort, fix the smallest, two-pointer the rest, and skip a value you just used.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>nums (sorted) · blue = i, green = left and right</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>result</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+
+<footer>
+  Source files: <a href="three_sum.py">three_sum.py</a> · <a href="three_sum_annotated.py">three_sum_annotated.py</a> · <a href="test_three_sum.py">test_three_sum.py</a> · <a href="../../md.html?f=medium/004-3sum/notes.md">notes.md</a> · <a href="../../index.html">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def three_sum(nums):",
+    "    nums.sort()",
+    "    result = []",
+    "    n = len(nums)",
+    "    for i in range(n - 2):",
+    "        if nums[i] > 0:",
+    "            break",
+    "        if i > 0 and nums[i] == nums[i - 1]:",
+    "            continue",
+    "        left, right = i + 1, n - 1",
+    "        while left < right:",
+    "            total = nums[i] + nums[left] + nums[right]",
+    "            if total < 0:",
+    "                left += 1",
+    "            elif total > 0:",
+    "                right -= 1",
+    "            else:",
+    "                result.append([nums[i], nums[left], nums[right]])",
+    "                left += 1",
+    "                right -= 1",
+    "                while left < right and nums[left] == nums[left - 1]:",
+    "                    left += 1",
+    "    return result"
+  ];
+
+  var RAW = [-1, 0, 1, 2, -1, -4];
+  var SORTED = [-4, -1, -1, 0, 1, 2];
+
+  // Each state describes what the sticky panel shows for one step.
+  // cur = the fixed index i, hits = [left, right], skip = indices skipped as duplicates,
+  // trips = triplets recorded so far.
+  var STATES = {
+    problem: {
+      caption: "Every distinct triplet summing to zero. The input is not sorted yet.",
+      nums: RAW, cur: -1, hits: [], skip: [], trips: [], meta: "Answer: <b>[-1, -1, 2]</b> and <b>[-1, 0, 1]</b>.", hl: []
+    },
+    brute: {
+      caption: "Brute force tries every i < j < k and throws sorted hits into a set.",
+      nums: RAW, cur: 0, hits: [1, 2], skip: [], trips: [], meta: "i = 0, j = 1, k = 2: −1 + 0 + 1 = 0, add (−1, 0, 1). About n³ / 6 triples to check.", hl: [],
+      big: "O(n³)", bigNote: "4.5 billion triples at n = 3000"
+    },
+    sorted: {
+      caption: "Sorted: [-4, -1, -1, 0, 1, 2]. Fix the smallest, the rest is Two Sum on sorted input.",
+      nums: SORTED, cur: 1, hits: [], skip: [], trips: [], meta: "For i = 1 (−1), find two later numbers summing to <b>+1</b>.", hl: [1, 4]
+    },
+    idea: {
+      caption: "Two pointers close inward: too small moves left up, too big moves right down.",
+      nums: SORTED, cur: 1, hits: [2, 5], skip: [], trips: [], meta: "left = 2, right = 5 · every step retires one element, so the sweep is O(n).", hl: [9, 10, 11, 12, 13, 14, 15]
+    },
+    t1: {
+      caption: "i = 0 (−4): every total is negative, left walks all the way to right, nothing found.",
+      nums: SORTED, cur: 0, hits: [4, 5], skip: [], trips: [], meta: "−4 + 1 + 2 = −1 &lt; 0 → left += 1 → pointers meet, sweep over.", hl: [11, 12, 13]
+    },
+    t2: {
+      caption: "i = 1 (−1): two hits in a row, then i = 2 is skipped as a duplicate first value.",
+      nums: SORTED, cur: 1, hits: [3, 4], skip: [2], trips: [[-1, -1, 2], [-1, 0, 1]],
+      meta: "−1 − 1 + 2 = 0 → record · −1 + 0 + 1 = 0 → record · then nums[2] == nums[1], continue.", hl: [7, 8, 16, 17, 18, 19],
+      big: "2 triplets", bigNote: "[-1, -1, 2] · [-1, 0, 1]"
+    },
+    pitfall: {
+      caption: "Skipping when nums[i] == nums[i + 1] drops the first −1, and [-1, -1, 2] with it.",
+      nums: SORTED, cur: 2, hits: [3, 5], skip: [1], trips: [[-1, 0, 1]],
+      meta: "With i = 1 skipped, i = 2 sees only one −1 after it is gone. Compare with the <b>previous</b> element.", hl: [7, 20, 21],
+      big: "1 triplet, wrong", bigNote: "skip backward, not forward"
+    },
+    complexity: {
+      caption: "Sort once, then n sweeps of O(n) each.",
+      nums: SORTED, cur: -1, hits: [], skip: [], trips: [[-1, -1, 2], [-1, 0, 1]],
+      meta: "The two-pointer sweep never revisits an element within one i.", hl: [1, 4, 10],
+      big: "O(n²) time · O(1) extra space", bigNote: "versus O(n³) for three nested loops"
+    },
+    final: {
+      caption: "The whole solution.",
+      nums: SORTED, cur: -1, hits: [], skip: [], trips: [[-1, -1, 2], [-1, 0, 1]], meta: "",
+      hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.nums.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.skip.indexOf(i) !== -1) cls += " skip";
+      else if (s.cur !== -1 && i < s.cur) cls += " dim";
+      arr += '<div class="' + cls + '">' + s.nums[i] + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.trips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">no triplets yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.trips.length; k++) {
+        d += '<span class="kv trip' + (k === s.trips.length - 1 ? " found" : "") + '">[' + s.trips[k].join(", ") + ']</span>';
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

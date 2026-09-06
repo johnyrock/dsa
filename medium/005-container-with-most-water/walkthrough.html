@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Container With Most Water Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* container additions: a bar chart of the lines, with the water level drawn between the two pointers */
+  .bars { position: relative; display: flex; align-items: flex-end; gap: 6px; height: 170px; padding-top: 20px; margin: 8px 0 28px; }
+  .bar { flex: 1; position: relative; border-radius: 4px 4px 0 0; background: var(--line); transition: background 0.25s, opacity 0.25s; min-height: 3px; }
+  .bar .v { position: absolute; top: -18px; left: 0; right: 0; text-align: center; font-family: ui-monospace, Menlo, monospace; font-size: 0.75rem; color: var(--muted); }
+  .bar .idx { position: absolute; bottom: -18px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .bar.hit { background: var(--ok); }
+  .bar.cur { background: var(--accent); }
+  .bar.retired { opacity: 0.3; }
+  .water { position: absolute; bottom: 0; background: var(--accent-soft); opacity: 0.55; border-top: 2px solid var(--accent); pointer-events: none; transition: all 0.25s; }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html">← All walkthroughs</a>
+  <div class="tag">Medium · Two Pointers · LeetCode #11</div>
+  <h1>Container With Most Water, narrated</h1>
+  <p>Scroll through the thinking, from checking every pair of lines to two pointers that start at the ends and always move the shorter line inward, with the state of the algorithm shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get an array of heights. Each one is a vertical line standing at its index. Pick two lines; with the floor they form a container, and it holds water up to the level of the <em>shorter</em> line. Return the largest area any pair can enclose.</p>
+      <p>The area of the pair at indices <code>i &lt; j</code> is <code>(j - i) · min(height[i], height[j])</code>. Width times the shorter wall. The taller wall is wasted above that level.</p>
+      <div class="callout">Running example: <code>height = [1, 8, 6, 2, 5, 4, 8, 3, 7]</code>. The answer is 49: the 8 at index 1 and the 7 at index 8, width 7, height 7.</div>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every pair</h2>
+      <p>Compute the area for every pair of lines and keep the largest.</p>
+      <pre class="code"><span class="ln">best = 0</span><span class="ln">for i in range(n):</span><span class="ln">    for j in range(i + 1, n):</span><span class="ln">        best = max(best, (j - i) * min(height[i], height[j]))</span></pre>
+      <p style="margin-top:14px">Correct and <strong>O(n²)</strong>. At n = 100,000 that is five billion pairs, too slow. Most of those pairs are hopeless, and there is a way to know which ones without computing them.</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: start wide and only give up width for height</h2>
+      <p>The widest possible container uses the two outermost lines. Every other pair is narrower. So a narrower pair can only win if it is <em>taller</em>, and "taller" means its shorter wall is higher than the current shorter wall.</p>
+      <p>That points at the shorter wall. Suppose the left line is the shorter one. Any container that keeps the left line and moves the right line inward is narrower and still capped at the left line's height, so it is strictly worse. The left line is finished; nothing it pairs with going forward can beat what it already made.</p>
+      <div class="callout">Retire the shorter line. Keep the taller one, because it might still form a bigger container with something taller further in.</div>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: two pointers, move the shorter one</h2>
+      <p>Put <code>left = 0</code> and <code>right = n - 1</code>. Repeat until they meet:</p>
+      <ul>
+        <li>Compute the area between them and update <code>best</code>.</li>
+        <li>If <code>height[left] &lt; height[right]</code>, move <code>left</code> in. Otherwise move <code>right</code> in.</li>
+      </ul>
+      <p>Each step retires one line for good. After at most n − 1 steps the pointers meet and every pair that could possibly have been the best has been looked at. The pairs that were skipped were all provably beaten by a pair we did compute.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the first move</h2>
+      <p><code>left = 0</code> (height 1), <code>right = 8</code> (height 7). Width 8, height min(1, 7) = 1, area <strong>8</strong>. <code>best = 8</code>.</p>
+      <p>The left wall, height 1, is the shorter one. Any container using index 0 and a right wall closer in would be at most 1 tall and less than 8 wide, so index 0 is retired. <code>left</code> becomes 1.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: the answer appears immediately</h2>
+      <p><code>left = 1</code> (height 8), <code>right = 8</code> (height 7). Width 7, height min(8, 7) = 7, area <strong>49</strong>. <code>best = 49</code>.</p>
+      <p>Now the right wall is shorter, so <code>right</code> moves in to index 7 (height 3). Width 6, height 3, area 18. Still shorter on the right: index 6 (height 8), width 5, height 8, area 40. Tie at 8 and 8, so <code>right</code> moves again, and so on inward. Nothing beats 49, and the loop ends with the pointers meeting.</p>
+      <div class="callout">Eight iterations instead of 36 pairs, and the best pair was among them.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 7</div>
+      <h2>The pitfall: moving the taller line</h2>
+      <p>Run the running example with the opposite rule: always move the <em>taller</em> wall. Index 0, height 1, is never the taller one, so it never moves. <code>right</code> walks in from 8 to 1, and every area it produces is width × 1: 8, 7, 6, and so on down. The rule reports <strong>8</strong>. The real answer is 49, and reaching it required retiring index 0.</p>
+      <div class="callout warn">Moving the taller wall gives up width without any chance of gaining height, because the shorter wall still sets the level. It can only lose. Moving both pointers at once has the same flaw plus skipped pairs.</div>
+      <p>Two smaller traps: using <code>max</code> instead of <code>min</code> for the height, and looping while <code>left &lt;= right</code> instead of <code>&lt;</code>, since a single line has zero width and is not a container.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 8</div>
+      <h2>Time and space</h2>
+      <p>Each iteration does O(1) work and moves one pointer one step. The pointers start n − 1 apart and stop when they meet, so there are at most n − 1 iterations: <strong>O(n) time</strong>.</p>
+      <p>Two indices and one running best: <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Every pair</td><td>O(n²)</td><td>O(1)</td></tr>
+        <tr><td>Two pointers, move the shorter</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 9</div>
+      <h2>The final solution</h2>
+      <p>Eleven lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>left, right = 0, len(height) - 1</code> starts at the widest container.</li>
+        <li><code>area = (right - left) * min(...)</code> is width times the shorter wall.</li>
+        <li><code>if area &gt; best</code> keeps the running maximum.</li>
+        <li><code>if height[left] &lt; height[right]: left += 1 else: right -= 1</code> retires the shorter line.</li>
+        <li><code>return best</code> after the pointers meet.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>start at the ends and always move the shorter wall.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>height · green = the two walls, faded = retired</h3>
+        <div class="bars" id="bars"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>pointers and best</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+
+<footer>
+  Source files: <a href="container_with_most_water.py">container_with_most_water.py</a> · <a href="container_with_most_water_annotated.py">container_with_most_water_annotated.py</a> · <a href="test_container_with_most_water.py">test_container_with_most_water.py</a> · <a href="../../md.html?f=medium/005-container-with-most-water/notes.md">notes.md</a> · <a href="../../index.html">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def max_area(height):",
+    "    left, right = 0, len(height) - 1",
+    "    best = 0",
+    "    while left < right:",
+    "        area = (right - left) * min(height[left], height[right])",
+    "        if area > best:",
+    "            best = area",
+    "        if height[left] < height[right]:",
+    "            left += 1",
+    "        else:",
+    "            right -= 1",
+    "    return best"
+  ];
+
+  var H = [1, 8, 6, 2, 5, 4, 8, 3, 7];
+
+  // Each state describes what the sticky panel shows for one step.
+  // left/right are the two walls (-1 = none), retired = indices already given up.
+  var STATES = {
+    problem: {
+      caption: "Pick two lines; the water level is the shorter one. Maximise width × shorter height.",
+      h: H, left: -1, right: -1, retired: [], chips: [], meta: "Answer: <b>49</b>, from index 1 (8) and index 8 (7).", hl: []
+    },
+    brute: {
+      caption: "Brute force computes the area of every pair.",
+      h: H, left: 2, right: 5, retired: [], chips: [], meta: "i = 2, j = 5: width 3 × min(6, 4) = 12. Then every other pair.", hl: [],
+      big: "O(n²)", bigNote: "five billion pairs at n = 100,000"
+    },
+    reframe: {
+      caption: "Start with the widest pair. A narrower pair only wins if its shorter wall is higher.",
+      h: H, left: 0, right: 8, retired: [], chips: [["width", "8"], ["shorter wall", "1"]],
+      meta: "Keeping index 0 and moving in loses width and stays capped at 1: index 0 is finished.", hl: []
+    },
+    idea: {
+      caption: "Two pointers from the ends; each step retires the shorter wall.",
+      h: H, left: 0, right: 8, retired: [], chips: [["left", "0", "new"], ["right", "8", "new"], ["best", "0", "new"]],
+      meta: "At most n − 1 moves before the pointers meet.", hl: [1, 3, 7, 8, 9, 10]
+    },
+    t1: {
+      caption: "Width 8 × min(1, 7) = 8. The left wall is shorter, so left moves in.",
+      h: H, left: 0, right: 8, retired: [], chips: [["left", "0"], ["right", "8"], ["area", "8"], ["best", "8", "new"]],
+      meta: "height[0] = 1 &lt; height[8] = 7 → <b>left += 1</b>", hl: [4, 5, 6, 7, 8]
+    },
+    t2: {
+      caption: "Width 7 × min(8, 7) = 49. The right wall is shorter now, so right moves in.",
+      h: H, left: 1, right: 8, retired: [0], chips: [["left", "1"], ["right", "8"], ["area", "49"], ["best", "49", "found"]],
+      meta: "8 ≥ 7 → <b>right −= 1</b>. Later pairs (1,7)=18, (1,6)=40, … never beat 49.", hl: [4, 5, 6, 9, 10],
+      big: "49", bigNote: "found on the second iteration"
+    },
+    pitfall: {
+      caption: "Always moving the taller wall: index 0 (height 1) never moves, every area is width × 1, and the rule reports 8.",
+      h: H, left: 0, right: 1, retired: [2, 3, 4, 5, 6, 7, 8], chips: [["move taller wall", "8"], ["correct", "49", "found"]],
+      meta: "The shorter wall caps the height, so shrinking the width around it can never gain.", hl: [7, 8, 9, 10],
+      big: "8, not 49", bigNote: "the shorter wall is the only one worth moving"
+    },
+    complexity: {
+      caption: "One pointer moves per iteration; they meet after at most n − 1 iterations.",
+      h: H, left: 4, right: 5, retired: [0, 1, 2, 3, 6, 7, 8], chips: [["best", "49"]],
+      meta: "Every skipped pair was provably beaten by a computed one.", hl: [3, 7, 8, 9, 10],
+      big: "O(n) time · O(1) space", bigNote: "versus O(n²) for every pair"
+    },
+    final: {
+      caption: "The whole solution.",
+      h: H, left: 1, right: 8, retired: [], chips: [["best", "49", "found"]], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var maxH = Math.max.apply(null, s.h);
+    var html = "";
+    for (var i = 0; i < s.h.length; i++) {
+      var cls = "bar";
+      if (i === s.left || i === s.right) cls += " hit";
+      else if (s.retired.indexOf(i) !== -1) cls += " retired";
+      var px = maxH ? (s.h[i] / maxH) * 150 : 0;
+      html += '<div class="' + cls + '" style="height:' + px + 'px"><span class="v">' + s.h[i] + '</span><span class="idx">' + i + '</span></div>';
+    }
+    if (s.left !== -1 && s.right !== -1 && s.right > s.left) {
+      var n = s.h.length;
+      var lvl = Math.min(s.h[s.left], s.h[s.right]);
+      var l = ((s.left + 0.5) / n) * 100, r = ((s.right + 0.5) / n) * 100;
+      html += '<div class="water" style="left:' + l + '%;width:' + (r - l) + '%;height:' + (maxH ? (lvl / maxH) * 150 : 0) + 'px"></div>';
+    }
+    $("bars").innerHTML = html;
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.chips.length; k++) {
+        var e = s.chips[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l2 = 0; l2 < CODE.length; l2++) {
+      c += '<span class="ln' + (s.hl.indexOf(l2) !== -1 ? " hl" : "") + '">' + CODE[l2].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

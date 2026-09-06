@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Group Anagrams Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* group-anagrams additions: word cells are wider, and buckets stack one per line */
+  .cell { font-size: 0.95rem; padding: 8px 4px 5px; }
+  .dict .bucket { display: block; margin-bottom: 6px; }
+  .dict .bucket:last-child { margin-bottom: 0; }
+  .dict .key { display: inline-block; min-width: 3.2em; color: var(--muted); margin-right: 8px; }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html">← All walkthroughs</a>
+  <div class="tag">Medium · Hash Map · LeetCode #49</div>
+  <h1>Group Anagrams, narrated</h1>
+  <p>Scroll through the thinking, from comparing every pair of words to a single pass that buckets each word under a canonical key, with the state of the algorithm shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get a list of words. Put the anagrams together: two words belong in the same group when one can be rearranged into the other, which means they have exactly the same letters with the same counts.</p>
+      <p>Group order and the order inside a group do not matter. All the grader checks is that the right words ended up together.</p>
+      <div class="callout">Running example: <code>["eat", "tea", "tan", "ate", "nat", "bat"]</code>. The answer is three groups: <code>[eat, tea, ate]</code>, <code>[tan, nat]</code>, <code>[bat]</code>.</div>
+      <p>The awkward part is that "is an anagram of" is a relation between two words, but the output wants whole groups. Turning a pairwise relation into groups is what the rest of this page is about.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: compare every pair</h2>
+      <p>The direct idea: for each word, look through the groups formed so far and ask a representative of each group "are you my anagram?" using the Valid Anagram check. If yes, join that group; if no group says yes, start a new one.</p>
+      <pre class="code"><span class="ln">groups = []</span><span class="ln">for word in strs:</span><span class="ln">    for g in groups:</span><span class="ln">        if is_anagram(word, g[0]):</span><span class="ln">            g.append(word); break</span><span class="ln">    else:</span><span class="ln">        groups.append([word])</span></pre>
+      <p style="margin-top:14px">It is correct. But every word may be checked against every existing group, and each check costs O(k) for words of length k. In the worst case, with no anagrams at all, that is <strong>O(n² · k)</strong>. At n = 10,000 the inner loop runs about fifty million anagram checks.</p>
+      <p>The waste is that we re-derive "same letters?" from scratch for every pair, when that fact depends on each word alone.</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: give each word a name that anagrams share</h2>
+      <p>Anagrams are words that look different but are <em>the same multiset of letters</em>. So compute something from each word that depends only on that multiset. Anagrams will get identical results; non-anagrams will not.</p>
+      <p>The simplest such thing is the word with its letters sorted. <code>eat</code>, <code>tea</code> and <code>ate</code> all sort to <code>aet</code>. <code>tan</code> and <code>nat</code> both sort to <code>ant</code>. <code>bat</code> sorts to <code>abt</code> and nothing else does.</p>
+      <div class="callout">Call this the word's <strong>key</strong>. Two words are anagrams if and only if their keys are equal. That is an exact test, not a heuristic.</div>
+      <p>Once every word has a key, grouping is no longer a pairwise question. It is "put things with the same key in the same bucket", which is exactly what a dictionary does.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: a dictionary from key to bucket</h2>
+      <p>Walk the list once. For each word, compute its key, then append the word to <code>groups[key]</code>, creating the bucket the first time the key appears. At the end, the buckets are the answer.</p>
+      <ul>
+        <li>The dictionary lookup is O(1) on average, so grouping costs nothing beyond computing the key.</li>
+        <li>No word is ever compared to another word. The key does all the matching.</li>
+      </ul>
+      <p>For the key itself there is a choice. Sorting the letters costs O(k log k). Because the alphabet is only lowercase a–z, we can instead count letters into a 26-slot list in O(k), and freeze that list into a tuple so it can be a dictionary key. The final code uses the tally; the sorted string is a perfectly acceptable answer too.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the first three words</h2>
+      <p><code>eat</code>: the tally has a 1 in the a, e and t slots. Nothing has that key yet, so open a new bucket and drop <code>eat</code> in.</p>
+      <p><code>tea</code>: same three letters, so the very same tally. The key is already in the dictionary. Append <code>tea</code> to the existing bucket. No comparison against <code>eat</code> happened; the equal key did the work.</p>
+      <p><code>tan</code>: a, n, t. A different tally, so a second bucket opens.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: the rest of the list</h2>
+      <p><code>ate</code> lands with <code>eat</code> and <code>tea</code>. <code>nat</code> lands with <code>tan</code>. <code>bat</code> is a, b, t, which nobody has produced, so a third bucket opens.</p>
+      <p>Six words, six dictionary operations, three buckets. <code>list(groups.values())</code> hands them back.</p>
+      <div class="callout">The panel shows keys as the sorted letters because they are easier to read than 26-number tuples. In the code the key is the tuple; the meaning is identical.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 7</div>
+      <h2>The pitfall: a key that is not exact</h2>
+      <p>It is tempting to shortcut the key: add up the character codes, or multiply primes assigned to letters. Sums are not safe. <code>"bdddddddddd"</code> and <code>"bbbbbbbbbbc"</code> have the same total but are not anagrams, so a sum-based key would wrongly merge them.</p>
+      <div class="callout warn">The key must be a lossless description of the letter multiset. The sorted string and the 26-count tally both are. Anything that compresses further can collide.</div>
+      <p>Two smaller traps: a Python list cannot be a dictionary key, so the tally has to become a <code>tuple</code>; and the empty string is a legal word whose key is 26 zeros, which works fine as long as you do not special-case it away.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 8</div>
+      <h2>Time and space</h2>
+      <p>Each of the n words is visited once, and building its tally touches each of its k letters once, so the total is <strong>O(n · k) time</strong>. With the sorted-string key it would be O(n · k log k).</p>
+      <p>The dictionary holds every word once plus one key per group, so <strong>O(n · k) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Compare against every group</td><td>O(n² · k)</td><td>O(n · k)</td></tr>
+        <tr><td>Sorted-string key</td><td>O(n · k log k)</td><td>O(n · k)</td></tr>
+        <tr><td>Letter-count key</td><td>O(n · k)</td><td>O(n · k)</td></tr>
+      </table>
+      <p>The output itself is O(n · k), so no solution can use less space than that.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 9</div>
+      <h2>The final solution</h2>
+      <p>Ten lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>groups = {}</code> is the key-to-bucket dictionary.</li>
+        <li><code>counts = [0] * 26</code> and the inner loop build the O(k) tally.</li>
+        <li><code>key = tuple(counts)</code> freezes it so it can be hashed.</li>
+        <li><code>if key not in groups</code> opens a bucket the first time a key appears.</li>
+        <li><code>groups[key].append(word)</code> is the whole grouping step.</li>
+        <li><code>return list(groups.values())</code> hands back the buckets.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>anagrams share a canonical key, so bucket by key instead of comparing pairs.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>strs · blue = current word, green = already bucketed</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>groups · key → bucket</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+
+<footer>
+  Source files: <a href="group_anagrams.py">group_anagrams.py</a> · <a href="group_anagrams_annotated.py">group_anagrams_annotated.py</a> · <a href="test_group_anagrams.py">test_group_anagrams.py</a> · <a href="../../md.html?f=medium/001-group-anagrams/notes.md">notes.md</a> · <a href="../../index.html">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def group_anagrams(strs):",
+    "    groups = {}",
+    "    for word in strs:",
+    "        counts = [0] * 26",
+    "        for ch in word:",
+    "            counts[ord(ch) - ord(\"a\")] += 1",
+    "        key = tuple(counts)",
+    "        if key not in groups:",
+    "            groups[key] = []",
+    "        groups[key].append(word)",
+    "    return list(groups.values())"
+  ];
+
+  var WORDS = ["eat", "tea", "tan", "ate", "nat", "bat"];
+
+  // Each state describes what the sticky panel shows for one step.
+  // cur = the word being processed, done = how many words are already in buckets,
+  // buckets = [key, [words], cls] rows shown in the dictionary block.
+  var STATES = {
+    problem: {
+      caption: "Put the anagrams together. Same letters, same counts, same group.",
+      words: WORDS, cur: -1, done: 0, buckets: [], meta: "", hl: []
+    },
+    brute: {
+      caption: "Brute force checks each new word against a representative of every group so far.",
+      words: WORDS, cur: 5, done: 5, buckets: [["?", ["eat", "tea", "ate"], ""], ["?", ["tan", "nat"], ""]],
+      meta: "bat vs eat? no. bat vs tan? no. Then open a new group. Every word repeats this scan.", hl: [],
+      big: "O(n² · k)", bigNote: "one O(k) anagram check per word per group"
+    },
+    reframe: {
+      caption: "Sort each word's letters: anagrams become identical strings.",
+      words: WORDS, cur: -1, done: 0, buckets: [["aet", ["eat", "tea", "ate"], "found"], ["ant", ["tan", "nat"], "found"], ["abt", ["bat"], "found"]],
+      meta: "eat → aet, tea → aet, ate → aet. Equal keys ⇔ anagrams, with no pairwise test.", hl: []
+    },
+    idea: {
+      caption: "One pass: compute the key, append the word to groups[key].",
+      words: WORDS, cur: -1, done: 0, buckets: [],
+      meta: "The key here is a 26-slot letter tally frozen into a tuple, built in O(k).", hl: [1, 3, 4, 5, 6]
+    },
+    t1: {
+      caption: "eat opens the aet bucket, tea joins it, tan opens ant.",
+      words: WORDS, cur: 2, done: 2, buckets: [["aet", ["eat", "tea"], ""], ["ant", ["tan"], "new"]],
+      meta: "tan → key <b>ant</b> not in groups → open bucket, append.", hl: [6, 7, 8, 9]
+    },
+    t2: {
+      caption: "ate and nat join existing buckets; bat opens a third.",
+      words: WORDS, cur: 5, done: 5, buckets: [["aet", ["eat", "tea", "ate"], ""], ["ant", ["tan", "nat"], ""], ["abt", ["bat"], "new"]],
+      meta: "Six words, six dictionary operations, three buckets returned.", hl: [9, 10],
+      big: "3 groups", bigNote: "[eat, tea, ate] · [tan, nat] · [bat]"
+    },
+    pitfall: {
+      caption: "A lossy key such as a sum of character codes merges words that are not anagrams.",
+      words: ["bdddddddddd", "bbbbbbbbbbc"], cur: 1, done: 1, buckets: [["sum 1098", ["bdddddddddd", "bbbbbbbbbbc"], "new"]],
+      meta: "Equal code sums, different letters. The tally keeps them apart; the sum does not.", hl: [3, 4, 5, 6],
+      big: "wrong merge", bigNote: "the key must describe the full letter multiset"
+    },
+    complexity: {
+      caption: "Every word is touched once and every letter inside it once.",
+      words: WORDS, cur: -1, done: 6, buckets: [["aet", ["eat", "tea", "ate"], ""], ["ant", ["tan", "nat"], ""], ["abt", ["bat"], ""]],
+      meta: "No word is ever compared to another word.", hl: [2, 4, 9],
+      big: "O(n · k) time · O(n · k) space", bigNote: "versus O(n² · k) for comparing against every group"
+    },
+    final: {
+      caption: "The whole solution.",
+      words: WORDS, cur: -1, done: 6, buckets: [["aet", ["eat", "tea", "ate"], ""], ["ant", ["tan", "nat"], ""], ["abt", ["bat"], ""]],
+      meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.words.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (i < s.done) cls += " hit";
+      else if (s.cur !== -1 && i > s.cur) cls += " dim";
+      arr += '<div class="' + cls + '">' + s.words[i] + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.buckets.length === 0) {
+      $("dict").innerHTML = '<span class="empty">no buckets yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.buckets.length; k++) {
+        var b = s.buckets[k];
+        d += '<span class="bucket"><span class="key">' + b[0] + '</span>';
+        for (var w = 0; w < b[1].length; w++) {
+          d += '<span class="kv' + (b[2] ? " " + b[2] : "") + '">' + b[1][w] + '</span>';
+        }
+        d += '</span>';
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

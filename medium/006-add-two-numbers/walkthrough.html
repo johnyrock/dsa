@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add Two Numbers Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* linked-list additions: a row label, the arrow glyph between nodes, and the terminating None */
+  .array { align-items: center; gap: 6px; }
+  .rowlab {
+    flex: 0 0 52px; font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem;
+    color: var(--muted); text-align: right; padding-right: 2px;
+  }
+  .arrow { flex: 0 0 auto; color: var(--muted); font-size: 0.95rem; }
+  .nil { flex: 0 0 auto; color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.85rem; }
+  .dict .kv { margin-right: 4px; }
+  .dict .kv.dummy { color: var(--muted); border-style: dashed; }
+  .dict .kv.carry { border-color: var(--warn); background: var(--warn-soft); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html">← All walkthroughs</a>
+  <div class="tag">Medium · Linked List · LeetCode #2</div>
+  <h1>Add Two Numbers, narrated</h1>
+  <p>Scroll through the thinking, from converting to integers and back to a single pass of schoolbook addition with a carry, with the state of the algorithm shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Two linked lists, each holding a non-negative integer one digit per node, <em>least significant digit first</em>. Add the numbers and return the sum in the same format.</p>
+      <div class="callout">Running example: <code>l1 = [2, 4, 3]</code> is 342 and <code>l2 = [5, 6, 4]</code> is 465. Their sum is 807, returned as <code>[7, 0, 8]</code>.</div>
+      <p>The reversed order sounds like an obstacle. It is the opposite. Addition works from the ones digit upward, and the ones digits are the heads, so both lists are already in the order we need.</p>
+    </section>
+
+    <section class="step" data-state="naive">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: turn them into integers</h2>
+      <p>Walk each list, rebuild the integer, add them with <code>+</code>, then split the result back into digits and link them up.</p>
+      <pre class="code"><span class="ln">a = 0; mult = 1</span><span class="ln">while l1: a += l1.val * mult; mult *= 10; l1 = l1.next</span><span class="ln"># same for b, then total = a + b</span><span class="ln"># then peel digits off total with % 10 and // 10</span></pre>
+      <p style="margin-top:14px">In Python this passes, because integers never overflow. It is still the wrong answer in an interview: it throws away the structure the question is about, it does three passes where one will do, and in most languages a 100-digit number does not fit in any integer type.</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: do it the way you learned in school</h2>
+      <p>Column by column from the right: add the two digits and the carry from the previous column. Write down the ones digit, carry the tens digit to the next column.</p>
+      <p>Because the lists are stored least-significant first, "the next column" is simply <code>.next</code> on both lists. Walk them together, one node each per step, and each step is one column of the addition.</p>
+      <div class="callout">Column: <code>total = carry + l1.val + l2.val</code>. Keep <code>total % 10</code>, carry <code>total // 10</code>. Both come from one call to <code>divmod</code>.</div>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: one loop that survives unequal lengths and the last carry</h2>
+      <p>Three details make the loop clean:</p>
+      <ul>
+        <li>A <strong>dummy head</strong> in front of the result, so appending the first digit is not a special case. Return <code>dummy.next</code> at the end.</li>
+        <li>Loop <code>while l1 or l2 or carry</code>. When one list runs out it just stops contributing, as if padded with zeros. When both run out but a carry remains, one more iteration emits it.</li>
+        <li>Guard each list with <code>if l1:</code> before reading its value or advancing it.</li>
+      </ul>
+      <p>That is the whole algorithm. No pre-pass to measure lengths, no padding, no post-loop fix-up.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the first two columns</h2>
+      <p>Column 1: carry 0 + 2 + 5 = 7. <code>divmod(7, 10)</code> is (0, 7). Append 7, carry stays 0.</p>
+      <p>Column 2: carry 0 + 4 + 6 = 10. <code>divmod(10, 10)</code> is (1, 0). Append 0, and now <strong>carry = 1</strong>.</p>
+      <p>The result so far is <code>7 → 0</code>, and the two list pointers have each moved twice.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: the last column and the exit</h2>
+      <p>Column 3: carry 1 + 3 + 4 = 8. <code>divmod(8, 10)</code> is (0, 8). Append 8, carry back to 0.</p>
+      <p>Now <code>l1</code> and <code>l2</code> are both <code>None</code> and <code>carry</code> is 0, so the loop condition is false and we stop. <code>dummy.next</code> is <code>7 → 0 → 8</code>: 807.</p>
+      <div class="callout">Three nodes in, three iterations, three nodes out. The loop never asked how long either list was.</div>
+    </section>
+
+    <section class="step" data-state="carry">
+      <div class="n">STEP 7</div>
+      <h2>The pitfall: stopping before the last carry</h2>
+      <p>Take <code>l1 = [9, 9]</code> and <code>l2 = [1]</code>, which is 99 + 1 = 100. Column 1: 9 + 1 = 10, append 0, carry 1. Column 2: <code>l2</code> is gone, so 1 + 9 = 10, append 0, carry 1. Both lists are now empty.</p>
+      <div class="callout warn">A loop that runs only <code>while l1 or l2</code> stops here and returns <code>[0, 0]</code>. The carry is the hundreds digit. Including <code>carry</code> in the condition gives one more iteration: 1 + nothing = 1, append 1, carry 0, done: <code>[0, 0, 1]</code>.</div>
+      <p>The same condition handles the two-lists-of-different-lengths case: once <code>l2</code> runs out, <code>l1</code> keeps the loop alive on its own.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 8</div>
+      <h2>Time and space</h2>
+      <p>One iteration per column, and there are <code>max(m, n)</code> columns plus at most one for the final carry: <strong>O(max(m, n)) time</strong>.</p>
+      <p>The result list has that many nodes and the problem requires it, so <strong>O(max(m, n)) space for the output</strong> and O(1) beyond it: a dummy, a tail pointer and a carry.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Extra space</th></tr>
+        <tr><td>Convert to integers and back</td><td>O(m + n), three passes</td><td>O(1) in Python, overflows elsewhere</td></tr>
+        <tr><td>Column-by-column with carry</td><td>O(max(m, n)), one pass</td><td>O(1)</td></tr>
+      </table>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 9</div>
+      <h2>The final solution</h2>
+      <p>Sixteen lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>dummy = ListNode(); tail = dummy</code> removes the first-node special case.</li>
+        <li><code>while l1 or l2 or carry</code> handles unequal lengths and the trailing carry.</li>
+        <li><code>total = carry</code> then the two guarded <code>if</code> blocks add whatever digits exist and advance those pointers.</li>
+        <li><code>carry, digit = divmod(total, 10)</code> splits the column.</li>
+        <li><code>tail.next = ListNode(digit); tail = tail.next</code> appends in least-significant-first order.</li>
+        <li><code>return dummy.next</code> skips the dummy.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>walk both lists in step, one column per node, and loop while anything is left, including the carry.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>l1 · l2 — heads under addition</h3>
+        <div class="array" id="row1"></div>
+        <div class="array" id="row2"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>result (dummy → tail) and carry</h3>
+        <div class="dict" id="result"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+
+<footer>
+  Source files: <a href="add_two_numbers.py">add_two_numbers.py</a> · <a href="add_two_numbers_annotated.py">add_two_numbers_annotated.py</a> · <a href="test_add_two_numbers.py">test_add_two_numbers.py</a> · <a href="../../md.html?f=medium/006-add-two-numbers/notes.md">notes.md</a> · <a href="../../index.html">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def add_two_numbers(l1, l2):",
+    "    dummy = ListNode()",
+    "    tail = dummy",
+    "    carry = 0",
+    "    while l1 or l2 or carry:",
+    "        total = carry",
+    "        if l1:",
+    "            total += l1.val",
+    "            l1 = l1.next",
+    "        if l2:",
+    "            total += l2.val",
+    "            l2 = l2.next",
+    "        carry, digit = divmod(total, 10)",
+    "        tail.next = ListNode(digit)",
+    "        tail = tail.next",
+    "    return dummy.next"
+  ];
+
+  var L1 = [2, 4, 3];
+  var L2 = [5, 6, 4];
+
+  // Each state describes what the sticky panel shows for one step.
+  // cur = the column being added (index into both lists, -1 = none), done = columns finished,
+  // out = digits appended so far, carry = pending carry.
+  var STATES = {
+    problem: {
+      caption: "342 + 465, stored least-significant digit first. Return 807 the same way.",
+      l1: L1, l2: L2, cur: -1, done: 0, out: [], carry: null, meta: "Answer: <b>7 → 0 → 8</b>.", hl: []
+    },
+    naive: {
+      caption: "First instinct: rebuild both integers, add them, split the sum back into digits.",
+      l1: L1, l2: L2, cur: -1, done: 0, out: [], carry: null,
+      meta: "342 + 465 = 807 → 7, 0, 8. Three passes, and it overflows at 100 digits outside Python.", hl: [],
+      big: "3 passes", bigNote: "and it ignores the data structure the question is about"
+    },
+    reframe: {
+      caption: "Schoolbook addition: one column per node, right to left, which here is head to tail.",
+      l1: L1, l2: L2, cur: 0, done: 0, out: [], carry: 0,
+      meta: "Column = carry + l1.val + l2.val · keep total % 10, carry total // 10.", hl: [12]
+    },
+    idea: {
+      caption: "A dummy head, a loop that runs while anything is left (including the carry), and guarded reads.",
+      l1: L1, l2: L2, cur: 0, done: 0, out: [], carry: 0,
+      meta: "<b>while l1 or l2 or carry</b> covers unequal lengths and the final carry with no extra code.", hl: [1, 2, 4, 6, 9]
+    },
+    t1: {
+      caption: "Column 1: 0 + 2 + 5 = 7, append 7. Column 2: 0 + 4 + 6 = 10, append 0, carry 1.",
+      l1: L1, l2: L2, cur: 1, done: 1, out: [[7, ""], [0, "new"]], carry: 1,
+      meta: "divmod(10, 10) = (<b>1</b>, <b>0</b>) · carry moves to the next column.", hl: [5, 7, 10, 12, 13, 14]
+    },
+    t2: {
+      caption: "Column 3: 1 + 3 + 4 = 8, append 8, carry 0. Both lists empty, no carry: stop.",
+      l1: L1, l2: L2, cur: 2, done: 2, out: [[7, ""], [0, ""], [8, "found"]], carry: 0,
+      meta: "l1 = None, l2 = None, carry = 0 → loop ends → return dummy.next.", hl: [4, 12, 13, 15],
+      big: "7 → 0 → 8", bigNote: "807, built in three iterations"
+    },
+    carry: {
+      caption: "99 + 1: after both lists empty a carry of 1 is still pending. The loop runs once more to emit it.",
+      l1: [9, 9], l2: [1], cur: -1, done: 2, out: [[0, ""], [0, ""], [1, "found"]], carry: 1,
+      meta: "while l1 or l2 alone would return <b>[0, 0]</b>. With carry in the condition: <b>[0, 0, 1]</b>.", hl: [4],
+      big: "[0, 0, 1]", bigNote: "the extra iteration produces the hundreds digit"
+    },
+    complexity: {
+      caption: "One iteration per column, at most max(m, n) + 1 of them.",
+      l1: L1, l2: L2, cur: -1, done: 3, out: [[7, ""], [0, ""], [8, ""]], carry: 0,
+      meta: "The length of neither list is ever measured.", hl: [4, 13, 14],
+      big: "O(max(m, n)) time · O(1) extra space", bigNote: "the output list itself is required"
+    },
+    final: {
+      caption: "The whole solution.",
+      l1: L1, l2: L2, cur: -1, done: 3, out: [[7, ""], [0, ""], [8, ""]], carry: 0, meta: "",
+      hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function renderRow(label, vals, cur, done) {
+    var html = '<span class="rowlab">' + label + '</span>';
+    if (vals.length <= done) {
+      return html + '<span class="nil">None &nbsp;(exhausted)</span>';
+    }
+    for (var i = 0; i < vals.length; i++) {
+      var cls = "cell";
+      if (i < done) cls += " dim";
+      else if (i === cur) cls += " cur";
+      html += '<div class="' + cls + '">' + vals[i] + '<span class="idx">' + (i < done ? "added" : i === cur ? "head" : "") + '</span></div>';
+      if (i < vals.length - 1) html += '<span class="arrow">→</span>';
+    }
+    return html + '<span class="arrow">→</span><span class="nil">None</span>';
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    $("row1").innerHTML = renderRow("l1", s.l1, s.cur, s.done);
+    $("row2").innerHTML = renderRow("l2", s.l2, s.cur, s.done);
+
+    var d = '<span class="kv dummy">dummy</span><span class="arrow">→</span>';
+    if (s.out.length === 0) {
+      d += '<span class="empty">nothing appended yet</span>';
+    } else {
+      for (var k = 0; k < s.out.length; k++) {
+        var e = s.out[k];
+        d += '<span class="kv' + (e[1] ? " " + e[1] : "") + '">' + e[0] + "</span>";
+        if (k < s.out.length - 1) d += '<span class="arrow">→</span>';
+      }
+    }
+    if (s.carry !== null) d += ' &nbsp;<span class="kv carry">carry = ' + s.carry + '</span>';
+    $("result").innerHTML = d;
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maximum Subarray Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* maximum-subarray additions: cells inside the current run are green, the current element is blue */
+  .cell.run { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.neg { color: var(--warn); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html">← All walkthroughs</a>
+  <div class="tag">Medium · Dynamic Programming · LeetCode #53</div>
+  <h1>Maximum Subarray, narrated</h1>
+  <p>Scroll through the thinking, from summing every subarray to Kadane's one-pass "extend or restart" rule, with the state of the algorithm shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get an integer array with positives and negatives mixed in. Find the contiguous slice with the largest sum, and return that sum.</p>
+      <p>The slice has to be non-empty. That rule decides the answer for all-negative input: you must pick something, so you pick the least negative element.</p>
+      <div class="callout">Running example: <code>nums = [-2, 1, -3, 4, -1, 2, 1, -5, 4]</code>. The answer is 6, from <code>[4, -1, 2, 1]</code>.</div>
+      <p>Notice that the winning slice carries a −1 inside it. Absorbing a small loss to connect two gains is the kind of decision the algorithm has to make correctly.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: sum every subarray</h2>
+      <p>Try every start index and every end index, keep a running sum as the end moves so each subarray costs O(1) to extend, and remember the best.</p>
+      <pre class="code"><span class="ln">best = nums[0]</span><span class="ln">for i in range(n):</span><span class="ln">    s = 0</span><span class="ln">    for j in range(i, n):</span><span class="ln">        s += nums[j]</span><span class="ln">        best = max(best, s)</span></pre>
+      <p style="margin-top:14px">Correct, and already better than the O(n³) version that re-sums from scratch. But there are n² / 2 subarrays, so it is <strong>O(n²)</strong>. At n = 100,000 that is five billion additions.</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: the best subarray ending here</h2>
+      <p>Every subarray ends somewhere. So instead of asking about all subarrays, ask a narrower question at each index <code>i</code>: <em>what is the largest sum of a subarray that ends exactly at <code>i</code>?</em> Call it <code>current</code>. The answer to the whole problem is the largest <code>current</code> over all <code>i</code>.</p>
+      <p>Now the narrower question has a one-step answer. A subarray ending at <code>i</code> is either just <code>nums[i]</code> on its own, or <code>nums[i]</code> glued onto a subarray ending at <code>i - 1</code>. The best of the second kind is <code>nums[i]</code> plus the best subarray ending at <code>i - 1</code>, which is the previous <code>current</code>.</p>
+      <div class="callout"><code>current = max(nums[i], current + nums[i])</code>. Extend the previous run, or restart fresh.</div>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: a negative run is dead weight</h2>
+      <p>The <code>max</code> picks the restart exactly when the previous <code>current</code> is negative, because then <code>current + nums[i] &lt; nums[i]</code>. A negative prefix can only drag down whatever follows, so it is dropped.</p>
+      <p>This is dynamic programming: the subproblem is "best ending at i", it depends only on "best ending at i − 1", and the base case is <code>current = nums[0]</code>. Because each step needs only the previous value, the table shrinks to one variable, and <code>best</code> tracks the maximum entry as it goes.</p>
+      <p>Seeding both with <code>nums[0]</code> rather than 0 is what makes the all-negative case come out right.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: restarting</h2>
+      <p>Start: <code>current = best = -2</code>. Index 1, value 1: <code>max(1, -2 + 1) = 1</code>, restart. <code>best = 1</code>. Index 2, value −3: <code>max(-3, 1 − 3) = -2</code>, extend (it is the lesser evil), <code>best</code> stays 1.</p>
+      <p>Index 3, value 4: <code>max(4, -2 + 4) = 4</code>. The run ending at index 2 was worth −2, so it is dropped and a new run starts at the 4. <code>best = 4</code>.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: absorbing a dip</h2>
+      <p>Index 4, value −1: <code>max(-1, 4 − 1) = 3</code>. Extending wins even though the element is negative, because the run is still positive. Index 5, value 2: <code>max(2, 3 + 2) = 5</code>. Index 6, value 1: <code>max(1, 5 + 1) = 6</code>. <code>best = 6</code>.</p>
+      <p>Index 7, value −5: <code>max(-5, 6 − 5) = 1</code>. Extend, but the run is badly hurt. Index 8, value 4: <code>max(4, 1 + 4) = 5</code>. Extend again, but 5 does not beat 6. Loop ends, return <strong>6</strong>.</p>
+      <div class="callout">The run that won was <code>[4, -1, 2, 1]</code>. The algorithm never stored it; it only needed its sum.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 7</div>
+      <h2>The pitfall: seeding with zero</h2>
+      <p>Take <code>nums = [-3, -1, -2]</code>. The answer is −1. If <code>best</code> starts at 0, nothing ever beats it, and the function returns 0, which is not the sum of any subarray. The empty subarray is not allowed.</p>
+      <div class="callout warn">Seed <code>best</code> and <code>current</code> with <code>nums[0]</code>, and start the loop at index 1. The common variant <code>current = max(0, current + x)</code> has the same bug for the same reason.</div>
+      <p>With the correct seed: <code>current</code> goes −3, then <code>max(-1, -4) = -1</code>, then <code>max(-2, -3) = -2</code>. <code>best</code> ends at −1.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 8</div>
+      <h2>Time and space</h2>
+      <p>One pass, two <code>max</code> calls per element: <strong>O(n) time</strong>. Two integers regardless of input size: <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Every subarray, re-summed</td><td>O(n³)</td><td>O(1)</td></tr>
+        <tr><td>Every subarray, running sum</td><td>O(n²)</td><td>O(1)</td></tr>
+        <tr><td>Divide and conquer</td><td>O(n log n)</td><td>O(log n) stack</td></tr>
+        <tr><td>Kadane, extend or restart</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>The divide-and-conquer version exists mainly as an exercise. Kadane is the expected answer.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 9</div>
+      <h2>The final solution</h2>
+      <p>Seven lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>best = nums[0]</code> and <code>current = nums[0]</code> seed with a real subarray, not zero.</li>
+        <li><code>for x in nums[1:]</code> is the single pass from the second element.</li>
+        <li><code>current = max(x, current + x)</code> is the extend-or-restart recurrence.</li>
+        <li><code>best = max(best, current)</code> records the best "ending here" seen so far.</li>
+        <li><code>return best</code>.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>at each element, either extend the run or start over; a negative run is never worth keeping.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>nums · green = current run, blue = this element</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>trackers</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+
+<footer>
+  Source files: <a href="maximum_subarray.py">maximum_subarray.py</a> · <a href="maximum_subarray_annotated.py">maximum_subarray_annotated.py</a> · <a href="test_maximum_subarray.py">test_maximum_subarray.py</a> · <a href="../../md.html?f=medium/007-maximum-subarray/notes.md">notes.md</a> · <a href="../../index.html">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def max_sub_array(nums):",
+    "    best = nums[0]",
+    "    current = nums[0]",
+    "    for x in nums[1:]:",
+    "        current = max(x, current + x)",
+    "        best = max(best, current)",
+    "    return best"
+  ];
+
+  var NUMS = [-2, 1, -3, 4, -1, 2, 1, -5, 4];
+
+  // Each state describes what the sticky panel shows for one step.
+  // cur = index being processed, runStart = where the current run begins (-1 = none).
+  var STATES = {
+    problem: {
+      caption: "Largest sum of any non-empty contiguous slice.",
+      nums: NUMS, cur: -1, runStart: -1, chips: [], meta: "Answer: <b>6</b>, from [4, −1, 2, 1].", hl: []
+    },
+    brute: {
+      caption: "Brute force sums every (start, end) pair with a running total.",
+      nums: NUMS, cur: 5, runStart: 3, chips: [], meta: "i = 3: 4, 3, 5, 6, 1, 5 … then i = 4, and so on for every start.", hl: [],
+      big: "O(n²)", bigNote: "n² / 2 subarrays"
+    },
+    reframe: {
+      caption: "Ask a narrower question at each index: best sum of a subarray that ends exactly here.",
+      nums: NUMS, cur: 6, runStart: 3, chips: [["ending at 6", "6"]],
+      meta: "Either x alone, or x glued onto the best run ending at the previous index.", hl: [4]
+    },
+    idea: {
+      caption: "current = max(x, current + x). A negative previous run is dropped automatically.",
+      nums: NUMS, cur: 0, runStart: 0, chips: [["current", "−2", "new"], ["best", "−2", "new"]],
+      meta: "Seed both with nums[0], not 0, so all-negative input still works.", hl: [1, 2, 4]
+    },
+    t1: {
+      caption: "Index 3: max(4, −2 + 4) = 4. The run worth −2 is dropped and a new one starts.",
+      nums: NUMS, cur: 3, runStart: 3, chips: [["current", "4", "new"], ["best", "4", "found"]],
+      meta: "Previous current = −2 (from [1, −3]) · <b>restart at 4</b>", hl: [4, 5]
+    },
+    t2: {
+      caption: "Index 6: max(1, 5 + 1) = 6. The −1 at index 4 was absorbed because the run stayed positive.",
+      nums: NUMS, cur: 6, runStart: 3, chips: [["current", "6", "new"], ["best", "6", "found"]],
+      meta: "Then −5 drags current to 1, and 4 lifts it to 5. Nothing beats 6.", hl: [4, 5],
+      big: "6", bigNote: "[4, −1, 2, 1], never stored, only summed"
+    },
+    pitfall: {
+      caption: "nums = [−3, −1, −2] with best seeded at 0 returns 0, which is not the sum of any subarray.",
+      nums: [-3, -1, -2], cur: 1, runStart: 1, chips: [["seed 0 → best", "0"], ["seed nums[0] → best", "−1", "found"]],
+      meta: "current: −3, then max(−1, −4) = <b>−1</b>, then max(−2, −3) = −2.", hl: [1, 2],
+      big: "−1, not 0", bigNote: "the empty subarray is not allowed"
+    },
+    complexity: {
+      caption: "One pass, two comparisons per element, two integers held.",
+      nums: NUMS, cur: 8, runStart: 3, chips: [["current", "5"], ["best", "6"]],
+      meta: "The DP table is one cell wide because each step needs only the previous answer.", hl: [3, 4, 5],
+      big: "O(n) time · O(1) space", bigNote: "versus O(n²) for the running-sum brute force"
+    },
+    final: {
+      caption: "The whole solution.",
+      nums: NUMS, cur: -1, runStart: -1, chips: [["best", "6", "found"]], meta: "", hl: [0, 1, 2, 3, 4, 5, 6]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.nums.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.runStart !== -1 && i >= s.runStart && i < s.cur) cls += " run";
+      else if (s.cur !== -1 && i > s.cur) cls += " dim";
+      if (s.nums[i] < 0) cls += " neg";
+      arr += '<div class="' + cls + '">' + s.nums[i] + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.chips.length; k++) {
+        var e = s.chips[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

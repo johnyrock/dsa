@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Product of Array Except Self Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* product-except-self additions: a second labelled row for the result array */
+  .rowlab { display: block; font-family: ui-monospace, Menlo, monospace; font-size: 0.75rem; color: var(--muted); margin: 10px 0 0; }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html">← All walkthroughs</a>
+  <div class="tag">Medium · Prefix Sum · LeetCode #238</div>
+  <h1>Product of Array Except Self, narrated</h1>
+  <p>Scroll through the thinking, from the nested loop through the division trick that breaks on zeros to the two-sweep prefix and suffix products, with the state of the algorithm shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get an array <code>nums</code>. Build a new array where slot <code>i</code> holds the product of every element <em>except</em> <code>nums[i]</code>.</p>
+      <p>Two rules make it interesting: you may not use division, and the solution must run in O(n).</p>
+      <div class="callout">Running example: <code>nums = [1, 2, 3, 4]</code>. The answer is <code>[24, 12, 8, 6]</code>. Slot 0 is 2·3·4, slot 1 is 1·3·4, and so on.</div>
+      <p>The "no division" rule is not arbitrary. It is there to rule out one specific shortcut, and to make you find the pattern that also survives zeros.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: multiply everything else, per slot</h2>
+      <p>For each index <code>i</code>, loop over the whole array and multiply together every element whose index is not <code>i</code>.</p>
+      <pre class="code"><span class="ln">result = []</span><span class="ln">for i in range(len(nums)):</span><span class="ln">    p = 1</span><span class="ln">    for j in range(len(nums)):</span><span class="ln">        if j != i:</span><span class="ln">            p *= nums[j]</span><span class="ln">    result.append(p)</span></pre>
+      <p style="margin-top:14px">Correct, and it needs no division. But each slot rescans the whole array, so it is <strong>O(n²)</strong>. At n = 100,000 that is ten billion multiplications, and the statement demands O(n).</p>
+    </section>
+
+    <section class="step" data-state="division">
+      <div class="n">STEP 3</div>
+      <h2>The tempting shortcut, and why it is banned</h2>
+      <p>Compute the product of everything once, then each slot is <code>total / nums[i]</code>. One pass, O(n). Except the problem forbids division, and there is a real reason: zeros.</p>
+      <p>With <code>nums = [-1, 1, 0, -3, 3]</code> the total is 0, and dividing by <code>nums[2] = 0</code> is undefined. You can patch it by counting zeros: one zero means only that slot is non-zero, two or more means everything is zero. It works, but it is three special cases stacked on a trick.</p>
+      <div class="callout warn">Division is not a building block here. It is a way of <em>undoing</em> a multiplication you did not need to do. The clean solution never multiplies <code>nums[i]</code> into its own answer in the first place.</div>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 4</div>
+      <h2>Reframe: split "everything else" into left and right</h2>
+      <p>Everything except <code>nums[i]</code> is exactly two pieces: everything <em>to the left</em> of <code>i</code>, and everything <em>to the right</em>. The answer for slot <code>i</code> is the product of those two pieces.</p>
+      <p>For <code>i = 2</code> in the example, the left piece is 1·2 = 2 and the right piece is 4, so the answer is 2·4 = 8. Neither piece involves <code>nums[2]</code>, so nothing needs to be divided back out.</p>
+      <div class="callout">Both pieces are <strong>running products</strong>. The left product for slot <code>i+1</code> is the left product for slot <code>i</code> times <code>nums[i]</code>. Same for the right, going the other way.</div>
+      <p>That means one sweep left to right produces every left piece, and one sweep right to left produces every right piece.</p>
+    </section>
+
+    <section class="step" data-state="prefix">
+      <div class="n">STEP 5</div>
+      <h2>Sweep 1: prefix products, stored in the output</h2>
+      <p>Start <code>prefix = 1</code>, the product of nothing. At each index, first write the current <code>prefix</code> into <code>result[i]</code>, and only then multiply <code>nums[i]</code> into <code>prefix</code>. The order matters: slot <code>i</code> must see the product of what came <em>before</em> it, not including itself.</p>
+      <p>After the sweep, <code>result</code> is <code>[1, 1, 2, 6]</code>: the product of the empty left side, then 1, then 1·2, then 1·2·3.</p>
+    </section>
+
+    <section class="step" data-state="suffix">
+      <div class="n">STEP 6</div>
+      <h2>Sweep 2: suffix products, multiplied on top</h2>
+      <p>Now walk from the right end with <code>suffix = 1</code>. At each index, multiply <code>result[i]</code> by <code>suffix</code>, then fold <code>nums[i]</code> into <code>suffix</code> for the slots further left.</p>
+      <p>Slot 3 gets 6·1 = 6. Slot 2 gets 2·4 = 8. Slot 1 gets 1·12 = 12. Slot 0 gets 1·24 = 24. Each slot ends up as left product times right product, which is everything except itself.</p>
+      <div class="callout">The output array was the only storage. No prefix array, no suffix array, no division, two passes.</div>
+    </section>
+
+    <section class="step" data-state="zeros">
+      <div class="n">STEP 7</div>
+      <h2>Zeros fall out for free</h2>
+      <p>Run the same two sweeps on <code>[-1, 1, 0, -3, 3]</code>. The prefix products are <code>[1, -1, -1, 0, 0]</code>: once the zero has been folded in, every later prefix is 0. The suffix products, read left to right, are <code>[0, 0, -9, 3, 1]</code>: every slot left of the zero has a 0 on its right.</p>
+      <p>Multiply them slot by slot and only index 2, the zero itself, survives: −1 · −9 = 9. Everything else is 0, exactly the expected <code>[0, 0, 9, 0, 0]</code>.</p>
+      <p>No zero counting, no special cases. Because <code>nums[i]</code> was never multiplied into its own slot, there was nothing to undo.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 8</div>
+      <h2>Time and space</h2>
+      <p>Two passes over n elements with O(1) work each: <strong>O(n) time</strong>.</p>
+      <p>Two scalars plus the output array. The statement does not count the output, so this is <strong>O(1) extra space</strong>. A first version with separate <code>left[]</code> and <code>right[]</code> arrays is O(n) extra and is a fine stepping stone.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Extra space</th></tr>
+        <tr><td>Nested loop</td><td>O(n²)</td><td>O(1)</td></tr>
+        <tr><td>Total / nums[i] with zero handling</td><td>O(n)</td><td>O(1), but uses division</td></tr>
+        <tr><td>Prefix and suffix arrays</td><td>O(n)</td><td>O(n)</td></tr>
+        <tr><td>Two sweeps into the output</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 9</div>
+      <h2>The final solution</h2>
+      <p>Twelve lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>result = [1] * n</code> is the output doubling as scratch space, seeded with the multiplicative identity.</li>
+        <li>The first loop writes <code>prefix</code> <em>before</em> folding in <code>nums[i]</code>, so a slot never includes itself.</li>
+        <li>The second loop runs <code>n-1</code> down to <code>0</code> and multiplies <code>suffix</code> on top, again before folding in <code>nums[i]</code>.</li>
+        <li><code>return result</code> hands back left × right for every slot.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>everything except me is everything on my left times everything on my right.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>nums · blue = index being processed</h3>
+        <div class="array" id="array"></div>
+        <span class="rowlab">result so far</span>
+        <div class="array" id="result"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>running products</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+
+<footer>
+  Source files: <a href="product_of_array_except_self.py">product_of_array_except_self.py</a> · <a href="product_of_array_except_self_annotated.py">product_of_array_except_self_annotated.py</a> · <a href="test_product_of_array_except_self.py">test_product_of_array_except_self.py</a> · <a href="../../md.html?f=medium/002-product-of-array-except-self/notes.md">notes.md</a> · <a href="../../index.html">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def product_except_self(nums):",
+    "    n = len(nums)",
+    "    result = [1] * n",
+    "    prefix = 1",
+    "    for i in range(n):",
+    "        result[i] = prefix",
+    "        prefix *= nums[i]",
+    "    suffix = 1",
+    "    for i in range(n - 1, -1, -1):",
+    "        result[i] *= suffix",
+    "        suffix *= nums[i]",
+    "    return result"
+  ];
+
+  var NUMS = [1, 2, 3, 4];
+
+  // Each state describes what the sticky panel shows for one step.
+  // cur = the index being processed, hits = indices whose product is being used,
+  // result = the output array at this moment ("?" for not yet written).
+  var STATES = {
+    problem: {
+      caption: "For each slot, the product of every other slot. No division, O(n).",
+      nums: NUMS, cur: -1, hits: [], result: ["?", "?", "?", "?"], chips: [], meta: "Answer: <b>[24, 12, 8, 6]</b>.", hl: []
+    },
+    brute: {
+      caption: "Brute force rescans the whole array for every slot.",
+      nums: NUMS, cur: 2, hits: [0, 1, 3], result: [24, 12, "?", "?"], chips: [],
+      meta: "i = 2: multiply slots 0, 1 and 3 → 1 · 2 · 4 = <b>8</b>. Repeat for every i.", hl: [],
+      big: "O(n²)", bigNote: "n multiplications per slot, n slots"
+    },
+    division: {
+      caption: "total / nums[i] is O(n) but is forbidden, and it divides by zero the moment a zero appears.",
+      nums: [-1, 1, 0, -3, 3], cur: 2, hits: [], result: ["?", "?", "?", "?", "?"], chips: [["total", "0"]],
+      meta: "total / nums[2] = 0 / 0. Undefined. The special cases start piling up.", hl: [],
+      big: "0 / 0", bigNote: "division has to undo a multiplication that was never needed"
+    },
+    reframe: {
+      caption: "Slot i is (product of the left) × (product of the right). Neither piece contains nums[i].",
+      nums: NUMS, cur: 2, hits: [0, 1, 3], result: ["?", "?", "?", "?"], chips: [["left of 2", "1 · 2 = 2"], ["right of 2", "4"]],
+      meta: "2 × 4 = <b>8</b>, and both pieces are running products.", hl: []
+    },
+    prefix: {
+      caption: "Sweep left to right, writing the running prefix into result before folding in nums[i].",
+      nums: NUMS, cur: 3, hits: [0, 1, 2], result: [1, 1, 2, 6], chips: [["prefix", "24", "new"]],
+      meta: "result = [1, 1, 2, 6]: each slot holds the product of everything to its left.", hl: [3, 4, 5, 6]
+    },
+    suffix: {
+      caption: "Sweep right to left, multiplying the running suffix on top of what is already there.",
+      nums: NUMS, cur: 0, hits: [1, 2, 3], result: [24, 12, 8, 6], chips: [["suffix", "24", "new"]],
+      meta: "Slot 0: 1 × 24 = <b>24</b>. Every slot is now left × right.", hl: [7, 8, 9, 10],
+      big: "[24, 12, 8, 6]", bigNote: "two passes, output array as the only storage"
+    },
+    zeros: {
+      caption: "With a zero present, both sweeps produce zeros on the correct side and only the zero's own slot survives.",
+      nums: [-1, 1, 0, -3, 3], cur: 2, hits: [], result: [0, 0, 9, 0, 0], chips: [["prefixes", "1, −1, −1, 0, 0"], ["suffixes", "0, 0, −9, 3, 1"]],
+      meta: "Slot 2: −1 × −9 = <b>9</b>. Everything else has a 0 on one side.", hl: [5, 9],
+      big: "[0, 0, 9, 0, 0]", bigNote: "no zero counting, no special cases"
+    },
+    complexity: {
+      caption: "Two linear passes, two scalars, and the output array.",
+      nums: NUMS, cur: -1, hits: [], result: [24, 12, 8, 6], chips: [["prefix", "24"], ["suffix", "24"]],
+      meta: "Nothing grows with n except the answer itself.", hl: [4, 8],
+      big: "O(n) time · O(1) extra space", bigNote: "versus O(n²) for the nested loop"
+    },
+    final: {
+      caption: "The whole solution.",
+      nums: NUMS, cur: -1, hits: [], result: [24, 12, 8, 6], chips: [["prefix", "24"], ["suffix", "24"]], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function renderCells(vals, cur, hits) {
+    var arr = "";
+    for (var i = 0; i < vals.length; i++) {
+      var cls = "cell";
+      if (i === cur) cls += " cur";
+      else if (hits.indexOf(i) !== -1) cls += " hit";
+      arr += '<div class="' + cls + '">' + vals[i] + '<span class="idx">' + i + '</span></div>';
+    }
+    return arr;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+    $("array").innerHTML = renderCells(s.nums, s.cur, s.hits);
+    $("result").innerHTML = renderCells(s.result, s.cur, []);
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.chips.length; k++) {
+        var e = s.chips[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

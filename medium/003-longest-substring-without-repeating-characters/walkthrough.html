@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Longest Substring Without Repeating Characters Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* longest-substring additions: characters in the window get the green treatment, the right edge is blue */
+  .cell.win { border-color: var(--ok); background: var(--ok-soft); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html">← All walkthroughs</a>
+  <div class="tag">Medium · Sliding Window · LeetCode #3</div>
+  <h1>Longest Substring Without Repeating Characters, narrated</h1>
+  <p>Scroll through the thinking, from checking every substring to a sliding window whose left edge jumps straight past the repeat, with the state of the algorithm shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get a string. Find the length of the longest <em>contiguous</em> stretch in which no character appears twice.</p>
+      <p>Only the length is asked for, not the substring itself, and contiguity is the whole game: <code>"pwke"</code> is not an answer for <code>"pwwkew"</code> because those letters are not next to each other.</p>
+      <div class="callout">Running example: <code>s = "abcabcbb"</code>. The answer is 3, from <code>"abc"</code> (and <code>"bca"</code> and <code>"cab"</code>, which tie).</div>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: check every substring</h2>
+      <p>Try every start index and every end index, and for each pair check whether the characters in between are all distinct.</p>
+      <pre class="code"><span class="ln">best = 0</span><span class="ln">for i in range(len(s)):</span><span class="ln">    seen = set()</span><span class="ln">    for j in range(i, len(s)):</span><span class="ln">        if s[j] in seen: break</span><span class="ln">        seen.add(s[j])</span><span class="ln">        best = max(best, j - i + 1)</span></pre>
+      <p style="margin-top:14px">This version already breaks out of the inner loop at the first repeat, which makes it <strong>O(n²)</strong> rather than O(n³). At n = 50,000 that can still be over a billion steps.</p>
+      <p>The waste: after finding that <code>s[i..j]</code> has a repeat, we restart from <code>i+1</code> and re-examine almost the same characters.</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: keep one window and slide it</h2>
+      <p>Hold a window <code>s[left..right]</code> that is <em>always</em> free of repeats. Push <code>right</code> forward one character at a time. Most of the time the new character is new to the window and the window just grows.</p>
+      <p>When the new character already lives inside the window, the window is broken at exactly one place: the earlier copy. Move <code>left</code> to just past that copy and the window is valid again.</p>
+      <div class="callout">Every valid window has to end somewhere. For each <code>right</code>, the window we hold is the <strong>longest</strong> valid one ending there, so checking its length at each step finds the overall best.</div>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: remember where each character was last seen</h2>
+      <p>To move <code>left</code> past the earlier copy, we need to know where the earlier copy is. A dictionary <code>last_seen[ch] = index</code> answers that in O(1), and it lets <code>left</code> <em>jump</em> rather than crawl.</p>
+      <ul>
+        <li>If <code>ch</code> is in <code>last_seen</code> and that index is at or after <code>left</code>, the copy is inside the window: set <code>left = last_seen[ch] + 1</code>.</li>
+        <li>Record <code>last_seen[ch] = right</code> either way.</li>
+        <li>Then <code>right - left + 1</code> is a valid length; keep the max.</li>
+      </ul>
+      <p>The condition <code>&gt;= left</code> is not decoration. It is the difference between a right and a wrong answer, as Step 7 shows.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the window grows to "abc"</h2>
+      <p><code>right = 0</code>: <code>a</code> is new. Window <code>"a"</code>, length 1. <code>right = 1</code>: <code>b</code> is new. Window <code>"ab"</code>, length 2. <code>right = 2</code>: <code>c</code> is new. Window <code>"abc"</code>, length 3.</p>
+      <p><code>best</code> is now 3 and <code>last_seen</code> holds <code>a → 0, b → 1, c → 2</code>. Nothing has been thrown out yet.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: the first repeat</h2>
+      <p><code>right = 3</code>, character <code>a</code>. <code>last_seen[a] = 0</code>, and <code>0 &gt;= left = 0</code>, so the old <code>a</code> is inside the window. Jump <code>left</code> to 1.</p>
+      <p>The window is now <code>"bca"</code>, still length 3. Update <code>last_seen[a] = 3</code>. <code>best</code> stays at 3.</p>
+      <p>The next few steps do the same dance: <code>b</code> at 4 pushes <code>left</code> to 2, <code>c</code> at 5 pushes it to 3, <code>b</code> at 6 pushes it to 5, and the final <code>b</code> at 7 pushes it to 7. Each window is at most 3 wide, so the answer is <strong>3</strong>.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 7</div>
+      <h2>The pitfall: a stale occurrence outside the window</h2>
+      <p>Take <code>s = "abba"</code>. After the two <code>b</code>s, <code>left</code> is 2 and the window is <code>"b"</code>. Now the final <code>a</code> arrives. <code>last_seen[a] = 0</code>, but that <code>a</code> was cut out of the window long ago.</p>
+      <div class="callout warn">Without the <code>&gt;= left</code> check, <code>left</code> would be set to 1, moving <em>backwards</em>, and the "window" <code>"bba"</code> would be reported with length 3. The right answer is 2.</div>
+      <p>Only jump when the previous occurrence is at or after <code>left</code>. Equivalently, <code>left = max(left, last_seen[ch] + 1)</code>. Either form keeps <code>left</code> moving one way only.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 8</div>
+      <h2>Time and space</h2>
+      <p><code>right</code> advances n times. <code>left</code> only ever moves forward, so across the whole run it moves at most n times too. Everything else is O(1) dictionary work. <strong>O(n) time</strong>.</p>
+      <p>The dictionary has one entry per distinct character, so <strong>O(min(n, alphabet size)) space</strong>: at most 128 entries for ASCII no matter how long the string is.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Every substring, with early break</td><td>O(n²)</td><td>O(alphabet)</td></tr>
+        <tr><td>Window with a set, crawl left forward</td><td>O(n)</td><td>O(alphabet)</td></tr>
+        <tr><td>Window with last-seen index, jump left</td><td>O(n)</td><td>O(alphabet)</td></tr>
+      </table>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 9</div>
+      <h2>The final solution</h2>
+      <p>Nine lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>last_seen = {}</code> is the char-to-index memory that lets <code>left</code> jump.</li>
+        <li><code>left = 0</code> and <code>best = 0</code> start an empty window; the empty string returns 0 untouched.</li>
+        <li><code>for right, ch in enumerate(s)</code> is the single forward pass.</li>
+        <li><code>if ch in last_seen and last_seen[ch] &gt;= left</code> asks "is the repeat inside the window?"</li>
+        <li><code>left = last_seen[ch] + 1</code> is the jump.</li>
+        <li><code>best = max(best, right - left + 1)</code> measures the now-valid window.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>grow the right edge; on a repeat inside the window, jump the left edge past the old copy.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>s · green = current window, blue = right edge</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>last_seen and window state</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+
+<footer>
+  Source files: <a href="longest_substring_without_repeating_characters.py">longest_substring_without_repeating_characters.py</a> · <a href="longest_substring_without_repeating_characters_annotated.py">longest_substring_without_repeating_characters_annotated.py</a> · <a href="test_longest_substring_without_repeating_characters.py">test_longest_substring_without_repeating_characters.py</a> · <a href="../../md.html?f=medium/003-longest-substring-without-repeating-characters/notes.md">notes.md</a> · <a href="../../index.html">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def length_of_longest_substring(s):",
+    "    last_seen = {}",
+    "    left = 0",
+    "    best = 0",
+    "    for right, ch in enumerate(s):",
+    "        if ch in last_seen and last_seen[ch] >= left:",
+    "            left = last_seen[ch] + 1",
+    "        last_seen[ch] = right",
+    "        best = max(best, right - left + 1)",
+    "    return best"
+  ];
+
+  var S = "abcabcbb".split("");
+
+  // Each state describes what the sticky panel shows for one step.
+  // left/right bound the window (inclusive); right = -1 means no window yet.
+  var STATES = {
+    problem: {
+      caption: "Longest contiguous stretch with no repeated character.",
+      s: S, left: 0, right: -1, chips: [], meta: "Answer: <b>3</b>, e.g. \"abc\".", hl: []
+    },
+    brute: {
+      caption: "Brute force restarts a fresh scan from every start index.",
+      s: S, left: 1, right: 3, chips: [], meta: "i = 1: b, c, a … then <b>b</b> repeats, break, restart at i = 2.", hl: [],
+      big: "O(n²)", bigNote: "each start rescans almost the same characters"
+    },
+    reframe: {
+      caption: "Keep one window that is always repeat-free and slide it to the right.",
+      s: S, left: 0, right: 2, chips: [["window", "\"abc\""]],
+      meta: "Push right forward; when a repeat appears, move left past the earlier copy.", hl: []
+    },
+    idea: {
+      caption: "A dictionary of last-seen indices tells left exactly where to jump.",
+      s: S, left: 0, right: -1, chips: [["last_seen", "{}", "new"], ["left", "0", "new"], ["best", "0", "new"]],
+      meta: "Jump only if the earlier copy is inside the window: last_seen[ch] ≥ left.", hl: [1, 2, 3, 5, 6]
+    },
+    t2: {
+      caption: "a, b, c are all new. The window grows to \"abc\" and best becomes 3.",
+      s: S, left: 0, right: 2, chips: [["a", "0"], ["b", "1"], ["c", "2", "new"], ["left", "0"], ["best", "3", "found"]],
+      meta: "right = 2 · window length 2 − 0 + 1 = <b>3</b>", hl: [7, 8]
+    },
+    t3: {
+      caption: "right = 3 is another a. last_seen[a] = 0 ≥ left, so left jumps to 1. Window: \"bca\".",
+      s: S, left: 1, right: 3, chips: [["a", "3", "new"], ["b", "1"], ["c", "2"], ["left", "1", "new"], ["best", "3"]],
+      meta: "left = 0 + 1 = <b>1</b> · window length 3 − 1 + 1 = 3, best unchanged", hl: [5, 6, 7],
+      big: "3", bigNote: "every later window is also at most 3 wide"
+    },
+    pitfall: {
+      caption: "s = \"abba\": the final a was last seen at 0, but left is already 2. Do not move left backwards.",
+      s: "abba".split(""), left: 2, right: 3, chips: [["a", "0 → 3"], ["b", "2"], ["left", "2 (not 1)", "found"], ["best", "2"]],
+      meta: "0 ≥ 2 is false, so no jump. Window \"ba\", length <b>2</b>. Without the check: \"bba\", wrongly 3.", hl: [5],
+      big: "2, not 3", bigNote: "the ≥ left check keeps left moving one way"
+    },
+    complexity: {
+      caption: "right moves n times, left moves forward at most n times, every step is O(1).",
+      s: S, left: 7, right: 7, chips: [["last_seen", "≤ alphabet entries"], ["best", "3"]],
+      meta: "The dictionary never holds more than one entry per distinct character.", hl: [4, 5, 6],
+      big: "O(n) time · O(alphabet) space", bigNote: "versus O(n²) for checking every substring"
+    },
+    final: {
+      caption: "The whole solution.",
+      s: S, left: 7, right: 7, chips: [["best", "3", "found"]], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.s.length; i++) {
+      var cls = "cell";
+      if (i === s.right) cls += " cur";
+      else if (s.right !== -1 && i >= s.left && i < s.right) cls += " win";
+      else if (s.right !== -1 && i > s.right) cls += " dim";
+      arr += '<div class="' + cls + '">' + s.s[i] + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.chips.length; k++) {
+        var e = s.chips[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

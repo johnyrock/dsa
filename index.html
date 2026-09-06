@@ -114,6 +114,9 @@
     <button class="chip" data-pattern="linked-list" aria-pressed="false">Linked List <span class="count"></span></button>
     <button class="chip" data-pattern="binary-search" aria-pressed="false">Binary Search <span class="count"></span></button>
     <button class="chip" data-pattern="dynamic-programming" aria-pressed="false">Dynamic Programming <span class="count"></span></button>
+    <button class="chip" data-pattern="prefix-sum" aria-pressed="false">Prefix Sum <span class="count"></span></button>
+    <button class="chip" data-pattern="intervals" aria-pressed="false">Intervals <span class="count"></span></button>
+    <button class="chip" data-pattern="graph" aria-pressed="false">Graph <span class="count"></span></button>
   </div>
 
   <section id="easy">
@@ -197,8 +200,81 @@
 
   <section id="medium">
     <h2>Medium</h2>
-    <p class="sub">Numbering restarts per difficulty.</p>
-    <div class="empty">No medium walkthroughs yet. Add a card here when the first one lands in <code>medium/</code>.</div>
+    <p class="sub">The most frequently asked medium problems from the same lists. Numbering restarts per difficulty.</p>
+    <div class="grid">
+
+      <a class="card" href="medium/001-group-anagrams/walkthrough.html" data-pattern="hash-map">
+        <div class="meta">medium/001 · LeetCode #49</div>
+        <h3>Group Anagrams</h3>
+        <p>From comparing every pair of words to bucketing each one under a canonical letter-count key.</p>
+        <div class="foot"><span class="pill">Hash Map</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/002-product-of-array-except-self/walkthrough.html" data-pattern="prefix-sum">
+        <div class="meta">medium/002 · LeetCode #238</div>
+        <h3>Product of Array Except Self</h3>
+        <p>From the nested loop, past the division trick that breaks on zeros, to two sweeps of prefix and suffix products.</p>
+        <div class="foot"><span class="pill">Prefix Sum</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/003-longest-substring-without-repeating-characters/walkthrough.html" data-pattern="sliding-window">
+        <div class="meta">medium/003 · LeetCode #3</div>
+        <h3>Longest Substring Without Repeating Characters</h3>
+        <p>From checking every substring to a window whose left edge jumps straight past the repeat.</p>
+        <div class="foot"><span class="pill">Sliding Window</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/004-3sum/walkthrough.html" data-pattern="two-pointers">
+        <div class="meta">medium/004 · LeetCode #15</div>
+        <h3>3Sum</h3>
+        <p>From three nested loops to sorting, fixing one number, and closing two pointers on the rest.</p>
+        <div class="foot"><span class="pill">Two Pointers</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/005-container-with-most-water/walkthrough.html" data-pattern="two-pointers">
+        <div class="meta">medium/005 · LeetCode #11</div>
+        <h3>Container With Most Water</h3>
+        <p>From every pair of walls to two pointers that always move the shorter one inward.</p>
+        <div class="foot"><span class="pill">Two Pointers</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/006-add-two-numbers/walkthrough.html" data-pattern="linked-list">
+        <div class="meta">medium/006 · LeetCode #2</div>
+        <h3>Add Two Numbers</h3>
+        <p>From converting to integers and back to schoolbook addition with a carry, one node per column.</p>
+        <div class="foot"><span class="pill">Linked List</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/007-maximum-subarray/walkthrough.html" data-pattern="dynamic-programming">
+        <div class="meta">medium/007 · LeetCode #53</div>
+        <h3>Maximum Subarray</h3>
+        <p>From summing every subarray to Kadane's one-pass extend-or-restart rule.</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/008-coin-change/walkthrough.html" data-pattern="dynamic-programming">
+        <div class="meta">medium/008 · LeetCode #322</div>
+        <h3>Coin Change</h3>
+        <p>From the greedy that fails, through exponential recursion, to a bottom-up table over amounts.</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/009-merge-intervals/walkthrough.html" data-pattern="intervals">
+        <div class="meta">medium/009 · LeetCode #56</div>
+        <h3>Merge Intervals</h3>
+        <p>From merge-any-pair-and-rescan to sorting by start and extending the last interval in one sweep.</p>
+        <div class="foot"><span class="pill">Intervals</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/010-number-of-islands/walkthrough.html" data-pattern="graph">
+        <div class="meta">medium/010 · LeetCode #200</div>
+        <h3>Number of Islands</h3>
+        <p>From counting land cells to a flood fill that sinks each island the first time it is touched.</p>
+        <div class="foot"><span class="pill">Graph</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+    </div>
+    <p class="none" hidden>No medium walkthroughs use this pattern yet.</p>
   </section>
 </main>
 

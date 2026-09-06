@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Number of Islands Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* number-of-islands additions: a grid of square cells with land, water, sunk and current states */
+  .grid { display: grid; gap: 4px; margin: 8px 0 4px; }
+  .gc {
+    aspect-ratio: 1; border-radius: 6px; border: 2px solid var(--line); background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.9rem; color: var(--muted); transition: all 0.25s;
+  }
+  .gc.land { background: var(--ok-soft); border-color: var(--ok); color: var(--ink); font-weight: 600; }
+  .gc.sunk { background: var(--code-bg); border-color: var(--line); color: var(--muted); text-decoration: line-through; }
+  .gc.cur { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); transform: scale(1.06); }
+  .gc.scan { outline: 2px dashed var(--accent); outline-offset: -2px; }
+  .dict .kv.island { border-color: var(--ok); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html">← All walkthroughs</a>
+  <div class="tag">Medium · Graph · LeetCode #200</div>
+  <h1>Number of Islands, narrated</h1>
+  <p>Scroll through the thinking, from counting land cells to a flood fill that sinks each island the first time it is touched, with the state of the algorithm shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get a grid of <code>'1'</code> (land) and <code>'0'</code> (water). An island is a group of land cells connected up, down, left or right. Count the islands.</p>
+      <p>Diagonals do not connect. The grid's edge is water. Two blocks that touch only at a corner are two islands.</p>
+      <div class="callout">Running example: a 4 × 5 grid with a 2 × 2 block top-left, a single cell in the middle, and a pair bottom-right. The answer is 3.</div>
+    </section>
+
+    <section class="step" data-state="naive">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: count the land</h2>
+      <p>The tempting shortcut is to count <code>'1'</code> cells. The example has 7 of them and 3 islands, so that is not it. The question is not "how much land" but "how many separate pieces".</p>
+      <p>A second instinct is to look at each land cell and ask whether it has a land neighbour above or to the left already counted. That handles simple blobs but fails on shapes like a U, where the two arms are first seen as separate and only join lower down.</p>
+      <div class="callout warn">Local rules do not work because connectivity is a global property. A cell belongs to whichever island it can <em>reach</em>, and reaching may take a long winding path.</div>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: the grid is a graph</h2>
+      <p>Every land cell is a node. Every pair of orthogonally adjacent land cells is an edge. An island is a <strong>connected component</strong> of this graph, and counting islands is counting components.</p>
+      <p>Counting components has a standard recipe: visit nodes in any order; whenever you meet a node you have not visited, that is a new component, so count it and then traverse everything reachable from it, marking each node visited so it is never counted as the start of another component.</p>
+      <div class="callout">The traversal is a flood fill: depth-first or breadth-first, it does not matter for counting. Both visit exactly the cells of one island.</div>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: sink the island as you go</h2>
+      <p>Scan the grid row by row. When the scan lands on a <code>'1'</code>:</p>
+      <ul>
+        <li>Increment the count. This cell is the first touch of a new island.</li>
+        <li>Flood fill from it with an explicit stack. Pop a cell, look at its four neighbours, and for each in-bounds neighbour that is still <code>'1'</code>, overwrite it with <code>'0'</code> and push it.</li>
+      </ul>
+      <p>Overwriting to <code>'0'</code> is the visited set. It costs no extra memory, and it guarantees the outer scan will pass over the rest of this island without counting it again. Mark on push, not on pop, so no cell is pushed twice.</p>
+      <p>An explicit stack rather than recursion matters at the limits: a 300 × 300 grid of all land is one island 90,000 cells deep, well past Python's recursion limit.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the first island</h2>
+      <p>The scan starts at (0, 0), which is land. <code>count = 1</code>. Sink it and push it. Pop (0, 0): neighbours (1, 0) and (0, 1) are land, sink both, push both. Pop (0, 1): (1, 1) is land, sink and push. Pop (1, 1): its neighbours are now all water or out of bounds. Pop (1, 0): same. Stack empty.</p>
+      <p>The whole 2 × 2 block is now <code>'0'</code>. When the scan continues to (0, 1), (1, 0) and (1, 1) it sees water and skips them. The island was counted exactly once.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: the rest of the grid</h2>
+      <p>The scan crosses water until (2, 2), a lone land cell. <code>count = 2</code>. Sink it; its flood fill finds no land neighbours and ends immediately.</p>
+      <p>More water, then (3, 3). <code>count = 3</code>. Sink it, push it, pop it, find (3, 4) is land, sink and push, pop it, nothing more. The scan reaches (3, 4), sees water, and finishes.</p>
+      <div class="callout">Every cell was scanned once and every land cell was pushed once. Final answer: <strong>3</strong>.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 7</div>
+      <h2>The pitfall: diagonals and bounds</h2>
+      <p>On a checkerboard, every <code>'1'</code> is a separate island because none share an edge. Adding the four diagonal directions to the neighbour list would merge them all into one and return 1 instead of 8.</p>
+      <div class="callout warn">Four neighbours, not eight. And check <code>0 &lt;= nr &lt; rows</code> on <em>both</em> sides: in Python, <code>grid[-1]</code> is the last row, so a missing lower-bound check silently wraps around and connects the top edge to the bottom.</div>
+      <p>One more: the grid holds the <em>string</em> <code>'1'</code>. Comparing to the integer <code>1</code> makes every cell look like water and returns 0.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 8</div>
+      <h2>Time and space</h2>
+      <p>The outer scan touches each of the m × n cells once. Across all flood fills, each land cell is sunk and pushed at most once and popped at most once, and each pop examines four neighbours. Total <strong>O(m × n) time</strong>.</p>
+      <p>The stack can hold, in the worst case, a large fraction of a single island, so <strong>O(m × n) space</strong> in the worst case, and no extra memory for the visited set because the grid itself records it.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Extra space</th></tr>
+        <tr><td>Recursive DFS, sink in place</td><td>O(m × n)</td><td>O(m × n) call stack, may overflow</td></tr>
+        <tr><td>Iterative DFS or BFS, sink in place</td><td>O(m × n)</td><td>O(m × n) stack or queue</td></tr>
+        <tr><td>Either, with a visited set</td><td>O(m × n)</td><td>O(m × n) set + stack, grid preserved</td></tr>
+      </table>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 9</div>
+      <h2>The final solution</h2>
+      <p>Sixteen lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li>The two <code>for</code> loops are the scan that visits every cell once.</li>
+        <li><code>if grid[r][c] != "1": continue</code> skips water and already-sunk land.</li>
+        <li><code>count += 1</code> fires once per island, on its first cell.</li>
+        <li><code>grid[r][c] = "0"</code> and <code>stack = [(r, c)]</code> start the flood fill with the seed marked.</li>
+        <li>The <code>while stack</code> loop pops a cell, checks four neighbours with a full bounds test, sinks and pushes each land one.</li>
+        <li><code>return count</code>.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>scan every cell; on unvisited land, count one and flood-fill it away.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>grid · green = land, struck = sunk, blue = exploring, dashed = scan</h3>
+        <div class="grid" id="grid"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>count and stack</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+
+<footer>
+  Source files: <a href="number_of_islands.py">number_of_islands.py</a> · <a href="number_of_islands_annotated.py">number_of_islands_annotated.py</a> · <a href="test_number_of_islands.py">test_number_of_islands.py</a> · <a href="../../md.html?f=medium/010-number-of-islands/notes.md">notes.md</a> · <a href="../../index.html">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def num_islands(grid):",
+    "    rows, cols = len(grid), len(grid[0])",
+    "    count = 0",
+    "    for r in range(rows):",
+    "        for c in range(cols):",
+    "            if grid[r][c] != \"1\":",
+    "                continue",
+    "            count += 1",
+    "            grid[r][c] = \"0\"",
+    "            stack = [(r, c)]",
+    "            while stack:",
+    "                cr, cc = stack.pop()",
+    "                for nr, nc in ((cr + 1, cc), (cr - 1, cc), (cr, cc + 1), (cr, cc - 1)):",
+    "                    if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == \"1\":",
+    "                        grid[nr][nc] = \"0\"",
+    "                        stack.append((nr, nc))",
+    "    return count"
+  ];
+
+  // 1 = land, 0 = water, 2 = sunk (already flood-filled)
+  var G0 = [
+    [1, 1, 0, 0, 0],
+    [1, 1, 0, 0, 0],
+    [0, 0, 1, 0, 0],
+    [0, 0, 0, 1, 1]
+  ];
+  var G1 = [
+    [2, 2, 0, 0, 0],
+    [2, 2, 0, 0, 0],
+    [0, 0, 1, 0, 0],
+    [0, 0, 0, 1, 1]
+  ];
+  var G2 = [
+    [2, 2, 0, 0, 0],
+    [2, 2, 0, 0, 0],
+    [0, 0, 2, 0, 0],
+    [0, 0, 0, 2, 2]
+  ];
+  var CHECKER = [
+    [1, 0, 1, 0, 1],
+    [0, 1, 0, 1, 0],
+    [1, 0, 1, 0, 1]
+  ];
+
+  // Each state describes what the sticky panel shows for one step.
+  // g = grid values, cur = [r, c] being explored (or null), scan = [r, c] of the outer scan (or null).
+  var STATES = {
+    problem: {
+      caption: "Count the groups of orthogonally connected land cells.",
+      g: G0, cur: null, scan: null, chips: [], meta: "Answer: <b>3</b>. Seven land cells, three pieces.", hl: []
+    },
+    naive: {
+      caption: "Counting land cells gives 7, not 3. Local neighbour rules fail on U-shapes.",
+      g: G0, cur: null, scan: null, chips: [["land cells", "7"], ["islands", "3", "found"]],
+      meta: "Connectivity is global: a cell belongs to whatever it can reach.", hl: [],
+      big: "7 ≠ 3", bigNote: "the question is pieces, not area"
+    },
+    reframe: {
+      caption: "Land cells are nodes, orthogonal adjacency is an edge, islands are connected components.",
+      g: G0, cur: [0, 0], scan: null, chips: [["components", "?"]],
+      meta: "Count components: on an unvisited node, count one and traverse everything reachable.", hl: []
+    },
+    idea: {
+      caption: "Scan every cell; on a '1', count it and flood-fill with a stack, sinking cells to '0' as they are pushed.",
+      g: G0, cur: null, scan: [0, 0], chips: [["count", "0", "new"], ["stack", "[]", "new"]],
+      meta: "Sinking is the visited set. Mark on push so nothing is pushed twice.", hl: [5, 6, 7, 8, 9, 13, 14, 15]
+    },
+    t1: {
+      caption: "(0, 0) is land: count = 1. The flood fill sinks (0, 0), (1, 0), (0, 1), (1, 1).",
+      g: [[2, 2, 0, 0, 0], [2, 1, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 1, 1]], cur: [0, 1], scan: [0, 0],
+      chips: [["count", "1", "found"], ["stack", "[(1,0), (1,1)]", "new"]],
+      meta: "Pop (0, 1): neighbour (1, 1) is land → sink, push. Later scan steps see water here.", hl: [10, 11, 12, 13, 14, 15]
+    },
+    t2: {
+      caption: "(2, 2) alone: count = 2. (3, 3) then (3, 4): count = 3. Scan ends.",
+      g: G2, cur: [3, 4], scan: [3, 3], chips: [["count", "3", "found"], ["stack", "[]"]],
+      meta: "Every land cell pushed once, every cell scanned once.", hl: [7, 16],
+      big: "3", bigNote: "each island counted on its first cell only"
+    },
+    pitfall: {
+      caption: "A checkerboard has 8 islands. Adding diagonal neighbours would merge them into 1.",
+      g: CHECKER, cur: null, scan: null, chips: [["4 directions", "8", "found"], ["8 directions", "1"]],
+      meta: "Also: 0 ≤ nr, not just nr &lt; rows, or grid[-1] wraps to the last row.", hl: [12, 13],
+      big: "8, not 1", bigNote: "only edges connect, never corners"
+    },
+    complexity: {
+      caption: "Every cell scanned once; every land cell pushed and popped at most once.",
+      g: G2, cur: null, scan: null, chips: [["cells", "20"], ["pushes", "7"]],
+      meta: "The grid doubles as the visited set, so no extra memory for that.", hl: [3, 4, 10],
+      big: "O(m × n) time · O(m × n) stack worst case", bigNote: "an explicit stack avoids the recursion limit"
+    },
+    final: {
+      caption: "The whole solution.",
+      g: G2, cur: null, scan: null, chips: [["count", "3", "found"]], meta: "",
+      hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var grid = $("grid");
+    grid.style.gridTemplateColumns = "repeat(" + s.g[0].length + ", 1fr)";
+    var html = "";
+    for (var r = 0; r < s.g.length; r++) {
+      for (var c = 0; c < s.g[r].length; c++) {
+        var v = s.g[r][c];
+        var cls = "gc" + (v === 1 ? " land" : v === 2 ? " sunk" : "");
+        if (s.cur && s.cur[0] === r && s.cur[1] === c) cls += " cur";
+        if (s.scan && s.scan[0] === r && s.scan[1] === c) cls += " scan";
+        html += '<div class="' + cls + '">' + (v === 0 ? "0" : "1") + '</div>';
+      }
+    }
+    grid.innerHTML = html;
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.chips.length; k++) {
+        var e = s.chips[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var code = "";
+    for (var l = 0; l < CODE.length; l++) {
+      code += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = code;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

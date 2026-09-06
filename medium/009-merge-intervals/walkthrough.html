@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Merge Intervals Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* merge-intervals additions: intervals drawn as bars on a shared number line */
+  .timeline { position: relative; margin: 6px 0 4px; }
+  .tl-row { position: relative; height: 26px; margin-bottom: 4px; }
+  .tl-bar {
+    position: absolute; top: 3px; height: 20px; border-radius: 5px;
+    background: var(--panel); border: 2px solid var(--line);
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; line-height: 16px; text-align: center;
+    color: var(--ink); white-space: nowrap; overflow: visible; transition: all 0.25s;
+  }
+  .tl-bar.cur { border-color: var(--accent); background: var(--accent-soft); }
+  .tl-bar.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .tl-bar.dim { opacity: 0.4; }
+  .tl-axis { position: relative; height: 16px; border-top: 1px solid var(--line); margin-top: 4px; }
+  .tl-axis span { position: absolute; top: 1px; transform: translateX(-50%); font-size: 0.65rem; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+  .tl-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 6px 0 2px; }
+  .dict .kv.iv { margin-bottom: 4px; }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html">← All walkthroughs</a>
+  <div class="tag">Medium · Intervals · LeetCode #56</div>
+  <h1>Merge Intervals, narrated</h1>
+  <p>Scroll through the thinking, from repeatedly scanning for any overlapping pair to sorting by start and merging in one sweep, with the state of the algorithm shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get a list of closed intervals, each a <code>[start, end]</code> pair, in no particular order. Wherever two intervals overlap, or even just touch, combine them into one. Return the resulting list of separate intervals.</p>
+      <div class="callout">Running example: <code>[[1, 3], [2, 6], [8, 10], [15, 18]]</code>. <code>[1, 3]</code> and <code>[2, 6]</code> overlap, so the answer is <code>[[1, 6], [8, 10], [15, 18]]</code>.</div>
+      <p>The output should be sorted, contain no overlaps, and cover exactly the same points as the input.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: find any overlapping pair and merge it, repeat</h2>
+      <p>Scan all pairs. If two intervals overlap, replace them with their union and start over. Stop when a full scan finds no overlap.</p>
+      <pre class="code"><span class="ln">changed = True</span><span class="ln">while changed:</span><span class="ln">    changed = False</span><span class="ln">    for each pair (a, b):</span><span class="ln">        if a and b overlap:</span><span class="ln">            replace both with [min starts, max ends]</span><span class="ln">            changed = True; break</span></pre>
+      <p style="margin-top:14px">It terminates and it is correct, but each scan is O(n²) and there can be O(n) merges, so it is <strong>O(n³)</strong> in the worst case. The waste: after a merge we forget everything we learned and rescan.</p>
+    </section>
+
+    <section class="step" data-state="sorted">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: sort by start, then only neighbours matter</h2>
+      <p>Sort the intervals by their start. Now picture walking left to right along the number line. When you reach an interval, everything that could overlap the region you are currently covering has to start at or before its end, and because of the sort those intervals are the very next ones in the list.</p>
+      <div class="callout">After sorting, an interval either overlaps the <em>last merged</em> interval or it starts a new one. It can never reach back to an earlier merged interval, because there is a gap in between that it would have had to start inside.</div>
+      <p>So one forward pass is enough, comparing each interval only with the last entry of the output.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: extend or append</h2>
+      <p>Keep an output list <code>merged</code>. For each interval in sorted order:</p>
+      <ul>
+        <li>If <code>merged</code> is non-empty and <code>start ≤ merged[-1].end</code>, they overlap. Extend the last merged interval: <code>merged[-1].end = max(merged[-1].end, end)</code>.</li>
+        <li>Otherwise there is a gap. Append <code>[start, end]</code> as a new interval.</li>
+      </ul>
+      <p>The <code>max</code> is essential: the new interval may end <em>before</em> the current merged end, as in <code>[1, 4]</code> followed by <code>[2, 3]</code>. The <code>≤</code> is what makes touching intervals merge.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the merge</h2>
+      <p><code>[1, 3]</code>: <code>merged</code> is empty, so append it. <code>[2, 6]</code>: 2 ≤ 3, overlap. Extend: <code>merged[-1].end = max(3, 6) = 6</code>. The output now holds <code>[1, 6]</code>.</p>
+      <p>Note that the comparison was against the merged interval's end, 3, and after extending it the end is 6. If a <code>[5, 7]</code> came next it would compare against 6, not 3, and merge too.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: the gaps</h2>
+      <p><code>[8, 10]</code>: 8 ≤ 6 is false. Gap. Append <code>[8, 10]</code>. <code>[15, 18]</code>: 15 ≤ 10 is false. Gap. Append <code>[15, 18]</code>.</p>
+      <p>End of input. <code>merged</code> is <code>[[1, 6], [8, 10], [15, 18]]</code>, and it came out sorted because the input was processed in sorted order.</p>
+      <div class="callout">Four intervals, four comparisons, each against only the last output entry.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 7</div>
+      <h2>The pitfall: overwriting instead of taking the max</h2>
+      <p>Take <code>[[1, 4], [2, 3]]</code>. Sorted order is the same. <code>[1, 4]</code> is appended. <code>[2, 3]</code>: 2 ≤ 4, overlap. If the code writes <code>merged[-1].end = 3</code>, the merged interval shrinks to <code>[1, 3]</code> and the point 4 is lost.</p>
+      <div class="callout warn">Always <code>max(merged[-1].end, end)</code>. A contained interval must leave the outer one unchanged.</div>
+      <p>Two more traps: skipping the sort (<code>[[4, 7], [1, 4]]</code> cannot be merged by a single unsorted pass), and using <code>&lt;</code> instead of <code>≤</code>, which fails to merge <code>[1, 4]</code> with <code>[4, 5]</code>.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 8</div>
+      <h2>Time and space</h2>
+      <p>The sort is <strong>O(n log n)</strong>. The sweep is O(n) with O(1) work per interval, so the sort dominates.</p>
+      <p>The output can hold up to n intervals, so <strong>O(n) space</strong> for the answer, and O(1) extra beyond that apart from what the sort uses internally.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Merge any pair, rescan</td><td>O(n³)</td><td>O(n)</td></tr>
+        <tr><td>Sort by start, one sweep</td><td>O(n log n)</td><td>O(n) output</td></tr>
+      </table>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 9</div>
+      <h2>The final solution</h2>
+      <p>Eight lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>intervals.sort(key=lambda iv: iv[0])</code> orders by start so only the last output entry can overlap.</li>
+        <li><code>if merged and start &lt;= merged[-1][1]</code> is the overlap test, with <code>≤</code> so touching intervals merge.</li>
+        <li><code>merged[-1][1] = max(merged[-1][1], end)</code> extends without ever shrinking.</li>
+        <li><code>merged.append([start, end])</code> starts a new interval on a gap, as a fresh list.</li>
+        <li><code>return merged</code>.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>sort by start, then each interval either extends the last one or starts a new one.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>input (sorted by start) · blue = current interval</h3>
+        <div class="timeline" id="tl-in"></div>
+        <div class="tl-label">merged so far</div>
+        <div class="timeline" id="tl-out"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>merged</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+
+<footer>
+  Source files: <a href="merge_intervals.py">merge_intervals.py</a> · <a href="merge_intervals_annotated.py">merge_intervals_annotated.py</a> · <a href="test_merge_intervals.py">test_merge_intervals.py</a> · <a href="../../md.html?f=medium/009-merge-intervals/notes.md">notes.md</a> · <a href="../../index.html">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def merge(intervals):",
+    "    intervals.sort(key=lambda iv: iv[0])",
+    "    merged = []",
+    "    for start, end in intervals:",
+    "        if merged and start <= merged[-1][1]:",
+    "            merged[-1][1] = max(merged[-1][1], end)",
+    "        else:",
+    "            merged.append([start, end])",
+    "    return merged"
+  ];
+
+  var IN = [[1, 3], [2, 6], [8, 10], [15, 18]];
+  var OUT = [[1, 6], [8, 10], [15, 18]];
+
+  // Each state describes what the sticky panel shows for one step.
+  // inp = input intervals, cur = index of the one being processed, done = how many are consumed,
+  // out = merged list so far (last one marked green), lo/hi = number-line range.
+  var STATES = {
+    problem: {
+      caption: "Combine every overlapping or touching pair into one interval.",
+      inp: IN, cur: -1, done: 0, out: [], lo: 0, hi: 19, meta: "Answer: <b>[1, 6], [8, 10], [15, 18]</b>.", hl: []
+    },
+    brute: {
+      caption: "Brute force scans all pairs for any overlap, merges one, and rescans from scratch.",
+      inp: IN, cur: 0, done: 0, out: [], lo: 0, hi: 19, meta: "Compare [1,3] with [2,6], [8,10], [15,18] … merge one pair, then start over.", hl: [],
+      big: "O(n³)", bigNote: "O(n²) per scan, up to n merges"
+    },
+    sorted: {
+      caption: "Sorted by start, an interval can only overlap the last merged one, never anything earlier.",
+      inp: IN, cur: 2, done: 2, out: [[1, 6]], lo: 0, hi: 19,
+      meta: "[8, 10] starts after 6, so there is a gap. Everything before the gap is finished.", hl: [1]
+    },
+    idea: {
+      caption: "For each interval: extend the last merged one if start ≤ its end, otherwise append.",
+      inp: IN, cur: -1, done: 0, out: [], lo: 0, hi: 19,
+      meta: "max() on the end, ≤ on the test.", hl: [3, 4, 5, 6, 7]
+    },
+    t1: {
+      caption: "[1, 3] is appended. [2, 6]: 2 ≤ 3, so extend the end to max(3, 6) = 6.",
+      inp: IN, cur: 1, done: 1, out: [[1, 6]], lo: 0, hi: 19,
+      meta: "merged[-1] = <b>[1, 6]</b>. Later intervals compare against 6, not 3.", hl: [4, 5]
+    },
+    t2: {
+      caption: "[8, 10]: 8 ≤ 6 is false, append. [15, 18]: 15 ≤ 10 is false, append.",
+      inp: IN, cur: 3, done: 3, out: OUT, lo: 0, hi: 19,
+      meta: "Four comparisons, each against the last output entry only.", hl: [4, 6, 7],
+      big: "3 intervals", bigNote: "[1, 6] · [8, 10] · [15, 18]"
+    },
+    pitfall: {
+      caption: "[[1, 4], [2, 3]]: writing end = 3 instead of max(4, 3) shrinks the interval and loses the point 4.",
+      inp: [[1, 4], [2, 3]], cur: 1, done: 1, out: [[1, 4]], lo: 0, hi: 5,
+      meta: "Correct: merged stays <b>[1, 4]</b>. Overwrite bug: [1, 3].", hl: [5],
+      big: "[1, 4], not [1, 3]", bigNote: "a contained interval must not shrink the outer one"
+    },
+    complexity: {
+      caption: "Sort once, then one linear sweep.",
+      inp: IN, cur: -1, done: 4, out: OUT, lo: 0, hi: 19,
+      meta: "The sweep does O(1) work per interval; the sort dominates.", hl: [1, 3],
+      big: "O(n log n) time · O(n) output", bigNote: "versus O(n³) for merge-and-rescan"
+    },
+    final: {
+      caption: "The whole solution.",
+      inp: IN, cur: -1, done: 4, out: OUT, lo: 0, hi: 19, meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function bar(iv, cls, lo, hi) {
+    var span = hi - lo;
+    var left = ((iv[0] - lo) / span) * 100;
+    var width = Math.max(((iv[1] - iv[0]) / span) * 100, 3);
+    return '<div class="tl-bar ' + cls + '" style="left:' + left + '%;width:' + width + '%">' + iv[0] + '–' + iv[1] + '</div>';
+  }
+
+  function axis(lo, hi) {
+    var html = '<div class="tl-axis">';
+    var step = hi - lo > 10 ? 5 : 1;
+    for (var t = lo; t <= hi; t += step) {
+      html += '<span style="left:' + (((t - lo) / (hi - lo)) * 100) + '%">' + t + '</span>';
+    }
+    return html + '</div>';
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var html = "";
+    for (var i = 0; i < s.inp.length; i++) {
+      var cls = i === s.cur ? "cur" : i < s.done ? "dim" : "";
+      html += '<div class="tl-row">' + bar(s.inp[i], cls, s.lo, s.hi) + '</div>';
+    }
+    $("tl-in").innerHTML = html + axis(s.lo, s.hi);
+
+    if (s.out.length === 0) {
+      $("tl-out").innerHTML = '<div class="tl-row"><span class="empty" style="font-size:0.8rem;color:var(--muted)">nothing merged yet</span></div>';
+      $("dict").innerHTML = '<span class="empty">empty</span>';
+    } else {
+      var row = '<div class="tl-row">';
+      var d = "";
+      for (var k = 0; k < s.out.length; k++) {
+        var last = k === s.out.length - 1;
+        row += bar(s.out[k], last ? "hit" : "", s.lo, s.hi);
+        d += '<span class="kv iv' + (last ? " found" : "") + '">[' + s.out[k][0] + ', ' + s.out[k][1] + ']</span>';
+      }
+      $("tl-out").innerHTML = row + '</div>';
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>
