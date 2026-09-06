@@ -10,12 +10,14 @@ No dependencies. Each problem's test file is a plain script that prints PASS or 
 python3 easy/001-two-sum/test_two_sum.py
 ```
 
+Open `index.html` in a browser for a home page that links to every walkthrough, filterable by pattern.
+
 **Per session:**
 1. Check the **Due for review** list below. Re-solve those first: delete the solution file, keep the tests, write it again from scratch, run the tests.
 2. Take a new problem. The folder is created from `templates/problem/` with only the statement and tests.
 3. Attempt it. Ask for hints before looking at the answer.
 4. After review, fill in the solution, the annotated version, and `notes.md`.
-5. Update the index below and the relevant page in `patterns/`.
+5. Update the index below, the relevant page in `patterns/`, and add a card to `index.html` if a walkthrough was written.
 
 **Confidence scale:** 1 = needed the full answer, 2 = needed a hint, 3 = solved but slow or messy, 4 = clean solve, 5 = could teach it.
 
@@ -60,6 +62,7 @@ _(Problems whose next review date has passed. Updated at the start of each sessi
 ## Layout
 
 ```
+index.html                home page linking to every walkthrough, open in a browser
 easy/NNN-slug/
   README.md               statement, examples, constraints
   <slug>.py               clean interview version, e.g. two_sum.py

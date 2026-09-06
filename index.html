@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DSA Walkthroughs</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --code-bg: #f3f1ec;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --code-bg: #23262d;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+  a { color: var(--accent); }
+
+  header { max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 24px 48px; }
+
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 32px; }
+  .chip {
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+    border-radius: 999px; padding: 4px 14px; font: inherit; font-size: 0.9rem; cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+  .chip .count { color: var(--muted); font-size: 0.8rem; margin-left: 4px; }
+
+  section { margin-bottom: 40px; }
+  section h2 { font-size: 1.1rem; margin: 0 0 4px; }
+  section .sub { color: var(--muted); font-size: 0.95rem; margin: 0 0 16px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .card {
+    display: flex; flex-direction: column; gap: 8px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; text-decoration: none; color: inherit;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
+  }
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
+  .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .card .meta { color: var(--muted); font-size: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase; font-family: ui-monospace, Menlo, monospace; }
+  .card h3 { margin: 0; font-size: 1.2rem; line-height: 1.25; }
+  .card p { margin: 0; color: var(--muted); font-size: 0.95rem; flex: 1; }
+  .card .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 0.85rem; }
+  .pill { background: var(--accent-soft); color: var(--ink); border-radius: 999px; padding: 2px 10px; font-size: 0.8rem; }
+  .card .open { color: var(--accent); font-weight: 600; }
+  .card[hidden] { display: none; }
+
+  .empty {
+    border: 1px dashed var(--line); border-radius: 12px; padding: 24px; color: var(--muted); text-align: center;
+  }
+  .none { color: var(--muted); font-style: italic; }
+
+  footer { max-width: 1100px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.7rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="tag">DSA Practice</div>
+  <h1>Walkthroughs</h1>
+  <p>Scroll-driven narrations of each solution, from the first instinct to the interview answer, with the state of the algorithm shown alongside. Pick a problem or filter by pattern.</p>
+</header>
+
+<main>
+  <div class="filters" id="filters" role="group" aria-label="Filter by pattern">
+    <button class="chip" data-pattern="all" aria-pressed="true">All <span class="count"></span></button>
+    <button class="chip" data-pattern="hash-map" aria-pressed="false">Hash Map <span class="count"></span></button>
+    <button class="chip" data-pattern="hash-set" aria-pressed="false">Hash Set <span class="count"></span></button>
+    <button class="chip" data-pattern="stack" aria-pressed="false">Stack <span class="count"></span></button>
+    <button class="chip" data-pattern="sliding-window" aria-pressed="false">Sliding Window <span class="count"></span></button>
+    <button class="chip" data-pattern="two-pointers" aria-pressed="false">Two Pointers <span class="count"></span></button>
+    <button class="chip" data-pattern="linked-list" aria-pressed="false">Linked List <span class="count"></span></button>
+    <button class="chip" data-pattern="binary-search" aria-pressed="false">Binary Search <span class="count"></span></button>
+    <button class="chip" data-pattern="dynamic-programming" aria-pressed="false">Dynamic Programming <span class="count"></span></button>
+  </div>
+
+  <section id="easy">
+    <h2>Easy</h2>
+    <p class="sub">The easy tier of the Blind 75 and NeetCode 150 lists.</p>
+    <div class="grid">
+
+      <a class="card" href="easy/001-two-sum/walkthrough.html" data-pattern="hash-map">
+        <div class="meta">easy/001 · LeetCode #1</div>
+        <h3>Two Sum</h3>
+        <p>From the obvious brute force to the one-pass hash map.</p>
+        <div class="foot"><span class="pill">Hash Map</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/002-valid-anagram/walkthrough.html" data-pattern="hash-map">
+        <div class="meta">easy/002 · LeetCode #242</div>
+        <h3>Valid Anagram</h3>
+        <p>From sorting both strings to a single pass of character counting.</p>
+        <div class="foot"><span class="pill">Hash Map</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/003-contains-duplicate/walkthrough.html" data-pattern="hash-set">
+        <div class="meta">easy/003 · LeetCode #217</div>
+        <h3>Contains Duplicate</h3>
+        <p>From all-pairs comparison through sorting to the one-pass hash set.</p>
+        <div class="foot"><span class="pill">Hash Set</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/004-valid-parentheses/walkthrough.html" data-pattern="stack">
+        <div class="meta">easy/004 · LeetCode #20</div>
+        <h3>Valid Parentheses</h3>
+        <p>From counting brackets to the one-pass stack.</p>
+        <div class="foot"><span class="pill">Stack</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/005-best-time-to-buy-and-sell-stock/walkthrough.html" data-pattern="sliding-window">
+        <div class="meta">easy/005 · LeetCode #121</div>
+        <h3>Best Time to Buy and Sell Stock</h3>
+        <p>From the obvious brute force to the one-pass minimum tracker.</p>
+        <div class="foot"><span class="pill">Sliding Window</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/006-valid-palindrome/walkthrough.html" data-pattern="two-pointers">
+        <div class="meta">easy/006 · LeetCode #125</div>
+        <h3>Valid Palindrome</h3>
+        <p>From the cleaned copy you reach for first to two pointers that need no copy at all.</p>
+        <div class="foot"><span class="pill">Two Pointers</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/007-reverse-linked-list/walkthrough.html" data-pattern="linked-list">
+        <div class="meta">easy/007 · LeetCode #206</div>
+        <h3>Reverse Linked List</h3>
+        <p>From copying the values into an array to the in-place three-pointer rewiring.</p>
+        <div class="foot"><span class="pill">Linked List</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/008-merge-two-sorted-lists/walkthrough.html" data-pattern="linked-list">
+        <div class="meta">easy/008 · LeetCode #21</div>
+        <h3>Merge Two Sorted Lists</h3>
+        <p>From dumping the values into a list and sorting to the one-pass merge with a dummy head.</p>
+        <div class="foot"><span class="pill">Linked List</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/009-binary-search/walkthrough.html" data-pattern="binary-search">
+        <div class="meta">easy/009 · LeetCode #704</div>
+        <h3>Binary Search</h3>
+        <p>From the linear scan to the loop that throws away half the array per comparison.</p>
+        <div class="foot"><span class="pill">Binary Search</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/010-climbing-stairs/walkthrough.html" data-pattern="dynamic-programming">
+        <div class="meta">easy/010 · LeetCode #70</div>
+        <h3>Climbing Stairs</h3>
+        <p>From the exponential recursion to a loop with two variables.</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+    </div>
+    <p class="none" hidden>No easy walkthroughs use this pattern yet.</p>
+  </section>
+
+  <section id="medium">
+    <h2>Medium</h2>
+    <p class="sub">Numbering restarts per difficulty.</p>
+    <div class="empty">No medium walkthroughs yet. Add a card here when the first one lands in <code>medium/</code>.</div>
+  </section>
+</main>
+
+<footer>
+  Problem index, review schedule, and pattern notes live in <a href="README.md">README.md</a>. Add a card above whenever a new <code>walkthrough.html</code> is written.
+</footer>
+
+<script>
+  (function () {
+    var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
+    var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+
+    chips.forEach(function (chip) {
+      var p = chip.dataset.pattern;
+      var n = p === 'all' ? cards.length : cards.filter(function (c) { return c.dataset.pattern === p; }).length;
+      chip.querySelector('.count').textContent = n;
+    });
+
+    function apply(pattern) {
+      chips.forEach(function (chip) {
+        chip.setAttribute('aria-pressed', chip.dataset.pattern === pattern ? 'true' : 'false');
+      });
+      cards.forEach(function (card) {
+        card.hidden = pattern !== 'all' && card.dataset.pattern !== pattern;
+      });
+      document.querySelectorAll('section').forEach(function (sec) {
+        var none = sec.querySelector('.none');
+        if (!none) return;
+        var visible = sec.querySelectorAll('.card:not([hidden])').length;
+        none.hidden = visible > 0;
+      });
+      try {
+        if (pattern === 'all') history.replaceState(null, '', location.pathname);
+        else history.replaceState(null, '', '#' + pattern);
+      } catch (e) {}
+    }
+
+    chips.forEach(function (chip) {
+      chip.addEventListener('click', function () { apply(chip.dataset.pattern); });
+    });
+
+    var initial = location.hash.replace('#', '');
+    if (chips.some(function (c) { return c.dataset.pattern === initial; })) apply(initial);
+  })();
+</script>
+
+</body>
+</html>
