@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LRU Cache Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* lru additions: the recency list runs head → tail with double arrows, the map shows key → node */
+  .array { align-items: center; gap: 5px; flex-wrap: wrap; }
+  .arrow { flex: 0 0 auto; color: var(--muted); font-size: 0.9rem; }
+  .sent { flex: 0 0 auto; color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.78rem; border: 1px dashed var(--line); border-radius: 6px; padding: 4px 6px; }
+  .cell { flex: 0 0 auto; min-width: 52px; padding: 6px 8px 4px; font-size: 0.95rem; }
+  .cell.gone { opacity: 0.35; text-decoration: line-through; }
+  .dict .kv.miss { border-color: var(--warn); background: var(--warn-soft); }
+  .oplog { font-family: ui-monospace, Menlo, monospace; font-size: 0.82rem; color: var(--muted); margin-top: 6px; }
+  .oplog b { color: var(--ink); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html">← All walkthroughs</a>
+  <div class="tag">Medium · Linked List · LeetCode #146</div>
+  <h1>LRU Cache, narrated</h1>
+  <p>Scroll through the thinking, from a dictionary with timestamps to a hash map pointing into a doubly linked list ordered by recency, with the state of the cache shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Build a cache with a fixed capacity. <code>get(key)</code> returns the stored value or −1. <code>put(key, value)</code> stores or updates. When a <code>put</code> would exceed the capacity, throw out the entry that has gone longest without being touched.</p>
+      <p>Both a <code>get</code> hit and a <code>put</code> count as touching the key. And both operations must be <strong>O(1)</strong>. That last requirement is the whole problem.</p>
+      <div class="callout">Running example, capacity 2: <code>put(1,1)</code>, <code>put(2,2)</code>, <code>get(1) → 1</code>, <code>put(3,3)</code> evicts 2, <code>get(2) → −1</code>, <code>put(4,4)</code> evicts 1, <code>get(1) → −1</code>, <code>get(3) → 3</code>, <code>get(4) → 4</code>.</div>
+    </section>
+
+    <section class="step" data-state="naive">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: a dictionary plus timestamps</h2>
+      <p>Keep <code>key → (value, last_used)</code> in a dictionary and a counter that ticks on every operation. <code>get</code> and <code>put</code> update the timestamp. On eviction, scan every entry for the smallest timestamp.</p>
+      <pre class="code"><span class="ln">def put(self, key, value):</span><span class="ln">    if key not in self.d and len(self.d) == self.cap:</span><span class="ln">        oldest = min(self.d, key=lambda k: self.d[k][1])</span><span class="ln">        del self.d[oldest]</span><span class="ln">    self.d[key] = (value, self.tick()); ...</span></pre>
+      <p style="margin-top:14px"><code>get</code> is O(1), but that <code>min</code> scan makes eviction <strong>O(n)</strong>. With 200,000 operations on a full cache of 3,000 entries that is hundreds of millions of comparisons. The requirement says O(1) for both.</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: keep the entries in recency order</h2>
+      <p>The scan exists because the dictionary has no order. Suppose instead the entries sit in a sequence sorted by last use: most recent at the front, least recent at the back. Then the eviction victim is always <em>the last element</em>, no search needed.</p>
+      <p>Maintaining that order costs one operation per touch: move the touched entry to the front. So we need a sequence that supports, in O(1):</p>
+      <ul>
+        <li>remove an element from the middle,</li>
+        <li>insert at the front,</li>
+        <li>remove from the back.</li>
+      </ul>
+      <p>A Python list fails the first one: removing from the middle is O(n). A <strong>doubly linked list</strong> does all three in O(1), <em>provided you already hold a reference to the node</em>.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: the dictionary points at nodes</h2>
+      <p>Pair the two structures. The dictionary maps <code>key → node</code>, so a lookup lands directly on the node's position in the recency list. Unlink it (its <code>prev</code> and <code>next</code> are right there), push it to the front, done. The list gives order; the dictionary gives the "where is it" the list cannot.</p>
+      <ul>
+        <li>Two <strong>sentinel</strong> nodes, <code>head</code> and <code>tail</code>, never removed. The most recent real node is <code>head.next</code>, the least recent is <code>tail.prev</code>, and no insert or unlink ever has to check for <code>None</code>.</li>
+        <li>Each node stores its <strong>key</strong> as well as its value, so when <code>tail.prev</code> is evicted we can also <code>del nodes[key]</code>.</li>
+        <li>Two helpers, <code>_unlink</code> and <code>_push_front</code>, and every operation is a short composition of them.</li>
+      </ul>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: fill the cache, then a hit</h2>
+      <p><code>put(1,1)</code>: new key, size 0 &lt; 2, create node, index it, push front. List: <code>1</code>. <code>put(2,2)</code>: same. List: <code>2 → 1</code>, with 1 now at the back.</p>
+      <p><code>get(1)</code>: dictionary hit. Unlink node 1 from the back, push it to the front. List: <code>1 → 2</code>. Return 1. The read reordered the list, which is exactly the point: 1 is now safe, 2 is the next victim.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: eviction</h2>
+      <p><code>put(3,3)</code>: new key, and the size is already 2. <code>tail.prev</code> is node 2. Unlink it and delete key 2 from the dictionary, using the key stored on the node. Then create node 3 and push it front. List: <code>3 → 1</code>.</p>
+      <p><code>get(2)</code> misses: −1. <code>put(4,4)</code> evicts 1 the same way. List: <code>4 → 3</code>. <code>get(1)</code> → −1, <code>get(3)</code> → 3 (list becomes <code>3 → 4</code>), <code>get(4)</code> → 4 (list becomes <code>4 → 3</code>).</p>
+      <div class="callout">Every operation touched a constant number of pointers and one dictionary entry. Nothing was scanned.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 7</div>
+      <h2>The pitfall: updating an existing key</h2>
+      <p><code>put</code> on a key that is already present must <em>update in place</em>: change the node's value, move it to the front, and return. It must not create a second node, and it must not run the eviction check, because the size does not change.</p>
+      <div class="callout warn">Check <code>key in nodes</code> <em>before</em> the capacity check. Evict first and you can throw out a live entry to make room for an update that needed no room. Insert a fresh node and the dictionary points at the new one while the old one lingers in the list, so the size count is wrong forever.</div>
+      <p>Two more: a <code>get</code> hit that forgets to move the node to the front lets hot keys get evicted, and a node without a stored key cannot be removed from the dictionary when it falls off the tail.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 8</div>
+      <h2>Time and space</h2>
+      <p><code>get</code>: one dictionary lookup, one unlink (four pointer writes), one push-front (four pointer writes). <code>put</code>: the same plus at most one eviction, which is another unlink and a dictionary delete. <strong>O(1) for both.</strong></p>
+      <p>One node and one dictionary entry per cached key: <strong>O(capacity) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>get</th><th>put</th><th>Space</th></tr>
+        <tr><td>Dictionary + timestamps, scan to evict</td><td>O(1)</td><td>O(n)</td><td>O(n)</td></tr>
+        <tr><td>Dictionary + Python list for order</td><td>O(n)</td><td>O(n)</td><td>O(n)</td></tr>
+        <tr><td>Dictionary → doubly linked list nodes</td><td>O(1)</td><td>O(1)</td><td>O(n)</td></tr>
+      </table>
+      <p>Python's <code>OrderedDict</code> is this exact structure under the hood, with <code>move_to_end</code> and <code>popitem(last=False)</code>. Mention it, then show you can build it.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 9</div>
+      <h2>The final solution</h2>
+      <p>About forty lines, but only four ideas.</p>
+      <ul>
+        <li><code>Node</code> holds <code>key</code>, <code>val</code>, <code>prev</code>, <code>next</code>; the key is there for eviction.</li>
+        <li><code>head</code> and <code>tail</code> sentinels remove every empty-list special case.</li>
+        <li><code>_unlink</code> and <code>_push_front</code> are the only pointer surgery; <code>get</code> and <code>put</code> compose them.</li>
+        <li><code>put</code> checks "already present" first, then "full", then inserts.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>the map finds the node, the list remembers the order, and the victim is always the node before the tail.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>recency list · head (most recent) → tail (least recent)</h3>
+        <div class="array" id="list"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>nodes · key → value</h3>
+        <div class="dict" id="dict"></div>
+        <div class="oplog" id="oplog"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+
+<footer>
+  Source files: <a href="lru_cache.py">lru_cache.py</a> · <a href="lru_cache_annotated.py">lru_cache_annotated.py</a> · <a href="test_lru_cache.py">test_lru_cache.py</a> · <a href="../../md.html?f=medium/011-lru-cache/notes.md">notes.md</a> · <a href="../../index.html">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class LRUCache:",
+    "    def __init__(self, capacity):",
+    "        self.capacity = capacity",
+    "        self.nodes = {}",
+    "        self.head = Node()",
+    "        self.tail = Node()",
+    "        self.head.next = self.tail",
+    "        self.tail.prev = self.head",
+    "",
+    "    def _unlink(self, node):",
+    "        node.prev.next = node.next",
+    "        node.next.prev = node.prev",
+    "",
+    "    def _push_front(self, node):",
+    "        node.prev = self.head",
+    "        node.next = self.head.next",
+    "        self.head.next.prev = node",
+    "        self.head.next = node",
+    "",
+    "    def get(self, key):",
+    "        if key not in self.nodes:",
+    "            return -1",
+    "        node = self.nodes[key]",
+    "        self._unlink(node)",
+    "        self._push_front(node)",
+    "        return node.val",
+    "",
+    "    def put(self, key, value):",
+    "        if key in self.nodes:",
+    "            node = self.nodes[key]",
+    "            node.val = value",
+    "            self._unlink(node)",
+    "            self._push_front(node)",
+    "            return",
+    "        if len(self.nodes) == self.capacity:",
+    "            lru = self.tail.prev",
+    "            self._unlink(lru)",
+    "            del self.nodes[lru.key]",
+    "        node = Node(key, value)",
+    "        self.nodes[key] = node",
+    "        self._push_front(node)"
+  ];
+
+  // Each state describes what the sticky panel shows for one step.
+  // list = [key, value, cls] nodes from head to tail; map = [key, value, cls] chips; op = the operation shown.
+  var STATES = {
+    problem: {
+      caption: "A fixed-size cache: get and put in O(1), evict the least recently used key when full.",
+      list: [], map: [], op: "capacity = 2", meta: "The eviction rule is what makes O(1) hard.", hl: []
+    },
+    naive: {
+      caption: "Dictionary with timestamps: get is O(1), but eviction scans every entry for the oldest.",
+      list: [], map: [["1", "(1, t=3)", ""], ["2", "(2, t=2)", "miss"]], op: "put(3, 3) → min over all timestamps → evict 2",
+      meta: "The scan is O(n) per eviction. The requirement is O(1).", hl: [],
+      big: "O(n) put", bigNote: "the dictionary has no order to exploit"
+    },
+    reframe: {
+      caption: "Keep entries ordered by last use. The victim is always the last one, no search.",
+      list: [["1", "1", "hit"], ["2", "2", ""]], map: [], op: "most recent at the front, least recent at the back",
+      meta: "Needs O(1) remove-from-middle, insert-at-front, remove-from-back: a doubly linked list.", hl: []
+    },
+    idea: {
+      caption: "The dictionary maps key → node, so a lookup lands on the node's place in the list.",
+      list: [], map: [], op: "head ⇄ tail sentinels, nodes store their key",
+      meta: "Unlink + push_front is a move-to-front in eight pointer writes.", hl: [3, 4, 5, 6, 7, 9, 10, 11, 13, 14, 15, 16, 17]
+    },
+    t1: {
+      caption: "put(1,1), put(2,2), then get(1): the hit moves 1 to the front, so 2 is now the eviction candidate.",
+      list: [["1", "1", "cur"], ["2", "2", ""]], map: [["1", "node(1)", "new"], ["2", "node(2)", ""]], op: "get(1) → <b>1</b>",
+      meta: "Lookup node 1, unlink it from the back, push it front.", hl: [19, 20, 21, 22, 23, 24, 25]
+    },
+    t2: {
+      caption: "put(3,3) on a full cache: unlink tail.prev (node 2), delete key 2, insert 3 at the front.",
+      list: [["3", "3", "cur"], ["1", "1", ""], ["2", "2", "gone"]], map: [["3", "node(3)", "new"], ["1", "node(1)", ""], ["2", "evicted", "miss"]], op: "put(3, 3) evicts 2 · get(2) → <b>−1</b>",
+      meta: "lru.key is what lets us delete the dictionary entry.", hl: [34, 35, 36, 37, 38, 39, 40],
+      big: "O(1) eviction", bigNote: "the victim is always tail.prev"
+    },
+    pitfall: {
+      caption: "put on an existing key updates in place and moves it front. It never evicts and never adds a node.",
+      list: [["1", "100", "cur"], ["2", "2", ""]], map: [["1", "node(1) val 100", "new"], ["2", "node(2)", ""]], op: "put(1, 100) on a full cache of {1, 2}",
+      meta: "Check <b>key in nodes</b> before the capacity check, or 2 is wrongly evicted.", hl: [28, 29, 30, 31, 32, 33],
+      big: "update ≠ insert", bigNote: "size unchanged, so no eviction"
+    },
+    complexity: {
+      caption: "Every operation is one dictionary access plus a constant number of pointer writes.",
+      list: [["4", "4", ""], ["3", "3", ""]], map: [["4", "node(4)", ""], ["3", "node(3)", ""]], op: "after put(4,4), get(3), get(4)",
+      meta: "One node and one map entry per cached key.", hl: [9, 10, 11, 13, 14, 15, 16, 17],
+      big: "O(1) get · O(1) put · O(capacity) space", bigNote: "versus O(n) eviction with a timestamp scan"
+    },
+    final: {
+      caption: "The whole solution.",
+      list: [["4", "4", ""], ["3", "3", ""]], map: [["4", "node(4)", ""], ["3", "node(3)", ""]], op: "", meta: "",
+      hl: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 24, 25, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+    $("oplog").innerHTML = s.op;
+
+    var html = '<span class="sent">head</span>';
+    if (s.list.length === 0) {
+      html += '<span class="arrow">⇄</span><span class="sent">tail</span> <span class="empty" style="color:var(--muted);font-size:0.85rem">&nbsp;empty</span>';
+    } else {
+      for (var i = 0; i < s.list.length; i++) {
+        var n = s.list[i];
+        html += '<span class="arrow">⇄</span><div class="cell' + (n[2] ? " " + n[2] : "") + '">' + n[0] + '<span class="idx">val ' + n[1] + '</span></div>';
+      }
+      html += '<span class="arrow">⇄</span><span class="sent">tail</span>';
+    }
+    $("list").innerHTML = html;
+
+    if (s.map.length === 0) {
+      $("dict").innerHTML = '<span class="empty">empty</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.map.length; k++) {
+        var e = s.map[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " → " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + (CODE[l] === "" ? " " : CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;")) + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

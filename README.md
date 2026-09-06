@@ -49,6 +49,8 @@ Problems are chosen by interview frequency: the easy and medium tiers of the Bli
 | medium/008 | [Coin Change](medium/008-coin-change/) | Medium | [dynamic-programming](patterns/dynamic-programming.md) | - | - | not yet solved |
 | medium/009 | [Merge Intervals](medium/009-merge-intervals/) | Medium | [intervals](patterns/intervals.md) | - | - | not yet solved |
 | medium/010 | [Number of Islands](medium/010-number-of-islands/) | Medium | [graph](patterns/graph.md) | - | - | not yet solved |
+| medium/011 | [LRU Cache](medium/011-lru-cache/) | Medium | [linked-list](patterns/linked-list.md) | - | - | not yet solved |
+| medium/012 | [Longest Palindromic Substring](medium/012-longest-palindromic-substring/) | Medium | [two-pointers](patterns/two-pointers.md) | - | - | not yet solved |
 
 ## Due for review
 
@@ -64,8 +66,8 @@ _(Problems whose next review date has passed. Updated at the start of each sessi
 | [hash-set](patterns/hash-set.md) | easy/003 |
 | [stack](patterns/stack.md) | easy/004 |
 | [sliding-window](patterns/sliding-window.md) | easy/005, medium/003 |
-| [two-pointers](patterns/two-pointers.md) | easy/006, medium/004, medium/005 |
-| [linked-list](patterns/linked-list.md) | easy/007, easy/008, medium/006 |
+| [two-pointers](patterns/two-pointers.md) | easy/006, medium/004, medium/005, medium/012 |
+| [linked-list](patterns/linked-list.md) | easy/007, easy/008, medium/006, medium/011 |
 | [binary-search](patterns/binary-search.md) | easy/009 |
 | [dynamic-programming](patterns/dynamic-programming.md) | easy/010, medium/007, medium/008 |
 | [prefix-sum](patterns/prefix-sum.md) | medium/002 |

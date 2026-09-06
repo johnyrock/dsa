@@ -36,6 +36,7 @@ return dummy.next
 | [easy/007 Reverse Linked List](../easy/007-reverse-linked-list/) | Easy | three pointers, save next first |
 | [easy/008 Merge Two Sorted Lists](../easy/008-merge-two-sorted-lists/) | Easy | dummy head, pick the smaller head, attach the remainder |
 | [medium/006 Add Two Numbers](../medium/006-add-two-numbers/) | Medium | dummy head, walk both lists with a carry, loop while anything is left |
+| [medium/011 LRU Cache](../medium/011-lru-cache/) | Medium | dict of key -> node into a doubly linked list with head/tail sentinels; move to front on use, evict tail.prev |
 
 ## Common mistakes
 
@@ -44,3 +45,4 @@ return dummy.next
 - Forgetting to attach the leftover tail after one list runs out.
 - Not handling an empty list or a single node.
 - Looping `while l1 and l2` when the loop should run while *either* has nodes (or a carry is pending).
+- In LRU Cache, a singly linked list. O(1) unlink needs `prev`, and sentinels remove every empty-list special case.

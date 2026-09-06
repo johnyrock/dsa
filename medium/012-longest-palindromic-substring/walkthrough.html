@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Longest Palindromic Substring Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* palindrome additions: the centre is blue, the confirmed palindrome is green, the failing pair is amber */
+  .cell.pal { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.stop { border-color: var(--warn); background: var(--warn-soft); }
+  .gap { flex: 0 0 6px; align-self: stretch; border-radius: 3px; }
+  .gap.cur { background: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html">← All walkthroughs</a>
+  <div class="tag">Medium · Two Pointers · LeetCode #5</div>
+  <h1>Longest Palindromic Substring, narrated</h1>
+  <p>Scroll through the thinking, from testing every substring to expanding outward from each of the 2n − 1 centres, with the state of the algorithm shown alongside.</p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get a string. Return the longest <em>contiguous</em> piece of it that reads the same forwards and backwards. Ties can be broken any way you like.</p>
+      <div class="callout">Running example: <code>s = "babad"</code>. The answer is <code>"bab"</code>, and <code>"aba"</code> is equally correct.</div>
+      <p>A single character is a palindrome, so for a non-empty string the answer is never empty. The interesting part is finding the long ones without checking every substring.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: test every substring</h2>
+      <p>For every start and every end, check whether that slice is a palindrome, and keep the longest that passes.</p>
+      <pre class="code"><span class="ln">best = ""</span><span class="ln">for i in range(n):</span><span class="ln">    for j in range(i, n):</span><span class="ln">        sub = s[i:j + 1]</span><span class="ln">        if sub == sub[::-1] and len(sub) &gt; len(best):</span><span class="ln">            best = sub</span></pre>
+      <p style="margin-top:14px">There are n² / 2 substrings and each palindrome check is O(n), so this is <strong>O(n³)</strong>. At n = 1000 that is on the order of a hundred million character comparisons, and most of them re-check the same inner characters over and over.</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: every palindrome has a centre</h2>
+      <p>A palindrome is symmetric, so it has a middle. For odd length the middle is a character: <code>"bab"</code> is centred on the <code>a</code>. For even length the middle is the gap between two characters: <code>"bb"</code> in <code>"cbbd"</code> is centred between the two b's.</p>
+      <p>In a string of length n there are n character-centres and n − 1 gap-centres, so <strong>2n − 1 centres</strong> in total. Instead of choosing a start and an end, choose a centre and grow outward.</p>
+      <div class="callout">If <code>s[left+1 .. right-1]</code> is a palindrome and <code>s[left] == s[right]</code>, then <code>s[left .. right]</code> is a palindrome too. Each outward step reuses everything already confirmed.</div>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: expand around each centre</h2>
+      <p>For each index <code>centre</code>, run two expansions: one starting with <code>left = right = centre</code> (odd length) and one with <code>left = centre, right = centre + 1</code> (even length). In each, move the pointers apart while both are in bounds and <code>s[left] == s[right]</code>.</p>
+      <p>When the loop stops, the pointers have gone one step too far on each side, so the palindrome is <code>s[left+1 : right]</code> and its length is <code>right − left − 1</code>. Compare that with the best so far, remembering only a start and a length, and slice once at the very end.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: centre 1, the first "a"</h2>
+      <p>Odd expansion from index 1: <code>left = right = 1</code>, <code>s[1] == s[1]</code>, so step out to 0 and 2. <code>s[0] = b</code> and <code>s[2] = b</code> match, step out to −1 and 3. Now <code>left</code> is out of bounds, stop.</p>
+      <p>Length <code>3 − (−1) − 1 = 3</code>, start <code>−1 + 1 = 0</code>. That is <code>"bab"</code>, and <code>best_len</code> becomes 3.</p>
+      <p>The even expansion from the same centre compares <code>s[1] = a</code> with <code>s[2] = b</code>, which fails immediately: length <code>2 − 1 − 1 = 0</code>, nothing to record.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: centre 2, the middle "b"</h2>
+      <p>Odd expansion from index 2: <code>s[1] = a</code> and <code>s[3] = a</code> match, step out. <code>s[0] = b</code> and <code>s[4] = d</code> do not. Stop with <code>left = 0, right = 4</code>. Length <code>4 − 0 − 1 = 3</code>, which is <code>"aba"</code>.</p>
+      <p>3 is not greater than the current best of 3, so <code>"bab"</code> is kept. The remaining centres produce nothing longer. Return <strong><code>"bab"</code></strong>.</p>
+      <div class="callout">The even expansions all fail on the first comparison in this string, which is why there is no even-length palindrome in <code>"babad"</code>.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 7</div>
+      <h2>The pitfall: skipping the even centres</h2>
+      <p>Take <code>s = "cbbd"</code>. Every odd expansion stops at length 1: no character has matching neighbours on both sides. The answer <code>"bb"</code> is centred on the <em>gap</em> between indices 1 and 2, and only the even expansion with <code>left = 1, right = 2</code> finds it.</p>
+      <div class="callout warn">Two expansions per index, not one. Drop the even one and every even-length palindrome is missed. The other classic slip is <code>right − left + 1</code> for the length, which is off by two because the pointers have already overshot.</div>
+      <p>Check bounds <em>before</em> comparing characters. In Python <code>s[-1]</code> silently reads the last character instead of raising, which can make a palindrome appear to wrap around the string.</p>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 8</div>
+      <h2>Time and space</h2>
+      <p>2n − 1 centres, and an expansion from any of them takes at most n/2 steps: <strong>O(n²) time</strong>. In practice most expansions stop after one or two comparisons, so it is fast.</p>
+      <p>Two pointers, a start and a length: <strong>O(1) space</strong>. The final slice is the output.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Every substring, check each</td><td>O(n³)</td><td>O(1)</td></tr>
+        <tr><td>DP table is_pal[i][j]</td><td>O(n²)</td><td>O(n²)</td></tr>
+        <tr><td>Expand around centre</td><td>O(n²)</td><td>O(1)</td></tr>
+        <tr><td>Manacher's algorithm</td><td>O(n)</td><td>O(n)</td></tr>
+      </table>
+      <p>Expand-around-centre is the expected interview answer. Manacher's is worth naming, rarely worth writing.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 9</div>
+      <h2>The final solution</h2>
+      <p>Eleven lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>best_start, best_len = 0, 0</code> records the answer without slicing until the end.</li>
+        <li><code>for centre in range(len(s))</code> visits every character-centre.</li>
+        <li><code>for left, right in ((centre, centre), (centre, centre + 1))</code> runs the odd and even expansions.</li>
+        <li>The <code>while</code> loop expands with bounds checked first.</li>
+        <li><code>length = right - left - 1</code> corrects for the overshoot.</li>
+        <li><code>return s[best_start:best_start + best_len]</code>.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>every palindrome has a centre; try all 2n − 1 of them and grow outward.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>s · blue = centre, green = confirmed palindrome, amber = mismatch</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>pointers and best</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+
+<footer>
+  Source files: <a href="longest_palindromic_substring.py">longest_palindromic_substring.py</a> · <a href="longest_palindromic_substring_annotated.py">longest_palindromic_substring_annotated.py</a> · <a href="test_longest_palindromic_substring.py">test_longest_palindromic_substring.py</a> · <a href="../../md.html?f=medium/012-longest-palindromic-substring/notes.md">notes.md</a> · <a href="../../index.html">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "def longest_palindrome(s):",
+    "    best_start, best_len = 0, 0",
+    "    for centre in range(len(s)):",
+    "        for left, right in ((centre, centre), (centre, centre + 1)):",
+    "            while left >= 0 and right < len(s) and s[left] == s[right]:",
+    "                left -= 1",
+    "                right += 1",
+    "            length = right - left - 1",
+    "            if length > best_len:",
+    "                best_start, best_len = left + 1, length",
+    "    return s[best_start:best_start + best_len]"
+  ];
+
+  var S = "babad".split("");
+
+  // Each state describes what the sticky panel shows for one step.
+  // centre = index of the centre character (-1 = none), gapAfter = index whose right gap is the centre (-1 = none),
+  // pal = [lo, hi] inclusive range confirmed as a palindrome (null = none), stop = indices of the failing pair.
+  var STATES = {
+    problem: {
+      caption: "Longest contiguous piece that reads the same both ways.",
+      s: S, centre: -1, gapAfter: -1, pal: null, stop: [], chips: [], meta: "Answer: <b>\"bab\"</b> (or \"aba\").", hl: []
+    },
+    brute: {
+      caption: "Brute force slices every substring and reverses it to check.",
+      s: S, centre: -1, gapAfter: -1, pal: [0, 3], stop: [], chips: [], meta: "s[0:4] = \"baba\" → reversed \"abab\" → no. Then s[0:5], s[1:2], …", hl: [],
+      big: "O(n³)", bigNote: "n² / 2 substrings, O(n) check each"
+    },
+    reframe: {
+      caption: "Every palindrome has a centre: a character (odd length) or a gap (even length). 2n − 1 centres in all.",
+      s: S, centre: 1, gapAfter: -1, pal: [0, 2], stop: [], chips: [["centres", "5 characters + 4 gaps = 9"]],
+      meta: "\"bab\" is centred on the a at index 1.", hl: []
+    },
+    idea: {
+      caption: "From each centre, push two pointers outward while the characters match.",
+      s: S, centre: 2, gapAfter: -1, pal: null, stop: [], chips: [["left", "2", "new"], ["right", "2", "new"], ["best_len", "0"]],
+      meta: "Two runs per index: (centre, centre) and (centre, centre + 1).", hl: [2, 3, 4, 5, 6]
+    },
+    t1: {
+      caption: "Centre 1, odd: a matches a, then b matches b, then left goes out of bounds. Length 3 − (−1) − 1 = 3.",
+      s: S, centre: 1, gapAfter: -1, pal: [0, 2], stop: [], chips: [["left", "−1"], ["right", "3"], ["length", "3"], ["best", "\"bab\"", "found"]],
+      meta: "best_start = left + 1 = <b>0</b>, best_len = <b>3</b>.", hl: [4, 5, 6, 7, 8, 9]
+    },
+    t2: {
+      caption: "Centre 2, odd: a and a match, then b and d do not. Length 4 − 0 − 1 = 3, a tie, so \"bab\" is kept.",
+      s: S, centre: 2, gapAfter: -1, pal: [1, 3], stop: [0, 4], chips: [["left", "0"], ["right", "4"], ["length", "3"], ["best", "\"bab\"", "found"]],
+      meta: "3 &gt; 3 is false. No later centre beats it.", hl: [4, 7, 8],
+      big: "\"bab\"", bigNote: "found from the centre at index 1"
+    },
+    pitfall: {
+      caption: "s = \"cbbd\": only the even expansion between indices 1 and 2 finds \"bb\". Odd centres all stop at length 1.",
+      s: "cbbd".split(""), centre: -1, gapAfter: 1, pal: [1, 2], stop: [0, 3], chips: [["left", "0"], ["right", "3"], ["length", "3 − 0 − 1 = 2"], ["best", "\"bb\"", "found"]],
+      meta: "Without the (centre, centre + 1) run the answer would wrongly be a single character.", hl: [3, 7],
+      big: "\"bb\"", bigNote: "even-length palindromes live on the gaps"
+    },
+    complexity: {
+      caption: "2n − 1 centres, each expansion at most n/2 steps, two pointers of state.",
+      s: S, centre: -1, gapAfter: -1, pal: [0, 2], stop: [], chips: [["best", "\"bab\""]],
+      meta: "Most expansions fail on the first comparison, so the constant is small.", hl: [2, 3, 4],
+      big: "O(n²) time · O(1) space", bigNote: "versus O(n³) for checking every substring"
+    },
+    final: {
+      caption: "The whole solution.",
+      s: S, centre: -1, gapAfter: -1, pal: [0, 2], stop: [], chips: [["best", "\"bab\"", "found"]], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.s.length; i++) {
+      var cls = "cell";
+      if (i === s.centre) cls += " cur";
+      else if (s.stop.indexOf(i) !== -1) cls += " stop";
+      else if (s.pal && i >= s.pal[0] && i <= s.pal[1]) cls += " pal";
+      arr += '<div class="' + cls + '">' + s.s[i] + '<span class="idx">' + i + '</span></div>';
+      if (i < s.s.length - 1) arr += '<div class="gap' + (i === s.gapAfter ? " cur" : "") + '"></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.chips.length; k++) {
+        var e = s.chips[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>
