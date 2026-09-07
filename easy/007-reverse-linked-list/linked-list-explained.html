@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linked Lists, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+
+  /* --- node diagrams --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.reversed { border-color: var(--accent); }
+  .node.reversed .val { background: var(--accent-soft); }
+  .node.null {
+    flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted);
+    padding: 10px 8px; font-size: 0.9rem;
+  }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+  .label-row { display: flex; gap: 0; margin-top: -10px; margin-bottom: 22px; flex-wrap: wrap; }
+  .label {
+    flex-shrink: 0; font-size: 0.78rem; color: var(--accent); font-weight: 700;
+    text-align: center; font-family: ui-monospace, Menlo, monospace;
+  }
+
+  .compare {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0;
+  }
+  .compare .box {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px;
+  }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) {
+    .compare { grid-template-columns: 1fr; }
+  }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px;
+  }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html">← All walkthroughs</a>
+  <div class="tag">Concept · Data Structure</div>
+  <h1>Linked Lists, Explained</h1>
+  <p class="lede">What a linked list actually is, why it exists next to arrays, and how reversing one works — for the reversal walkthrough itself, see <a href="walkthrough.html">Reverse Linked List</a>.</p>
+</header>
+
+<main>
+
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      Instead of storing items in one contiguous block of memory (like an array), a linked list is a chain of
+      separate objects called <strong>nodes</strong>. Each node knows exactly two things:
+    </p>
+    <ol>
+      <li>its own value</li>
+      <li>where the <em>next</em> node lives</li>
+    </ol>
+    <p>That's the entire idea. Here's a node in code:</p>
+    <pre>class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val    # the data, e.g. 5
+        self.next = next  # a pointer to the next node, or None if it's the last one</pre>
+
+    <p>A list holding <code>[1, 2, 3]</code> isn't one object — it's three separate <code>ListNode</code>s, daisy-chained together:</p>
+
+    <div class="diagram" aria-label="Linked list 1 to 2 to 3 to None">
+      <div class="node"><div class="val">1</div><div class="ptr">•</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="val">2</div><div class="ptr">•</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="val">3</div><div class="ptr">•</div></div>
+      <div class="arrow">→</div>
+      <div class="node null">None</div>
+    </div>
+
+    <p>
+      Each box is a node — left side is <code>val</code>, the dot on the right is <code>next</code>, and the arrow
+      is where that pointer leads. A variable called <code>head</code> just points at the first node. The last
+      node's <code>next</code> is <code>None</code> — that's how code knows it has reached the end.
+    </p>
+  </section>
+
+  <section>
+    <h2>Why not just use an array?</h2>
+    <div class="compare">
+      <div class="box">
+        <h4>Array</h4>
+        <ul>
+          <li>Items sit next to each other in memory</li>
+          <li>Jumping to index <code>i</code> is instant</li>
+          <li>Inserting/removing in the middle means shifting every item after it</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h4>Linked list</h4>
+        <ul>
+          <li>Items are scattered, connected by pointers</li>
+          <li>Reaching index <code>i</code> means walking from the head, node by node</li>
+          <li>Inserting/removing is just rewiring a couple of pointers — nothing shifts</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout why">
+      <strong>Why this trade-off matters:</strong> pick a linked list when you're constantly inserting and
+      removing (queues, undo history, LRU caches) and rarely need "give me item #47" directly. Pick an array when
+      you need random access or cache-friendly iteration.
+    </div>
+  </section>
+
+  <section>
+    <h2>Walking the list</h2>
+    <p>This pattern — starting at the head and following <code>.next</code> until you fall off the end — shows up constantly:</p>
+    <pre>curr = head
+while curr:
+    print(curr.val)
+    curr = curr.next   # step to the next node</pre>
+    <p class="muted">Notice you can't skip ahead. To read the 3rd node you must first visit the 1st and 2nd.</p>
+  </section>
+
+  <section>
+    <h2>Reversing a linked list</h2>
+    <p>
+      This is the classic interview question, and the trickiest part conceptually. Reversing means every arrow
+      needs to flip direction:
+    </p>
+
+    <div class="diagram" aria-label="Before: 1 to 2 to 3 to None">
+      <div class="node"><div class="val">1</div><div class="ptr">•</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="val">2</div><div class="ptr">•</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="val">3</div><div class="ptr">•</div></div>
+      <div class="arrow">→</div>
+      <div class="node null">None</div>
+    </div>
+    <p class="muted" style="margin-top:-14px">before</p>
+
+    <div class="diagram" aria-label="After: None to 1 to 2 to 3, new head is 3">
+      <div class="node null">None</div>
+      <div class="arrow back">←</div>
+      <div class="node reversed"><div class="val">1</div><div class="ptr">•</div></div>
+      <div class="arrow back">←</div>
+      <div class="node reversed"><div class="val">2</div><div class="ptr">•</div></div>
+      <div class="arrow back">←</div>
+      <div class="node reversed"><div class="val">3</div><div class="ptr">•</div></div>
+    </div>
+    <p class="muted" style="margin-top:-14px">after — node 3 is the new head</p>
+
+    <h3>The trick: three pointers</h3>
+    <p>
+      Walk through the list once. At each node, flip its arrow to point <em>backward</em> instead of forward.
+      To do that safely without losing the rest of the list, track three things at once:
+    </p>
+    <ol class="steps">
+      <li><strong><code>prev</code></strong> — the part of the list already reversed. Starts at <code>None</code>, because node 1 must eventually point at nothing.</li>
+      <li><strong><code>curr</code></strong> — the node being rewired right now. Starts at <code>head</code>.</li>
+      <li><strong><code>next_node</code></strong> — a bookmark for "what used to come next," saved <em>before</em> <code>curr.next</code> gets overwritten. Skip this and the rest of the list becomes unreachable the instant you flip the arrow.</li>
+    </ol>
+
+    <h3>One step, traced by hand</h3>
+    <p>Starting from <code>[1, 2, 3]</code>, here's the very first iteration:</p>
+    <div class="diagram" aria-label="Step state before flipping node 1">
+      <div class="node null">None</div>
+      <div class="arrow">&nbsp;</div>
+      <div class="node reversed"><div class="val">1</div><div class="ptr">•</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="val">2</div><div class="ptr">•</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="val">3</div><div class="ptr">•</div></div>
+      <div class="arrow">→</div>
+      <div class="node null">None</div>
+    </div>
+    <div class="label-row">
+      <span class="label" style="width:78px">prev</span>
+      <span class="label" style="width:38px"></span>
+      <span class="label" style="width:112px">curr</span>
+      <span class="label" style="width:38px"></span>
+      <span class="label" style="width:112px">next_node</span>
+    </div>
+    <pre>prev = None,  curr = node(1),  next_node = node(2)
+
+curr.next = prev      # node 1 now points at None instead of node 2
+prev = curr            # prev slides up to node 1
+curr = next_node       # curr slides up to node 2</pre>
+    <p>Repeat that same block for node 2, then node 3. When <code>curr</code> finally becomes <code>None</code>, the loop stops — and <code>prev</code> is sitting on the last node that got flipped, which is the new head.</p>
+
+    <h3>The full function</h3>
+    <pre>def reverse_list(head):
+    prev = None
+    curr = head
+    while curr:
+        next_node = curr.next   # save it before overwriting curr.next
+        curr.next = prev        # flip the arrow backward
+        prev = curr             # prev advances
+        curr = next_node        # curr advances
+    return prev                 # prev is the new head</pre>
+
+    <div class="callout gotcha">
+      <strong>The one line everyone forgets:</strong> <code>next_node = curr.next</code>. If you flip
+      <code>curr.next</code> before saving where it used to point, you lose the rest of the chain — there's no
+      way to get back to node 3 once node 2's arrow has been overwritten.
+    </div>
+  </section>
+
+  <section>
+    <h2>Try it yourself</h2>
+    <p>
+      The annotated version of this exact function — with a line-by-line comment on every statement — lives in
+      <code>reverse_linked_list_annotated.py</code> next to this page. Run
+      <code>t_reverse_linked_list.py</code> to see the cases pass, or drop a <code>print(curr.val, prev)</code>
+      inside the loop and watch the pointers move for yourself.
+    </p>
+    <p><a href="walkthrough.html">→ See the full scroll-through walkthrough for Reverse Linked List</a></p>
+  </section>
+
+</main>
+
+<footer>
+  Part of the <a href="../../index.html">DSA walkthroughs</a> collection.
+</footer>
+
+</body>
+</html>
