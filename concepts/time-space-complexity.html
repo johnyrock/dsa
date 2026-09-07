@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Time &amp; Space Complexity, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 0.92rem;
+    border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+  }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  th { background: var(--code-bg); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+  tr:last-child td { border-bottom: none; }
+  td code { white-space: nowrap; }
+
+  .growth {
+    display: flex; align-items: flex-end; gap: 10px; margin: 22px 0 8px;
+    height: 140px; padding: 0 4px; overflow-x: auto;
+  }
+  .growth .bar-wrap { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 76px; }
+  .growth .bar {
+    width: 40px; background: var(--accent-soft); border: 1.5px solid var(--accent); border-radius: 4px 4px 0 0;
+  }
+  .growth .bar.hot { background: var(--warn-soft); border-color: var(--warn); }
+  .growth .name { margin-top: 8px; font-family: ui-monospace, Menlo, monospace; font-size: 0.82rem; text-align: center; }
+  .growth .desc { color: var(--muted); font-size: 0.72rem; text-align: center; }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li {
+    counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px;
+  }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html">← All walkthroughs</a>
+  <div class="tag">Concept · Algorithm Analysis</div>
+  <h1>Time &amp; Space Complexity, Explained</h1>
+  <p class="lede">What Big O actually measures, why constants get dropped, and how to read time and space off a piece of code without guessing.</p>
+</header>
+
+<main>
+
+  <section>
+    <h2>What Big O actually measures</h2>
+    <p>
+      Big O describes how the <strong>cost of an algorithm grows as the input grows</strong> — not how fast it
+      runs on your laptop today. "This function is O(n)" means: if you double the size of the input, the amount
+      of work roughly doubles. It says nothing about whether it takes 2ms or 2 seconds for a given n — that
+      depends on hardware, language, constants. Big O is about the <em>shape</em> of the growth curve, not a
+      single measurement.
+    </p>
+    <div class="callout why">
+      <strong>Why drop constants:</strong> an algorithm that does <code>3n + 100</code> operations is still
+      called O(n), not O(3n + 100). For small n the <code>+100</code> might dominate, but as n grows toward
+      infinity, only the fastest-growing term matters — the constants become noise. This is also why O(n) beats
+      O(n²) eventually, even if the O(n²) version has a smaller constant and wins for tiny inputs.
+    </div>
+  </section>
+
+  <section>
+    <h2>The common complexities, smallest to largest</h2>
+    <div class="growth" aria-hidden="true">
+      <div class="bar-wrap"><div class="bar" style="height:14px"></div><div class="name">O(1)</div><div class="desc">constant</div></div>
+      <div class="bar-wrap"><div class="bar" style="height:26px"></div><div class="name">O(log n)</div><div class="desc">logarithmic</div></div>
+      <div class="bar-wrap"><div class="bar" style="height:50px"></div><div class="name">O(n)</div><div class="desc">linear</div></div>
+      <div class="bar-wrap"><div class="bar" style="height:66px"></div><div class="name">O(n log n)</div><div class="desc">linearithmic</div></div>
+      <div class="bar-wrap"><div class="bar hot" style="height:96px"></div><div class="name">O(n&sup2;)</div><div class="desc">quadratic</div></div>
+      <div class="bar-wrap"><div class="bar hot" style="height:140px"></div><div class="name">O(2&#8319;)</div><div class="desc">exponential</div></div>
+    </div>
+    <p class="muted" style="margin-top:0">bar height ≈ relative work done as n grows — not to scale, just ordering</p>
+
+    <table>
+      <thead>
+        <tr><th>Complexity</th><th>Name</th><th>What it looks like</th><th>Example</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>O(1)</code></td><td>Constant</td><td>No loops over the input, or a fixed number of steps regardless of size</td><td>Look up a value by key in a hash map</td></tr>
+        <tr><td><code>O(log n)</code></td><td>Logarithmic</td><td>Each step throws away a chunk of the remaining input, usually half</td><td>Binary search on a sorted array</td></tr>
+        <tr><td><code>O(n)</code></td><td>Linear</td><td>One loop over the input, constant work per element</td><td>Find the max of an array</td></tr>
+        <tr><td><code>O(n log n)</code></td><td>Linearithmic</td><td>A linear pass done log n times, or divide-and-conquer that recombines</td><td>Merge sort, sorting in general</td></tr>
+        <tr><td><code>O(n&sup2;)</code></td><td>Quadratic</td><td>A loop inside a loop, each running roughly n times</td><td>Comparing every pair in an array</td></tr>
+        <tr><td><code>O(2&#8319;)</code></td><td>Exponential</td><td>Branching recursion that tries every combination</td><td>Brute-force subset generation</td></tr>
+      </tbody>
+    </table>
+
+    <h3>How to read time complexity off code</h3>
+    <p>Ask one question at each loop or recursive call: <strong>how many times does the innermost line run, as a function of n?</strong></p>
+    <pre>for x in items:          # runs n times
+    print(x)              # O(1) work each time
+# total: O(n)
+
+for x in items:          # runs n times
+    for y in items:      # runs n times, for each x
+        print(x, y)
+# total: O(n * n) = O(n²)
+
+mid = len(items) // 2    # binary search: each step halves what's left
+# total: O(log n)</pre>
+    <div class="callout gotcha">
+      <strong>Sequential loops add, nested loops multiply.</strong> Two separate <code>for</code> loops one
+      after another, each over n items, is O(n) + O(n) = O(n), still linear. A loop <em>inside</em> another loop
+      is O(n) × O(n) = O(n²). Mixing these up is the single most common Big O mistake.
+    </div>
+  </section>
+
+  <section>
+    <h2>Space complexity</h2>
+    <p>
+      Space complexity counts the <strong>extra memory the algorithm allocates beyond the input itself</strong>.
+      The input is given, not created, so it isn't charged. This extra memory is called <strong>auxiliary
+      space</strong>, and it's what interviewers usually mean by "what's the space complexity?"
+    </p>
+
+    <h3>The counting rule</h3>
+    <p>Look at every variable and container the function creates, and ask: <strong>does its size depend on n, the length of the input?</strong></p>
+    <ol class="steps">
+      <li>A single number, boolean, or fixed-size variable takes the same memory whether n is 6 or 6 million — <code>O(1)</code>.</li>
+      <li>A list, set, or dict that can grow to hold up to n items — <code>O(n)</code>.</li>
+      <li>A 2D grid sized n by n — <code>O(n&sup2;)</code>.</li>
+      <li>Recursion costs space too: every unfinished call sits on the call stack, so recursion n levels deep is <code>O(n)</code> even with no explicit list anywhere.</li>
+    </ol>
+
+    <h3>Worked example</h3>
+    <p>Take the classic "best time to buy and sell stock" one-pass solution:</p>
+    <pre>def max_profit(prices):
+    min_price = float("inf")
+    best = 0
+    for price in prices:
+        min_price = min(min_price, price)
+        best = max(best, price - min_price)
+    return best</pre>
+    <table>
+      <thead><tr><th>Variable</th><th>Size depends on n?</th><th>Space</th></tr></thead>
+      <tbody>
+        <tr><td><code>min_price</code></td><td>No — always one float</td><td>O(1)</td></tr>
+        <tr><td><code>best</code></td><td>No — always one int</td><td>O(1)</td></tr>
+        <tr><td><code>price</code></td><td>No — one value at a time, overwritten each iteration</td><td>O(1)</td></tr>
+      </tbody>
+    </table>
+    <p>Three small values regardless of input size, so the whole function is <code>O(1)</code> space. Reusing a variable is not growth — <code>price</code> changes n times over the loop, but only ever holds one value at once.</p>
+
+    <p>Now contrast it with a version that stores the running minimum for every day instead of just the latest one:</p>
+    <pre>def max_profit(prices):
+    mins = []
+    lowest = float("inf")
+    for p in prices:
+        lowest = min(lowest, p)
+        mins.append(lowest)          # grows with n
+    best = 0
+    for i, p in enumerate(prices):
+        best = max(best, p - mins[i])
+    return best</pre>
+    <p>
+      Same answer, same O(n) time, but <code>mins</code> holds one entry per price, so this version is
+      <code>O(n)</code> space. The tighter solution above keeps only the latest minimum instead of the whole
+      history. Replacing "store all of them" with "store only what the next step needs" is the most common way
+      to shrink space from O(n) down to O(1).
+    </p>
+
+    <div class="callout gotcha">
+      <strong>Modifying the input in place</strong> is usually counted as O(1) extra space, since nothing new is
+      allocated — you're reusing memory that already existed. Say this explicitly in an interview; don't let it
+      go unstated.
+    </div>
+  </section>
+
+  <section>
+    <h2>Quick checklist for any solution</h2>
+    <ol class="steps">
+      <li><strong>Time:</strong> how many times does the innermost line run? One loop over n is O(n). A loop inside a loop is O(n²). Sorting is O(n log n). Halving the input each step is O(log n).</li>
+      <li><strong>Space:</strong> what did the function create that isn't the input, and can it grow with n? Only scalars means O(1). A list or map sized off the input means O(n). Recursion n deep means O(n) from the call stack alone, even with zero explicit data structures.</li>
+    </ol>
+    <p>Run through both questions for every solution you write — it's the two-line summary interviewers are listening for at the end of your answer.</p>
+  </section>
+
+</main>
+
+<footer>
+  Part of the <a href="../index.html">DSA walkthroughs</a> collection. See it applied in
+  <a href="../md.html?f=easy/005-best-time-to-buy-and-sell-stock/notes.md">easy/005's notes</a>.
+</footer>
+
+</body>
+</html>

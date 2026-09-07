@@ -87,5 +87,6 @@ easy/NNN-slug/
   walkthrough.html        optional: scroll-driven narration of the solution, open in a browser
 medium/NNN-slug/          same shape, numbering restarts per difficulty
 patterns/<name>.md        when to use it, template code, problems that use it
+concepts/<slug>.html      standalone from-scratch explainers (data structures, complexity), open in a browser
 templates/problem/        skeleton copied for each new problem (see templates/README.md)
 ```
