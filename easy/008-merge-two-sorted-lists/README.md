@@ -1,6 +1,6 @@
 # 008. Merge Two Sorted Lists
 
-**Difficulty:** Easy | **Pattern:** [linked-list](../../patterns/linked-list.md) | **Source:** LeetCode #21
+**Difficulty:** Easy | **Pattern:** [linked-list](../../patterns/linked-list.md) ([explained](../../concepts/linked-list.html)) | **Source:** LeetCode #21
 
 ## Problem
 

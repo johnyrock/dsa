@@ -1,6 +1,6 @@
 # 010. Climbing Stairs
 
-**Difficulty:** Easy | **Pattern:** [dynamic-programming](../../patterns/dynamic-programming.md) | **Source:** LeetCode #70
+**Difficulty:** Easy | **Pattern:** [dynamic-programming](../../patterns/dynamic-programming.md) ([explained](../../concepts/dynamic-programming.html)) | **Source:** LeetCode #70
 
 ## Problem
 

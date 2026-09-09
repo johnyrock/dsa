@@ -1,6 +1,6 @@
 # 004. 3Sum
 
-**Difficulty:** Medium | **Pattern:** [two-pointers](../../patterns/two-pointers.md) | **Source:** LeetCode #15
+**Difficulty:** Medium | **Pattern:** [two-pointers](../../patterns/two-pointers.md) ([explained](../../concepts/two-pointers.html)) | **Source:** LeetCode #15
 
 ## Problem
 

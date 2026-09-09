@@ -1,6 +1,6 @@
 # 012. Longest Palindromic Substring
 
-**Difficulty:** Medium | **Pattern:** [two-pointers](../../patterns/two-pointers.md) | **Source:** LeetCode #5
+**Difficulty:** Medium | **Pattern:** [two-pointers](../../patterns/two-pointers.md) ([explained](../../concepts/two-pointers.html)) | **Source:** LeetCode #5
 
 ## Problem
 

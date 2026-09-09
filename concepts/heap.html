@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heaps &amp; Top-K, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Heaps &amp; Top-K, Explained</h1>
+  <p class="lede">A structure that always hands you the smallest or largest item, for top-K, k-th largest, and merging sorted streams.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      A hospital emergency room does not treat people in the order they arrived. It treats the most urgent
+      person next. New patients keep arriving, urgencies keep shifting, and yet the question "who is next?"
+      must always be answerable instantly. Nobody re-sorts the whole waiting room every time the door opens —
+      that would be absurd. They just keep the most urgent case at the front.
+    </p>
+    <p>
+      A <strong>heap</strong> is that waiting room. It is a structure that gives you the smallest item
+      instantly, and lets you add or remove items cheaply, while making <em>no promises at all</em> about the
+      order of everything else. That last part is the deal you are striking: you give up full sorting, and in
+      exchange every operation gets cheap.
+    </p>
+    <p>
+      Concretely, a min-heap is a binary tree with one rule: <strong>every parent is smaller than or equal to
+      its children</strong>. That rule alone forces the smallest value to sit at the root. The tree is stored
+      as a flat list, where the children of index <code>i</code> live at <code>2i+1</code> and
+      <code>2i+2</code>, so there are no node objects and no pointers.
+    </p>
+    <pre class="art">the tree                    the list Python actually stores
+
+        1                    index:  0   1   2   3   4
+      /   \                        ┌───┬───┬───┬───┬───┐
+     3     8                       │ 1 │ 3 │ 8 │ 5 │ 9 │
+    / \                            └───┴───┴───┴───┴───┘
+   5   9                    children of index i: 2i+1 and 2i+2
+                            so index 1 (value 3) parents 3 and 4
+
+every parent &lt;= its children, so the smallest value (1) must be at the root.
+note that the list is NOT sorted — 8 sits before 5. Only the root is promised.</pre>
+    <div class="callout why">
+      <strong>Why it's fast:</strong> the tree is always kept balanced and complete, so its height is
+      log₂(n) — about 20 levels for a million items. Adding or removing an item only has to fix one path from
+      root to leaf, so both cost O(log n), while peeking at the smallest is O(1) because it is just index 0.
+      Sorting everything, by contrast, costs O(n log n) and gives you far more order than you asked for.
+    </div>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <p>Reach for a heap when:</p>
+    <ul>
+      <li><strong>The problem says "top k", "k largest", "k closest", or "kth smallest".</strong> The word
+        <em>k</em> next to a big <em>n</em> is the loudest signal there is.</li>
+      <li><strong>You repeatedly need the smallest or largest thing, and the collection keeps changing.</strong>
+        If it never changes, just sort once — a heap earns its keep when items come and go.</li>
+      <li><strong>Data arrives as a stream</strong> and you cannot hold it all, or "find the running median".</li>
+      <li><strong>You are merging several sorted sequences</strong> and need the overall smallest next item.</li>
+      <li><strong>"Always process the cheapest/nearest/earliest option next"</strong> — task scheduling,
+        Dijkstra's shortest path. That is a <em>priority queue</em>, which is what a heap is usually called
+        when it is doing that job.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>
+      Find the <em>k</em> largest numbers in a list. The first idea is to sort and slice:
+    </p>
+    <pre>def k_largest_sorted(nums, k):
+    return sorted(nums)[-k:]         # O(n log n), then take the last k</pre>
+    <p>
+      That is honestly fine for most inputs, and you should say so in an interview. But it does more work than
+      the question asked for. Sorting puts <em>all</em> n items in order when you only ever look at k of them;
+      if n is 10 million and k is 10, you have ordered 10 million things to answer a question about 10. Worse,
+      it needs every item in memory at once, so it cannot handle a stream that never ends.
+    </p>
+    <p>
+      The other naive idea — scan for the max, remove it, repeat k times — is O(n × k), which is even slower
+      once k grows past log n.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>
+      Keep a heap holding <strong>only k items</strong>: the best k you have seen so far. For the k
+      <em>largest</em>, use a <em>min</em>-heap, so the weakest survivor is the one sitting at the top, ready
+      to be evicted the moment something better shows up.
+    </p>
+    <pre>import heapq
+
+def k_largest(nums, k):
+    if k &lt;= 0:
+        return []
+    heap = []                                # a min-heap of the best k so far
+
+    for x in nums:
+        if len(heap) &lt; k:
+            heapq.heappush(heap, x)          # still filling up
+        elif x &gt; heap[0]:                    # heap[0] is the WEAKEST of the k
+            heapq.heappushpop(heap, x)       # evict it, insert x
+
+    return sorted(heap)</pre>
+    <p>
+      The line that matters is <code>elif x &gt; heap[0]</code>. Read it as a bouncer at a club with k places:
+      <em>"is this newcomer better than the worst person currently inside?"</em> If not, the newcomer is
+      rejected in O(1) and you never touch the heap. If yes, one swap keeps the club at exactly k people.
+    </p>
+    <p>
+      Note that <code>heap[0]</code> is the only element you are allowed to trust. The rest of the list is in
+      heap order, not sorted order, which is why the function ends with <code>sorted(heap)</code> — over k
+      items, which is cheap.
+    </p>
+    <div class="callout tip">
+      <strong>heapq is min-only.</strong> Python's <code>heapq</code> module gives you a min-heap and nothing
+      else: <code>heap[0]</code> is always the smallest. To get max behaviour, push
+      <code>-x</code> instead of <code>x</code> and negate again when you pop. Because negation flips the
+      order, the largest original value becomes the smallest negated one, so it lands on top. There is no
+      <code>heapq.heapmax</code> — the minus sign <em>is</em> the API.
+    </div>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>Find the 3 largest values in <code>[5, 1, 8, 3, 9, 2]</code>, so <code>k = 3</code>.</p>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="Array 5 1 8 3 9 2 with the scan starting at index 0 and an empty heap">
+        <div class="cell hi"><span class="idx">0</span>5<span class="ptr">x</span></div>
+        <div class="cell"><span class="idx">1</span>1</div>
+        <div class="cell"><span class="idx">2</span>8</div>
+        <div class="cell"><span class="idx">3</span>3</div>
+        <div class="cell"><span class="idx">4</span>9</div>
+        <div class="cell"><span class="idx">5</span>2</div>
+      </div>
+    </div>
+    <p class="caption">Start. The heap is empty and has room for three.</p>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>Step</th><th>x</th><th>heap[0] (weakest)</th><th>Decision</th><th>Heap list after</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>5</td><td>—</td><td>not full, push</td><td><code>[5]</code></td></tr>
+          <tr><td>2</td><td>1</td><td>—</td><td>not full, push</td><td><code>[1, 5]</code></td></tr>
+          <tr><td>3</td><td>8</td><td>—</td><td>not full, push</td><td><code>[1, 5, 8]</code></td></tr>
+          <tr class="hi"><td>4</td><td>3</td><td>1</td><td>3 &gt; 1, evict the 1</td><td><code>[3, 5, 8]</code></td></tr>
+          <tr class="hi"><td>5</td><td>9</td><td>3</td><td>9 &gt; 3, evict the 3</td><td><code>[5, 9, 8]</code></td></tr>
+          <tr><td>6</td><td>2</td><td>5</td><td>2 &gt; 5 is false — reject, heap untouched</td><td><code>[5, 9, 8]</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <pre class="art">final heap                answer
+     5   ← heap[0] is the      sorted(heap) = [5, 8, 9]
+    / \    3rd largest, so
+   9   8   "kth largest" is    and if the question were
+           just heap[0]        "3rd largest?", the answer
+                               is heap[0] = 5, in O(1)</pre>
+    <p class="caption">The heap never held more than three numbers, no matter how long the input was.</p>
+
+    <p>
+      Notice what happened at step 6. The value <code>2</code> was compared against a single number,
+      <code>heap[0]</code>, and thrown away — no insertion, no restructuring, no comparison against 5, 8 or 9
+      individually. Most elements in a real top-k problem take exactly this path, which is why the pattern is
+      so much faster than its worst case suggests.
+    </p>
+    <p>
+      Notice also the heap list at step 5: <code>[5, 9, 8]</code>. That is <em>not</em> sorted, and it is not
+      a bug. The heap only promises that each parent is at most its children: 5 is at most 9, and 5 is at most
+      8. Nothing was ever promised about 9 versus 8. Print a heap and it will look shuffled; that is the point.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>Max-heap by negation</h3>
+    <p>
+      When you need the <em>largest</em> item on top, negate on the way in and on the way out. The two minus
+      signs cancel and the values you get back are the real ones.
+    </p>
+    <pre>import heapq
+
+def three_biggest_in_order(nums):
+    heap = [-x for x in nums]        # flip: biggest value becomes smallest
+    heapq.heapify(heap)              # rearrange in place, O(n)
+    out = []
+    for _ in range(min(3, len(heap))):
+        out.append(-heapq.heappop(heap))   # flip back on the way out
+    return out</pre>
+    <p>
+      <code>heapq.heapify(lst)</code> turns an existing list into a heap in place in O(n) — cheaper than n
+      separate pushes, and the right move when you already have all the data.
+    </p>
+
+    <h3>Priorities with tuples</h3>
+    <p>
+      To order items by something other than the item itself, push a tuple. Python compares tuples
+      element by element, so the first slot acts as the priority.
+    </p>
+    <pre>import heapq
+
+def most_frequent(words, k):
+    counts = {}
+    for w in words:
+        counts[w] = counts.get(w, 0) + 1
+    heap = []
+    for word, c in counts.items():
+        heapq.heappush(heap, (c, word))  # ordered by count, then alphabetically
+        if len(heap) &gt; k:
+            heapq.heappop(heap)          # drop the least frequent survivor
+    return [w for c, w in sorted(heap, reverse=True)]</pre>
+    <p>
+      A warning that bites people: if two tuples tie on the first slot, Python compares the second slot. That
+      is fine for strings and numbers, but if the second slot is a custom object with no ordering defined, you
+      get <code>TypeError</code>. The fix is a tiebreaker in the middle — a counter that increases with every
+      push — so the comparison never reaches the object itself.
+    </p>
+
+    <h3>Merging sorted sequences</h3>
+    <p>
+      To merge k sorted lists, put the first item of each into a heap along with the list it came from. Pop
+      the smallest, output it, and push that list's next item. The heap holds at most k items, so the whole
+      merge is O(total items × log k). This is the general form of
+      <a href="../easy/008-merge-two-sorted-lists/walkthrough.html">Merge Two Sorted Lists</a>, where k is
+      just 2 and a heap is overkill.
+    </p>
+    <pre>import heapq
+
+def merge_sorted(lists):
+    heap = []
+    for li, lst in enumerate(lists):
+        if lst:
+            heapq.heappush(heap, (lst[0], li, 0))   # (value, which list, which index)
+    out = []
+    while heap:
+        val, li, idx = heapq.heappop(heap)
+        out.append(val)
+        if idx + 1 &lt; len(lists[li]):
+            heapq.heappush(heap, (lists[li][idx + 1], li, idx + 1))
+    return out</pre>
+    <p class="muted">
+      Python also ships <code>heapq.merge</code>, plus <code>heapq.nlargest(k, xs)</code> and
+      <code>heapq.nsmallest(k, xs)</code>, which do the whole top-k pattern in one call. Know the manual
+      version for interviews; use the library everywhere else.
+    </p>
+
+    <h3>Two heaps, for a running median</h3>
+    <p>
+      Keep a max-heap of the smaller half of the numbers and a min-heap of the larger half, and keep their
+      sizes within one of each other. The median is then the top of one heap, or the average of both tops —
+      both O(1) reads, with O(log n) insertion. This "two heaps facing each other" trick is the standard
+      answer to Find Median from Data Stream.
+    </p>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong>Expecting a max-heap.</strong> <code>heapq</code> only does minimums. If you push raw values and
+      read <code>heap[0]</code> expecting the biggest, you get the smallest and no error. Negate on push
+      <em>and</em> on pop — forgetting the second negation returns correct-looking numbers with the wrong sign,
+      which is a genuinely hard bug to spot.
+    </div>
+    <div class="callout gotcha">
+      <strong>Treating the heap list as sorted.</strong> Only <code>heap[0]</code> is guaranteed. Slicing
+      <code>heap[:3]</code> does not give you the three smallest, and iterating the list gives no useful order.
+      To get sorted output, either pop repeatedly or call <code>sorted(heap)</code> at the end.
+    </div>
+    <div class="callout gotcha">
+      <strong>Letting the heap grow to n for a top-k question.</strong> Pushing everything and popping k times
+      is O(n log n) and O(n) memory — no better than sorting. The whole win comes from capping the heap at k,
+      which makes it O(n log k) time and O(k) memory.
+    </div>
+    <div class="callout gotcha">
+      <strong>Mutating an item after pushing it, or forgetting a tiebreaker.</strong> A heap only re-checks
+      order when you push or pop, so changing a stored item's priority in place silently corrupts it — push a
+      new entry and skip stale ones instead. And in tuples, add a unique counter before any unorderable object
+      so equal priorities never force Python to compare the objects.
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Time:</strong> O(n log k) for the top-k pattern — each of the n elements does at most one
+        O(log k) push or push-pop on a heap capped at k items. A single push or pop is O(log n) because it
+        fixes one root-to-leaf path; <code>heapify</code> on an existing list is O(n); peeking is O(1).</li>
+      <li><strong>Space:</strong> O(k), since the heap never holds more than k items. That is what lets the
+        pattern run over a stream too large to store.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <p>No walkthroughs use this pattern yet.</p>
+    <p class="muted">
+      The closest thing here is <a href="../easy/008-merge-two-sorted-lists/walkthrough.html">Merge Two Sorted
+      Lists</a> (easy/008), which is the k = 2 case of the merge above and needs no heap at all.
+    </p>
+    <p class="muted" style="margin-top:14px">Classic LeetCode problems not yet in the repo: Kth Largest Element in an Array (#215), Top K Frequent Elements (#347), K Closest Points to Origin (#973), Merge k Sorted Lists (#23), Find Median from Data Stream (#295), Task Scheduler (#621), Last Stone Weight (#1046).</p>
+    <p class="muted">Related pages: <a href="time-space-complexity.html">Time &amp; Space Complexity</a> for what O(log n) is buying you, and <a href="hash-map.html">Hash Maps &amp; Sets</a>, which usually does the counting step before a top-k heap does the ranking.</p>
+  </section>
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>

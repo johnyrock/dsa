@@ -1,6 +1,6 @@
 # 003. Longest Substring Without Repeating Characters
 
-**Difficulty:** Medium | **Pattern:** [sliding-window](../../patterns/sliding-window.md) | **Source:** LeetCode #3
+**Difficulty:** Medium | **Pattern:** [sliding-window](../../patterns/sliding-window.md) ([explained](../../concepts/sliding-window.html)) | **Source:** LeetCode #3
 
 ## Problem
 

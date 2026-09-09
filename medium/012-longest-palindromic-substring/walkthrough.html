@@ -54,6 +54,11 @@
     max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
   }
   header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
   header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
   header p { margin: 0; color: var(--muted); max-width: 640px; }
   header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
@@ -179,10 +184,11 @@
 <body>
 
 <header>
-  <a class="home" href="../../index.html">← All walkthroughs</a>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Two Pointers · LeetCode #5</div>
   <h1>Longest Palindromic Substring, narrated</h1>
   <p>Scroll through the thinking, from testing every substring to expanding outward from each of the 2n − 1 centres, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/two-pointers.html">Two Pointers</a> <span class="how">expand outward from each of the 2n - 1 centres while the ends match</span></p>
 </header>
 
 <div class="layout">
@@ -306,7 +312,7 @@
   </div>
 
 <footer>
-  Source files: <a href="longest_palindromic_substring.py">longest_palindromic_substring.py</a> · <a href="longest_palindromic_substring_annotated.py">longest_palindromic_substring_annotated.py</a> · <a href="test_longest_palindromic_substring.py">test_longest_palindromic_substring.py</a> · <a href="../../md.html?f=medium/012-longest-palindromic-substring/notes.md">notes.md</a> · <a href="../../index.html">All walkthroughs</a>
+  Source files: <a href="longest_palindromic_substring.py">longest_palindromic_substring.py</a> · <a href="longest_palindromic_substring_annotated.py">longest_palindromic_substring_annotated.py</a> · <a href="test_longest_palindromic_substring.py">test_longest_palindromic_substring.py</a> · <a href="../../md.html?f=medium/012-longest-palindromic-substring/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
 </footer>
 
 <script>

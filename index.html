@@ -43,14 +43,33 @@
   code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
   a { color: var(--accent); }
 
-  header { max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px; }
+  header { max-width: 1100px; margin: 0 auto; padding: 48px 24px 0; }
   header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
   header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
-  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header p { margin: 0 0 20px; color: var(--muted); max-width: 640px; }
 
-  main { max-width: 1100px; margin: 0 auto; padding: 24px 24px 48px; }
+  /* --- top menu --- */
+  .menu-wrap {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--bg); border-bottom: 1px solid var(--line);
+  }
+  .menu {
+    max-width: 1100px; margin: 0 auto; padding: 0 24px;
+    display: flex; gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  .tab {
+    appearance: none; background: none; border: 0; border-bottom: 3px solid transparent;
+    color: var(--muted); font: inherit; font-size: 1rem; font-weight: 600;
+    padding: 14px 16px 12px; cursor: pointer; white-space: nowrap; margin-bottom: -1px;
+  }
+  .tab:hover { color: var(--ink); }
+  .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+  .tab .count { color: var(--muted); font-weight: 500; font-size: 0.85rem; margin-left: 6px; }
 
-  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 32px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px 24px 48px; }
+
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 28px; align-items: center; }
+  .filters .lbl { color: var(--muted); font-size: 0.85rem; margin-right: 4px; }
   .chip {
     border: 1px solid var(--line); background: var(--panel); color: var(--ink);
     border-radius: 999px; padding: 4px 14px; font: inherit; font-size: 0.9rem; cursor: pointer;
@@ -59,10 +78,14 @@
   .chip:hover { border-color: var(--accent); }
   .chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
   .chip .count { color: var(--muted); font-size: 0.8rem; margin-left: 4px; }
+  .chip[hidden] { display: none; }
 
-  section { margin-bottom: 40px; }
-  section h2 { font-size: 1.1rem; margin: 0 0 4px; }
-  section .sub { color: var(--muted); font-size: 0.95rem; margin: 0 0 16px; }
+  section[hidden] { display: none; }
+  section h2 { font-size: 1.3rem; margin: 0 0 4px; }
+  section .sub { color: var(--muted); font-size: 0.95rem; margin: 0 0 20px; }
+  .group { margin: 28px 0 12px; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .group:first-of-type { margin-top: 0; }
+  .group[hidden] { display: none; }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
   .card {
@@ -82,16 +105,14 @@
   .card .open { color: var(--accent); font-weight: 600; }
   .card[hidden] { display: none; }
 
-  .empty {
-    border: 1px dashed var(--line); border-radius: 12px; padding: 24px; color: var(--muted); text-align: center;
-  }
   .none { color: var(--muted); font-style: italic; }
 
   footer { max-width: 1100px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
 
   @media (max-width: 600px) {
-    header { padding-top: 32px; }
+    header { padding-top: 28px; }
     header h1 { font-size: 1.7rem; }
+    .tab { padding: 12px 12px 10px; font-size: 0.95rem; }
   }
 </style>
 </head>
@@ -100,35 +121,71 @@
 <header>
   <div class="tag">DSA Practice</div>
   <h1>Walkthroughs</h1>
-  <p>Scroll-driven narrations of each solution, from the first instinct to the interview answer, with the state of the algorithm shown alongside. Pick a problem or filter by pattern.</p>
+  <p>Concept pages explain each pattern from scratch. Problem walkthroughs narrate a solution from the first instinct to the interview answer. Pick a section, then filter by pattern.</p>
 </header>
+
+<div class="menu-wrap">
+  <nav class="menu" id="menu" role="tablist" aria-label="Sections"></nav>
+</div>
 
 <main>
   <div class="filters" id="filters" role="group" aria-label="Filter by pattern">
+    <span class="lbl">Pattern</span>
     <button class="chip" data-pattern="all" aria-pressed="true">All <span class="count"></span></button>
     <button class="chip" data-pattern="hash-map" aria-pressed="false">Hash Map <span class="count"></span></button>
     <button class="chip" data-pattern="hash-set" aria-pressed="false">Hash Set <span class="count"></span></button>
-    <button class="chip" data-pattern="stack" aria-pressed="false">Stack <span class="count"></span></button>
-    <button class="chip" data-pattern="sliding-window" aria-pressed="false">Sliding Window <span class="count"></span></button>
     <button class="chip" data-pattern="two-pointers" aria-pressed="false">Two Pointers <span class="count"></span></button>
+    <button class="chip" data-pattern="sliding-window" aria-pressed="false">Sliding Window <span class="count"></span></button>
+    <button class="chip" data-pattern="fast-slow-pointers" aria-pressed="false">Fast &amp; Slow Pointers <span class="count"></span></button>
+    <button class="chip" data-pattern="prefix-sum" aria-pressed="false">Prefix Sum <span class="count"></span></button>
+    <button class="chip" data-pattern="cyclic-sort" aria-pressed="false">Cyclic Sort <span class="count"></span></button>
+    <button class="chip" data-pattern="stack" aria-pressed="false">Stack <span class="count"></span></button>
+    <button class="chip" data-pattern="heap" aria-pressed="false">Heap <span class="count"></span></button>
     <button class="chip" data-pattern="linked-list" aria-pressed="false">Linked List <span class="count"></span></button>
     <button class="chip" data-pattern="binary-search" aria-pressed="false">Binary Search <span class="count"></span></button>
+    <button class="chip" data-pattern="recursion" aria-pressed="false">Recursion <span class="count"></span></button>
+    <button class="chip" data-pattern="backtracking" aria-pressed="false">Backtracking <span class="count"></span></button>
     <button class="chip" data-pattern="dynamic-programming" aria-pressed="false">Dynamic Programming <span class="count"></span></button>
-    <button class="chip" data-pattern="prefix-sum" aria-pressed="false">Prefix Sum <span class="count"></span></button>
-    <button class="chip" data-pattern="intervals" aria-pressed="false">Intervals <span class="count"></span></button>
+    <button class="chip" data-pattern="greedy" aria-pressed="false">Greedy <span class="count"></span></button>
+    <button class="chip" data-pattern="tree" aria-pressed="false">Tree <span class="count"></span></button>
     <button class="chip" data-pattern="graph" aria-pressed="false">Graph <span class="count"></span></button>
+    <button class="chip" data-pattern="topological-sort" aria-pressed="false">Topological Sort <span class="count"></span></button>
+    <button class="chip" data-pattern="trie" aria-pressed="false">Trie <span class="count"></span></button>
+    <button class="chip" data-pattern="intervals" aria-pressed="false">Intervals <span class="count"></span></button>
+    <button class="chip" data-pattern="bit-manipulation" aria-pressed="false">Bit Manipulation <span class="count"></span></button>
   </div>
 
-  <section id="concepts">
+  <section id="sec-concepts" data-section="concepts" data-label="Concepts">
     <h2>Concepts</h2>
-    <p class="sub">Deeper dives into the data structures themselves, for whenever a walkthrough moves too fast.</p>
+    <p class="sub">Each pattern explained from scratch, with a hand-traced example. Read these before the problems that use them. Suggested order: foundations, then data structures, then patterns.</p>
+
+    <h3 class="group">Foundations</h3>
     <div class="grid">
 
       <a class="card" href="concepts/time-space-complexity.html">
-        <div class="meta">Concept · Algorithm Analysis</div>
+        <div class="meta">Concept · Foundations</div>
         <h3>Time &amp; Space Complexity, Explained</h3>
         <p>What Big O actually measures, the common complexity classes, and how to read time and space off a piece of code.</p>
         <div class="foot"><span class="open">Open explanation →</span></div>
+      </a>
+
+      <a class="card" href="concepts/recursion.html" data-pattern="recursion">
+        <div class="meta">Concept · Foundations</div>
+        <h3>Recursion, Explained</h3>
+        <p>A function that calls itself, the call stack that makes it work, and how to trust the recursive leap.</p>
+        <div class="foot"><span class="pill">Recursion</span><span class="open">Open explanation →</span></div>
+      </a>
+
+    </div>
+
+    <h3 class="group">Data structures</h3>
+    <div class="grid">
+
+      <a class="card" href="concepts/hash-map.html" data-pattern="hash-map hash-set">
+        <div class="meta">Concept · Data Structure</div>
+        <h3>Hash Maps &amp; Sets, Explained</h3>
+        <p>Trading a little memory for instant lookups, the single most common trick for turning O(n²) into O(n).</p>
+        <div class="foot"><span class="pill">Hash Map</span><span class="open">Open explanation →</span></div>
       </a>
 
       <a class="card" href="concepts/linked-list.html" data-pattern="linked-list">
@@ -138,11 +195,146 @@
         <div class="foot"><span class="pill">Linked List</span><span class="open">Open explanation →</span></div>
       </a>
 
+      <a class="card" href="concepts/stack.html" data-pattern="stack">
+        <div class="meta">Concept · Data Structure</div>
+        <h3>Stacks &amp; Monotonic Stacks, Explained</h3>
+        <p>Last in, first out for matching brackets, and the monotonic variant for "next greater element" problems.</p>
+        <div class="foot"><span class="pill">Stack</span><span class="open">Open explanation →</span></div>
+      </a>
+
+      <a class="card" href="concepts/heap.html" data-pattern="heap">
+        <div class="meta">Concept · Data Structure</div>
+        <h3>Heaps &amp; Top-K, Explained</h3>
+        <p>A structure that always hands you the smallest or largest item, for top-K, k-th largest, and merging sorted streams.</p>
+        <div class="foot"><span class="pill">Heap</span><span class="open">Open explanation →</span></div>
+      </a>
+
+      <a class="card" href="concepts/trie.html" data-pattern="trie">
+        <div class="meta">Concept · Data Structure</div>
+        <h3>Tries, Explained</h3>
+        <p>A tree of characters for prefix lookups, autocomplete, and word search.</p>
+        <div class="foot"><span class="pill">Trie</span><span class="open">Open explanation →</span></div>
+      </a>
+
     </div>
+
+    <h3 class="group">Array &amp; string patterns</h3>
+    <div class="grid">
+
+      <a class="card" href="concepts/two-pointers.html" data-pattern="two-pointers">
+        <div class="meta">Concept · Pattern</div>
+        <h3>Two Pointers, Explained</h3>
+        <p>Two index variables walking toward each other, and why that one trick turns a nested loop into a single pass.</p>
+        <div class="foot"><span class="pill">Two Pointers</span><span class="open">Open explanation →</span></div>
+      </a>
+
+      <a class="card" href="concepts/sliding-window.html" data-pattern="sliding-window">
+        <div class="meta">Concept · Pattern</div>
+        <h3>Sliding Window, Explained</h3>
+        <p>A window that grows on the right and shrinks on the left, for any "longest or shortest contiguous chunk" question.</p>
+        <div class="foot"><span class="pill">Sliding Window</span><span class="open">Open explanation →</span></div>
+      </a>
+
+      <a class="card" href="concepts/fast-slow-pointers.html" data-pattern="fast-slow-pointers linked-list">
+        <div class="meta">Concept · Pattern</div>
+        <h3>Fast &amp; Slow Pointers, Explained</h3>
+        <p>Two pointers moving at different speeds through a linked list: cycle detection, midpoints, and the nth node from the end.</p>
+        <div class="foot"><span class="pill">Fast &amp; Slow Pointers</span><span class="open">Open explanation →</span></div>
+      </a>
+
+      <a class="card" href="concepts/prefix-sum.html" data-pattern="prefix-sum">
+        <div class="meta">Concept · Pattern</div>
+        <h3>Prefix Sums, Explained</h3>
+        <p>Precompute running totals once so that any range sum, or product, becomes a single subtraction.</p>
+        <div class="foot"><span class="pill">Prefix Sum</span><span class="open">Open explanation →</span></div>
+      </a>
+
+      <a class="card" href="concepts/cyclic-sort.html" data-pattern="cyclic-sort">
+        <div class="meta">Concept · Pattern</div>
+        <h3>Cyclic Sort, Explained</h3>
+        <p>When the numbers are 1 to n, put each one in its own slot and the missing or duplicate one falls out.</p>
+        <div class="foot"><span class="pill">Cyclic Sort</span><span class="open">Open explanation →</span></div>
+      </a>
+
+      <a class="card" href="concepts/binary-search.html" data-pattern="binary-search">
+        <div class="meta">Concept · Pattern</div>
+        <h3>Binary Search, Explained</h3>
+        <p>Halving the search space every step, and the "search on the answer" trick that makes it show up far outside sorted arrays.</p>
+        <div class="foot"><span class="pill">Binary Search</span><span class="open">Open explanation →</span></div>
+      </a>
+
+      <a class="card" href="concepts/intervals.html" data-pattern="intervals">
+        <div class="meta">Concept · Pattern</div>
+        <h3>Merge Intervals, Explained</h3>
+        <p>Sort by start, then sweep: merging, inserting, and finding overlaps.</p>
+        <div class="foot"><span class="pill">Intervals</span><span class="open">Open explanation →</span></div>
+      </a>
+
+      <a class="card" href="concepts/bit-manipulation.html" data-pattern="bit-manipulation">
+        <div class="meta">Concept · Pattern</div>
+        <h3>Bit Manipulation, Explained</h3>
+        <p>AND, OR, XOR, and shifts, and the handful of tricks that turn up in interviews.</p>
+        <div class="foot"><span class="pill">Bit Manipulation</span><span class="open">Open explanation →</span></div>
+      </a>
+
+    </div>
+
+    <h3 class="group">Recursion, search &amp; optimisation</h3>
+    <div class="grid">
+
+      <a class="card" href="concepts/backtracking.html" data-pattern="backtracking recursion">
+        <div class="meta">Concept · Pattern</div>
+        <h3>Backtracking, Explained</h3>
+        <p>Build a candidate one choice at a time and undo when it fails: subsets, permutations, and combinations from scratch.</p>
+        <div class="foot"><span class="pill">Backtracking</span><span class="open">Open explanation →</span></div>
+      </a>
+
+      <a class="card" href="concepts/dynamic-programming.html" data-pattern="dynamic-programming recursion">
+        <div class="meta">Concept · Pattern</div>
+        <h3>Dynamic Programming, Explained</h3>
+        <p>Overlapping subproblems, memoisation, and bottom-up tables, from Fibonacci to coin change.</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open explanation →</span></div>
+      </a>
+
+      <a class="card" href="concepts/greedy.html" data-pattern="greedy">
+        <div class="meta">Concept · Pattern</div>
+        <h3>Greedy Algorithms, Explained</h3>
+        <p>Taking the locally best choice at every step, when that works, and how to tell when it doesn't.</p>
+        <div class="foot"><span class="pill">Greedy</span><span class="open">Open explanation →</span></div>
+      </a>
+
+    </div>
+
+    <h3 class="group">Trees &amp; graphs</h3>
+    <div class="grid">
+
+      <a class="card" href="concepts/tree-traversal.html" data-pattern="tree recursion">
+        <div class="meta">Concept · Pattern</div>
+        <h3>Tree Traversal (DFS &amp; BFS), Explained</h3>
+        <p>Preorder, inorder, postorder, and level order, and which one to reach for.</p>
+        <div class="foot"><span class="pill">Tree</span><span class="open">Open explanation →</span></div>
+      </a>
+
+      <a class="card" href="concepts/graph-traversal.html" data-pattern="graph">
+        <div class="meta">Concept · Pattern</div>
+        <h3>Graph Traversal, Explained</h3>
+        <p>Representing a graph, BFS for shortest paths, DFS for connectivity, and union-find for grouping.</p>
+        <div class="foot"><span class="pill">Graph</span><span class="open">Open explanation →</span></div>
+      </a>
+
+      <a class="card" href="concepts/topological-sort.html" data-pattern="topological-sort graph">
+        <div class="meta">Concept · Pattern</div>
+        <h3>Topological Sort, Explained</h3>
+        <p>Ordering tasks that depend on each other with Kahn's algorithm, and detecting when a cycle makes it impossible.</p>
+        <div class="foot"><span class="pill">Topological Sort</span><span class="open">Open explanation →</span></div>
+      </a>
+
+    </div>
+
     <p class="none" hidden>No concept pages use this pattern yet.</p>
   </section>
 
-  <section id="easy">
+  <section id="sec-easy" data-section="easy" data-label="Easy" hidden>
     <h2>Easy</h2>
     <p class="sub">The easy tier of the Blind 75 and NeetCode 150 lists.</p>
     <div class="grid">
@@ -217,11 +409,13 @@
         <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
       </a>
 
+    
+
     </div>
     <p class="none" hidden>No easy walkthroughs use this pattern yet.</p>
   </section>
 
-  <section id="medium">
+  <section id="sec-medium" data-section="medium" data-label="Medium" hidden>
     <h2>Medium</h2>
     <p class="sub">The most frequently asked medium problems from the same lists. Numbering restarts per difficulty.</p>
     <div class="grid">
@@ -310,51 +504,111 @@
         <div class="foot"><span class="pill">Two Pointers</span><span class="open">Open walkthrough →</span></div>
       </a>
 
+    
+
     </div>
     <p class="none" hidden>No medium walkthroughs use this pattern yet.</p>
   </section>
 </main>
 
 <footer>
-  Problem index, review schedule, and pattern notes live in <a href="md.html?f=README.md">README.md</a>. Add a card above whenever a new <code>walkthrough.html</code> is written.
+  Problem index, review schedule, and pattern notes live in <a href="md.html?f=README.md">README.md</a>. To add a section (for example Hard), add a <code>&lt;section id="sec-hard" data-section="hard" data-label="Hard"&gt;</code> block above and the menu picks it up automatically. Add a card whenever a new <code>walkthrough.html</code> or concept page is written.
 </footer>
 
 <script>
   (function () {
+    var sections = Array.prototype.slice.call(document.querySelectorAll('main > section'));
     var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
-    var cards = Array.prototype.slice.call(document.querySelectorAll('.card'));
+    var menu = document.getElementById('menu');
+    var tabs = [];
 
-    chips.forEach(function (chip) {
-      var p = chip.dataset.pattern;
-      var n = p === 'all' ? cards.length : cards.filter(function (c) { return c.dataset.pattern === p; }).length;
-      chip.querySelector('.count').textContent = n;
+    function patternsOf(card) {
+      return (card.dataset.pattern || '').split(/\s+/).filter(Boolean);
+    }
+    function matches(card, pattern) {
+      return pattern === 'all' || patternsOf(card).indexOf(pattern) !== -1;
+    }
+
+    // Build the menu from the sections so adding a section adds a tab.
+    sections.forEach(function (sec) {
+      var btn = document.createElement('button');
+      btn.className = 'tab';
+      btn.setAttribute('role', 'tab');
+      btn.dataset.section = sec.dataset.section;
+      var n = sec.querySelectorAll('.card').length;
+      btn.innerHTML = sec.dataset.label + '<span class="count">' + n + '</span>';
+      btn.addEventListener('click', function () { apply(sec.dataset.section, currentPattern); });
+      menu.appendChild(btn);
+      tabs.push(btn);
     });
 
-    function apply(pattern) {
+    var currentSection = sections[0].dataset.section;
+    var currentPattern = 'all';
+
+    function apply(sectionId, pattern) {
+      currentSection = sectionId;
+      currentPattern = pattern;
+
+      tabs.forEach(function (t) {
+        t.setAttribute('aria-selected', t.dataset.section === sectionId ? 'true' : 'false');
+      });
+
+      var active = null;
+      sections.forEach(function (sec) {
+        var on = sec.dataset.section === sectionId;
+        sec.hidden = !on;
+        if (on) active = sec;
+      });
+
+      var cards = Array.prototype.slice.call(active.querySelectorAll('.card'));
+
+      // Chip counts reflect the active section; chips with nothing to show are hidden.
+      var available = false;
+      chips.forEach(function (chip) {
+        var p = chip.dataset.pattern;
+        var n = cards.filter(function (c) { return matches(c, p); }).length;
+        chip.querySelector('.count').textContent = n;
+        chip.hidden = p !== 'all' && n === 0;
+        if (p === pattern && n > 0) available = true;
+      });
+      if (!available) { pattern = 'all'; currentPattern = 'all'; }
       chips.forEach(function (chip) {
         chip.setAttribute('aria-pressed', chip.dataset.pattern === pattern ? 'true' : 'false');
       });
-      cards.forEach(function (card) {
-        card.hidden = pattern !== 'all' && card.dataset.pattern !== pattern;
+
+      cards.forEach(function (card) { card.hidden = !matches(card, pattern); });
+
+      // Hide group headings whose cards are all hidden.
+      Array.prototype.forEach.call(active.querySelectorAll('.group'), function (h) {
+        var grid = h.nextElementSibling;
+        h.hidden = !grid || grid.querySelectorAll('.card:not([hidden])').length === 0;
       });
-      document.querySelectorAll('section').forEach(function (sec) {
-        var none = sec.querySelector('.none');
-        if (!none) return;
-        var visible = sec.querySelectorAll('.card:not([hidden])').length;
-        none.hidden = visible > 0;
-      });
+
+      var none = active.querySelector('.none');
+      if (none) none.hidden = active.querySelectorAll('.card:not([hidden])').length > 0;
+
       try {
-        if (pattern === 'all') history.replaceState(null, '', location.pathname);
-        else history.replaceState(null, '', '#' + pattern);
+        var hash = sectionId + (pattern === 'all' ? '' : '/' + pattern);
+        history.replaceState(null, '', '#' + hash);
       } catch (e) {}
     }
 
     chips.forEach(function (chip) {
-      chip.addEventListener('click', function () { apply(chip.dataset.pattern); });
+      chip.addEventListener('click', function () { apply(currentSection, chip.dataset.pattern); });
     });
 
-    var initial = location.hash.replace('#', '');
-    if (chips.some(function (c) { return c.dataset.pattern === initial; })) apply(initial);
+    function fromHash() {
+      var parts = location.hash.replace('#', '').split('/');
+      var sec = parts[0], pat = parts[1] || 'all';
+      var knownSec = sections.some(function (s) { return s.dataset.section === sec; });
+      var knownPat = chips.some(function (c) { return c.dataset.pattern === pat; });
+      // Old links used #pattern on its own; keep those working.
+      if (!knownSec && chips.some(function (c) { return c.dataset.pattern === sec; })) { pat = sec; sec = sections[0].dataset.section; knownSec = true; }
+      apply(knownSec ? sec : sections[0].dataset.section, knownPat ? pat : 'all');
+    }
+
+    window.addEventListener('hashchange', fromHash);
+    fromHash();
   })();
 </script>
 

@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Greedy Algorithms, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Greedy Algorithms, Explained</h1>
+  <p class="lede">Taking the locally best choice at every step, when that works, and how to tell when it doesn't.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      You are a cashier handing back 63p in change, and you want to use as few coins as possible. You do not sit
+      down and enumerate every combination of coins. You grab the biggest coin that still fits — 25p — then the
+      biggest that fits in what is left, and so on, until you have handed over nothing. It takes about four
+      seconds and you have never once regretted a coin.
+    </p>
+    <p>
+      A <strong>greedy algorithm</strong> is exactly that: at each step take the choice that looks best right
+      now, commit to it, and never reconsider. No backtracking, no table of alternatives, no second guesses.
+    </p>
+    <div class="callout why">
+      <strong>Why it's fast:</strong> you look at each option once and make one decision about it, so the whole
+      thing is a single pass — usually O(n), or O(n log n) if you have to sort first. Compare that with
+      <a href="backtracking.html">backtracking</a>, which walks every combination, or
+      <a href="dynamic-programming.html">dynamic programming</a>, which fills a whole table. Greedy does neither.
+      It keeps no history at all.
+    </div>
+    <div class="callout gotcha">
+      <strong>And why it is dangerous:</strong> keeping no history means that if the locally best choice is ever
+      the globally wrong one, you will never find out. Greedy is the one pattern where writing the code is easy
+      and knowing whether you are <em>allowed</em> to write it is the hard part. There is a worked
+      counterexample below; read it before you trust a greedy solution.
+    </div>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <p>Greedy is worth trying when:</p>
+    <ul>
+      <li><strong>There is an obvious "best" ordering</strong> — biggest first, earliest deadline first, earliest finishing time first — and the problem practically hands it to you.</li>
+      <li><strong>The problem asks for a maximum count or a minimum count</strong> of things chosen under a simple constraint: most meetings that fit, fewest coins, fewest jumps.</li>
+      <li><strong>A choice does not badly constrain later choices.</strong> Taking the meeting that ends soonest leaves the most room for everything after it; nothing you might want later becomes impossible.</li>
+      <li><strong>You can argue an <em>exchange</em>:</strong> "take any optimal answer that does not include my greedy choice; I can swap my choice in without making it worse." If you can say that sentence honestly, greedy is correct. If you cannot, it probably is not.</li>
+      <li><strong>Sorting the input makes the problem look trivial.</strong> Half of all greedy solutions are a <code>sort</code> followed by one loop.</li>
+    </ul>
+    <p class="muted">
+      Negative signal: if choices interact — taking this item changes what the <em>best</em> next item even is,
+      as with a weight limit or a budget — greedy usually fails and you want
+      <a href="dynamic-programming.html">dynamic programming</a>.
+    </p>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>
+      The running example is <strong>fewest coins to make an amount</strong>. The complete, obviously-correct
+      approach is to try every coin as the next one and keep the best result:
+    </p>
+    <pre>def min_coins_slow(coins, amount):
+    if amount == 0:
+        return 0
+    best = float("inf")
+    for c in coins:
+        if c &lt;= amount:
+            best = min(best, min_coins_slow(coins, amount - c) + 1)
+    return best
+
+min_coins_slow([25, 10, 5, 1], 12)   # 3  (10 + 1 + 1)</pre>
+    <p>
+      This is always right, and it is exponential: every call branches once per coin, so the number of calls
+      grows exponentially — about 390 million calls for an amount of 63, which is hopeless. Even asking it for
+      an amount of 100 will outlast your patience.
+    </p>
+    <p>
+      The wasted work is that it explores <em>orderings</em>. It tries 25-then-10 and 10-then-25 as if they were
+      different answers, and it re-solves "make 38p" once for every different route that arrives at 38p. Caching
+      those repeats is <a href="dynamic-programming.html">dynamic programming</a> and gets you to
+      O(amount × coins). The greedy claim is bolder: that you never needed to explore at all.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>Sort into the order that makes "best" mean something, then take everything you can, in that order.</p>
+    <pre>def min_coins_greedy(coins, amount):
+    coins = sorted(coins, reverse=True)   # biggest first: the ordering IS the algorithm
+    used = []
+    for c in coins:
+        while amount &gt;= c:                # take as many of this coin as fit
+            amount -= c
+            used.append(c)
+    return used
+
+min_coins_greedy([1, 5, 10, 25], 63)   # [25, 25, 10, 1, 1, 1] — six coins</pre>
+    <p>
+      The line that matters is <code>sorted(coins, reverse=True)</code>. In a greedy algorithm the sort key
+      <em>is</em> the algorithm — everything after it is bookkeeping. When a greedy solution is wrong, the bug is
+      almost never in the loop; it is that you sorted by the wrong thing, or that no sort key exists for this
+      problem at all.
+    </p>
+    <p>
+      The general shape, for any greedy problem, is the same three lines: <strong>sort by the key</strong>,
+      <strong>walk the sorted items once</strong>, <strong>take each one if it is still compatible with what you
+      have already taken</strong>.
+    </p>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>Make 63p from coins <code>[1, 5, 10, 25]</code>, sorted biggest first.</p>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="Coins 25 10 5 1 with the pointer on 25">
+        <div class="cell hi"><span class="idx">0</span>25<span class="ptr">c</span></div>
+        <div class="cell"><span class="idx">1</span>10</div>
+        <div class="cell"><span class="idx">2</span>5</div>
+        <div class="cell"><span class="idx">3</span>1</div>
+      </div>
+    </div>
+    <p class="caption">Start. <code>amount = 63</code>, nothing taken yet, sitting on the biggest coin.</p>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>Step</th><th>coin</th><th>amount</th><th>Decision</th><th>amount after</th><th>taken</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>25</code></td><td>63</td><td>63 ≥ 25, take it</td><td>38</td><td><code>[25]</code></td></tr>
+          <tr><td>2</td><td><code>25</code></td><td>38</td><td>38 ≥ 25, take it</td><td>13</td><td><code>[25,25]</code></td></tr>
+          <tr><td>3</td><td><code>25</code></td><td>13</td><td>13 &lt; 25, move to the next coin</td><td>13</td><td>—</td></tr>
+          <tr><td>4</td><td><code>10</code></td><td>13</td><td>13 ≥ 10, take it</td><td>3</td><td><code>[25,25,10]</code></td></tr>
+          <tr><td>5</td><td><code>10</code></td><td>3</td><td>3 &lt; 10, move on</td><td>3</td><td>—</td></tr>
+          <tr><td>6</td><td><code>5</code></td><td>3</td><td>3 &lt; 5, move on</td><td>3</td><td>—</td></tr>
+          <tr class="hi"><td>7</td><td><code>1</code></td><td>3</td><td>take it three times</td><td>0</td><td><code>[25,25,10,1,1,1]</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="Final coins 25 25 10 1 1 1">
+        <div class="cell ok">25</div>
+        <div class="cell ok">25</div>
+        <div class="cell ok">10</div>
+        <div class="cell ok">1</div>
+        <div class="cell ok">1</div>
+        <div class="cell ok">1</div>
+      </div>
+    </div>
+    <p class="caption">End. Six coins, and six really is the minimum for 63p with these denominations.</p>
+
+    <p>
+      Notice what happened at step 1 — or rather, what <em>didn't</em>. Taking that first 25p was never revisited.
+      No later step could say "actually, two 10s and a 5 would have been better", because the algorithm keeps no
+      record of the choice and has no mechanism for changing it. It worked here, for a reason specific to these
+      coins: with 1, 5, 10 and 25, no pile of smaller coins can ever replace a bigger coin using fewer pieces.
+      Change the coin set and that reason evaporates.
+    </p>
+  </section>
+
+  <section>
+    <h2>When greedy fails</h2>
+    <p>
+      Run the exact same function with coins <code>[1, 3, 4]</code> and an amount of <code>6</code>. Sorted
+      biggest first, that is 4, 3, 1.
+    </p>
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>Step</th><th>coin</th><th>amount</th><th>Decision</th><th>amount after</th><th>taken</th></tr></thead>
+        <tbody>
+          <tr class="hi"><td>1</td><td><code>4</code></td><td>6</td><td>6 ≥ 4, take it — this is the mistake</td><td>2</td><td><code>[4]</code></td></tr>
+          <tr><td>2</td><td><code>3</code></td><td>2</td><td>2 &lt; 3, move on</td><td>2</td><td>—</td></tr>
+          <tr><td>3</td><td><code>1</code></td><td>2</td><td>take it twice</td><td>0</td><td><code>[4,1,1]</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="Greedy answer four one one, three coins">
+        <div class="cell warn">4</div>
+        <div class="cell warn">1</div>
+        <div class="cell warn">1</div>
+      </div>
+    </div>
+    <p class="caption">What greedy returns: three coins.</p>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="Optimal answer three three, two coins">
+        <div class="cell ok">3</div>
+        <div class="cell ok">3</div>
+      </div>
+    </div>
+    <p class="caption">What is actually optimal: <code>3 + 3</code>, two coins. Greedy is 50% worse, on an input with three coins and an amount of six.</p>
+
+    <p>
+      Look at where it went wrong: <strong>step 1</strong>. Taking the 4 left a remainder of 2, and 2 is an
+      awkward number to make from 1s, 3s and 4s. The 3 was the better first move even though it is smaller —
+      because of what it leaves behind, which is information greedy never looks at. And this is not a one-off:
+      the same coins give the wrong answer for 6, 10, 14, 18, 22, 26, 30, and so on forever.
+    </p>
+    <div class="callout tip">
+      <strong>How to check, in two minutes.</strong> Before trusting a greedy rule, do this: write the honest
+      brute force (or a small DP), generate every input up to some small size, and compare the two answers. If
+      they never disagree, you probably have something. If they disagree once, you are done — you have your
+      counterexample, and the answer is <a href="dynamic-programming.html">dynamic programming</a>. Sweeping
+      amounts 1 to 200 for the coins <code>[1, 5, 10, 25]</code> finds no disagreement; the same sweep for
+      <code>[1, 3, 4]</code> finds one at 6 almost immediately.
+    </div>
+    <p>
+      This is why <a href="../medium/008-coin-change/walkthrough.html">Coin Change</a> is a DP problem on
+      LeetCode and not a greedy one: the coins are given to you, so you cannot assume they behave like real money.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>Sort by end time: fit the most items</h3>
+    <p>
+      The classic correct greedy. Given meetings with start and end times, book as many non-overlapping ones as
+      possible. Sort by <strong>end</strong> time and take every meeting that starts after the last one you took
+      finished.
+    </p>
+    <pre>def max_meetings(meetings):
+    meetings = sorted(meetings, key=lambda m: m[1])   # earliest FINISHING first
+    count = 0
+    last_end = float("-inf")
+    for start, end in meetings:
+        if start &gt;= last_end:        # does not clash with what we already took
+            count += 1
+            last_end = end
+    return count
+
+max_meetings([(1, 3), (2, 4), (3, 5), (0, 6), (5, 7), (8, 9)])   # 4</pre>
+    <p>
+      The exchange argument works here: the meeting that finishes earliest leaves at least as much room as any
+      other first choice, so swapping it into any optimal schedule never makes things worse. Sort the same list
+      by <em>start</em> time instead and you get <code>2</code> — the long <code>(0, 6)</code> meeting gets
+      picked first and blocks four others.
+    </p>
+
+    <h3>Sort by start: merging intervals</h3>
+    <p>
+      A different key for a different question. To merge overlapping ranges, sort by start and extend the last
+      range whenever the next one begins before it ends.
+    </p>
+    <pre>def merge(intervals):
+    intervals = sorted(intervals, key=lambda x: x[0])   # earliest STARTING first
+    merged = []
+    for start, end in intervals:
+        if merged and start &lt;= merged[-1][1]:           # overlaps the last one
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+    return merged
+
+merge([[1, 3], [2, 6], [8, 10], [15, 18]])   # [[1, 6], [8, 10], [15, 18]]</pre>
+
+    <h3>Running best, no sort at all</h3>
+    <p>
+      Some greedy algorithms need no ordering because the input order already is the ordering. Buying and
+      selling a stock once: at every day, greedily assume you bought at the cheapest price seen so far.
+    </p>
+    <pre>def max_profit(prices):
+    cheapest = float("inf")
+    best = 0
+    for p in prices:
+        cheapest = min(cheapest, p)     # greedy: always buy at the cheapest so far
+        best = max(best, p - cheapest)
+    return best
+
+max_profit([7, 1, 5, 3, 6, 4])   # 5</pre>
+    <p>
+      This one is correct because a cheaper buying day is never worse for any future selling day — the exchange
+      argument again, in one line.
+    </p>
+
+    <h3>Greedy with a heap</h3>
+    <p>
+      When "best right now" changes as you go, you cannot pre-sort — you need a structure that hands you the
+      current best on demand. That is a heap (a priority queue), and the pattern is: push everything you have
+      unlocked, pop the best, repeat. Task scheduling and "merge k sorted lists" both look like this.
+    </p>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong>Assuming greedy works because it feels obvious.</strong> The coin example above is the whole
+      lesson: a rule that is correct for real money is wrong for <code>[1, 3, 4]</code>, and nothing in the code
+      hints at it. "It felt right" is not an argument. Either state the exchange argument in a sentence, or test
+      against brute force on small inputs.
+    </div>
+    <div class="callout gotcha">
+      <strong>Passing the sample tests and calling it proved.</strong> Greedy failures are usually rare and
+      structured — they need a specific relationship between the values, so the first few examples in a problem
+      statement typically miss them entirely. A greedy solution that passes three hand-written examples has
+      shown nothing.
+    </div>
+    <div class="callout gotcha">
+      <strong>Sorting by the wrong key.</strong> "Sort the intervals" is not an instruction; by start and by end
+      are different algorithms answering different questions. Before typing the <code>sort</code>, say what the
+      key is <em>for</em>: earliest finish leaves the most room, earliest start makes overlaps adjacent.
+    </div>
+    <div class="callout gotcha">
+      <strong>Using greedy when choices compete for a shared budget.</strong> In 0/1 knapsack, taking items by
+      best value-per-kilogram is the natural greedy rule, and it is wrong: with items (3kg, £6), (4kg, £7),
+      (5kg, £8) and a 9kg limit, greedy takes the 3kg and 4kg items for £13, while the 4kg and 5kg pair fills the
+      bag exactly for £15. A shared, exhaustible resource is the standard signal that you need
+      <a href="dynamic-programming.html">DP</a> instead.
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Time:</strong> O(n log n) when the sort is what makes it work, since the sort dominates the single pass afterwards. O(n) when no sort is needed, as in the running-best variants. This is the payoff: DP on the same problem is often O(n × something).</li>
+      <li><strong>Space:</strong> O(1) beyond the input if you sort in place and keep only a running answer, O(n) if you build an output list or sort a copy. See <a href="time-space-complexity.html">time &amp; space complexity</a>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <ul class="problems">
+      <li><span class="id">easy/005</span><a href="../easy/005-best-time-to-buy-and-sell-stock/walkthrough.html">Best Time to Buy and Sell Stock</a><span class="note">greedily hold the cheapest price seen so far</span></li>
+      <li><span class="id">medium/007</span><a href="../medium/007-maximum-subarray/walkthrough.html">Maximum Subarray</a><span class="note">greedily drop a running sum once it turns negative</span></li>
+      <li><span class="id">medium/009</span><a href="../medium/009-merge-intervals/walkthrough.html">Merge Intervals</a><span class="note">sort by start, then one sweep</span></li>
+      <li><span class="id">medium/008</span><a href="../medium/008-coin-change/walkthrough.html">Coin Change</a><span class="note">the counterexample above — greedy fails, DP does not</span></li>
+    </ul>
+    <p class="muted" style="margin-top:14px">Classic LeetCode problems not yet in the repo: Jump Game (#55), Non-overlapping Intervals (#435), Partition Labels (#763), Gas Station (#134), Task Scheduler (#621).</p>
+  </section>
+
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>

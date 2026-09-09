@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Merge Intervals, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Merge Intervals, Explained</h1>
+  <p class="lede">Sort by start, then sweep: merging, inserting, and finding overlaps.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      Picture a stack of sticky notes on your desk, each one a booking for the same meeting room:
+      "9:00 to 10:00", "2:00 to 6:00", "8:00 to 10:00". They came in whatever order people happened to
+      ask, so the pile is a mess. You want to know the real answer: which blocks of time is the room
+      actually busy?
+    </p>
+    <p>
+      Nobody solves that by comparing every note with every other note. You lay them out
+      <strong>in order of start time</strong>, then read left to right with one finger, gluing a note
+      onto the one before it whenever they touch. That is the entire pattern.
+    </p>
+    <p>
+      An <strong>interval</strong> is just a pair of numbers, <code>[start, end]</code>, standing for a
+      stretch of a line: a range of times, a range of positions, a range of anything ordered. Two
+      intervals <strong>overlap</strong> when they share at least one point. The pattern is:
+      <em>sort by start, then sweep once, keeping a single "currently open" interval that you either
+      stretch or close off.</em>
+    </p>
+    <div class="callout why">
+      <strong>Why it's fast:</strong> once the list is sorted by start, any interval that could overlap
+      the one you are holding must be the very next one you read. Everything further right starts even
+      later. So you never need to look backwards, and one pass is enough.
+    </div>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <p>You are almost certainly looking at an interval problem when:</p>
+    <ul>
+      <li><strong>The input is a list of pairs</strong> like <code>[[1,3],[2,6],[8,10]]</code>, and the two
+        numbers in each pair mean "from" and "to".</li>
+      <li><strong>The words are calendar words</strong>: meetings, bookings, schedules, conflicts, rooms,
+        flights, shifts, "busy", "free".</li>
+      <li><strong>The question asks about overlap</strong>: merge the overlapping ones, count how many
+        overlap at once, remove the fewest so that none overlap, insert a new one.</li>
+      <li><strong>The ranges are unsorted and the answer must be sorted.</strong> That is a strong hint that
+        sorting is step one and the real work is the single pass after it.</li>
+      <li><strong>The pairs are ranges on a line</strong> even if they are not times: memory blocks, ranges
+        of IP addresses, chapters in a book, x-coordinates of buildings.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>
+      Here is the honest first attempt. Take every pair of intervals, and if two of them overlap, replace
+      them with one combined interval. Repeat the whole thing until a full pass changes nothing, because
+      gluing two together can create a new overlap with a third.
+    </p>
+    <pre>def merge_slow(intervals):
+    merged = [list(iv) for iv in intervals]
+    changed = True
+    while changed:
+        changed = False
+        for i in range(len(merged)):
+            for j in range(i + 1, len(merged)):
+                a, b = merged[i], merged[j]
+                if a[0] &lt;= b[1] and b[0] &lt;= a[1]:      # they overlap
+                    a[0] = min(a[0], b[0])
+                    a[1] = max(a[1], b[1])
+                    merged.pop(j)
+                    changed = True
+                    break
+            if changed:
+                break
+    return sorted(merged)     # and now sort, because the answer must be in order</pre>
+    <p>
+      This works. It is also slow, and worse, it is fiddly: the <code>break</code>s exist only to restart
+      the scan after a merge, and the <code>while changed</code> loop can run many times. Each full scan
+      is O(n²) and there can be O(n) scans, so the worst case is O(n³).
+    </p>
+    <p>
+      The wasted work is the backtracking. Interval <code>[15,18]</code> gets compared against
+      <code>[1,3]</code> over and over, even though a human glancing at the desk can see they are nowhere
+      near each other. All that checking exists purely because the notes are in random order. Put them in
+      order once and the question "could these two overlap?" is answered by adjacency instead of by a
+      comparison.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>
+      Sort by start. Hold one interval open. For each next interval, either stretch the open one or close
+      it and open a new one.
+    </p>
+    <pre>def merge(intervals):
+    if not intervals:
+        return []
+
+    intervals = sorted(intervals, key=lambda iv: iv[0])   # 1. sort by start
+    out = [list(intervals[0])]                            # 2. seed with the first
+
+    for start, end in intervals[1:]:
+        last = out[-1]
+        if start &lt;= last[1]:            # THE line: does this one start before the last one ended?
+            last[1] = max(last[1], end) # overlap -&gt; stretch the open interval
+        else:
+            out.append([start, end])    # gap -&gt; close it off and start a new one
+
+    return out</pre>
+    <p>
+      The line that matters is <code>if start &lt;= last[1]</code>. Read it out loud as a question about the
+      current note and the one you already glued down: <em>"does this one begin before that one finished?"</em>
+      If yes they touch, so there is really only one busy block, and you widen it. If no, there is a genuine
+      gap, and the block you were holding is final.
+    </p>
+    <p>
+      Two details are worth staring at. First, <code>out[-1]</code> is the interval you are still holding open;
+      the rest of <code>out</code> is already finished and never touched again. Second, you must write
+      <code>max(last[1], end)</code>, not just <code>end</code> — the new interval can be entirely swallowed by
+      the open one, as <code>[2,3]</code> is by <code>[1,10]</code>, and plain assignment would shrink your
+      answer.
+    </p>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>Merge <code>[[8,10], [1,3], [15,18], [2,6], [9,12]]</code>. Here is the desk before you tidy it:</p>
+
+<pre class="art">          0    5    10   15   20
+          |----|----|----|----|
+[8,10]            ###
+[1,3]      ###
+[15,18]                  ####
+[2,6]       #####
+[9,12]             ####</pre>
+    <p class="caption">Five bookings, in the order they arrived. Hard to see anything.</p>
+
+    <p>Step one, sort by start. Nothing clever, just <code>sorted(intervals, key=lambda iv: iv[0])</code>:</p>
+
+<pre class="art">          0    5    10   15   20
+          |----|----|----|----|
+[1,3]      ###
+[2,6]       #####
+[8,10]            ###
+[9,12]             ####
+[15,18]                  ####</pre>
+    <p class="caption">Same five bookings, sorted by start time. Now the overlaps are visibly adjacent.</p>
+
+    <p>
+      Now sweep. <code>open</code> is the interval sitting at <code>out[-1]</code>, the one you are still
+      holding; <code>done</code> is everything already closed off behind you.
+    </p>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>Step</th><th>Reading</th><th>open</th><th>start &lt;= open end?</th><th>Action</th><th>done</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>—</td><td><code>[1,3]</code></td><td>—</td><td>seed with the first interval</td><td>—</td></tr>
+          <tr class="hi"><td>1</td><td><code>[2,6]</code></td><td><code>[1,3]</code></td><td>2 &lt;= 3 → yes</td><td>stretch: end becomes <code>max(3,6)=6</code></td><td>—</td></tr>
+          <tr><td>2</td><td><code>[8,10]</code></td><td><code>[1,6]</code></td><td>8 &lt;= 6 → no</td><td>close <code>[1,6]</code>, open <code>[8,10]</code></td><td><code>[1,6]</code></td></tr>
+          <tr class="hi"><td>3</td><td><code>[9,12]</code></td><td><code>[8,10]</code></td><td>9 &lt;= 10 → yes</td><td>stretch: end becomes <code>max(10,12)=12</code></td><td><code>[1,6]</code></td></tr>
+          <tr><td>4</td><td><code>[15,18]</code></td><td><code>[8,12]</code></td><td>15 &lt;= 12 → no</td><td>close <code>[8,12]</code>, open <code>[15,18]</code></td><td><code>[1,6]</code>, <code>[8,12]</code></td></tr>
+          <tr><td>end</td><td>—</td><td><code>[15,18]</code></td><td>—</td><td>the open one is part of the answer too</td><td><code>[1,6]</code>, <code>[8,12]</code>, <code>[15,18]</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+<pre class="art">          0    5    10   15   20
+          |----|----|----|----|
+[1,6]      ######
+[8,12]            #####
+[15,18]                  ####</pre>
+    <p class="caption">The answer: three genuinely separate busy blocks. Five intervals in, one pass, three out.</p>
+
+    <p>
+      Notice what happened at step 3. The open interval was <code>[8,10]</code> and the new one was
+      <code>[9,12]</code>, so the end moved from 10 to 12 — and that <em>changed the question asked at step 4</em>.
+      Against the original <code>[8,10]</code> you would ask "is 15 &lt;= 10?"; against the stretched
+      <code>[8,12]</code> you ask "is 15 &lt;= 12?". Both happen to be "no" here, but that is luck. This is why the
+      open interval has to be a live, mutable thing rather than a copy of whatever you last read: each merge can
+      widen the target that the <em>next</em> interval is tested against.
+    </p>
+    <p>
+      Also notice the last row. The loop ends with an interval still open, and it never goes through the
+      <code>else</code> branch that appends. It is already in <code>out</code> because you appended it when
+      you opened it, and you have been mutating it in place ever since. Beginners who build the answer with a
+      separate <code>current</code> variable instead of <code>out[-1]</code> almost always forget to append
+      that final one.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>Insert one interval into an already-sorted list</h3>
+    <p>
+      If the list is already sorted and non-overlapping, and you are handed one new interval, you do not need
+      to sort again. Walk the list in three phases: everything that ends before the new one starts goes
+      through untouched; everything that overlaps gets absorbed into the new one; everything after goes
+      through untouched. That is O(n) with no sort at all.
+    </p>
+    <pre>def insert(intervals, new):
+    out = []
+    i, n = 0, len(intervals)
+
+    while i &lt; n and intervals[i][1] &lt; new[0]:   # ends before new starts
+        out.append(intervals[i])
+        i += 1
+
+    start, end = new
+    while i &lt; n and intervals[i][0] &lt;= end:     # overlaps new
+        start = min(start, intervals[i][0])
+        end = max(end, intervals[i][1])
+        i += 1
+    out.append([start, end])
+
+    out.extend(intervals[i:])                   # everything after
+    return out</pre>
+    <p class="muted">
+      The subtle bit is <code>intervals[i][0] &lt;= end</code> in the second loop, where <code>end</code> is
+      growing as you go. Absorbing an interval can extend the reach far enough to swallow the next one too.
+    </p>
+
+    <h3>Sort by <em>end</em> instead: fewest removals</h3>
+    <p>
+      "Remove the fewest intervals so that none of the survivors overlap" is not a merge problem, and sorting
+      by start gives the wrong answer. Sort by <strong>end</strong> and keep greedily: whenever two conflict,
+      throw away the one that ends later, because it blocks more of the future. This is a
+      <a href="greedy.html">greedy</a> argument, not a sweep.
+    </p>
+    <pre>def erase_overlap_intervals(intervals):
+    if not intervals:
+        return 0
+    intervals = sorted(intervals, key=lambda iv: iv[1])   # sort by END
+    kept_end = intervals[0][1]
+    removed = 0
+    for start, end in intervals[1:]:
+        if start &lt; kept_end:      # conflicts with the one we kept
+            removed += 1          # drop this one; it ends later
+        else:
+            kept_end = end
+    return removed</pre>
+
+    <h3>The sweep line: how many overlap at once</h3>
+    <p>
+      "How many meeting rooms do I need?" is not asking you to merge anything — it is asking for the biggest
+      pile-up. Forget the intervals and keep only the <em>events</em>: a start is <code>+1</code> person in the
+      building, an end is <code>-1</code>. Sort all the events by time and run a counter. The peak is your
+      answer.
+    </p>
+    <pre>def max_overlap(intervals):
+    events = []
+    for start, end in intervals:
+        events.append((start, 1))    # a meeting begins
+        events.append((end, -1))     # a meeting ends
+    events.sort()                    # ends (-1) sort before starts (+1) at the same time
+
+    live = best = 0
+    for _time, delta in events:
+        live += delta
+        best = max(best, live)
+    return best</pre>
+    <p class="muted">
+      The tuple sort is doing real work here. At the same timestamp, <code>(5, -1)</code> sorts before
+      <code>(5, 1)</code>, so a meeting that ends at 5 frees its room before a meeting starting at 5 claims one.
+      If your problem counts <code>[1,5]</code> and <code>[5,9]</code> as a conflict, starts must win the tie
+      instead: keep the deltas as they are but sort with <code>key=lambda e: (e[0], -e[1])</code>. The same job can be done with a min-<a href="heap.html">heap</a> of
+      end times, which some people find easier to picture.
+    </p>
+
+    <h3>Two sorted lists at once: intersections</h3>
+    <p>
+      Given two separate sorted lists of intervals, the overlap of <code>a</code> and <code>b</code> is
+      <code>[max(a.start, b.start), min(a.end, b.end)]</code>, which is a real interval only when that start is
+      &lt;= that end. Walk both lists with an index each and always advance the one that ends first — a
+      <a href="two-pointers.html">two-pointer</a> merge rather than a sweep.
+    </p>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong>Assigning the new end instead of taking the max.</strong> Writing <code>last[1] = end</code>
+      looks fine until a short interval hides inside a long one: merging <code>[1,10]</code> with
+      <code>[2,3]</code> would silently shrink your answer to <code>[1,3]</code>. Always
+      <code>last[1] = max(last[1], end)</code>.
+    </div>
+    <div class="callout gotcha">
+      <strong>Guessing whether touching counts as overlapping.</strong> Do <code>[1,4]</code> and
+      <code>[4,5]</code> merge into <code>[1,5]</code>, or stay apart? It depends entirely on the problem, and
+      it is the difference between <code>&lt;=</code> and <code>&lt;</code> on one line. LeetCode's Merge
+      Intervals says they merge. A "meeting rooms" problem usually says they don't, because you can leave at 4
+      and someone else can arrive at 4. Decide this before you write the comparison, not after the test fails.
+    </div>
+    <div class="callout gotcha">
+      <strong>Sorting by the wrong end of the pair.</strong> Merging needs sort-by-start. Greedy
+      "keep the most non-overlapping intervals" needs sort-by-end. They are different problems that both look
+      like "sort the intervals", and using the wrong key gives an answer that is right on your small test and
+      wrong on the real one.
+    </div>
+    <div class="callout gotcha">
+      <strong>Mutating the caller's list.</strong> <code>intervals.sort()</code> reorders the list you were
+      handed, and <code>out = [intervals[0]]</code> puts the caller's own inner list into your result, so
+      <code>last[1] = ...</code> then edits their data. Use <code>sorted(...)</code>, which returns a new list,
+      and <code>list(intervals[0])</code>, which copies the pair. Interview graders rarely check this;
+      real code and confusing test failures both do.
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Time: O(n log n).</strong> The sort dominates. The sweep itself touches each interval exactly
+        once, so it is only O(n) — if the input arrives already sorted, as in the insert variation, the whole
+        thing drops to O(n).</li>
+      <li><strong>Space: O(n) for the output, O(1) extra.</strong> Beyond the list you are building you keep
+        nothing but a couple of variables. (Python's sort itself needs O(n) working space, and
+        <a href="time-space-complexity.html">the usual convention</a> is to count the output separately from
+        the extra space.)</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <ul class="problems">
+      <li><span class="id">medium/009</span><a href="../medium/009-merge-intervals/walkthrough.html">Merge Intervals</a><span class="note">sort by start, sweep once, stretch or close</span></li>
+    </ul>
+    <p class="muted" style="margin-top:14px">
+      Classic interval problems not yet in the repo: Insert Interval (#57), Non-overlapping Intervals (#435),
+      Meeting Rooms (#252), Meeting Rooms II (#253), Interval List Intersections (#986), Minimum Number of
+      Arrows to Burst Balloons (#452). If you can do Merge Intervals from memory, #57 and #435 are the two
+      that teach the most next.
+    </p>
+  </section>
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>

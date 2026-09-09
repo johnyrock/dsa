@@ -1,6 +1,6 @@
 # 011. LRU Cache
 
-**Difficulty:** Medium | **Pattern:** [linked-list](../../patterns/linked-list.md) | **Source:** LeetCode #146
+**Difficulty:** Medium | **Pattern:** [linked-list](../../patterns/linked-list.md) ([explained](../../concepts/linked-list.html)) | **Source:** LeetCode #146
 
 ## Problem
 

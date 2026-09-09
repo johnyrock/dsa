@@ -1,6 +1,6 @@
 # 006. Add Two Numbers
 
-**Difficulty:** Medium | **Pattern:** [linked-list](../../patterns/linked-list.md) | **Source:** LeetCode #2
+**Difficulty:** Medium | **Pattern:** [linked-list](../../patterns/linked-list.md) ([explained](../../concepts/linked-list.html)) | **Source:** LeetCode #2
 
 ## Problem
 

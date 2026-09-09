@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binary Search, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Binary Search, Explained</h1>
+  <p class="lede">Halving the search space every step, and the "search on the answer" trick that makes it show up far outside sorted arrays.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      Think of a paper phone book. You are looking for "Nakamura". You do not start at page one and read every
+      name. You flop the book open near the middle, land on "Lawson", and think: <em>N comes after L, so the
+      whole first half is dead.</em> You throw it away, open the middle of what is left, and repeat. A book
+      with a million names is done in about twenty flips.
+    </p>
+    <p>
+      That is binary search. You keep a <em>range</em> of positions that could still hold the answer, look at
+      the middle one, and use what you see to throw away half the range. You repeat until the range is empty
+      or you have landed on the answer.
+    </p>
+    <div class="callout why">
+      <strong>Why it's fast:</strong> every step deletes half the remaining candidates. Halving 1,000,000 down
+      to 1 takes only about 20 steps, because 2²⁰ is roughly a million. That "number of halvings" is exactly
+      what <a href="time-space-complexity.html">O(log n)</a> means.
+    </div>
+    <p>
+      The one thing binary search demands is <strong>order</strong>. You have to be able to look at the middle
+      element and know, with certainty, which side the answer is on. A sorted array gives you that for free.
+      Later on you will see that other things give it to you too.
+    </p>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <p>Binary search is on the table when a problem has one of these smells:</p>
+    <ul>
+      <li><strong>The input is sorted</strong>, and the problem says "find" or "where would this go".</li>
+      <li><strong>The expected complexity is O(log n)</strong>, or the constraints are enormous (n up to 10⁹) so
+        even a single pass over every value is too slow.</li>
+      <li><strong>The question is "the smallest x that works"</strong> or "the largest x that works" — minimum
+        speed, minimum capacity, maximum size. This is the "search on the answer" flavour below.</li>
+      <li><strong>You can write a yes/no test</strong> that is <em>monotonic</em>: once the answer flips from
+        no to yes as x grows, it never flips back. Monotonic just means "goes one way and stays there".</li>
+      <li><strong>The array is sorted but rotated</strong>, or sorted in a wobbly way. Even then, one of the two
+        halves is always properly sorted, which is enough.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>Find the index of <code>target</code> in a sorted array. The obvious version walks the whole thing:</p>
+    <pre>def search_slow(nums, target):
+    for i in range(len(nums)):
+        if nums[i] == target:
+            return i
+    return -1</pre>
+    <p>
+      This is O(n): for a million numbers it does up to a million comparisons. And every one of them past the
+      first is wasted information. When <code>search_slow</code> checks index 0 and sees <code>2 &lt; 23</code>,
+      it has just learned that the array is sorted so <em>index 1 is also less than 23, and index 2, and so on
+      up until things get bigger</em>. It learns that and immediately throws it away, then checks index 1
+      anyway. Binary search is what you get when you refuse to throw that away.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>
+      Keep two indices, <code>lo</code> and <code>hi</code>, marking the range that could still contain the
+      answer. Here that range <em>includes</em> both ends, so an empty range is <code>lo &gt; hi</code>.
+    </p>
+    <pre>def binary_search(nums, target):
+    lo, hi = 0, len(nums) - 1        # the range [lo, hi], both ends included
+
+    while lo &lt;= hi:                  # while the range still has something in it
+        mid = (lo + hi) // 2         # // is integer division: round down
+        if nums[mid] == target:
+            return mid               # landed on it
+        elif nums[mid] &lt; target:
+            lo = mid + 1             # mid is too small, so is everything left of it
+        else:
+            hi = mid - 1             # mid is too big, so is everything right of it
+
+    return -1                        # range went empty, target is not here</pre>
+    <p>
+      The lines that matter are <code>lo = mid + 1</code> and <code>hi = mid - 1</code>. Read them as
+      <em>promises</em>: "I have personally checked <code>mid</code>, it is not the answer, and everything on
+      that side of it cannot be the answer either." The <code>+ 1</code> and <code>- 1</code> are what make
+      the range shrink every single time. If you ever write <code>lo = mid</code> in this template, the range
+      can stop shrinking and the loop runs forever.
+    </p>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>Search for <code>16</code> in <code>[2, 5, 8, 12, 16, 23, 38]</code>.</p>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="Sorted array 2 5 8 12 16 23 38, lo at index 0, hi at index 6, mid at index 3">
+        <div class="cell hi"><span class="idx">0</span>2<span class="ptr">lo</span></div>
+        <div class="cell"><span class="idx">1</span>5</div>
+        <div class="cell"><span class="idx">2</span>8</div>
+        <div class="cell warn"><span class="idx">3</span>12<span class="ptr">mid</span></div>
+        <div class="cell"><span class="idx">4</span>16</div>
+        <div class="cell"><span class="idx">5</span>23</div>
+        <div class="cell hi"><span class="idx">6</span>38<span class="ptr">hi</span></div>
+      </div>
+    </div>
+    <p class="caption">Start. The whole array is in play, and <code>mid = (0 + 6) // 2 = 3</code>.</p>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>Step</th><th>lo</th><th>hi</th><th>mid</th><th>nums[mid]</th><th>Decision</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>0</code></td><td><code>6</code></td><td><code>3</code></td><td>12</td><td>12 &lt; 16, drop indices 0–3, set <code>lo = 4</code></td></tr>
+          <tr><td>2</td><td><code>4</code></td><td><code>6</code></td><td><code>5</code></td><td>23</td><td>23 &gt; 16, drop indices 5–6, set <code>hi = 4</code></td></tr>
+          <tr class="hi"><td>3</td><td><code>4</code></td><td><code>4</code></td><td><code>4</code></td><td>16</td><td>equal — return <code>4</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="Final state, index 4 found, other cells greyed out">
+        <div class="cell dim"><span class="idx">0</span>2</div>
+        <div class="cell dim"><span class="idx">1</span>5</div>
+        <div class="cell dim"><span class="idx">2</span>8</div>
+        <div class="cell dim"><span class="idx">3</span>12</div>
+        <div class="cell ok"><span class="idx">4</span>16<span class="ptr">found</span></div>
+        <div class="cell dim"><span class="idx">5</span>23</div>
+        <div class="cell dim"><span class="idx">6</span>38</div>
+      </div>
+    </div>
+    <p class="caption">Three comparisons instead of five. Indices 3 and 5 were checked and then discarded; indices 0, 1 and 2 were eliminated without ever being examined.</p>
+
+    <p>
+      Notice what happened at step 1. One comparison against <code>12</code> eliminated <em>four</em> of the
+      seven positions — index 3 because we checked it, and indices 0, 1, 2 because sortedness guarantees they
+      are all smaller still. You are not paying for information about one element; you are paying for
+      information about half the array.
+    </p>
+    <p>
+      Notice also step 3. <code>lo</code> and <code>hi</code> are both 4, so the range holds exactly one
+      element, and <code>mid</code> is that element. This is why the loop condition is <code>lo &lt;= hi</code>
+      and not <code>lo &lt; hi</code>: with <code>&lt;</code> the loop would have quit one step early and
+      missed the answer sitting right there.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>Leftmost position (the insertion point)</h3>
+    <p>
+      Far more useful than plain "find it" is "where does this value <em>start</em>, or where would I insert
+      it to keep the array sorted?" That handles duplicates and missing values in one shot. The trick is to
+      never return early: keep shrinking until the range is empty, and let <code>lo</code> be the answer.
+    </p>
+    <pre>def lower_bound(nums, target):
+    """Index of the first element &gt;= target (== len(nums) if there is none)."""
+    lo, hi = 0, len(nums)            # note: hi is one PAST the end this time
+    while lo &lt; hi:                   # range is [lo, hi), right end excluded
+        mid = (lo + hi) // 2
+        if nums[mid] &lt; target:
+            lo = mid + 1             # mid is too small, answer is strictly right
+        else:
+            hi = mid                 # mid might BE the answer, so keep it
+    return lo</pre>
+    <p>
+      Two things changed. <code>hi</code> now sits one past the last index, so the range is "lo up to but not
+      including hi", and the loop stops when they meet. And <code>hi = mid</code> has no <code>- 1</code>,
+      because <code>mid</code> is still a candidate. Python ships this exact function as
+      <code>bisect.bisect_left</code>, and <code>bisect_right</code> for the first element strictly greater.
+      In an interview, writing it yourself once is worth it; in real code, use the library.
+    </p>
+
+    <h3>Search on the answer</h3>
+    <p>
+      This is the variation that surprises people, because there is no array to search. Suppose you must pick
+      a speed, or a capacity, or a size, and you can <em>test</em> a candidate value cheaply. If "does speed x
+      work?" is monotonic — too slow is no, and everything at or above some threshold is yes — then you can
+      binary search the <em>range of possible answers</em> instead of an array.
+    </p>
+    <pre>def min_workable(lo, hi, works):
+    """Smallest x in [lo, hi] with works(x) True, assuming False...False,True...True."""
+    while lo &lt; hi:
+        mid = (lo + hi) // 2
+        if works(mid):
+            hi = mid                 # mid works, but something smaller might too
+        else:
+            lo = mid + 1             # mid fails, so does everything below it
+    return lo</pre>
+    <p>
+      To use it you write the <code>works</code> function first — usually a simple O(n) simulation — then wrap
+      this around it. "Ship all packages within D days" and "Koko eating bananas" are both exactly this shape:
+      guess a capacity, simulate, adjust.
+    </p>
+
+    <h3>Rotated sorted arrays</h3>
+    <p>
+      An array like <code>[12, 16, 23, 38, 2, 5, 8]</code> is sorted and then <em>rotated</em>: someone cut it
+      and swapped the two pieces. You cannot compare <code>nums[mid]</code> to the target directly and know
+      which side to keep. But you can first compare <code>nums[lo]</code> to <code>nums[mid]</code> to find
+      out which half is the properly sorted one, then check whether the target falls inside that half's range.
+      If it does, search there; if it does not, search the other half. Still O(log n), just with one extra
+      question per step.
+    </p>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong>The infinite loop from <code>lo = mid</code>.</strong> With <code>mid = (lo + hi) // 2</code> and
+      <code>lo</code> and <code>hi</code> one apart, <code>mid</code> equals <code>lo</code>. Writing
+      <code>lo = mid</code> then changes nothing and the loop spins forever. Rule of thumb: if a branch assigns
+      <code>lo = mid</code>, you must round <code>mid</code> <em>up</em> with <code>(lo + hi + 1) // 2</code>.
+      Easier: stick to the two templates above, where <code>lo</code> always gets <code>mid + 1</code>.
+    </div>
+    <div class="callout gotcha">
+      <strong>Mixing up the two range styles.</strong> <code>hi = len(nums) - 1</code> pairs with
+      <code>while lo &lt;= hi</code> and <code>hi = mid - 1</code>. <code>hi = len(nums)</code> pairs with
+      <code>while lo &lt; hi</code> and <code>hi = mid</code>. Take one pair from each style and you get an
+      off-by-one or an index error. Pick one and always write it the same way.
+    </div>
+    <div class="callout gotcha">
+      <strong>Forgetting the input must be sorted.</strong> Binary search on unsorted data does not error, it
+      silently returns nonsense. If you have to sort first, that costs O(n log n), so a single search is not
+      worth it — but many searches over the same array very much are.
+    </div>
+    <div class="callout gotcha">
+      <strong>Overflow in <code>(lo + hi) // 2</code>.</strong> Python integers are unbounded so this is safe
+      here. In C++, Java, or Go, <code>lo + hi</code> can overflow a 32-bit int; there you write
+      <code>lo + (hi - lo) // 2</code>. Worth knowing because interviewers ask about it.
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Time:</strong> O(log n). The range halves every iteration, so it takes log₂(n) halvings to
+        get from n candidates down to one. For "search on the answer", it is O(log(range) × cost of one test).</li>
+      <li><strong>Space:</strong> O(1) for the loop version — just <code>lo</code>, <code>hi</code>, and
+        <code>mid</code>. A recursive version is O(log n) because of the call stack.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <ul class="problems">
+      <li><span class="id">easy/009</span><a href="../easy/009-binary-search/walkthrough.html">Binary Search</a><span class="note">the plain template, exactly as above</span></li>
+    </ul>
+    <p class="muted" style="margin-top:14px">Classic LeetCode problems not yet in the repo: Search Insert Position (#35), Find First and Last Position of Element in Sorted Array (#34), Search in Rotated Sorted Array (#33), Find Minimum in Rotated Sorted Array (#153), Koko Eating Bananas (#875), Median of Two Sorted Arrays (#4).</p>
+    <p class="muted">Related pages: <a href="two-pointers.html">Two Pointers</a> for the other big "shrink the range" idea, and <a href="time-space-complexity.html">Time &amp; Space Complexity</a> if O(log n) is still a bit fuzzy.</p>
+  </section>
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>

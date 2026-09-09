@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Topological Sort, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Topological Sort, Explained</h1>
+  <p class="lede">Ordering tasks that depend on each other with Kahn's algorithm, and detecting when a cycle makes it impossible.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      You are planning a course of study. You cannot take Recursion until you have done both Loops and
+      Functions, you cannot take either of those until you have done Intro, and Trees comes after Recursion.
+      Nobody hands you a schedule. All you have is a pile of index cards, each saying "X must come before Y".
+      You need a single order to work through, and it has to respect every card.
+    </p>
+    <p>
+      Here is how a person actually does it. Look at the pile and find any course with <em>nothing</em>
+      blocking it. Take it. Now cross that course off every card that mentioned it, which may free up some
+      other courses. Repeat until the pile is empty.
+    </p>
+    <p>
+      That is <strong>topological sort</strong>: given a directed graph whose edges mean "must come first",
+      produce an order of all the nodes such that every edge points forward. The version of it above, driven
+      by a count of how many things are still blocking each node, is <strong>Kahn's algorithm</strong>.
+    </p>
+    <div class="callout why">
+      <strong>Why it's fast:</strong> instead of rescanning the whole pile of cards to find what is free, you
+      keep a running count per node of how many blockers remain. Finishing a node decrements only its direct
+      successors, so across the whole run each edge is touched exactly once. That is O(V + E) instead of the
+      O(V<sup>2</sup> &times; E) you get from rescanning.
+    </div>
+    <p>
+      One thing can go wrong, and it is not a bug in the algorithm. If A must come before B and B must come
+      before A, there is no valid order at all. That is a <strong>cycle</strong>, and detecting it is half of
+      what these problems ask for.
+    </p>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <ul>
+      <li><strong>The words "prerequisite", "dependency", "must come before", "blocked by", "build order".</strong> These are the same problem wearing different clothes: courses, package installs, task schedules, recipe steps.</li>
+      <li><strong>The input is a list of pairs</strong> and the pairs are one-way. Two-way pairs are plain <a href="graph-traversal.html">graph traversal</a>; one-way pairs that mean "before" are topological sort.</li>
+      <li><strong>The question asks "is it possible?"</strong> rather than for the order itself. That is a cycle check, and the cycle check falls out of Kahn's algorithm for free.</li>
+      <li><strong>The question asks for the minimum number of rounds / semesters / parallel steps.</strong> That is the level-by-level variation below.</li>
+      <li><strong>The answer is allowed to be any valid order.</strong> A dead giveaway: topological orders are usually not unique, and the problem statement will say so.</li>
+    </ul>
+    <p class="muted">
+      The graph must be a <strong>DAG</strong> — a directed acyclic graph, meaning one-way edges and no
+      cycles. If it is not a DAG, no topological order exists.
+    </p>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>
+      Translate the index-card method literally: scan every remaining node, and for each one scan every edge
+      to see whether anything unfinished still points at it.
+    </p>
+    <pre>def topo_slow(nodes, edges):
+    remaining = set(nodes)
+    order = []
+    while remaining:
+        for node in sorted(remaining):
+            blocked = any(v == node and u in remaining for u, v in edges)
+            if not blocked:
+                order.append(node)
+                remaining.remove(node)
+                break
+        else:
+            return []          # nothing was free: there is a cycle
+    return order</pre>
+    <p>
+      This is correct, and it is the right thing to write first. But look at the cost. The outer
+      <code>while</code> runs once per node. Inside it you may scan every remaining node, and for each of
+      those you scan every edge. That is roughly O(V<sup>2</sup> &times; E) — for a thousand courses with ten thousand
+      prerequisites, on the order of ten billion comparisons to produce a thousand-item list.
+    </p>
+    <p>
+      The wasted work is the rescanning. Taking one course changes the blocked-ness of only the handful of
+      courses it pointed at, yet this code recomputes it for everything. Cache that number instead of
+      recomputing it and the whole algorithm collapses to one pass.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>
+      The cached number is called <strong>indegree</strong>: for each node, how many edges point <em>at</em>
+      it, counting only edges from nodes not yet placed. Indegree 0 means "nothing is blocking this, take it
+      now".
+    </p>
+    <pre>from collections import deque, defaultdict
+
+def topo_sort(nodes, edges):
+    # edges are (before, after) pairs
+    graph = defaultdict(list)
+    indegree = {n: 0 for n in nodes}
+    for before, after in edges:
+        graph[before].append(after)
+        indegree[after] += 1              # 'after' has one more thing blocking it
+
+    queue = deque(n for n in nodes if indegree[n] == 0)
+    order = []
+    while queue:
+        node = queue.popleft()
+        order.append(node)
+        for nxt in graph[node]:
+            indegree[nxt] -= 1            # one blocker cleared
+            if indegree[nxt] == 0:        # nothing left blocking it
+                queue.append(nxt)
+
+    if len(order) != len(nodes):
+        return []                          # a cycle: some nodes never reached 0
+    return order</pre>
+    <p>
+      The line that matters is <code>if indegree[nxt] == 0</code>. Read it as a gate that only opens on the
+      <em>last</em> blocker. A node with three prerequisites gets decremented three times and pushed exactly
+      once, on the third. Beginners often push whenever the count drops, which puts the node in the queue too
+      early and produces an order that violates the very constraints you were given.
+    </p>
+    <p>
+      The second line that matters is <code>if len(order) != len(nodes)</code> at the bottom. It is not a
+      sanity check bolted on, it <em>is</em> the cycle detector. Nodes inside a cycle each have a blocker
+      that is also inside the cycle, so none of their counts ever reaches 0, so none of them ever enters the
+      queue and none of them makes it into <code>order</code>. A short output means a cycle. Never omit this
+      check.
+    </p>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>
+      Five courses. The arrows mean "must come before". <code>intro</code> unlocks <code>loops</code> and
+      <code>funcs</code>; <code>recur</code> needs both of those; <code>trees</code> needs
+      <code>recur</code>.
+    </p>
+
+<pre class="art">        intro
+        /   \
+       v     v
+    loops   funcs
+       \     /
+        v   v
+        recur
+          |
+          v
+        trees</pre>
+    <p class="caption">Start. Starting indegrees: intro 0, loops 1, funcs 1, recur 2, trees 1.</p>
+
+    <p>
+      Only <code>intro</code> has indegree 0, so the queue begins as <code>[intro]</code>. Each row is one
+      turn of the <code>while</code> loop.
+    </p>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>Step</th><th>Popped</th><th>Decrements</th><th>Indegrees after</th><th>Queue after</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>intro</code></td><td>loops 1&rarr;0, funcs 1&rarr;0</td><td><code>loops 0, funcs 0, recur 2, trees 1</code></td><td><code>[loops, funcs]</code></td></tr>
+          <tr class="hi"><td>2</td><td><code>loops</code></td><td>recur 2&rarr;1</td><td><code>recur 1, trees 1</code></td><td><code>[funcs]</code></td></tr>
+          <tr><td>3</td><td><code>funcs</code></td><td>recur 1&rarr;0</td><td><code>recur 0, trees 1</code></td><td><code>[recur]</code></td></tr>
+          <tr><td>4</td><td><code>recur</code></td><td>trees 1&rarr;0</td><td><code>trees 0</code></td><td><code>[trees]</code></td></tr>
+          <tr><td>5</td><td><code>trees</code></td><td>nothing follows it</td><td>&mdash;</td><td><code>[]</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+<pre class="art">  1       2       3       4       5
+intro &rarr; loops &rarr; funcs &rarr; recur &rarr; trees
+
+  all five placed, so no cycle</pre>
+    <p class="caption">End. Every original arrow points forward in this line, which is exactly what "topological order" means.</p>
+
+    <p>
+      Notice what happened at step 2. <code>recur</code> went from 2 to 1 and was <em>not</em> pushed. It had
+      Loops out of the way but still needed Functions. Had we pushed on any decrement, <code>recur</code>
+      would have landed in the queue ahead of <code>funcs</code>, and the output would have told you to take
+      Recursion before Functions — a schedule that breaks the one rule you were given. The gate at exactly
+      zero is the whole algorithm.
+    </p>
+    <p class="muted">
+      Also notice that <code>[intro, funcs, loops, recur, trees]</code> would have been just as correct. Once
+      two nodes are both free, nothing in the problem prefers one over the other, so most of these problems
+      accept any valid order.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>Just asking "is it possible?"</h3>
+    <p>
+      Course Schedule (#207) does not want the order, only whether one exists. Run the same function and
+      compare lengths. Watch the direction of the pairs: LeetCode gives
+      <code>[course, prerequisite]</code>, which is <em>after</em> then <em>before</em>, the reverse of what
+      the template expects.
+    </p>
+    <pre>def can_finish(num_courses, prerequisites):
+    nodes = list(range(num_courses))
+    edges = [(before, after) for after, before in prerequisites]   # flip each pair
+    return len(topo_sort(nodes, edges)) == num_courses</pre>
+
+    <h3>The smallest valid order</h3>
+    <p>
+      When several nodes are free at once and the problem wants the lexicographically smallest answer, take
+      the smallest free node rather than the oldest. Swap the queue for a min-<a href="heap.html">heap</a>;
+      nothing else changes.
+    </p>
+    <pre>import heapq
+
+def topo_smallest(nodes, edges):
+    graph = defaultdict(list)
+    indegree = {n: 0 for n in nodes}
+    for before, after in edges:
+        graph[before].append(after)
+        indegree[after] += 1
+
+    heap = [n for n in nodes if indegree[n] == 0]
+    heapq.heapify(heap)                   # a min-heap instead of a queue
+    order = []
+    while heap:
+        node = heapq.heappop(heap)        # always the smallest free node
+        order.append(node)
+        for nxt in graph[node]:
+            indegree[nxt] -= 1
+            if indegree[nxt] == 0:
+                heapq.heappush(heap, nxt)
+    return order if len(order) == len(nodes) else []</pre>
+
+    <h3>Level by level: how many rounds?</h3>
+    <p>
+      "What is the fewest semesters if I can take any number of unblocked courses at once?" Drain the queue
+      one full level at a time, the same snapshot trick as BFS level order in
+      <a href="tree-traversal.html">tree traversal</a>. On our example this gives
+      <code>[[intro], [loops, funcs], [recur], [trees]]</code> — four semesters, with two courses in the
+      second.
+    </p>
+    <pre>def topo_levels(nodes, edges):
+    graph = defaultdict(list)
+    indegree = {n: 0 for n in nodes}
+    for before, after in edges:
+        graph[before].append(after)
+        indegree[after] += 1
+
+    queue = deque(n for n in nodes if indegree[n] == 0)
+    levels, placed = [], 0
+    while queue:
+        level = []
+        for _ in range(len(queue)):       # exactly the nodes free right now
+            node = queue.popleft()
+            level.append(node)
+            placed += 1
+            for nxt in graph[node]:
+                indegree[nxt] -= 1
+                if indegree[nxt] == 0:
+                    queue.append(nxt)
+        levels.append(level)
+    return levels if placed == len(nodes) else []</pre>
+
+    <h3>The DFS version</h3>
+    <p>
+      There is a second, quite different way: run a depth-first search, and append a node to a list only once
+      every node it points at is completely finished. Reverse that list at the end. Cycle detection needs a
+      third state — a node currently on the recursion stack — because walking into one of those means you
+      have gone in a circle.
+    </p>
+    <pre>def topo_dfs(nodes, edges):
+    graph = defaultdict(list)
+    for before, after in edges:
+        graph[before].append(after)
+
+    state = {n: 0 for n in nodes}         # 0 = unseen, 1 = on the stack, 2 = done
+    order = []
+
+    def visit(node):
+        if state[node] == 1:
+            return False                  # walked into something still in progress
+        if state[node] == 2:
+            return True                   # already placed, nothing to do
+        state[node] = 1
+        for nxt in graph[node]:
+            if not visit(nxt):
+                return False
+        state[node] = 2
+        order.append(node)                # finished: everything after it is placed
+        return True
+
+    for node in nodes:
+        if not visit(node):
+            return []
+    return order[::-1]                    # reverse the finish order</pre>
+    <p>
+      Both are O(V + E). Kahn's is easier to get right and gives you levels for free, so prefer it unless a
+      problem specifically wants the DFS finishing order.
+    </p>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong>Building the edges backwards.</strong> <code>prerequisites = [[1, 0]]</code> on LeetCode means
+      "to take course 1 you must first take course 0", so the edge runs 0 &rarr; 1 and it is
+      <em>course 1</em> whose indegree goes up. Getting this backwards produces a perfectly plausible-looking
+      order that is exactly reversed. Say the sentence out loud before you write the loop.
+    </div>
+    <div class="callout gotcha">
+      <strong>Skipping the cycle check.</strong> Without <code>len(order) != len(nodes)</code> a cyclic input
+      silently returns a partial order, and it looks fine on the small test cases. The check is two lines and
+      it is the difference between correct and wrong.
+    </div>
+    <div class="callout gotcha">
+      <strong>Pushing on every decrement instead of only at zero.</strong> A node with several prerequisites
+      then enters the queue as soon as the first one clears, and lands in the output ahead of its own
+      blockers. The condition is <code>== 0</code>, never <code>&lt;= 0</code> and never unconditional.
+    </div>
+    <div class="callout gotcha">
+      <strong>Forgetting the isolated nodes.</strong> Nodes that appear in no edge at all still belong in the
+      output. Seed <code>indegree</code> from the full node list — <code>{n: 0 for n in nodes}</code> — not
+      from the nodes you happen to see while scanning edges.
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Time:</strong> O(V + E). Every node enters and leaves the queue once, and each edge is decremented once, when its source node is popped.</li>
+      <li><strong>Space:</strong> O(V + E) — the adjacency list holds one entry per edge, and the indegree dict, queue, and output are each O(V).</li>
+    </ul>
+    <p class="muted">
+      If those symbols are unfamiliar, start with <a href="time-space-complexity.html">time and space complexity</a>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <p>No walkthroughs use this pattern yet.</p>
+    <p class="muted">
+      Classic LeetCode problems to try, easiest first: Course Schedule (#207), Course Schedule II (#210),
+      Minimum Height Trees (#310), Sequence Reconstruction (#444), Alien Dictionary (#269),
+      Parallel Courses (#1136).
+    </p>
+    <p class="muted">
+      The nearest thing in the repo today is
+      <a href="../medium/010-number-of-islands/walkthrough.html">Number of Islands</a>, which shares the
+      adjacency-and-visited machinery but has no ordering constraint.
+    </p>
+  </section>
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>

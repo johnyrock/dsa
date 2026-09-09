@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fast &amp; Slow Pointers, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Fast &amp; Slow Pointers, Explained</h1>
+  <p class="lede">Two pointers moving at different speeds through a linked list: cycle detection, midpoints, and the nth node from the end.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      Two runners set off together. One jogs, one sprints at exactly double the pace. If the road is straight,
+      the sprinter reaches the end and that is that — they never meet again. But if the road is a circular
+      track, the sprinter eventually laps the jogger and they end up standing on the same spot. You did not
+      need a map of the track, and you did not need to remember every step you took. You just needed two
+      different speeds.
+    </p>
+    <p>
+      That is the whole pattern. <strong>Fast and slow pointers</strong> means walking one pointer through a
+      linked list one node at a time while a second pointer goes two at a time. Where they end up — the same
+      node, or off the end — tells you something you would otherwise have to store a lot of memory to learn.
+      It is also called <em>Floyd's tortoise and hare</em>.
+    </p>
+    <div class="callout why">
+      <strong>Why it's useful:</strong> it answers "is there a loop?" and "where is the middle?" in O(1) extra
+      memory. The obvious alternatives — remembering every node you have visited, or walking the list twice to
+      measure it — cost O(n) memory or an extra pass. Two variables cost nothing.
+    </div>
+    <p class="muted">
+      New to linked lists? The <a href="linked-list.html">linked list page</a> covers what a node is and why
+      you cannot just index into one.
+    </p>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <p>Look for these signals:</p>
+    <ul>
+      <li><strong>A linked list, plus "cycle", "loop", or "does it end?"</strong> This is the signature use.</li>
+      <li><strong>"The middle node"</strong>, or "the first half and the second half", when you are not allowed a second pass to count the length.</li>
+      <li><strong>"The nth node from the end"</strong>. You cannot count backwards in a singly linked list, so you open a gap of <code>n</code> between two pointers and walk them together.</li>
+      <li><strong>"O(1) extra space" spelled out in the constraints</strong> on a linked-list problem. That is the interviewer ruling out a set of visited nodes.</li>
+      <li><strong>Any process that repeats a function forever</strong> — <code>x = f(x)</code> on integers, say. If the values must eventually repeat, they form a cycle, and the same two-speed trick finds it without storing every value.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>
+      To detect a cycle, the instinctive answer is to write down every node you visit and check whether you
+      have been there before:
+    </p>
+    <pre>def has_cycle_slow(head):
+    seen = set()
+    node = head
+    while node:
+        if id(node) in seen:     # we have stood on this exact node already
+            return True
+        seen.add(id(node))
+        node = node.next
+    return False</pre>
+    <p class="muted">
+      <code>id(node)</code> is Python's unique number for an object. We store that rather than the node itself,
+      because two different nodes can hold equal values and we care about identity, not value.
+    </p>
+    <p>
+      This is correct, and it is O(n) time. The waste is not time — it is <strong>space</strong>. The set grows
+      to O(n), one entry for every node, in a list that might have a million of them. Then it is all thrown
+      away, when the only fact we wanted out of it was a single yes or no.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>
+      Send both pointers from the head, move one by one and the other by two, and watch for a collision.
+    </p>
+    <pre>def has_cycle(head):
+    slow = head
+    fast = head
+    while fast and fast.next:      # fast needs two nodes ahead of it to move
+        slow = slow.next           # one step
+        fast = fast.next.next      # two steps
+        if slow is fast:           # they landed on the same node
+            return True
+    return False                   # fast ran off the end, so the list is straight</pre>
+    <p>
+      The line that matters is <code>while fast and fast.next:</code>. Read it as the guard that lets you write
+      <code>fast.next.next</code> on the following line without crashing. <code>fast</code> must exist, and
+      <code>fast.next</code> must exist, or the two-step move would run off the end of the list. It is also
+      your exit condition: reaching the end <em>is</em> the proof that there is no cycle, because a cycle has
+      no end.
+    </p>
+    <p>
+      Note <code>slow is fast</code>, not <code>slow == fast</code>. <code>is</code> asks "the same object?"
+      while <code>==</code> asks "equal contents?" Two separate nodes both holding the value 3 are
+      <code>==</code> but not <code>is</code>, and here you mean identity.
+    </p>
+    <div class="callout tip">
+      <strong>Why a collision is guaranteed.</strong> Once both pointers are inside the loop, look at the gap
+      between them going forward. Every step, <code>slow</code> gains 1 and <code>fast</code> gains 2, so the
+      gap shrinks by exactly 1 each time. A quantity that shrinks by 1 every step and wraps around a finite
+      loop must eventually hit 0. It cannot step over the target, because it moves by exactly one.
+    </div>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>Take a five-node list where the last node points back at the third:</p>
+
+<pre class="art">        +---+   +---+   +---+   +---+   +---+
+head --&gt;| 1 |--&gt;| 2 |--&gt;| 3 |--&gt;| 4 |--&gt;| 5 |
+        +---+   +---+   +---+   +---+   +---+
+                          ^                 |
+                          +-----------------+</pre>
+    <p class="caption">Start. Both <code>slow</code> and <code>fast</code> sit on node 1.</p>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>Step</th><th>slow (+1)</th><th>fast (+2)</th><th>Same node?</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td><code>1</code></td><td><code>1</code></td><td>they start together, so the check happens after moving</td></tr>
+          <tr><td>1</td><td><code>2</code></td><td><code>3</code></td><td>no</td></tr>
+          <tr><td>2</td><td><code>3</code></td><td><code>5</code></td><td>no</td></tr>
+          <tr class="hi"><td>3</td><td><code>4</code></td><td><code>5 → 3 → 4</code></td><td><strong>yes — both on node 4</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+<pre class="art">                              slow,fast
+                                  v
+        +---+   +---+   +---+   +---+   +---+
+head --&gt;| 1 |--&gt;| 2 |--&gt;| 3 |--&gt;| 4 |--&gt;| 5 |
+        +---+   +---+   +---+   +---+   +---+
+                          ^                 |
+                          +-----------------+</pre>
+    <p class="caption">They meet at node 4 after three steps, having used two variables and nothing else.</p>
+
+    <p>
+      Notice what happened at step 3. <code>fast</code> was on node 5, the last node — but "last" is a lie
+      here, because node 5 points back to node 3. So <code>fast</code> went 5 → 3 → 4 and landed on the node
+      <code>slow</code> had just reached. The wrap-around is invisible to the code; <code>fast.next.next</code>
+      simply follows whatever pointers exist.
+    </p>
+    <p>
+      Also notice that the meeting node, 4, is <em>not</em> where the cycle starts. The cycle starts at node 3.
+      The two are different, and the next section shows the two-line trick that gets from one to the other.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>Where does the cycle begin?</h3>
+    <p>
+      Once the pointers meet, put one of them back at the head and move <em>both</em> one step at a time. The
+      node where they meet again is the entrance to the loop. In our example: node 1 vs node 4, then node 2 vs
+      node 5, then node 3 vs node 3 — the entrance, correctly.
+    </p>
+    <pre>def cycle_start(head):
+    slow = fast = head
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+        if slow is fast:
+            slow = head                 # restart one pointer at the head
+            while slow is not fast:     # now both move ONE step at a time
+                slow = slow.next
+                fast = fast.next
+            return slow                 # they meet at the entrance
+    return None</pre>
+    <p class="muted">
+      The reason, briefly: let <code>a</code> be the distance from the head to the entrance and <code>b</code>
+      the distance from the entrance to the meeting point. Because <code>fast</code> travelled exactly twice as
+      far as <code>slow</code>, the distance from the meeting point onward to the entrance turns out to equal
+      <code>a</code>. So two pointers, one at the head and one at the meeting point, moving at the same speed,
+      arrive at the entrance together.
+    </p>
+
+    <h3>The middle of the list</h3>
+    <p>
+      When <code>fast</code> reaches the end, it has covered twice as much ground, so <code>slow</code> is
+      halfway. One pass, no length counting.
+    </p>
+    <pre>def middle_node(head):
+    slow = fast = head
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+    return slow</pre>
+    <p class="muted">
+      With an even number of nodes this returns the <em>second</em> of the two middles. If you need the first
+      one, start <code>fast</code> at <code>head.next</code> instead.
+    </p>
+
+    <h3>The nth node from the end (a fixed gap, same speed)</h3>
+    <p>
+      Here the pointers move at the same speed, but you open a gap of <code>n</code> nodes first. When the
+      leading pointer hits the last node, the trailing one is sitting exactly <code>n</code> nodes back.
+    </p>
+    <pre>def remove_nth_from_end(head, n):
+    dummy = ListNode(0, head)   # a fake node in front, so deleting the head is not special
+    slow = fast = dummy
+    for _ in range(n):          # open a gap of n nodes
+        fast = fast.next
+    while fast.next:            # walk both until fast is on the last node
+        slow = slow.next
+        fast = fast.next
+    slow.next = slow.next.next  # slow is now just before the target: unlink it
+    return dummy.next</pre>
+
+    <h3>Cycles without a linked list</h3>
+    <p>
+      Any repeated function <code>x = f(x)</code> over a finite set of values must eventually repeat, which
+      means it has a cycle. Happy Number replaces "sum of the squares of the digits" until it hits 1 or loops
+      forever — the same two speeds decide which.
+    </p>
+    <pre>def next_number(n):
+    return sum(int(d) ** 2 for d in str(n))
+
+def is_happy(n):
+    slow, fast = n, next_number(n)
+    while fast != 1 and slow != fast:
+        slow = next_number(slow)
+        fast = next_number(next_number(fast))
+    return fast == 1</pre>
+    <p class="muted">
+      Find the Duplicate Number (#287) is the same idea in disguise: treat <code>i → nums[i]</code> as the
+      "next" pointer and the duplicate value is the entrance to the cycle.
+    </p>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong>Checking only <code>while fast:</code>.</strong> That crashes with an
+      <code>AttributeError</code> the moment <code>fast</code> is the last node, because
+      <code>fast.next.next</code> dereferences <code>None</code>. You need both halves:
+      <code>while fast and fast.next:</code>.
+    </div>
+    <div class="callout gotcha">
+      <strong>Comparing with <code>==</code> instead of <code>is</code>.</strong> On a list like
+      <code>1 → 2 → 2 → 3</code>, the two nodes holding 2 compare equal, and an <code>==</code> check reports a
+      cycle that does not exist. Compare identity.
+    </div>
+    <div class="callout gotcha">
+      <strong>Assuming the meeting point is the cycle's start.</strong> It usually is not — in the trace above
+      they met at node 4 while the cycle begins at node 3. Returning the meeting node passes the "is there a
+      cycle?" problem and fails the "where does it start?" one.
+    </div>
+    <div class="callout gotcha">
+      <strong>Checking for a collision before the first move.</strong> Both pointers start on the head, so a
+      check at the top of the loop reports a cycle immediately for every list. Move first, compare second — or
+      start <code>fast</code> at <code>head.next</code> and adjust the rest to match.
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Time:</strong> O(n). <code>slow</code> visits each node at most once before the collision, and <code>fast</code> moves at twice that rate, so the total work is proportional to the list length.</li>
+      <li><strong>Space:</strong> O(1). Two pointer variables, no matter how long the list is. That is the entire point — the set-based version is O(n).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <p>No walkthroughs use this pattern yet.</p>
+    <p class="muted">
+      Classic LeetCode problems to try: Linked List Cycle (#141), Linked List Cycle II (#142), Middle of the
+      Linked List (#876), Remove Nth Node From End of List (#19), Palindrome Linked List (#234), Happy Number
+      (#202), Find the Duplicate Number (#287), Reorder List (#143).
+    </p>
+    <p class="muted">
+      For the linked-list mechanics these all assume, start with the
+      <a href="linked-list.html">linked list page</a> and the two list walkthroughs already in the repo:
+      <a href="../easy/007-reverse-linked-list/walkthrough.html">Reverse Linked List</a> and
+      <a href="../easy/008-merge-two-sorted-lists/walkthrough.html">Merge Two Sorted Lists</a>. The
+      opposite-ends cousin of this pattern is on the <a href="two-pointers.html">Two Pointers</a> page.
+    </p>
+  </section>
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sliding Window, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Sliding Window, Explained</h1>
+  <p class="lede">A window that grows on the right and shrinks on the left, for any "longest or shortest contiguous chunk" question.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      Picture a long shelf of books and a cardboard tube you look through. The tube shows you a few books at a
+      time. You slide it to the right one book at a time: a new book appears on the right edge, and if the tube
+      is getting too full, you let books fall off the left edge. At no point do you pick the whole shelf up and
+      start counting again — you only ever adjust the two edges.
+    </p>
+    <p>
+      That tube is the window. A <strong>sliding window</strong> is a pair of indices, <code>left</code> and
+      <code>right</code>, marking off a <em>contiguous</em> chunk of an array or string. "Contiguous" just means
+      the elements are next to each other with no gaps: <code>[3, 4, 1]</code> out of
+      <code>[9, 3, 4, 1, 7]</code> is contiguous, <code>[9, 4, 7]</code> is not. You push <code>right</code>
+      forward to grow the window, and pull <code>left</code> forward to shrink it.
+    </p>
+    <div class="callout why">
+      <strong>Why it's fast:</strong> <code>left</code> and <code>right</code> only ever move forward, never
+      back. Each of them travels the length of the input at most once, so the whole scan costs about
+      <code>2n</code> steps — O(n) — even though the loop looks nested.
+    </div>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <p>The problem is probably a sliding window if you see:</p>
+    <ul>
+      <li><strong>The word "subarray", "substring", or "consecutive"</strong>. All three mean contiguous, and contiguous is the window's whole reason to exist.</li>
+      <li><strong>"Longest" or "shortest" or "maximum" or "minimum"</strong> attached to that chunk. You are looking for the best window, not the best single element.</li>
+      <li><strong>A rule the chunk must obey</strong>: no repeated characters, sum at least <code>k</code>, at most two distinct letters. That rule is what tells the window when to shrink.</li>
+      <li><strong>A fixed size handed to you</strong>: "every subarray of length <code>k</code>". That is the easy flavour — the window never changes size, it just slides.</li>
+    </ul>
+    <p class="muted">
+      If the chunk is allowed to have gaps, it is not a sliding window. Reach for
+      <a href="dynamic-programming.html">dynamic programming</a> or a
+      <a href="hash-map.html">hash map</a> instead.
+    </p>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>
+      Take the classic: <em>find the length of the longest substring with no repeated characters.</em> The
+      obvious approach is to try every possible starting point, and from each one walk right until you hit a
+      repeat.
+    </p>
+    <pre>def longest_unique_slow(s):
+    best = 0
+    for i in range(len(s)):
+        seen = set()
+        for j in range(i, len(s)):
+            if s[j] in seen:
+                break
+            seen.add(s[j])
+            best = max(best, j - i + 1)
+    return best</pre>
+    <p>
+      This is O(n²): roughly <code>n</code> starting points times <code>n</code> characters each. For a string
+      of 10,000 characters that is about 50 million steps.
+    </p>
+    <p>
+      Look at where the work is thrown away. When the loop starting at <code>i = 0</code> gets as far as
+      <code>"abc"</code> and then breaks, it forgets everything. The next loop starts at <code>i = 1</code> and
+      re-reads <code>"bc"</code> from scratch, even though we <em>just</em> looked at those exact characters and
+      already know they are fine. Every restart re-walks ground we have already covered.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>
+      The fix is to never restart. Keep the previous window and repair it. When the new character on the right
+      breaks the rule, shrink from the left until the rule holds again.
+    </p>
+    <pre>def longest_unique(s):
+    seen = set()          # what is inside the window right now
+    left = 0              # the window is s[left] .. s[right]
+    best = 0
+    for right in range(len(s)):
+        while s[right] in seen:      # the new character breaks the rule
+            seen.remove(s[left])     # so drop the leftmost one
+            left += 1                # and pull the left edge in
+        seen.add(s[right])           # now it is safe to add
+        best = max(best, right - left + 1)
+    return best</pre>
+    <p>
+      The line that matters is <code>while s[right] in seen:</code>. Read it as a repair loop, not a search
+      loop: "the window is currently broken; keep dropping elements off the left until it is legal again."
+      Everything else is bookkeeping. The outer <code>for</code> always moves <code>right</code> forward by one;
+      the inner <code>while</code> moves <code>left</code> forward by as much as it needs to and no more.
+    </p>
+    <div class="callout tip">
+      <strong>Why a nested loop is still O(n):</strong> <code>left</code> starts at 0, only increases, and can
+      never pass <code>right</code>. So across the <em>entire</em> run, the inner <code>while</code> body
+      executes at most <code>n</code> times in total — not <code>n</code> times per outer step. Count total
+      pointer movement, not loop nesting.
+    </div>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>Find the longest substring with no repeats in <code>"abcbad"</code>.</p>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="String a b c b a d with left and right both at index 0">
+        <div class="cell hi"><span class="idx">0</span>a<span class="ptr">L R</span></div>
+        <div class="cell"><span class="idx">1</span>b</div>
+        <div class="cell"><span class="idx">2</span>c</div>
+        <div class="cell"><span class="idx">3</span>b</div>
+        <div class="cell"><span class="idx">4</span>a</div>
+        <div class="cell"><span class="idx">5</span>d</div>
+      </div>
+    </div>
+    <p class="caption">Start. Both edges sit on index 0, so the window is just <code>"a"</code>.</p>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>right</th><th>char</th><th>Shrink?</th><th>Window</th><th>Length</th><th>best</th></tr></thead>
+        <tbody>
+          <tr><td><code>0</code></td><td>a</td><td>no</td><td><code>"a"</code></td><td>1</td><td>1</td></tr>
+          <tr><td><code>1</code></td><td>b</td><td>no</td><td><code>"ab"</code></td><td>2</td><td>2</td></tr>
+          <tr><td><code>2</code></td><td>c</td><td>no</td><td><code>"abc"</code></td><td>3</td><td>3</td></tr>
+          <tr class="hi"><td><code>3</code></td><td>b</td><td><strong>yes, twice</strong> — drop <code>a</code>, drop <code>b</code>; <code>left</code> 0 → 2</td><td><code>"cb"</code></td><td>2</td><td>3</td></tr>
+          <tr><td><code>4</code></td><td>a</td><td>no — the old <code>a</code> already fell out</td><td><code>"cba"</code></td><td>3</td><td>3</td></tr>
+          <tr class="hi"><td><code>5</code></td><td>d</td><td>no</td><td><code>"cbad"</code></td><td>4</td><td><strong>4</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="Final window covering indices 2 to 5, c b a d">
+        <div class="cell dim"><span class="idx">0</span>a</div>
+        <div class="cell dim"><span class="idx">1</span>b</div>
+        <div class="cell ok"><span class="idx">2</span>c<span class="ptr">left</span></div>
+        <div class="cell ok"><span class="idx">3</span>b</div>
+        <div class="cell ok"><span class="idx">4</span>a</div>
+        <div class="cell ok"><span class="idx">5</span>d<span class="ptr">right</span></div>
+      </div>
+    </div>
+    <p class="caption">Answer: 4, the window <code>"cbad"</code>. Six characters read, six left-edge moves at most.</p>
+
+    <p>
+      Notice what happened at <code>right = 3</code>. The incoming <code>b</code> clashed with the <code>b</code>
+      at index 1, so the window had to shrink <em>past</em> that old <code>b</code> — index 2, not index 1. It
+      dropped two characters in one step, and that is fine: the inner <code>while</code> runs as many times as
+      needed. But <code>left</code> did not jump backwards, and it never will.
+    </p>
+    <p>
+      Then notice <code>right = 4</code>. The character is <code>a</code>, and there <em>is</em> an
+      <code>a</code> in the string at index 0 — but index 0 is no longer inside the window, so
+      <code>seen</code> does not contain it and nothing shrinks. The set only ever describes the current window.
+      That is exactly why the set is kept in sync on both edges.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>Fixed-size window</h3>
+    <p>
+      When the problem hands you the size, the window never grows or shrinks — it just slides. Add the element
+      entering on the right, subtract the one leaving on the left, and you get each window's sum in one
+      operation instead of <code>k</code>.
+    </p>
+    <pre>def max_sum_of_k(nums, k):
+    window = sum(nums[:k])       # the first window, computed the slow way once
+    best = window
+    for right in range(k, len(nums)):
+        window += nums[right] - nums[right - k]   # add one, drop one
+        best = max(best, window)
+    return best</pre>
+
+    <h3>Shrink-to-smallest</h3>
+    <p>
+      "Longest" problems shrink only when the window is <em>illegal</em>. "Shortest" problems flip it: shrink
+      while the window is <em>legal</em>, recording the size each time, because a smaller valid window is a
+      better answer. This needs non-negative numbers, so that shrinking always lowers the total.
+    </p>
+    <pre>def min_window_at_least(nums, target):
+    left, total, best = 0, 0, float("inf")
+    for right in range(len(nums)):
+        total += nums[right]
+        while total &gt;= target:            # valid, so try to make it smaller
+            best = min(best, right - left + 1)
+            total -= nums[left]
+            left += 1
+    return 0 if best == float("inf") else best</pre>
+
+    <h3>Jump the left edge instead of stepping it</h3>
+    <p>
+      Instead of a set plus a <code>while</code> loop, you can store the last index where each character was
+      seen and move <code>left</code> in one hop. It is the same idea, slightly faster, and easier to get wrong
+      — you must ignore a remembered index that has already fallen out of the window.
+    </p>
+    <pre>def longest_unique_jump(s):
+    last = {}                 # character -&gt; the last index it appeared at
+    left, best = 0, 0
+    for right, ch in enumerate(s):
+        if ch in last and last[ch] &gt;= left:   # this guard is the whole trick
+            left = last[ch] + 1
+        last[ch] = right
+        best = max(best, right - left + 1)
+    return best</pre>
+
+    <h3>A window of size one: running best-so-far</h3>
+    <p>
+      Some problems are the degenerate case where you only need one number about everything to the left. Best
+      Time to Buy and Sell Stock is really "for each day, what is the cheapest price so far?" — a single
+      variable trailing behind the scan.
+    </p>
+    <pre>def max_profit(prices):
+    cheapest = prices[0]
+    best = 0
+    for price in prices[1:]:
+        best = max(best, price - cheapest)   # sell today, having bought at the low
+        cheapest = min(cheapest, price)
+    return best</pre>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong>Forgetting to update the state when the left edge moves.</strong> If you do <code>left += 1</code>
+      but never <code>seen.remove(...)</code> or <code>total -= ...</code>, your bookkeeping describes a window
+      that no longer exists. Every change to <code>left</code> or <code>right</code> needs a matching change to
+      whatever you are tracking.
+    </div>
+    <div class="callout gotcha">
+      <strong>Off-by-one in the window length.</strong> The window covers indices <code>left</code> through
+      <code>right</code> <em>inclusive</em>, so its length is <code>right - left + 1</code>, not
+      <code>right - left</code>. Sanity-check it: when <code>left == right</code> the window holds one element.
+    </div>
+    <div class="callout gotcha">
+      <strong>Recording the best answer in the wrong place.</strong> For "longest", record <em>after</em> the
+      shrink loop, when the window is valid again. For "shortest", record <em>inside</em> the shrink loop, while
+      it is still valid. Getting these backwards produces answers that look almost right.
+    </div>
+    <div class="callout gotcha">
+      <strong>Moving <code>left</code> backwards.</strong> Any line that sets <code>left</code> to something
+      smaller than its current value breaks the O(n) guarantee and usually the correctness too. If you use the
+      jump variant, guard it: <code>left = max(left, last[ch] + 1)</code>.
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Time:</strong> O(n). Each of <code>left</code> and <code>right</code> advances at most <code>n</code> times over the whole run, and each advance does O(1) work.</li>
+      <li><strong>Space:</strong> O(k), where <code>k</code> is how many distinct things the window can hold — the size of the set or counter. For lowercase letters that is at most 26, so effectively O(1); for a plain running sum it really is O(1).</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <ul class="problems">
+      <li><span class="id">easy/005</span><a href="../easy/005-best-time-to-buy-and-sell-stock/walkthrough.html">Best Time to Buy and Sell Stock</a><span class="note">running minimum, the one-variable window</span></li>
+      <li><span class="id">medium/003</span><a href="../medium/003-longest-substring-without-repeating-characters/walkthrough.html">Longest Substring Without Repeating Characters</a><span class="note">the grow-and-shrink template above</span></li>
+      <li><span class="id">medium/007</span><a href="../medium/007-maximum-subarray/walkthrough.html">Maximum Subarray</a><span class="note">a close cousin: reset the left edge instead of shrinking it</span></li>
+    </ul>
+    <p class="muted" style="margin-top:14px">
+      Classic LeetCode problems not yet in the repo: Minimum Size Subarray Sum (#209), Longest Repeating
+      Character Replacement (#424), Permutation in String (#567), Minimum Window Substring (#76), Maximum
+      Average Subarray I (#643), Sliding Window Maximum (#239).
+    </p>
+    <p class="muted">
+      Related pages: <a href="two-pointers.html">Two Pointers</a> (the opposite-ends flavour),
+      <a href="prefix-sum.html">Prefix Sums</a> (for range sums when the window rule does not shrink cleanly),
+      and <a href="time-space-complexity.html">Time &amp; Space Complexity</a>.
+    </p>
+  </section>
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>

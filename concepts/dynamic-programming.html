@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dynamic Programming, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Dynamic Programming, Explained</h1>
+  <p class="lede">Overlapping subproblems, memoisation, and bottom-up tables, from Fibonacci to coin change.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      Imagine a class of thirty people all working through the same long homework sheet. Question 20 needs the
+      answer to question 12. So does question 17. And question 19. Left alone, everybody re-derives question 12
+      from scratch every time they need it, over and over, all afternoon.
+    </p>
+    <p>
+      Then someone walks to the whiteboard and writes: <em>Q12 = 47</em>. Nobody ever computes it again. The
+      afternoon collapses from hours to minutes, and nothing about the maths changed — only that each answer is
+      now written down once and read many times.
+    </p>
+    <p>
+      Dynamic programming (DP) is that whiteboard. You take a
+      <a href="recursion.html">recursive</a> solution, notice that it keeps asking the same smaller questions —
+      those are called <strong>overlapping subproblems</strong> — and store each answer the first time you work
+      it out. Nothing more mysterious than that. The scary name is from the 1950s and means nothing useful.
+    </p>
+    <div class="callout why">
+      <strong>Why it's fast:</strong> a branching recursion re-solves the same subproblem on every branch that
+      reaches it, so the work grows like 2<sup>n</sup>. With the answers stored, each distinct subproblem is
+      solved exactly once, so the total work becomes <em>(number of distinct subproblems) × (work per
+      subproblem)</em>. For climbing stairs that is n subproblems doing O(1) work each: exponential becomes
+      linear.
+    </div>
+    <p>
+      DP needs one more thing to be correct, on top of overlap: <strong>optimal substructure</strong>, meaning
+      the best answer for a big case really is built out of best answers to smaller cases. That holds far more
+      often than not, but it is the assumption to check when a DP gives wrong answers rather than slow ones.
+    </p>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <p>Look for these, usually two or three at a time:</p>
+    <ul>
+      <li><strong>"How many ways…"</strong> or <strong>"what is the minimum / maximum…"</strong> over a sequence of choices. Counting and optimising are the two DP moods.</li>
+      <li><strong>You can write a recursion, and it is too slow.</strong> This is the real signal. Write the honest recursive solution first, then ask which arguments repeat.</li>
+      <li><strong>Each step has a small set of choices</strong> — take it or leave it, step 1 or step 2, use this coin or the next one — and a choice affects what comes after.</li>
+      <li><strong>The answer for <code>n</code> depends on the answers for smaller <code>n</code></strong>, and you can say how in one sentence. That sentence is called the <em>recurrence</em>, and it is 90% of the work.</li>
+      <li><strong>A <a href="greedy.html">greedy</a> rule looks obvious but breaks on a small counterexample.</strong> When "always take the biggest" fails, DP is usually the fix.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>
+      The running example is <strong>climbing stairs</strong>: there are <code>n</code> steps and you can climb
+      1 or 2 at a time. How many different ways are there to reach the top?
+    </p>
+    <p>
+      Think about the last move. You arrived at step <code>n</code> either from step <code>n - 1</code> (a
+      1-step) or from step <code>n - 2</code> (a 2-step), and those are different routes. So the number of ways
+      to reach <code>n</code> is the number of ways to reach <code>n - 1</code> plus the number of ways to reach
+      <code>n - 2</code>. Straight into code:
+    </p>
+    <pre>def climb_slow(n):
+    if n &lt;= 2:                       # 1 step: one way. 2 steps: two ways (1+1, or 2).
+        return n
+    return climb_slow(n - 1) + climb_slow(n - 2)
+
+climb_slow(6)    # 13, correct
+climb_slow(30)   # 1346269, correct, after 1,664,079 function calls</pre>
+    <p>This is right, and it is unusable. Draw the calls for <code>climb_slow(5)</code>:</p>
+    <pre class="art">climb(5)
+ |
+ |-- climb(4)
+ |     |-- climb(3)
+ |     |     |-- climb(2) = 2
+ |     |     \-- climb(1) = 1
+ |     \-- climb(2) = 2          &lt;- again
+ |
+ \-- climb(3)                    &lt;- the WHOLE subtree, recomputed
+       |-- climb(2) = 2          &lt;- again
+       \-- climb(1) = 1</pre>
+    <p>
+      Nine calls to answer a question about five stairs. <code>climb(3)</code> is computed twice and
+      <code>climb(2)</code> three times, and each duplicate drags its own subtree along with it. The waste
+      compounds: <code>climb_slow(6)</code> takes 15 calls, and <code>climb_slow(30)</code> takes
+      <strong>1,664,079</strong>. There are only 30 different questions being asked. The other million-odd calls
+      are the same handful of answers, recomputed.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>
+      There are two ways to write down the answers, and they compute exactly the same thing. Start with
+      <strong>top-down</strong>, because it is the naive recursion plus three lines:
+    </p>
+    <pre>def climb_memo(n, memo=None):
+    if memo is None:                 # fresh cache per top-level call (see the gotchas)
+        memo = {}
+    if n &lt;= 2:
+        return n
+    if n in memo:                    # ALREADY SOLVED: read it off the whiteboard
+        return memo[n]
+    memo[n] = climb_memo(n - 1, memo) + climb_memo(n - 2, memo)   # solve once, write it down
+    return memo[n]</pre>
+    <p>
+      The line that matters is <code>if n in memo: return memo[n]</code>. Read it as: <em>"have I been asked
+      this exact question before? Then I already know."</em> That one check is what prunes the entire duplicate
+      subtree in the diagram above — the second <code>climb(3)</code> returns instantly instead of expanding.
+      Storing answers like this is called <strong>memoisation</strong>.
+    </p>
+    <p>
+      <strong>Bottom-up</strong> throws away the recursion entirely. If you know you will need every answer from
+      1 up to n, just compute them in order, smallest first, into a list:
+    </p>
+    <pre>def climb(n):
+    if n &lt;= 2:
+        return n
+    ways = [0] * (n + 1)             # ways[i] = number of ways to reach step i
+    ways[1], ways[2] = 1, 2          # base cases
+    for i in range(3, n + 1):
+        ways[i] = ways[i - 1] + ways[i - 2]     # the recurrence, as a loop
+    return ways[n]</pre>
+    <p>
+      Same recurrence, same answers, no call stack. Read the loop body next to the recursive line and confirm
+      they say the identical sentence — <code>ways[i - 1] + ways[i - 2]</code> versus
+      <code>climb(n - 1) + climb(n - 2)</code>. Every bottom-up DP is a recursion turned inside out like this.
+    </p>
+    <div class="callout tip">
+      <strong>How to actually write one:</strong> (1) say the recurrence in English; (2) write the slow
+      recursion and check it on a tiny input; (3) add a memo; (4) if you want, flip it to a table. Do not try to
+      write the table first. Almost every wrong DP is someone who skipped steps 1 and 2.
+    </div>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>Fill the table for <code>climb(6)</code> — six stairs, 1 or 2 at a time.</p>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="ways array with only the base cases filled">
+        <div class="cell dim"><span class="idx">0</span>0</div>
+        <div class="cell ok"><span class="idx">1</span>1<span class="ptr">base</span></div>
+        <div class="cell ok"><span class="idx">2</span>2<span class="ptr">base</span></div>
+        <div class="cell"><span class="idx">3</span>·</div>
+        <div class="cell"><span class="idx">4</span>·</div>
+        <div class="cell"><span class="idx">5</span>·</div>
+        <div class="cell"><span class="idx">6</span>·</div>
+      </div>
+    </div>
+    <p class="caption">Start. Only the two base cases are known. Index 0 is unused padding, so that <code>ways[6]</code> means "step 6".</p>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>i</th><th>ways[i-1]</th><th>ways[i-2]</th><th>ways[i]</th><th>In words</th></tr></thead>
+        <tbody>
+          <tr><td>3</td><td><code>2</code></td><td><code>1</code></td><td><code>3</code></td><td>reach 3 from step 2 (2 ways) or step 1 (1 way)</td></tr>
+          <tr><td>4</td><td><code>3</code></td><td><code>2</code></td><td><code>5</code></td><td>from step 3 (3) or step 2 (2)</td></tr>
+          <tr><td>5</td><td><code>5</code></td><td><code>3</code></td><td><code>8</code></td><td>from step 4 (5) or step 3 (3)</td></tr>
+          <tr class="hi"><td>6</td><td><code>8</code></td><td><code>5</code></td><td><code>13</code></td><td>from step 5 (8) or step 4 (5) — the answer</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="ways array fully filled: 0 1 2 3 5 8 13">
+        <div class="cell dim"><span class="idx">0</span>0</div>
+        <div class="cell ok"><span class="idx">1</span>1</div>
+        <div class="cell ok"><span class="idx">2</span>2</div>
+        <div class="cell ok"><span class="idx">3</span>3</div>
+        <div class="cell ok"><span class="idx">4</span>5</div>
+        <div class="cell ok"><span class="idx">5</span>8</div>
+        <div class="cell hi"><span class="idx">6</span>13<span class="ptr">answer</span></div>
+      </div>
+    </div>
+    <p class="caption">End. Four additions replaced fifteen function calls. For n = 30 it is 28 additions instead of 1.6 million calls.</p>
+
+    <p>
+      Notice what happened at step <code>i = 5</code>. It used <code>ways[4]</code>, which was itself built from
+      <code>ways[3]</code> and <code>ways[2]</code> — but it did not <em>recompute</em> any of that. It read one
+      number. Every cell is written once and read at most twice, which is the whole reason this is O(n). Also
+      notice the shape of the answers: 1, 2, 3, 5, 8, 13. Climbing stairs is Fibonacci in a costume, and quite a
+      few DP problems turn out to be something familiar once the table is on the page.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>Rolling the table up to two variables</h3>
+    <p>
+      Look at the loop: <code>ways[i]</code> only ever reads the two cells behind it. The other n − 2 cells are
+      dead weight. Keep two variables instead and the space drops from O(n) to O(1).
+    </p>
+    <pre>def climb_o1(n):
+    if n &lt;= 2:
+        return n
+    prev, cur = 1, 2                 # ways to reach step 1 and step 2
+    for _ in range(3, n + 1):
+        prev, cur = cur, prev + cur  # slide the window forward one step
+    return cur</pre>
+    <p>Do this <em>after</em> the table version works, never before. It is an optimisation, not a starting point.</p>
+
+    <h3>Minimising over choices: coin change</h3>
+    <p>
+      Same machinery, different recurrence. To make amount <code>a</code> with the fewest coins, try every coin
+      as the <em>last</em> one you add and take the best result. <code>best[a - c] + 1</code> reads as: "however
+      few coins make <code>a - c</code>, plus this one."
+    </p>
+    <pre>def coin_change(coins, amount):
+    INF = amount + 1                              # bigger than any real answer
+    best = [INF] * (amount + 1)
+    best[0] = 0                                   # zero coins make zero
+    for a in range(1, amount + 1):
+        for c in coins:
+            if c &lt;= a:
+                best[a] = min(best[a], best[a - c] + 1)
+    return best[amount] if best[amount] != INF else -1
+
+coin_change([1, 3, 4], 6)    # 2  (3 + 3)
+coin_change([1, 2, 5], 11)   # 3  (5 + 5 + 1)
+coin_change([2], 3)          # -1, impossible</pre>
+    <p>
+      The table for <code>[1, 3, 4]</code> and amount 6 fills in as <code>[0, 1, 2, 1, 1, 2, 2]</code>. Notice
+      <code>best[6] = 2</code> while grabbing the biggest coin first would give you 4 + 1 + 1 = three coins.
+      That gap is exactly why this problem is DP and not <a href="greedy.html">greedy</a>.
+    </p>
+
+    <h3>Running best in one pass: Kadane</h3>
+    <p>
+      Some DPs need no table at all, because the state is a single number. For the largest sum of any
+      contiguous run (contiguous = next to each other, no gaps), the question at each element is only:
+      <em>does the run so far still help me, or should I start fresh here?</em>
+    </p>
+    <pre>def max_subarray(nums):
+    best = cur = nums[0]
+    for x in nums[1:]:
+        cur = max(x, cur + x)        # start fresh at x, or extend the run
+        best = max(best, cur)
+    return best
+
+max_subarray([-2, 1, -3, 4, -1, 2, 1, -5, 4])   # 6</pre>
+
+    <h3>Two-dimensional tables</h3>
+    <p>
+      When the state needs two numbers, the table becomes a grid. Counting paths through an
+      <code>rows × cols</code> grid moving only down or right:
+    </p>
+    <pre>def unique_paths(rows, cols):
+    grid = [[1] * cols for _ in range(rows)]   # top row and left column: exactly one path
+    for r in range(1, rows):
+        for c in range(1, cols):
+            grid[r][c] = grid[r - 1][c] + grid[r][c - 1]
+    return grid[rows - 1][cols - 1]
+
+unique_paths(3, 7)   # 28</pre>
+    <p class="muted">
+      Edit distance, longest common subsequence, and 0/1 knapsack are all this shape: two indices, so a grid,
+      filled in an order that guarantees the cells you read are already written.
+    </p>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong>A memo key that leaves out an argument.</strong> If your function is
+      <code>f(i, remaining)</code>, the key must be <code>(i, remaining)</code> — not just <code>i</code>. Keying
+      coin change on the coin index alone returns a wrong answer for coins <code>[1, 3, 4]</code> and amount 6:
+      the first answer stored under <code>i</code> gets handed back for a completely different
+      <code>remaining</code>. Rule: <strong>every argument that changes between calls belongs in the key.</strong>
+    </div>
+    <div class="callout gotcha">
+      <strong>Initialising a minimum table with 0.</strong> For a "fewest / smallest" DP, an empty cell must
+      start at something <em>worse</em> than any real answer — <code>float("inf")</code>, or a sentinel like
+      <code>amount + 1</code> — or <code>min()</code> will happily pick the placeholder and every answer becomes
+      0. The mirror image applies to maximum problems.
+    </div>
+    <div class="callout gotcha">
+      <strong>Off-by-one on the table size and the base cases.</strong> If <code>ways[n]</code> is the answer,
+      the list needs <code>n + 1</code> slots, and index 0 usually stands for "nothing at all" rather than "the
+      first item". Write out what one cell <em>means</em> in a comment before filling any of them; most DP bugs
+      are really "I had two different meanings for the same index".
+    </div>
+    <div class="callout gotcha">
+      <strong><code>def f(n, memo={})</code>.</strong> In Python a default argument is created once, when the
+      function is defined, and then shared by every call for the rest of the program. As a cache it appears to
+      work — it is fast, and for a pure function like this the values stay correct — but it never empties, and
+      the moment the answers depend on anything else (a different coin list, a different input array) it starts
+      returning results computed for a completely different problem. Use <code>memo=None</code> and create the
+      dict inside, or <code>@functools.cache</code>.
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Time:</strong> (number of distinct states) × (work done per state). Climbing stairs: n states, O(1) work each, so O(n). Coin change: <code>amount</code> states, each trying every coin, so O(amount × number of coins). Counting states is the fastest way to sanity-check a DP before you run it.</li>
+      <li><strong>Space:</strong> the size of the table — O(n) for a 1-D table, O(rows × cols) for a grid — plus O(depth) for the call stack if you went top-down. Rolling the table up to a couple of variables often gets you to O(1). See <a href="time-space-complexity.html">time &amp; space complexity</a>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <ul class="problems">
+      <li><span class="id">easy/010</span><a href="../easy/010-climbing-stairs/walkthrough.html">Climbing Stairs</a><span class="note">the example above — the simplest real DP there is</span></li>
+      <li><span class="id">medium/007</span><a href="../medium/007-maximum-subarray/walkthrough.html">Maximum Subarray</a><span class="note">Kadane: a one-number DP state</span></li>
+      <li><span class="id">medium/008</span><a href="../medium/008-coin-change/walkthrough.html">Coin Change</a><span class="note">minimise over choices, and where greedy breaks</span></li>
+      <li><span class="id">medium/012</span><a href="../medium/012-longest-palindromic-substring/walkthrough.html">Longest Palindromic Substring</a><span class="note">the repo expands from centres; the classic 2-D DP is worth writing too</span></li>
+    </ul>
+    <p class="muted" style="margin-top:14px">Classic LeetCode problems not yet in the repo: House Robber (#198), Unique Paths (#62), Longest Increasing Subsequence (#300), Word Break (#139), Edit Distance (#72), Partition Equal Subset Sum (#416).</p>
+  </section>
+
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>

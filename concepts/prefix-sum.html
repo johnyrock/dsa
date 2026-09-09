@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prefix Sums, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Prefix Sums, Explained</h1>
+  <p class="lede">Precompute running totals once so that any range sum, or product, becomes a single subtraction.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      Motorways have mile markers. If someone asks how far it is from marker 12 to marker 30, you do not drive
+      the road and count — you subtract: 30 − 12 = 18. The markers did the work once, in advance, so every
+      distance question afterwards costs one subtraction.
+    </p>
+    <p>
+      A <strong>prefix sum</strong> is exactly that: an array of mile markers for your numbers.
+      <code>prefix[i]</code> holds the total of everything <em>before</em> index <code>i</code>. Once you have
+      it, the sum of any contiguous stretch — "contiguous" meaning the elements sit next to each other with no
+      gaps — is a single subtraction.
+    </p>
+    <div class="callout why">
+      <strong>Why it's fast:</strong> you pay O(n) once to build the markers, then every range question costs
+      O(1) instead of O(length of the range). Ten thousand questions on a big array go from tens of millions of
+      additions to ten thousand subtractions.
+    </div>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <p>Prefix sums are worth reaching for when:</p>
+    <ul>
+      <li><strong>You are asked the same kind of question many times</strong> — "the sum from <code>i</code> to <code>j</code>", asked over and over with different <code>i</code> and <code>j</code>.</li>
+      <li><strong>The answer involves a subarray total</strong>: count subarrays summing to <code>k</code>, find a subarray with a given sum, split an array into equal-sum halves.</li>
+      <li><strong>You need "everything before me" or "everything after me"</strong> for each position. That works for products and running minimums too, not just sums.</li>
+      <li><strong>A sliding window would fail</strong> because the array contains negative numbers, so growing the window does not reliably grow the sum. A <a href="sliding-window.html">sliding window</a> needs that monotonic behaviour; prefix sums do not.</li>
+      <li><strong>You want to apply many range updates</strong> — "add 3 to everything between index 2 and 7" — and only read the array at the end.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>
+      Say you must answer many "what is the sum of <code>nums[i..j]</code>?" questions. The obvious version
+      walks the range each time:
+    </p>
+    <pre>def range_sum_slow(nums, i, j):
+    total = 0
+    for k in range(i, j + 1):
+        total += nums[k]
+    return total</pre>
+    <p>
+      One call is O(j − i + 1), which is fine. The problem is <em>q</em> calls: that is O(n·q), and for
+      10,000 queries on a 10,000-element array it is 100 million additions.
+    </p>
+    <p>
+      Here is the wasted work. Asking for the sum of <code>nums[0..99]</code> and then the sum of
+      <code>nums[0..100]</code> re-adds the same first hundred numbers. Every query redoes almost all of the
+      previous query's arithmetic. Nothing is remembered between calls.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>
+      Build the markers once. Note the deliberate off-by-one: <code>prefix</code> has <code>n + 1</code> entries
+      and <code>prefix[0] = 0</code>, the sum of no elements at all. That extra leading zero is what makes
+      queries that start at index 0 work without a special case.
+    </p>
+    <pre>def build_prefix(nums):
+    prefix = [0]                       # prefix[0] = the sum of nothing = 0
+    for x in nums:
+        prefix.append(prefix[-1] + x)  # each entry = the previous one, plus x
+    return prefix
+
+def range_sum(prefix, i, j):
+    return prefix[j + 1] - prefix[i]   # everything up to j, minus everything before i</pre>
+    <p>
+      The line that matters is <code>prefix[j + 1] - prefix[i]</code>. Read it as two overlapping totals
+      cancelling. <code>prefix[j + 1]</code> is "everything from the start through <code>j</code>";
+      <code>prefix[i]</code> is "everything from the start through <code>i − 1</code>". Subtract, and the shared
+      front half vanishes, leaving exactly the slice you wanted. The <code>j + 1</code> is there because
+      <code>prefix[j]</code> stops <em>before</em> <code>j</code>, and you want <code>j</code> included.
+    </p>
+    <div class="callout tip">
+      <strong>A memory aid for the shift:</strong> <code>prefix[k]</code> answers "how many elements have I
+      passed, and what did they add up to?" — <code>prefix[3]</code> means three elements consumed. Index into
+      it with a <em>count</em>, not a position.
+    </div>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>Take <code>nums = [3, 1, 4, 1, 5, 9]</code> and build the markers.</p>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="Array 3 1 4 1 5 9">
+        <div class="cell"><span class="idx">0</span>3</div>
+        <div class="cell"><span class="idx">1</span>1</div>
+        <div class="cell"><span class="idx">2</span>4</div>
+        <div class="cell"><span class="idx">3</span>1</div>
+        <div class="cell"><span class="idx">4</span>5</div>
+        <div class="cell"><span class="idx">5</span>9</div>
+      </div>
+    </div>
+    <p class="caption">The input. Six numbers, no markers yet.</p>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>Step</th><th>x</th><th>prefix[-1]</th><th>Appended</th><th>prefix so far</th></tr></thead>
+        <tbody>
+          <tr><td>start</td><td>—</td><td>—</td><td><code>0</code></td><td><code>[0]</code></td></tr>
+          <tr><td>1</td><td>3</td><td>0</td><td><code>0 + 3 = 3</code></td><td><code>[0, 3]</code></td></tr>
+          <tr><td>2</td><td>1</td><td>3</td><td><code>3 + 1 = 4</code></td><td><code>[0, 3, 4]</code></td></tr>
+          <tr><td>3</td><td>4</td><td>4</td><td><code>4 + 4 = 8</code></td><td><code>[0, 3, 4, 8]</code></td></tr>
+          <tr><td>4</td><td>1</td><td>8</td><td><code>8 + 1 = 9</code></td><td><code>[0, 3, 4, 8, 9]</code></td></tr>
+          <tr><td>5</td><td>5</td><td>9</td><td><code>9 + 5 = 14</code></td><td><code>[0, 3, 4, 8, 9, 14]</code></td></tr>
+          <tr class="hi"><td>6</td><td>9</td><td>14</td><td><code>14 + 9 = 23</code></td><td><code>[0, 3, 4, 8, 9, 14, 23]</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Now answer "what is the sum of <code>nums[2..4]</code>?", which by hand is 4 + 1 + 5 = 10.</p>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="Prefix array 0 3 4 8 9 14 23 with markers at index 2 and index 5">
+        <div class="cell dim"><span class="idx">0</span>0</div>
+        <div class="cell dim"><span class="idx">1</span>3</div>
+        <div class="cell warn"><span class="idx">2</span>4<span class="ptr">prefix[i]</span></div>
+        <div class="cell dim"><span class="idx">3</span>8</div>
+        <div class="cell dim"><span class="idx">4</span>9</div>
+        <div class="cell ok"><span class="idx">5</span>14<span class="ptr">prefix[j+1]</span></div>
+        <div class="cell dim"><span class="idx">6</span>23</div>
+      </div>
+    </div>
+    <p class="caption"><code>prefix[5] - prefix[2] = 14 - 4 = 10</code>. One subtraction, and it is the right answer.</p>
+
+    <p>
+      Notice what happened at step 6. Building the marker for the last element cost one addition, because it
+      reused the marker before it. The whole table is <code>n</code> additions total. And notice the query: we
+      never touched <code>nums</code> at all. The 4, 1 and 5 were added together back at build time, and the
+      subtraction just cancelled out the 3 + 1 that we did not want.
+    </p>
+    <p>
+      Sanity-check the edges. The sum of <code>nums[0..5]</code> is
+      <code>prefix[6] - prefix[0] = 23 - 0 = 23</code>, the whole array. The sum of <code>nums[3..3]</code> is
+      <code>prefix[4] - prefix[3] = 9 - 8 = 1</code>, the single element. Both fall out without an
+      <code>if</code>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>Prefix sum plus a hash map: count subarrays summing to k</h3>
+    <p>
+      A subarray sums to <code>k</code> exactly when two prefix sums differ by <code>k</code>. So as you scan,
+      ask "have I seen the running total <code>running - k</code> before?" A
+      <a href="hash-map.html">hash map</a> of how many times each running total occurred answers that in O(1),
+      turning an O(n²) pair search into one pass. This works with negative numbers, which is why a window
+      cannot replace it.
+    </p>
+    <pre>def subarray_sum_count(nums, k):
+    counts = {0: 1}       # one "empty prefix" with running total 0
+    running = 0
+    answer = 0
+    for x in nums:
+        running += x
+        answer += counts.get(running - k, 0)   # earlier prefixes that close a k-sum
+        counts[running] = counts.get(running, 0) + 1
+    return answer</pre>
+    <p class="muted">
+      The <code>{0: 1}</code> seed is not decoration. It is what lets a subarray that starts at index 0 be
+      counted, because such a subarray needs "the empty prefix" as its left boundary.
+    </p>
+
+    <h3>Prefix and suffix together</h3>
+    <p>
+      The same idea runs backwards. For each position, one pass gives you the product of everything to its
+      left and a second pass multiplies in everything to its right — which is Product of Array Except Self,
+      solved without division.
+    </p>
+    <pre>def product_except_self(nums):
+    n = len(nums)
+    result = [1] * n
+    running = 1
+    for i in range(n):                # left pass: product of everything before i
+        result[i] = running
+        running *= nums[i]
+    running = 1
+    for i in range(n - 1, -1, -1):    # right pass: multiply in everything after i
+        result[i] *= running
+        running *= nums[i]
+    return result</pre>
+
+    <h3>Best prefix so far: maximum subarray</h3>
+    <p>
+      The largest subarray sum ending at position <code>j</code> is <code>prefix[j + 1]</code> minus the
+      <em>smallest</em> prefix seen before it. Track that smallest as you go and you get Kadane's algorithm in
+      prefix-sum clothing.
+    </p>
+    <pre>def max_subarray(nums):
+    best = nums[0]
+    running = 0
+    min_prefix = 0            # smallest prefix seen before the current position
+    for x in nums:
+        running += x
+        best = max(best, running - min_prefix)
+        min_prefix = min(min_prefix, running)
+    return best</pre>
+
+    <h3>Running it in reverse: the difference array</h3>
+    <p>
+      If you have many range <em>updates</em> and only one read at the end, flip the pattern. Record
+      <code>+amount</code> at the start of each range and <code>-amount</code> just past its end, then take a
+      prefix sum of that at the very end. Each update becomes O(1) instead of O(range length).
+    </p>
+    <pre>def apply_range_adds(n, updates):
+    diff = [0] * (n + 1)
+    for start, end, amount in updates:
+        diff[start] += amount
+        diff[end + 1] -= amount       # the +1 slot is why diff has n + 1 entries
+    out, running = [], 0
+    for i in range(n):
+        running += diff[i]
+        out.append(running)
+    return out</pre>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong>Skipping the leading zero.</strong> If <code>prefix[0]</code> is <code>nums[0]</code> instead of
+      <code>0</code>, then every query that starts at index 0 needs a special case, and you will forget it.
+      Always size the array at <code>n + 1</code> and start it with <code>0</code>.
+    </div>
+    <div class="callout gotcha">
+      <strong>Getting the <code>+1</code> on the wrong side.</strong> The inclusive range <code>i..j</code> is
+      <code>prefix[j + 1] - prefix[i]</code>, never <code>prefix[j] - prefix[i - 1]</code>. Test it on a range
+      of length 1 before you trust it: <code>i == j</code> must give back <code>nums[i]</code>.
+    </div>
+    <div class="callout gotcha">
+      <strong>Forgetting the empty prefix in the hash-map version.</strong> Starting with an empty
+      <code>counts = {}</code> silently loses every answer whose subarray begins at index 0. The seed must be
+      <code>{0: 1}</code>.
+    </div>
+    <div class="callout gotcha">
+      <strong>Rebuilding after every change.</strong> Prefix sums assume the array does not move. If the
+      problem interleaves updates with queries, a rebuild costs O(n) per update and you are back where you
+      started — that is what a Fenwick tree or segment tree is for.
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Time:</strong> O(n) to build, then O(1) per range query. Answering <code>q</code> queries is O(n + q) instead of O(n·q).</li>
+      <li><strong>Space:</strong> O(n) for the extra array. If you only need a running total as you scan — the hash-map and Kadane variants — it drops to O(1) beyond whatever the map holds.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <ul class="problems">
+      <li><span class="id">medium/002</span><a href="../medium/002-product-of-array-except-self/walkthrough.html">Product of Array Except Self</a><span class="note">prefix and suffix products, two passes</span></li>
+      <li><span class="id">medium/007</span><a href="../medium/007-maximum-subarray/walkthrough.html">Maximum Subarray</a><span class="note">running total minus the smallest prefix so far</span></li>
+      <li><span class="id">easy/005</span><a href="../easy/005-best-time-to-buy-and-sell-stock/walkthrough.html">Best Time to Buy and Sell Stock</a><span class="note">the same "best value seen so far" shape, on prices rather than sums</span></li>
+    </ul>
+    <p class="muted" style="margin-top:14px">
+      Classic LeetCode problems not yet in the repo: Range Sum Query - Immutable (#303), Subarray Sum Equals K
+      (#560), Contiguous Array (#525), Find Pivot Index (#724), Range Sum Query 2D - Immutable (#304), Subarray
+      Sums Divisible by K (#974).
+    </p>
+    <p class="muted">
+      Related pages: <a href="sliding-window.html">Sliding Window</a> (better when the values are all positive
+      and the window shrinks cleanly), <a href="hash-map.html">Hash Maps &amp; Sets</a>, and
+      <a href="time-space-complexity.html">Time &amp; Space Complexity</a>.
+    </p>
+  </section>
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>

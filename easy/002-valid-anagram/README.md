@@ -1,6 +1,6 @@
 # 002. Valid Anagram
 
-**Difficulty:** Easy | **Pattern:** [hash-map](../../patterns/hash-map.md) | **Source:** LeetCode #242
+**Difficulty:** Easy | **Pattern:** [hash-map](../../patterns/hash-map.md) ([explained](../../concepts/hash-map.html)) | **Source:** LeetCode #242
 
 ## Problem
 

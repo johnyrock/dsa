@@ -1,6 +1,6 @@
 # 007. Reverse Linked List
 
-**Difficulty:** Easy | **Pattern:** [linked-list](../../patterns/linked-list.md) | **Source:** LeetCode #206
+**Difficulty:** Easy | **Pattern:** [linked-list](../../patterns/linked-list.md) ([explained](../../concepts/linked-list.html)) | **Source:** LeetCode #206
 
 ## Problem
 

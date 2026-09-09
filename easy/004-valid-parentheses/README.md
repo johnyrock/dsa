@@ -1,6 +1,6 @@
 # 004. Valid Parentheses
 
-**Difficulty:** Easy | **Pattern:** [stack](../../patterns/stack.md) | **Source:** LeetCode #20
+**Difficulty:** Easy | **Pattern:** [stack](../../patterns/stack.md) ([explained](../../concepts/stack.html)) | **Source:** LeetCode #20
 
 ## Problem
 

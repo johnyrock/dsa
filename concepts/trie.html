@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tries, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Tries, Explained</h1>
+  <p class="lede">A tree of characters for prefix lookups, autocomplete, and word search.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      Think about the keyboard on your phone. You type <code>c</code>, then <code>a</code>, then
+      <code>r</code>, and it instantly offers <em>car</em>, <em>card</em>, <em>care</em>, <em>carpet</em>. It
+      is not reading a dictionary of 100,000 words after every keystroke. It walked three steps down a
+      structure that was already sorted by letter, and now it is standing on a branch where every word
+      underneath it starts with "car".
+    </p>
+    <p>
+      A <strong>trie</strong> (say "try", from re<em>trie</em>val; some people say "tree") is that structure.
+      It is a tree where <em>the edges are letters</em>, not the nodes. The path you walk from the root spells
+      out a string, and the node you land on represents that string. Two words that start the same way share
+      the same path until they differ, and only then does the tree branch.
+    </p>
+    <p>
+      One extra piece is needed. The path spelling "ca" exists inside a trie holding "cat", but "ca" is not
+      itself a word. So every node carries a flag, usually called <code>is_word</code>, meaning "a real word
+      ends right here".
+    </p>
+    <pre>class TrieNode:
+    def __init__(self):
+        self.children = {}        # one letter -&gt; the node you reach by using it
+        self.is_word = False      # does a word END here?</pre>
+    <div class="callout why">
+      <strong>Why it's fast:</strong> looking up a word of length <code>L</code> costs <code>L</code> dict
+      lookups, no matter how many words the trie holds. The size of the dictionary does not appear in the
+      cost at all. Scanning a list of <code>n</code> words costs O(n &times; L); a trie costs O(L). With a
+      hundred thousand words and a five-letter query, that is five steps instead of a hundred thousand
+      comparisons.
+    </div>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <ul>
+      <li><strong>The word "prefix" appears in the problem.</strong> That is the loudest possible signal. Tries are the prefix data structure.</li>
+      <li><strong>Autocomplete, typeahead, spell-check, dictionary, word search.</strong> All prefix problems in disguise.</li>
+      <li><strong>Many queries against one fixed set of words.</strong> Building the trie costs something up front, so it only pays off when you look things up repeatedly. For one lookup, just use a <a href="hash-map.html">set</a>.</li>
+      <li><strong>You need to prune a search early.</strong> In grid word-search problems the trie lets you abandon a path the moment the letters so far are not a prefix of anything — that turns an impossible <a href="backtracking.html">backtracking</a> search into a fast one.</li>
+      <li><strong>Wildcards in the query</strong>, like matching <code>c.t</code> against a dictionary. A hash set cannot do that; a trie can, by branching at the dot.</li>
+    </ul>
+    <div class="callout tip">
+      <strong>A trie is not a replacement for a set.</strong> If all you ever ask is "is this exact word in
+      the list?", a Python <code>set</code> is faster and one line long. Reach for a trie when the question
+      is about <em>prefixes</em>.
+    </div>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>
+      "Given a dictionary, find every word starting with a prefix." Python makes the obvious version very
+      short, which is why it is easy to stop here:
+    </p>
+    <pre>def words_with_prefix_slow(words, prefix):
+    return [w for w in words if w.startswith(prefix)]</pre>
+    <p>
+      For one call on a small list this is completely fine. The problem is repeated calls. Every call touches
+      all <code>n</code> words and compares up to <code>L</code> characters of each, so it is O(n &times; L)
+      <em>per query</em>. Type six characters into a search box with a 100,000-word dictionary and you have
+      done 600,000 word scans to render one dropdown.
+    </p>
+    <p>
+      Look at where the waste is. On the query "car" you compare the <code>c</code> of "car" against the
+      first letter of every one of those 100,000 words, and you did the same thing for the query "ca" one
+      keystroke ago. All the words beginning with <code>d</code> are re-rejected on every single query. A
+      trie does that letter comparison <em>once, ever</em>, at build time, and stores the answer as the shape
+      of the tree.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>
+      Every trie operation is the same walk: start at the root, and step down one node per character. What
+      you do when a letter is missing is the only thing that differs between insert and search.
+    </p>
+    <pre>class Trie:
+    def __init__(self):
+        self.root = TrieNode()          # the root spells the empty string
+
+    def insert(self, word):
+        node = self.root
+        for ch in word:
+            if ch not in node.children:
+                node.children[ch] = TrieNode()   # missing letter: carve a new branch
+            node = node.children[ch]             # step down one letter
+        node.is_word = True                      # plant the flag at the end
+
+    def _walk(self, prefix):
+        """Return the node this prefix lands on, or None if the path breaks."""
+        node = self.root
+        for ch in prefix:
+            if ch not in node.children:
+                return None                      # missing letter: the path just stops
+            node = node.children[ch]
+        return node
+
+    def search(self, word):
+        node = self._walk(word)
+        return node is not None and node.is_word   # path exists AND a word ends here
+
+    def starts_with(self, prefix):
+        return self._walk(prefix) is not None      # path exists, that is all</pre>
+    <p>
+      The two lines that matter sit at the end of <code>search</code> and <code>starts_with</code>, and the
+      difference between them is the entire point of the <code>is_word</code> flag.
+      <code>starts_with("ca")</code> is <code>True</code> because the path exists. <code>search("ca")</code>
+      is <code>False</code> because although the path exists, no word ends there. Same walk, different final
+      question.
+    </p>
+    <p>
+      The other habit to build: <code>node = self.root</code> is the first line of every operation. A trie
+      method that forgets to start at the root will happily carry on from wherever the last call left off.
+    </p>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>
+      Start with a trie holding <code>cat</code>, <code>car</code>, <code>dog</code>. A star marks a node
+      where <code>is_word</code> is <code>True</code>.
+    </p>
+
+<pre class="art">        (root)
+        /    \
+       c      d
+       |      |
+       a      o
+      / \     |
+     t*  r*   g*</pre>
+    <p class="caption">Start. Eight nodes for three words, not ten, because "cat" and "car" share the c-a path.</p>
+
+    <p>Now insert <code>card</code>. One row per character.</p>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>Step</th><th>Char</th><th>At node</th><th>In children?</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>c</code></td><td>root</td><td>yes (<code>c</code>, <code>d</code>)</td><td>reuse it, step down to <code>c</code></td></tr>
+          <tr><td>2</td><td><code>a</code></td><td><code>c</code></td><td>yes (<code>a</code>)</td><td>reuse it, step down to <code>ca</code></td></tr>
+          <tr class="hi"><td>3</td><td><code>r</code></td><td><code>ca</code></td><td>yes (<code>t</code>, <code>r</code>)</td><td>reuse it, step down to <code>car</code></td></tr>
+          <tr class="hi"><td>4</td><td><code>d</code></td><td><code>car</code></td><td>no (no children at all)</td><td>create a node, step down to <code>card</code></td></tr>
+          <tr><td>5</td><td>&mdash;</td><td><code>card</code></td><td>&mdash;</td><td>set <code>is_word = True</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+<pre class="art">        (root)
+        /    \
+       c      d
+       |      |
+       a      o
+      / \     |
+     t*  r*   g*
+         |
+         d*</pre>
+    <p class="caption">End. A four-letter word cost exactly one new node.</p>
+
+    <p>
+      Notice what happened at steps 3 and 4. Three of the four characters walked over nodes that already
+      existed, because "car" is a prefix of "card". Only the final <code>d</code> needed memory. That is the
+      compression a trie gives you: a dictionary of 100,000 English words does not need 500,000 nodes,
+      because the common beginnings are stored once.
+    </p>
+    <p>
+      Notice too that the <code>r</code> node keeps its star. "car" is still a word, and "card" is also a
+      word, and one lives on the path to the other. The flag is per node, so both facts coexist without any
+      special handling.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>Autocomplete: collect everything below a node</h3>
+    <p>
+      Walk to the prefix node, then run a <a href="tree-traversal.html">depth-first traversal</a> of
+      everything under it, building the string up as you descend. Sorting the children at each step gives you
+      alphabetical output.
+    </p>
+    <pre>def collect(node, prefix, out):
+    if node.is_word:
+        out.append(prefix)
+    for ch, child in sorted(node.children.items()):
+        collect(child, prefix + ch, out)
+    return out
+
+def autocomplete(trie, prefix):
+    node = trie._walk(prefix)
+    if node is None:
+        return []
+    return collect(node, prefix, [])</pre>
+    <p>
+      The cost is O(L) to walk down plus the size of the answer — you never touch a word that does not start
+      with the prefix, which is exactly what the naive scan could not promise.
+    </p>
+
+    <h3>Wildcards: branch at the dot</h3>
+    <p>
+      Design Add and Search Words (#211) allows <code>.</code> to mean "any single character". A concrete
+      letter follows one child; a dot has to try them all, so the walk becomes a recursive search that can
+      backtrack.
+    </p>
+    <pre>def search_wildcard(trie, word):
+    def go(node, i):
+        if i == len(word):
+            return node.is_word
+        ch = word[i]
+        if ch == ".":
+            return any(go(child, i + 1) for child in node.children.values())
+        if ch not in node.children:
+            return False
+        return go(node.children[ch], i + 1)
+    return go(trie.root, 0)</pre>
+
+    <h3>Counting: store a number at every node</h3>
+    <p>
+      "How many words start with this prefix?" does not need the words themselves, only the count. Keep a
+      counter on each node and bump it for every word that passes through during insertion. The query is then
+      a walk and a single read.
+    </p>
+    <pre>class CountingTrieNode:
+    def __init__(self):
+        self.children = {}
+        self.is_word = False
+        self.count = 0            # how many words pass through this node
+
+class CountingTrie:
+    def __init__(self):
+        self.root = CountingTrieNode()
+
+    def insert(self, word):
+        node = self.root
+        node.count += 1
+        for ch in word:
+            if ch not in node.children:
+                node.children[ch] = CountingTrieNode()
+            node = node.children[ch]
+            node.count += 1
+        node.is_word = True
+
+    def count_prefix(self, prefix):
+        node = self.root
+        for ch in prefix:
+            if ch not in node.children:
+                return 0
+            node = node.children[ch]
+        return node.count</pre>
+    <p>
+      This is the general trick: anything you can accumulate per node — a count, the smallest word id, the
+      full word string itself — turns a traversal into a lookup.
+    </p>
+
+    <h3>Longest common prefix</h3>
+    <p>
+      Insert every word, then walk down from the root while there is exactly one way to go and no word has
+      ended yet. Where the trie first branches, the shared prefix ends.
+    </p>
+    <pre>def longest_common_prefix(words):
+    trie = Trie()
+    for w in words:
+        trie.insert(w)
+    node, prefix = trie.root, ""
+    while len(node.children) == 1 and not node.is_word:
+        ch, node = next(iter(node.children.items()))
+        prefix += ch
+    return prefix</pre>
+    <p class="muted">
+      <code>not node.is_word</code> is doing real work here: for <code>["abc", "abcd"]</code> the answer is
+      <code>"abc"</code>, and without that condition you would keep walking to <code>"abcd"</code>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong>Forgetting <code>is_word</code>.</strong> Without the flag, a trie holding "cat" reports that
+      "ca" and "c" are words too, because their paths exist. Every wrong answer of the form "it says
+      everything is a word" is this bug.
+    </div>
+    <div class="callout gotcha">
+      <strong>Confusing <code>search</code> with <code>starts_with</code>.</strong> They walk identically and
+      differ only in the last line. <code>search</code> needs the flag; <code>starts_with</code> needs only
+      the path. Mixing them up passes the small tests and fails the real ones.
+    </div>
+    <div class="callout gotcha">
+      <strong>Assuming 26 lowercase letters.</strong> A fixed <code>[None] * 26</code> array of children is
+      fast, but it breaks the moment the input has an uppercase letter, a digit, or a space, usually with a
+      silent out-of-range index. A dict costs a little more memory and never has that problem. Use the dict
+      unless the problem promises you the alphabet.
+    </div>
+    <div class="callout gotcha">
+      <strong>Not restarting at the root.</strong> Every insert and every search begins
+      <code>node = self.root</code>. Leave it out and the second call continues from wherever the first one
+      stopped, which produces a trie full of nonsense that is very hard to read back.
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Time:</strong> O(L) for insert, search, and <code>starts_with</code>, where <code>L</code> is the length of the word — one dict lookup per character, and the number of stored words never enters the cost. Autocomplete is O(L + k) where <code>k</code> is the total length of the words returned. Building the trie from <code>n</code> words is O(total characters).</li>
+      <li><strong>Space:</strong> O(total characters) nodes in the worst case, when no two words share a prefix; much less in practice because shared prefixes are stored once. Each node also carries a dict, so the constant factor is heavier than a plain list of strings.</li>
+    </ul>
+    <p class="muted">
+      If those symbols are unfamiliar, start with <a href="time-space-complexity.html">time and space complexity</a>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <p>No walkthroughs use this pattern yet.</p>
+    <p class="muted">
+      Classic LeetCode problems to try, easiest first: Implement Trie (#208), Longest Common Prefix (#14),
+      Replace Words (#648), Design Add and Search Words Data Structure (#211), Map Sum Pairs (#677),
+      Word Search II (#212), Maximum XOR of Two Numbers in an Array (#421, a trie over bits).
+    </p>
+    <p class="muted">
+      For the plain "is this exact string present" version of the same question, see
+      <a href="../easy/003-contains-duplicate/walkthrough.html">Contains Duplicate</a> and
+      <a href="../medium/001-group-anagrams/walkthrough.html">Group Anagrams</a>, which use a
+      <a href="hash-map.html">hash set or map</a> instead.
+    </p>
+  </section>
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>

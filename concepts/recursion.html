@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recursion, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Recursion, Explained</h1>
+  <p class="lede">A function that calls itself, the call stack that makes it work, and how to trust the recursive leap.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      You are standing in a queue and you want to know your position, but you cannot see the front. So you tap
+      the person ahead of you on the shoulder and ask: "what number are you?" They do not know either, so they
+      ask the person ahead of <em>them</em>. This keeps going until it reaches the person at the very front, who
+      can answer without asking anybody: "I'm number 1." That answer comes back down the queue, and each person
+      adds one before passing it on. You get your answer without ever seeing the front of the line.
+    </p>
+    <p>
+      That is recursion. A <strong>recursive function</strong> is a function that solves a problem by calling
+      itself on a smaller version of the same problem. It needs exactly two things: a <strong>base case</strong>
+      (the person at the front, who answers directly and asks nobody) and a <strong>recursive case</strong>
+      (everyone else, who asks a smaller question and builds their answer on top of the reply).
+    </p>
+    <div class="callout why">
+      <strong>Why it's useful:</strong> recursion is usually not about speed — it is about not having to write
+      down the bookkeeping. Python already keeps a <strong>call stack</strong>: a pile of paused function calls,
+      each remembering its own variables and where to resume. When you recurse you get that pile for free, so
+      you never have to invent your own "list of places I still have to visit". For anything with a nested or
+      branching shape — folders inside folders, nodes with children, choices leading to more choices — that
+      saves you most of the code.
+    </div>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <p>Recursion is the natural fit when a problem statement has one of these smells:</p>
+    <ul>
+      <li><strong>The thing is made of smaller copies of itself.</strong> A folder contains folders. A tree node's children are trees. A linked list's <code>next</code> is another linked list.</li>
+      <li><strong>The depth is not known in advance.</strong> If you cannot say how many <code>for</code> loops you would need, you need recursion.</li>
+      <li><strong>You can describe the answer in terms of a slightly smaller answer.</strong> "The sum of this list is the first element plus the sum of the rest." If you can say a sentence like that, you have already written the function.</li>
+      <li><strong>The problem branches.</strong> "At each step you either take this item or you don't" — two recursive calls per step. That is the shape behind <a href="backtracking.html">backtracking</a> and <a href="dynamic-programming.html">dynamic programming</a>.</li>
+      <li><strong>The words "all", "every path", "explore" appear.</strong> Exhaustive search is recursion wearing a hat.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>
+      Say you have a list that may contain other lists, like <code>[1, [2, 3], [[4, 5]]]</code>, and you want the
+      total of every number in there. Without recursion, a beginner writes loops for each level of nesting:
+    </p>
+    <pre>def total_depth_3(data):
+    t = 0
+    for a in data:
+        if isinstance(a, list):
+            for b in a:
+                if isinstance(b, list):
+                    for c in b:
+                        t += c            # and what if there is a list *here*?
+                else:
+                    t += b
+        else:
+            t += a
+    return t</pre>
+    <p>
+      This returns <code>15</code> for the example, so it looks fine. Then somebody hands you
+      <code>[[[[1]]]]</code> — four levels deep — and it crashes with a <code>TypeError</code>, because
+      <code>c</code> is a list and you cannot add a list to a number.
+    </p>
+    <p>
+      The waste here is not wasted time, it is wasted <em>code</em>. Every level of nesting costs you another
+      <code>for</code> loop and another <code>isinstance</code> check, and there is no depth at which you are
+      finally done. The three loops are the same eight lines repeated with different variable names. Recursion
+      writes those eight lines once and lets the call stack repeat them as many times as the data needs.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>
+      Every recursive function has the same skeleton: stop, shrink, combine. Here it is on the simplest possible
+      problem — adding up a flat list of numbers.
+    </p>
+    <pre>def total(nums, i=0):
+    if i == len(nums):                     # 1. BASE CASE: nothing left to add
+        return 0                           #    the sum of no numbers is 0
+
+    rest = total(nums, i + 1)              # 2. SHRINK: ask for the answer to a smaller problem
+    return nums[i] + rest                  # 3. COMBINE: my element plus their answer</pre>
+    <p>
+      The line that matters is <code>total(nums, i + 1)</code>. Read it out loud as
+      <em>"the sum of everything after position i"</em>, and then — this is the hard part —
+      <strong>believe that it works</strong> without tracing it. That act of faith is called the
+      <em>recursive leap</em>. You only have to check two things, and if both hold, the function is correct:
+    </p>
+    <ol>
+      <li>The base case returns the right answer <em>without recursing</em>. Sum of an empty run of numbers is 0. True.</li>
+      <li>Every recursive call moves <strong>strictly closer</strong> to the base case, and the combine step is right assuming the smaller answer is right. <code>i + 1</code> always gets closer to <code>len(nums)</code>. True.</li>
+    </ol>
+    <p>
+      Nothing else needs to be checked. If you find yourself trying to hold six levels of calls in your head at
+      once, you have stopped taking the leap and started doing the computer's job.
+    </p>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>Call <code>total([3, 1, 4, 1, 5])</code>. Here is the array, with the first call pointing at index 0.</p>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="Array 3 1 4 1 5 with i at index 0">
+        <div class="cell hi"><span class="idx">0</span>3<span class="ptr">i</span></div>
+        <div class="cell"><span class="idx">1</span>1</div>
+        <div class="cell"><span class="idx">2</span>4</div>
+        <div class="cell"><span class="idx">3</span>1</div>
+        <div class="cell"><span class="idx">4</span>5</div>
+      </div>
+    </div>
+    <p class="caption">Start. One call, sitting at i = 0, about to ask about everything to its right.</p>
+
+    <p>
+      Each call parks itself and asks the next one. Nothing is added up on the way <em>down</em> — every call is
+      just waiting, holding on to its own <code>nums[i]</code>:
+    </p>
+    <pre class="art">total(nums, 0)   =  3 + ?          &lt;- paused, waiting
+  total(nums, 1)   =  1 + ?        &lt;- paused, waiting
+    total(nums, 2)   =  4 + ?      &lt;- paused, waiting
+      total(nums, 3)   =  1 + ?    &lt;- paused, waiting
+        total(nums, 4)   =  5 + ?  &lt;- paused, waiting
+          total(nums, 5)   =  0    &lt;- BASE CASE: i == len(nums), answers on its own</pre>
+
+    <p>Then the answers come back <em>up</em>, and now the additions actually happen:</p>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>Step</th><th>Call</th><th>i</th><th>What happens</th><th>Returns</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>total(nums, 0)</code></td><td>0</td><td>not the base case, ask <code>total(nums, 1)</code></td><td>paused</td></tr>
+          <tr><td>2</td><td><code>total(nums, 1)</code></td><td>1</td><td>not the base case, ask <code>total(nums, 2)</code></td><td>paused</td></tr>
+          <tr><td>3</td><td><code>total(nums, 2)</code></td><td>2</td><td>not the base case, ask <code>total(nums, 3)</code></td><td>paused</td></tr>
+          <tr><td>4</td><td><code>total(nums, 3)</code></td><td>3</td><td>not the base case, ask <code>total(nums, 4)</code></td><td>paused</td></tr>
+          <tr><td>5</td><td><code>total(nums, 4)</code></td><td>4</td><td>not the base case, ask <code>total(nums, 5)</code></td><td>paused</td></tr>
+          <tr class="hi"><td>6</td><td><code>total(nums, 5)</code></td><td>5</td><td><strong>base case</strong>: <code>i == len(nums)</code></td><td><code>0</code></td></tr>
+          <tr><td>7</td><td><code>total(nums, 4)</code> resumes</td><td>4</td><td><code>5 + 0</code></td><td><code>5</code></td></tr>
+          <tr><td>8</td><td><code>total(nums, 3)</code> resumes</td><td>3</td><td><code>1 + 5</code></td><td><code>6</code></td></tr>
+          <tr><td>9</td><td><code>total(nums, 2)</code> resumes</td><td>2</td><td><code>4 + 6</code></td><td><code>10</code></td></tr>
+          <tr><td>10</td><td><code>total(nums, 1)</code> resumes</td><td>1</td><td><code>1 + 10</code></td><td><code>11</code></td></tr>
+          <tr class="hi"><td>11</td><td><code>total(nums, 0)</code> resumes</td><td>0</td><td><code>3 + 11</code></td><td><code>14</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <pre class="art">          total(nums, 5)  ->  0
+        total(nums, 4)  ->  5 + 0   =  5
+      total(nums, 3)  ->  1 + 5   =  6
+    total(nums, 2)  ->  4 + 6   = 10
+  total(nums, 1)  ->  1 + 10  = 11
+total(nums, 0)  ->  3 + 11  = 14   &lt;- the answer pops out here</pre>
+    <p class="caption">The stack unwinding. Six calls were opened; six answers came back, innermost first.</p>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="Array fully summed to 14">
+        <div class="cell ok"><span class="idx">0</span>3<span class="ptr">14</span></div>
+        <div class="cell ok"><span class="idx">1</span>1<span class="ptr">11</span></div>
+        <div class="cell ok"><span class="idx">2</span>4<span class="ptr">10</span></div>
+        <div class="cell ok"><span class="idx">3</span>1<span class="ptr">6</span></div>
+        <div class="cell ok"><span class="idx">4</span>5<span class="ptr">5</span></div>
+      </div>
+    </div>
+    <p class="caption">End. Under each cell is what the call starting there returned. Each one is its own element plus the number to its right.</p>
+
+    <p>
+      Notice what happened at step 6, and how little happened before it. Steps 1 to 5 computed <em>nothing</em>.
+      They only stacked up five paused functions, each holding one number, waiting. All the arithmetic happened
+      on the way back up. This is the thing beginners find spooky, and it is worth saying plainly: a recursive
+      function has a "going down" phase and a "coming back up" phase, and where you put your code decides which
+      phase it runs in. Work before the recursive call happens top-down; work after it happens bottom-up.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>Recursion over nested structures</h3>
+    <p>
+      This is the version that fixes the broken loops from earlier. One function, any depth. The recursive call
+      is inside a loop because a list can hold many sub-lists, not just one.
+    </p>
+    <pre>def total_nested(data):
+    t = 0
+    for item in data:
+        if isinstance(item, list):
+            t += total_nested(item)   # same function, smaller box
+        else:
+            t += item
+    return t
+
+total_nested([1, [2, 3], [[4, 5]]])   # 15
+total_nested([[[[1]]]])               # 1, no matter how deep it goes</pre>
+
+    <h3>Recursion over a linked list</h3>
+    <p>
+      A linked list is recursive by construction: a node, plus another linked list hanging off <code>next</code>.
+      Here <code>prev</code> carries the already-reversed part downward, which is why nothing happens on the way
+      back up — this is a <em>tail call</em>, the flavour where the recursive call is the very last thing.
+      (See <a href="linked-list.html">linked lists</a> for what these nodes are.)
+    </p>
+    <pre>def reverse_list(head, prev=None):
+    if head is None:       # base case: ran off the end, prev is the new head
+        return prev
+    nxt = head.next        # remember the rest before we overwrite the link
+    head.next = prev       # flip this one arrow
+    return reverse_list(nxt, head)</pre>
+
+    <h3>Two recursive calls: branching</h3>
+    <p>
+      When each step has more than one option, call yourself once per option and add or compare the results.
+      Counting the paths from the top-left to the bottom-right of a grid, moving only down or right:
+    </p>
+    <pre>def count_paths(rows, cols):
+    if rows == 1 or cols == 1:   # base case: only one straight line left
+        return 1
+    return count_paths(rows - 1, cols) + count_paths(rows, cols - 1)
+
+count_paths(3, 3)   # 6</pre>
+    <p>
+      Branching recursion is where the interesting patterns live — and where it gets slow, because the same
+      subproblem gets recomputed on different branches. Storing those answers is
+      <a href="dynamic-programming.html">dynamic programming</a>; undoing a choice before trying the next one is
+      <a href="backtracking.html">backtracking</a>.
+    </p>
+
+    <h3>Recursion vs. a loop</h3>
+    <p>
+      Anything recursive can be rewritten with a loop and an explicit stack (a list you <code>append</code> to
+      and <code>pop</code> from), and anything with one straight recursive call — like <code>total</code> above —
+      is usually clearer as a plain <code>for</code> loop. Use recursion when the <em>data</em> branches, not to
+      look clever.
+    </p>
+    <div class="compare">
+      <div class="box">
+        <h4>Reach for recursion</h4>
+        <ul>
+          <li>Trees, nested lists, folders</li>
+          <li>Unknown or unbounded depth</li>
+          <li>"Try every option" searches</li>
+          <li>Divide and conquer (merge sort, binary search)</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h4>Reach for a loop</h4>
+        <ul>
+          <li>Walking an array once</li>
+          <li>Depth could be 100,000 (Python will stop you)</li>
+          <li>The recursion is one call, at the end</li>
+          <li>You need every scrap of speed</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong>No base case, or one that never gets hit.</strong> <code>def broken(n): return n + broken(n - 1)</code>
+      never stops, and Python eventually raises <code>RecursionError: maximum recursion depth exceeded</code>.
+      A base case that exists but is unreachable is the same bug wearing a disguise: if you test
+      <code>if i == len(nums)</code> but step by <code>i + 2</code>, you can jump straight over it.
+    </div>
+    <div class="callout gotcha">
+      <strong>Forgetting to <code>return</code> the recursive call.</strong> Writing
+      <code>total(nums, i + 1)</code> on its own line instead of <code>return nums[i] + total(nums, i + 1)</code>
+      computes the whole answer and throws it away. Python does not warn you; the function just returns
+      something wrong, or <code>None</code>. If a recursive function returns <code>None</code> for no obvious
+      reason, this is almost always why.
+    </div>
+    <div class="callout gotcha">
+      <strong>Slicing instead of indexing.</strong> <code>total(nums[1:])</code> looks tidier than
+      <code>total(nums, i + 1)</code>, but <code>nums[1:]</code> <em>copies</em> the rest of the list every call.
+      That turns an O(n) function into O(n²) and quietly uses O(n²) memory. Pass an index, not a slice.
+    </div>
+    <div class="callout gotcha">
+      <strong>Forgetting Python's depth limit.</strong> The default limit is 1000 nested calls, so a recursion
+      that is one-call-per-element dies on a list of 20,000. Interview inputs rarely go that deep, but if yours
+      does, rewrite it as a loop rather than raising the limit — raising it can crash the interpreter outright.
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Time:</strong> (number of calls) × (work inside one call, ignoring the recursive calls). <code>total</code> makes n + 1 calls doing O(1) work each, so O(n). <code>count_paths</code> branches in two every call, so it is exponential — about O(2<sup>rows+cols</sup>).</li>
+      <li><strong>Space:</strong> O(depth of the recursion) even when you allocate nothing, because every paused call sits on the call stack holding its variables. <code>total</code> on n elements is O(n) space — a real cost that the loop version does not pay. See <a href="time-space-complexity.html">time &amp; space complexity</a>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <ul class="problems">
+      <li><span class="id">easy/007</span><a href="../easy/007-reverse-linked-list/walkthrough.html">Reverse Linked List</a><span class="note">the tail-recursive flip, next to the loop version</span></li>
+      <li><span class="id">easy/008</span><a href="../easy/008-merge-two-sorted-lists/walkthrough.html">Merge Two Sorted Lists</a><span class="note">"smaller head, then merge the rest" is one line of recursion</span></li>
+      <li><span class="id">easy/010</span><a href="../easy/010-climbing-stairs/walkthrough.html">Climbing Stairs</a><span class="note">the branching recursion that begs to be memoised</span></li>
+      <li><span class="id">medium/010</span><a href="../medium/010-number-of-islands/walkthrough.html">Number of Islands</a><span class="note">recursive flood fill over a grid</span></li>
+    </ul>
+    <p class="muted" style="margin-top:14px">Classic LeetCode problems not yet in the repo: Fibonacci Number (#509), Pow(x, n) (#50), Binary Tree Inorder Traversal (#94), Maximum Depth of Binary Tree (#104), Sort an Array / merge sort (#912).</p>
+  </section>
+
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>

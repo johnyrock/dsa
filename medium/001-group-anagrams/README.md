@@ -1,6 +1,6 @@
 # 001. Group Anagrams
 
-**Difficulty:** Medium | **Pattern:** [hash-map](../../patterns/hash-map.md) | **Source:** LeetCode #49
+**Difficulty:** Medium | **Pattern:** [hash-map](../../patterns/hash-map.md) ([explained](../../concepts/hash-map.html)) | **Source:** LeetCode #49
 
 ## Problem
 

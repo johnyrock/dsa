@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stacks &amp; Monotonic Stacks, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Stacks &amp; Monotonic Stacks, Explained</h1>
+  <p class="lede">Last in, first out for matching brackets, and the monotonic variant for "next greater element" problems.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      Think of a stack of plates by the sink. You can only put a plate on top, and you can only take the top
+      one off. The plate you washed most recently is the first one you pick up again. Nobody reaches into the
+      middle. That rule has a name: <strong>LIFO</strong>, last in, first out.
+    </p>
+    <pre class="art">    push 'c'  ─┐        ┌─  pop  →  'c'
+               ↓        │
+             ┌───┐    ┌───┐
+             │ c │    │ c │  ← top: the only plate you can touch
+             ├───┤    ├───┤
+             │ b │    │ b │
+             ├───┤    ├───┤
+             │ a │    │ a │  ← bottom: pushed first, comes out last
+             └───┘    └───┘</pre>
+    <p>
+      In Python you do not need a special class. A plain list <em>is</em> a stack: <code>lst.append(x)</code>
+      pushes onto the top, <code>lst.pop()</code> removes and returns the top, and <code>lst[-1]</code> peeks
+      at the top without removing it. All three are O(1).
+    </p>
+    <p>
+      A stack is the right tool whenever the thing you care about is <strong>the most recent unfinished
+      thing</strong>. An open bracket waiting to be closed. A folder you opened on the way down and still
+      have to come back out of. A number that has not yet met anything bigger than itself.
+    </p>
+    <div class="callout why">
+      <strong>Why it's fast:</strong> the stack remembers the pending items <em>in the exact order you will
+      need them</em>, so you never search. Each element is pushed once and popped at most once, which is why
+      even the loop-inside-a-loop shape of a monotonic stack is still O(n) overall, not O(n²).
+    </div>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <p>Reach for a stack when a problem has any of these shapes:</p>
+    <ul>
+      <li><strong>Things nest inside other things</strong> — brackets, tags, folders, function calls. Nesting
+        is LIFO by definition: the innermost thing must close first.</li>
+      <li><strong>"Match each X with the most recent unmatched Y."</strong> The word <em>recent</em> is the tell.</li>
+      <li><strong>"Next greater / next smaller element"</strong>, "days until a warmer day", "how far can I see".
+        These want a <em>monotonic</em> stack — one whose contents always go one way, all increasing or all
+        decreasing.</li>
+      <li><strong>Undo, back button, or "reverse the order"</strong> — pushing everything and popping it all
+        reverses it for free.</li>
+      <li><strong>You want <a href="recursion.html">recursion</a> but without recursion.</strong> Every
+        recursive function already runs on a stack (the call stack). Making that stack explicit turns
+        recursion into a loop, which dodges Python's recursion limit.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>
+      Valid Parentheses: <em>given a string of brackets, decide whether every one is closed by the right kind,
+      in the right order.</em> A common first idea is to keep deleting adjacent matching pairs until nothing
+      changes, then see if the string is empty.
+    </p>
+    <pre>def is_valid_slow(s):
+    prev = None
+    while s != prev:                 # keep going until a pass changes nothing
+        prev = s
+        s = s.replace("()", "").replace("[]", "").replace("{}", "")
+    return s == ""</pre>
+    <p>
+      It works, and it is genuinely O(n²) — a string like <code>"((((((...))))))"</code> peels off only one
+      pair per full pass, and each pass rebuilds the whole string. The wasted work is the rescanning: on every
+      pass you walk past hundreds of characters you have already inspected, just to reach the one innermost
+      pair. What you actually needed to remember was a single thing at a time — <em>which bracket is still
+      open and most recent</em> — and that is precisely a stack.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>
+      Walk the string once. Push every opener. When you hit a closer, the only bracket it is allowed to close
+      is the one on top of the stack.
+    </p>
+    <pre>def is_valid(s):
+    pairs = {")": "(", "]": "[", "}": "{"}   # closer -&gt; the opener it needs
+    stack = []
+
+    for ch in s:
+        if ch not in pairs:                  # an opener
+            stack.append(ch)                 # remember it as "still open"
+        else:                                # a closer
+            if not stack or stack.pop() != pairs[ch]:
+                return False                 # nothing open, or the wrong thing was
+    return not stack                         # true only if nothing is left open</pre>
+    <p>
+      The line that matters is <code>stack.pop() != pairs[ch]</code>. Read it as a challenge: <em>"a closer
+      just arrived; the most recent thing still open had better be its partner."</em> There is no searching
+      and no backtracking, because nesting guarantees the partner is on top or the string is invalid.
+    </p>
+    <p>
+      Both guards on that line earn their keep. <code>not stack</code> catches a closer with nothing open at
+      all, like <code>")"</code>. And the final <code>return not stack</code> catches the opposite — openers
+      that never got closed, like <code>"("</code> — which the loop alone would happily accept.
+    </p>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>Run <code>is_valid</code> on <code>"([]{})"</code>.</p>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="String ( [ ] { } ) with the scan starting at index 0 and an empty stack">
+        <div class="cell hi"><span class="idx">0</span>(<span class="ptr">ch</span></div>
+        <div class="cell"><span class="idx">1</span>[</div>
+        <div class="cell"><span class="idx">2</span>]</div>
+        <div class="cell"><span class="idx">3</span>{</div>
+        <div class="cell"><span class="idx">4</span>}</div>
+        <div class="cell"><span class="idx">5</span>)</div>
+      </div>
+    </div>
+    <p class="caption">Start. The stack is empty and we are on the first character.</p>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>Step</th><th>ch</th><th>Kind</th><th>Action</th><th>Stack after (top on the right)</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>(</code></td><td>opener</td><td>push it</td><td><code>['(']</code></td></tr>
+          <tr><td>2</td><td><code>[</code></td><td>opener</td><td>push it</td><td><code>['(', '[']</code></td></tr>
+          <tr class="hi"><td>3</td><td><code>]</code></td><td>closer</td><td>pop <code>'['</code> — needs <code>'['</code> ✓</td><td><code>['(']</code></td></tr>
+          <tr><td>4</td><td><code>{</code></td><td>opener</td><td>push it</td><td><code>['(', '{']</code></td></tr>
+          <tr><td>5</td><td><code>}</code></td><td>closer</td><td>pop <code>'{'</code> — needs <code>'{'</code> ✓</td><td><code>['(']</code></td></tr>
+          <tr class="hi"><td>6</td><td><code>)</code></td><td>closer</td><td>pop <code>'('</code> — needs <code>'('</code> ✓</td><td><code>[]</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <pre class="art">after step 2        after step 4        after step 6
+   ┌───┐               ┌───┐
+   │ [ │ ← top         │ { │ ← top
+   ├───┤               ├───┤
+   │ ( │               │ ( │              (empty)
+   └───┘               └───┘
+ two things open    the [ ] closed     nothing left open
+                    and left again      → return True</pre>
+    <p class="caption">The stack grows and shrinks with the nesting depth, and ends empty, so the string is valid.</p>
+
+    <p>
+      Notice what happened at step 3. The <code>]</code> did not go hunting for its partner — it just took
+      whatever was on top, and that was guaranteed to be the innermost open bracket. Now imagine the input
+      were <code>"([)]"</code> instead. At step 3 the character is <code>)</code>, which needs <code>(</code>,
+      but the top of the stack is <code>[</code>. Mismatch, return False immediately. That one comparison is
+      the whole algorithm.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>The monotonic stack</h3>
+    <p>
+      A <strong>monotonic</strong> stack is one you deliberately keep in sorted order — every value in it is
+      smaller than the one below (or larger, depending on the problem). You maintain that by popping anything
+      that would break the order before you push. It solves the whole family of "next greater element"
+      questions in one pass.
+    </p>
+    <pre>def next_greater(nums):
+    """For each element, the first larger value to its right (-1 if none)."""
+    res = [-1] * len(nums)
+    stack = []                       # indices; values shrink as you go UP the stack
+
+    for i, x in enumerate(nums):
+        # x is bigger than the values waiting on top: it is their answer
+        while stack and nums[stack[-1]] &lt; x:
+            res[stack.pop()] = x
+        stack.append(i)              # x now waits for its own bigger value
+
+    return res                       # anything still on the stack keeps -1</pre>
+    <p>
+      Store <em>indices</em>, not values, so you know where to write the answer. On
+      <code>[2, 1, 5, 6, 2, 3]</code> this gives <code>[5, 5, 6, -1, 3, -1]</code>:
+    </p>
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>i</th><th>x</th><th>Popped (answered)</th><th>Stack after (indices)</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>2</td><td>—</td><td><code>[0]</code></td></tr>
+          <tr><td>1</td><td>1</td><td>— (1 &lt; 2, so it just waits)</td><td><code>[0, 1]</code></td></tr>
+          <tr class="hi"><td>2</td><td>5</td><td>index 1 → 5, then index 0 → 5</td><td><code>[2]</code></td></tr>
+          <tr><td>3</td><td>6</td><td>index 2 → 6</td><td><code>[3]</code></td></tr>
+          <tr><td>4</td><td>2</td><td>— (2 &lt; 6)</td><td><code>[3, 4]</code></td></tr>
+          <tr><td>5</td><td>3</td><td>index 4 → 3</td><td><code>[3, 5]</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      The <code>while</code> inside the <code>for</code> looks like O(n²), but it is not. Each index is pushed
+      exactly once and popped at most once, so across the whole run the <code>while</code> body executes at
+      most n times in total. That accounting trick — charge the work to the element being removed — is called
+      an <em>amortised</em> argument, and it is worth being able to say out loud in an interview.
+    </p>
+
+    <h3>Carrying extra information: a min stack</h3>
+    <p>
+      "Give me the smallest value currently in the stack, in O(1)" sounds impossible until you notice you can
+      push a <em>pair</em>: the value, and the minimum of everything at or below it. Popping throws the stale
+      minimum away automatically.
+    </p>
+    <pre>class MinStack:
+    def __init__(self):
+        self.stack = []              # (value, min so far including this value)
+
+    def push(self, x):
+        smallest = x if not self.stack else min(x, self.stack[-1][1])
+        self.stack.append((x, smallest))
+
+    def pop(self):
+        return self.stack.pop()[0]
+
+    def top(self):
+        return self.stack[-1][0]
+
+    def get_min(self):
+        return self.stack[-1][1]</pre>
+
+    <h3>Turning recursion into a loop</h3>
+    <p>
+      Depth-first search is naturally recursive, but you can run it with an explicit stack instead. Push the
+      start, then repeatedly pop a node and push its unvisited neighbours. This is <em>a</em> depth-first
+      traversal: it reaches the same nodes as the recursive version, though not always in the same order.
+      Your list plays the role of Python's call stack — handy when the graph is deep enough to blow
+      the default recursion limit of about 1000 frames. See
+      <a href="graph-traversal.html">Graph Traversal</a> and <a href="tree-traversal.html">Tree Traversal</a>
+      for the full versions.
+    </p>
+    <pre>def dfs_iterative(graph, start):
+    seen, order, stack = {start}, [], [start]
+    while stack:
+        node = stack.pop()           # pop, not pop(0): that's what makes it depth-first
+        order.append(node)
+        for nb in graph[node]:
+            if nb not in seen:
+                seen.add(nb)
+                stack.append(nb)
+    return order</pre>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong>Popping an empty stack.</strong> <code>[].pop()</code> raises
+      <code>IndexError: pop from empty list</code>. Every pop needs a guard —
+      <code>if not stack: return False</code>, or <code>while stack and ...</code>. In bracket problems this
+      is the input <code>")"</code>, and it is the most common crash on this pattern.
+    </div>
+    <div class="callout gotcha">
+      <strong>Forgetting to check the stack at the end.</strong> A loop that never fails is not the same as a
+      valid string. <code>"((("</code> survives every iteration and leaves three openers behind. The answer is
+      <code>return not stack</code>, not <code>return True</code>.
+    </div>
+    <div class="callout gotcha">
+      <strong>Storing values instead of indices in a monotonic stack.</strong> Once you have popped a value
+      you usually need to know <em>where</em> it came from, to write the result or to measure a distance.
+      Push <code>i</code> and read <code>nums[i]</code>. Getting this wrong makes "Daily Temperatures" style
+      problems unsolvable rather than merely buggy.
+    </div>
+    <div class="callout gotcha">
+      <strong>Using <code>pop(0)</code> when you meant <code>pop()</code>.</strong> <code>pop(0)</code> takes
+      from the <em>front</em>, which makes the list a queue (first in, first out) and quietly turns a
+      depth-first search into a breadth-first one. It is also O(n) per call because everything shifts down. If
+      you really want a queue, use <code>collections.deque</code> and <code>popleft()</code>.
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Time:</strong> O(n). Each element is pushed at most once and popped at most once, and both
+        operations are O(1) — so even the monotonic stack's inner <code>while</code> loop cannot push the
+        total past 2n steps.</li>
+      <li><strong>Space:</strong> O(n) in the worst case — a fully nested string like <code>"((((("</code>,
+        or a strictly decreasing array, puts every element on the stack at the same time.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <ul class="problems">
+      <li><span class="id">easy/004</span><a href="../easy/004-valid-parentheses/walkthrough.html">Valid Parentheses</a><span class="note">the matching stack, exactly as above</span></li>
+      <li><span class="id">medium/010</span><a href="../medium/010-number-of-islands/walkthrough.html">Number of Islands</a><span class="note">DFS — recursion's call stack, or your own explicit one</span></li>
+    </ul>
+    <p class="muted" style="margin-top:14px">Classic LeetCode problems not yet in the repo: Min Stack (#155), Evaluate Reverse Polish Notation (#150), Daily Temperatures (#739), Next Greater Element I (#496), Largest Rectangle in Histogram (#84), Basic Calculator (#224).</p>
+  </section>
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>

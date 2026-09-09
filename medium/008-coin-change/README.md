@@ -1,6 +1,6 @@
 # 008. Coin Change
 
-**Difficulty:** Medium | **Pattern:** [dynamic-programming](../../patterns/dynamic-programming.md) | **Source:** LeetCode #322
+**Difficulty:** Medium | **Pattern:** [dynamic-programming](../../patterns/dynamic-programming.md) ([explained](../../concepts/dynamic-programming.html)) | **Source:** LeetCode #322
 
 ## Problem
 

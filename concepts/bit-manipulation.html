@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bit Manipulation, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Bit Manipulation, Explained</h1>
+  <p class="lede">AND, OR, XOR, and shifts, and the handful of tricks that turn up in interviews.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      Imagine a row of light switches on a wall. Each switch is either on or off — no in-between. Now agree
+      on a rule: the rightmost switch is worth 1, the next one left is worth 2, the next 4, then 8, 16, and so
+      on, doubling every time you move left. Flip some switches on, add up what they are worth, and you have a
+      number. Flip a different set and you get a different number. Every whole number is exactly one pattern
+      of switches.
+    </p>
+    <p>
+      That is <strong>binary</strong>. Each switch is called a <strong>bit</strong> (short for "binary digit"),
+      written as <code>0</code> for off and <code>1</code> for on. The number 13 is:
+    </p>
+
+<pre class="art">worth:    8   4   2   1
+bits:     1   1   0   1
+          8 + 4 + 0 + 1  =  13</pre>
+    <p class="caption">13 in binary is 1101. Python agrees: <code>0b1101 == 13</code>, and <code>bin(13)</code> gives <code>'0b1101'</code>.</p>
+
+    <p>
+      Your computer stores every integer this way already. <strong>Bit manipulation</strong> just means
+      operating on those switches directly, all of them at once, instead of doing arithmetic on the number they
+      add up to. Python gives you five tools for it:
+    </p>
+    <ul>
+      <li><code>a &amp; b</code> — <strong>AND</strong>. A bit is 1 only if it is 1 in <em>both</em>. <code>12 &amp; 10 == 8</code>, because <code>1100 &amp; 1010 = 1000</code>.</li>
+      <li><code>a | b</code> — <strong>OR</strong>. A bit is 1 if it is 1 in <em>either</em>. <code>12 | 10 == 14</code> (<code>1110</code>).</li>
+      <li><code>a ^ b</code> — <strong>XOR</strong>, "exclusive or". A bit is 1 if the two bits <em>differ</em>. <code>12 ^ 10 == 6</code> (<code>0110</code>).</li>
+      <li><code>a &lt;&lt; k</code> — <strong>left shift</strong>. Slide every bit k places left, filling with 0s. Same as multiplying by 2<sup>k</sup>: <code>1 &lt;&lt; 3 == 8</code>.</li>
+      <li><code>a &gt;&gt; k</code> — <strong>right shift</strong>. Slide right, dropping what falls off the end. Same as integer-dividing by 2<sup>k</sup>: <code>13 &gt;&gt; 1 == 6</code>.</li>
+    </ul>
+    <p>
+      XOR is the one that earns its keep in interviews, because of three small facts that turn out to be a
+      superpower:
+    </p>
+    <pre>x ^ 0 == x          # XOR with nothing changes nothing
+x ^ x == 0          # anything XOR'd with itself vanishes
+(a ^ b) ^ c == a ^ (b ^ c)   # order does not matter at all</pre>
+    <div class="callout why">
+      <strong>Why it's useful:</strong> put those three facts together and XOR becomes a machine that
+      <em>cancels pairs regardless of where they sit</em>. Fold a whole list together with <code>^</code> and
+      every value that appears twice annihilates itself, no matter how far apart the two copies were. What is
+      left is the value that had no partner — found in one pass, using a single integer of memory.
+    </div>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <p>Bit tricks are narrow. These are the tells:</p>
+    <ul>
+      <li><strong>"Every element appears twice except one."</strong> That sentence is XOR, essentially always.</li>
+      <li><strong>The problem forbids extra memory</strong> — "solve it in O(1) space", "without using extra
+        space" — while the obvious solution wants a set or a dictionary.</li>
+      <li><strong>The problem is literally about bits</strong>: count the 1s, reverse the bits, check for a
+        power of two, add two numbers without <code>+</code>.</li>
+      <li><strong>You need every subset of a small set</strong> (n up to roughly 20). Each subset is a yes/no
+        choice per item, which is exactly a row of switches, so the numbers <code>0</code> to
+        <code>2ⁿ - 1</code> enumerate all of them.</li>
+      <li><strong>You want a compact flag set.</strong> "Which of these 26 letters have I seen?" fits in one
+        integer instead of a set, which matters inside a hot loop.</li>
+    </ul>
+    <p class="muted">
+      Equally important: bit manipulation is <em>not</em> a general problem-solving pattern. If a problem does
+      not fall into one of the shapes above, reaching for bits usually makes your code harder to read for no
+      speed gain. A <a href="hash-map.html">hash map</a> is almost always the better default.
+    </p>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>
+      The problem: <em>every number in the list appears exactly twice, except one that appears once. Find it.</em>
+      Given <code>[4, 1, 2, 1, 2]</code> the answer is <code>4</code>.
+    </p>
+    <p>The natural solution is to count:</p>
+    <pre>def single_number_slow(nums):
+    seen = {}
+    for x in nums:
+        seen[x] = seen.get(x, 0) + 1
+    for x, count in seen.items():
+        if count == 1:
+            return x</pre>
+    <p>
+      There is nothing wrong with this. It is O(n) time, it is clear, and in real code you should probably
+      write it. But look at what it keeps: a dictionary entry for every distinct value, which is O(n) memory
+      — and you throw almost all of it away. You build up counts for hundreds of numbers just to answer one
+      yes/no question about each: <em>did it appear an odd number of times?</em>
+    </p>
+    <p>
+      That is the wasted work. You are storing "how many" when you only need "odd or even", and you are
+      storing it per value when the values cancel each other out anyway.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>XOR everything together. That is the whole algorithm.</p>
+    <pre>def single_number(nums):
+    result = 0
+    for x in nums:
+        result ^= x     # THE line: pairs cancel, the loner survives
+    return result</pre>
+    <p>
+      The line that matters is <code>result ^= x</code>, which is shorthand for
+      <code>result = result ^ x</code>. Read it not as "combine these numbers" but as
+      <em>"toggle every switch that x has on"</em>. When the same value comes past a second time it toggles
+      exactly the same switches back off. Because order does not matter to XOR, the two copies cancel even
+      though they are nowhere near each other in the list.
+    </p>
+    <p>
+      Starting at <code>result = 0</code> is not arbitrary either: <code>0</code> is XOR's do-nothing value, the
+      way <code>0</code> is for <code>+</code> and <code>1</code> is for <code>*</code>. Start anywhere else and
+      your answer is off by that amount.
+    </p>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>Run it on <code>[4, 1, 2, 1, 2]</code>. Only three bits are needed, worth 4, 2 and 1:</p>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="Array 4 1 2 1 2">
+        <div class="cell hi"><span class="idx">0</span>4<span class="ptr">alone</span></div>
+        <div class="cell"><span class="idx">1</span>1</div>
+        <div class="cell"><span class="idx">2</span>2</div>
+        <div class="cell"><span class="idx">3</span>1</div>
+        <div class="cell"><span class="idx">4</span>2</div>
+      </div>
+    </div>
+    <p class="caption">The 1s are a pair and the 2s are a pair, but they are interleaved, and we are not allowed to sort or to keep a set.</p>
+
+    <p>Before the trace, here is the whole thing at once, as bit columns:</p>
+
+<pre class="art">          worth 4   worth 2   worth 1
+  4   -&gt;      1         0         0
+  1   -&gt;      0         0         1
+  2   -&gt;      0         1         0
+  1   -&gt;      0         0         1
+  2   -&gt;      0         1         0
+            -----     -----     -----
+ count:       1         2         2      &lt;- how many 1s in this column
+   XOR:       1         0         0      &lt;- odd count -&gt; 1, even count -&gt; 0
+
+                        100 = 4</pre>
+    <p class="caption">XOR down a column is just "is the number of 1s odd?". Paired values contribute two 1s to every column they touch, so they always land on even.</p>
+
+    <p>Now the same thing one step at a time, which is what the loop actually does:</p>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>Step</th><th>x</th><th>x in binary</th><th>result before</th><th>result after</th><th>What changed</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>—</td><td>—</td><td>—</td><td><code>000</code> (0)</td><td>start at 0, all switches off</td></tr>
+          <tr><td>1</td><td><code>4</code></td><td><code>100</code></td><td><code>000</code></td><td><code>100</code> (4)</td><td>the 4-switch turns on</td></tr>
+          <tr><td>2</td><td><code>1</code></td><td><code>001</code></td><td><code>100</code></td><td><code>101</code> (5)</td><td>the 1-switch turns on</td></tr>
+          <tr><td>3</td><td><code>2</code></td><td><code>010</code></td><td><code>101</code></td><td><code>111</code> (7)</td><td>the 2-switch turns on</td></tr>
+          <tr class="hi"><td>4</td><td><code>1</code></td><td><code>001</code></td><td><code>111</code></td><td><code>110</code> (6)</td><td>the 1-switch turns back <em>off</em> — the pair cancelled</td></tr>
+          <tr class="hi"><td>5</td><td><code>2</code></td><td><code>010</code></td><td><code>110</code></td><td><code>100</code> (4)</td><td>the 2-switch turns back off — the other pair cancelled</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="Final result, bits 1 0 0">
+        <div class="cell ok"><span class="idx">worth 4</span>1<span class="ptr">on</span></div>
+        <div class="cell dim"><span class="idx">worth 2</span>0</div>
+        <div class="cell dim"><span class="idx">worth 1</span>0</div>
+      </div>
+    </div>
+    <p class="caption">One switch left standing, the one worth 4. Answer: <code>4</code>. One pass, one integer of memory, no dictionary.</p>
+
+    <p>
+      Notice what happened at step 4. The running result was <code>111</code> — a state that means nothing on
+      its own; 7 is not in the input and is not the answer. Then the second <code>1</code> arrived and pushed it
+      back to <code>110</code>. This is the thing that makes XOR feel like magic and also the thing that makes
+      it hard to trust: <strong>the intermediate values are meaningless</strong>. You cannot look at
+      <code>result</code> halfway through and sanity-check it. All you can rely on is the invariant — <em>at
+      every step, <code>result</code> holds the XOR of everything seen so far, so any value seen an even number
+      of times has already cancelled out.</em> Trust the invariant, not the numbers.
+    </p>
+    <p>
+      One more thing worth seeing: the answer never depended on the order. Shuffle that list any way you like
+      and every step changes, but the final <code>100</code> does not.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>Reading and writing one bit</h3>
+    <p>
+      Everything else is built out of one idea: <code>1 &lt;&lt; i</code> is a number with a single 1 in
+      position <code>i</code> and 0s everywhere else. That is called a <strong>mask</strong> — a stencil you lay
+      over a number to touch one slot and leave the rest alone.
+    </p>
+    <pre>def get_bit(n, i):
+    return (n &gt;&gt; i) &amp; 1          # slide bit i down to the end, keep only it
+
+def set_bit(n, i):
+    return n | (1 &lt;&lt; i)          # OR with a 1 in that slot
+
+def clear_bit(n, i):
+    return n &amp; ~(1 &lt;&lt; i)         # AND with 1s everywhere except that slot
+
+def flip_bit(n, i):
+    return n ^ (1 &lt;&lt; i)          # XOR with a 1 in that slot</pre>
+    <p class="muted">
+      <code>~</code> flips every bit, so <code>~(1 &lt;&lt; i)</code> is "1s everywhere except slot i" — exactly
+      the stencil you need to knock out one bit with AND. Positions are counted from the right starting at 0,
+      so bit 0 is the one worth 1.
+    </p>
+
+    <h3>Counting the 1 bits</h3>
+    <p>
+      The obvious loop checks each of 32 positions. The trick version does one iteration per <em>1 bit</em>,
+      which is faster on sparse numbers:
+    </p>
+    <pre>def count_bits(n):
+    count = 0
+    while n:
+        n &amp;= n - 1      # erases the lowest 1 bit
+        count += 1
+    return count</pre>
+    <p>
+      Why does <code>n &amp; (n - 1)</code> erase the lowest 1? Subtracting 1 flips that lowest 1 to a 0 and
+      turns every 0 to its right into a 1: <code>1011&nbsp;0000</code> minus 1 is <code>1010&nbsp;1111</code>.
+      ANDing the two keeps only the bits above that point. (Python has <code>bin(n).count('1')</code> and
+      <code>int.bit_count()</code>, but interviewers usually want to see this.)
+    </p>
+
+    <h3>Power of two</h3>
+    <p>
+      A power of two is a number with exactly one 1 bit — 1, 10, 100, 1000. So knocking out its lowest 1 bit
+      must leave nothing:
+    </p>
+    <pre>def is_power_of_two(n):
+    return n &gt; 0 and (n &amp; (n - 1)) == 0</pre>
+
+    <h3>Every subset, from a counter</h3>
+    <p>
+      With n items, each subset is n yes/no choices, so it is a row of n switches, so it is a number from
+      <code>0</code> to <code>2ⁿ - 1</code>. Counting up through those numbers enumerates every subset with no
+      recursion at all:
+    </p>
+    <pre>def subsets(items):
+    out = []
+    for mask in range(1 &lt;&lt; len(items)):          # 2**len(items) masks
+        picked = [items[i] for i in range(len(items)) if (mask &gt;&gt; i) &amp; 1]
+        out.append(picked)
+    return out</pre>
+    <p class="muted">
+      This is the flat version of what <a href="backtracking.html">backtracking</a> does with recursion, and the
+      same "state as an integer" idea powers bitmask <a href="dynamic-programming.html">dynamic programming</a>.
+      It only works while n is small — 2²⁰ is a million, 2³⁰ is a billion.
+    </p>
+
+    <h3>Missing number</h3>
+    <p>
+      Given <code>0..n</code> with one number removed, XOR the values together with the indices. Every number
+      that <em>is</em> present cancels against its own index, and the missing one is left over. This is the same
+      problem <a href="cyclic-sort.html">cyclic sort</a> solves a different way.
+    </p>
+    <pre>def missing_number(nums):
+    result = len(nums)                 # start with n, the index that has no slot
+    for i, x in enumerate(nums):
+        result ^= i ^ x
+    return result</pre>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong><code>^</code> is XOR, not "to the power of".</strong> Coming from maths or from a spreadsheet,
+      <code>2 ^ 3</code> looks like 8. In Python it is <code>1</code>, because <code>010 ^ 011 = 001</code>.
+      The power operator is <code>**</code>. This one bites silently: your code runs, it just returns nonsense.
+    </div>
+    <div class="callout gotcha">
+      <strong>Python integers have no fixed width.</strong> There is no 32-bit box. <code>~5</code> is
+      <code>-6</code>, not some big positive number, and <code>-1 &gt;&gt; 100</code> is still <code>-1</code>
+      because negatives behave as if they have infinitely many 1s off to the left. Any problem that talks about
+      "a 32-bit integer" needs you to mask the result yourself with <code>&amp; 0xFFFFFFFF</code>, then convert
+      back if the sign bit is set. This is the single most common reason a bit solution that is correct in C
+      loops forever or returns a huge number in Python.
+    </div>
+    <div class="callout gotcha">
+      <strong>Forgetting that <code>0</code> passes the power-of-two test.</strong>
+      <code>0 &amp; (0 - 1)</code> is <code>0</code>, so <code>is_power_of_two(0)</code> would say True without
+      the <code>n &gt; 0</code> guard. Zero and negative numbers are the edge cases in almost every bit trick;
+      check them before you check anything else.
+    </div>
+    <div class="callout gotcha">
+      <strong>Assuming XOR cancels any repeat.</strong> It cancels <em>pairs</em>. If the duplicates appear
+      three times each, <code>5 ^ 5 ^ 5</code> is <code>5</code>, not <code>0</code>, and the whole approach
+      collapses. Read the problem statement carefully: "appears twice" is XOR, "appears three times" needs a
+      different technique (counting the 1s in each bit position modulo 3).
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Time: O(n)</strong> for the XOR fold — one pass, and each <code>^</code> is a single machine
+        instruction on fixed-width integers, so it is O(1) per element. The bit-twiddling helpers are O(1), or
+        O(number of 1 bits) for the <code>n &amp; (n-1)</code> loop, which is at most 32 or 64.</li>
+      <li><strong>Space: O(1).</strong> One integer, whatever the input size. That is the entire reason to
+        prefer XOR over the counting dictionary, which needs O(n) — see
+        <a href="time-space-complexity.html">time and space complexity</a> for why that trade matters.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <p>No walkthroughs use this pattern yet.</p>
+    <p class="muted">
+      The classics, in the order they are worth doing: Single Number (#136) — the XOR fold on this page;
+      Number of 1 Bits (#191) and Counting Bits (#338) — the <code>n &amp; (n-1)</code> trick; Missing Number
+      (#268) — XOR against the indices; Reverse Bits (#190) — shifting in both directions at once; Single
+      Number II (#137) and Sum of Two Integers (#371) — the genuinely hard ones, worth attempting only after
+      the first four feel routine.
+    </p>
+  </section>
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>

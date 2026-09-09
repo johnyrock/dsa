@@ -1,6 +1,6 @@
 # 010. Number of Islands
 
-**Difficulty:** Medium | **Pattern:** [graph](../../patterns/graph.md) | **Source:** LeetCode #200
+**Difficulty:** Medium | **Pattern:** [graph](../../patterns/graph.md) ([explained](../../concepts/graph-traversal.html)) | **Source:** LeetCode #200
 
 ## Problem
 

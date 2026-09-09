@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cyclic Sort, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Cyclic Sort, Explained</h1>
+  <p class="lede">When the numbers are 1 to n, put each one in its own slot and the missing or duplicate one falls out.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      A cloakroom has five numbered hooks and five numbered coats. Someone has hung them up in a mess. You do
+      not need a clever sorting method to fix it: pick up whatever is on hook 1, walk it to its own numbered
+      hook, and pick up whatever was hanging there. Keep doing that. Every coat you carry goes straight home,
+      and when you are done, hook <code>k</code> holds coat <code>k</code>. If a hook ends up empty, you know
+      instantly which coat is missing — the hook's number tells you.
+    </p>
+    <p>
+      That is <strong>cyclic sort</strong>. When an array holds the numbers <code>1</code> to <code>n</code>
+      (or <code>0</code> to <code>n</code>) in some scrambled order, the value <em>is</em> the address. Value
+      <code>v</code> belongs at index <code>v - 1</code>. So you walk the array putting each number where it
+      belongs by swapping, and afterwards any index whose value does not match is your answer.
+    </p>
+    <div class="callout why">
+      <strong>Why it's fast:</strong> every swap puts at least one number in its final resting place forever, so
+      there can be at most <code>n</code> swaps in total. That makes it O(n) — faster than the O(n log n) of a
+      general sort — and it uses no extra memory, unlike a <a href="hash-map.html">hash set</a> of what you
+      have seen.
+    </div>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <p>This pattern has an unusually loud tell. Look for:</p>
+    <ul>
+      <li><strong>"An array containing <code>n</code> numbers taken from the range 1 to n"</strong>, or 0 to n, stated in the problem. That sentence is the pattern announcing itself.</li>
+      <li><strong>"Find the missing / duplicate / corrupt number"</strong> in such an array.</li>
+      <li><strong>"Do it in O(n) time and O(1) extra space"</strong> alongside the range constraint. Those two constraints together rule out sorting and rule out a set, which leaves this.</li>
+      <li><strong>The array may be modified.</strong> Cyclic sort rearranges the input; if the problem forbids that, you need a different trick.</li>
+      <li><strong>Smallest missing positive</strong>, even when the values are junk. The array can still act as its own lookup table for whatever <em>does</em> fall in 1..n.</li>
+    </ul>
+    <p class="muted">
+      If the numbers are not bounded by the array's length, this does not apply — the addressing scheme has
+      nothing to stand on. Reach for a <a href="hash-map.html">hash map</a> or
+      <a href="binary-search.html">binary search</a> instead.
+    </p>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>
+      Take: <em>an array holds <code>n</code> distinct numbers from 1 to <code>n + 1</code>, with exactly one
+      missing. Find it.</em> The first thing most people write is a scan per candidate:
+    </p>
+    <pre>def find_missing_slow(nums):
+    n = len(nums) + 1
+    for candidate in range(1, n + 1):
+        if candidate not in nums:      # a fresh scan of the whole list, every time
+            return candidate
+    return -1</pre>
+    <p>
+      The <code>in</code> on a list is not free: it walks the list. So this is O(n²) — for 10,000 numbers,
+      about 50 million comparisons on average.
+    </p>
+    <p>
+      The wasted work is that each candidate's scan learns a great deal and then throws it away. Searching for
+      the number 1 walks past 7, 4 and 2 and forgets that it saw them; searching for 2 walks past them all
+      again. The array already knows where everything is — the code just refuses to use it.
+    </p>
+    <p class="muted">
+      A sensible middle step is <code>set(nums)</code>, which gets you to O(n) time. But it costs O(n) extra
+      memory, and problems that specify this pattern usually forbid exactly that.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>
+      Walk an index <code>i</code> from left to right. Look at <code>nums[i]</code>, work out where it belongs,
+      and swap it there. Crucially, <strong>do not advance <code>i</code> after a swap</strong> — you now have a
+      new, unexamined value sitting at <code>i</code>, and it needs the same treatment.
+    </p>
+    <pre>def cyclic_sort(nums):
+    i = 0
+    while i &lt; len(nums):
+        home = nums[i] - 1                 # value v belongs at index v - 1
+        if nums[i] != nums[home]:          # someone else is sitting in its seat
+            nums[i], nums[home] = nums[home], nums[i]
+        else:
+            i += 1                         # this seat is settled, move on
+    return nums</pre>
+    <p>
+      The line that matters is <code>if nums[i] != nums[home]:</code>. Read it as "is the value that belongs at
+      <code>home</code> already there?" You might expect <code>if i != home:</code>, and for a clean 1..n
+      permutation the two are identical. They differ when the array contains duplicates: with
+      <code>[2, 2]</code>, the value 2 at index 1 is already home, and <code>i != home</code> would keep
+      swapping it with an identical 2 forever. Comparing <em>values</em> never loops.
+    </p>
+    <div class="callout tip">
+      <strong>Why the loop terminates even though <code>i</code> sometimes does not move.</strong> Each
+      iteration either advances <code>i</code> (at most <code>n</code> times) or performs a swap that places a
+      value at its correct index, where it will never be moved again (at most <code>n</code> times). So the
+      loop body runs at most <code>2n</code> times. The nested-looking structure is still O(n).
+    </div>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>Sort <code>[3, 1, 5, 4, 2]</code>, which holds the numbers 1 to 5 in a scramble.</p>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="Array 3 1 5 4 2 with i at index 0">
+        <div class="cell hi"><span class="idx">0</span>3<span class="ptr">i</span></div>
+        <div class="cell"><span class="idx">1</span>1</div>
+        <div class="cell warn"><span class="idx">2</span>5</div>
+        <div class="cell ok"><span class="idx">3</span>4</div>
+        <div class="cell"><span class="idx">4</span>2</div>
+      </div>
+    </div>
+    <p class="caption">Start. Only the 4 at index 3 happens to be home already (green). <code>i</code> is on the 3, whose home is index 2 (amber).</p>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>#</th><th>i</th><th>nums[i]</th><th>home</th><th>Action</th><th>Array after</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>0</td><td>3</td><td>2</td><td>index 2 holds 5, not 3 — swap</td><td><code>[5, 1, 3, 4, 2]</code></td></tr>
+          <tr><td>2</td><td>0</td><td>5</td><td>4</td><td>index 4 holds 2, not 5 — swap</td><td><code>[2, 1, 3, 4, 5]</code></td></tr>
+          <tr><td>3</td><td>0</td><td>2</td><td>1</td><td>index 1 holds 1, not 2 — swap</td><td><code>[1, 2, 3, 4, 5]</code></td></tr>
+          <tr class="hi"><td>4</td><td>0</td><td>1</td><td>0</td><td>already home — <code>i</code> becomes 1</td><td><code>[1, 2, 3, 4, 5]</code></td></tr>
+          <tr><td>5</td><td>1</td><td>2</td><td>1</td><td>already home — <code>i</code> becomes 2</td><td><code>[1, 2, 3, 4, 5]</code></td></tr>
+          <tr><td>6</td><td>2</td><td>3</td><td>2</td><td>already home — <code>i</code> becomes 3</td><td><code>[1, 2, 3, 4, 5]</code></td></tr>
+          <tr><td>7</td><td>3</td><td>4</td><td>3</td><td>already home — <code>i</code> becomes 4</td><td><code>[1, 2, 3, 4, 5]</code></td></tr>
+          <tr><td>8</td><td>4</td><td>5</td><td>4</td><td>already home — <code>i</code> becomes 5, loop ends</td><td><code>[1, 2, 3, 4, 5]</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="Sorted array 1 2 3 4 5">
+        <div class="cell ok"><span class="idx">0</span>1</div>
+        <div class="cell ok"><span class="idx">1</span>2</div>
+        <div class="cell ok"><span class="idx">2</span>3</div>
+        <div class="cell ok"><span class="idx">3</span>4</div>
+        <div class="cell ok"><span class="idx">4</span>5</div>
+      </div>
+    </div>
+    <p class="caption">Sorted in 3 swaps and 8 loop iterations — no comparisons of which element is bigger, and no extra array.</p>
+
+    <p>
+      Notice what happened at steps 1 to 3. <code>i</code> stayed at 0 the whole time. Each swap dropped a new
+      value into index 0, and each one got handled in turn: 3 went home, then 5 went home, then 2 went home,
+      and only then did 1 land at index 0 where it belonged. That is the "cycle" the pattern is named after —
+      the values 3 → 5 → 2 → 1 formed a loop of displacements, and one pass around it resolved all of them.
+    </p>
+    <p>
+      And notice step 3. The swap put 2 at index 1 <em>and</em> brought 1 back to index 0. One swap, two
+      numbers placed. That is why the swap count is at most <code>n</code> and usually well under it.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>The range is 0 to n, not 1 to n</h3>
+    <p>
+      Then value <code>v</code> belongs at index <code>v</code>, with no minus one. One value in
+      <code>0..n</code> is missing, so one index will hold the wrong thing — and if every index matches, the
+      missing number is <code>n</code> itself, which has no slot.
+    </p>
+    <pre>def missing_number(nums):
+    i, n = 0, len(nums)
+    while i &lt; n:
+        home = nums[i]                            # value v belongs at index v
+        if nums[i] &lt; n and nums[i] != nums[home]: # n has no slot, so skip it
+            nums[i], nums[home] = nums[home], nums[i]
+        else:
+            i += 1
+    for i in range(n):
+        if nums[i] != i:
+            return i
+    return n</pre>
+
+    <h3>All the missing numbers at once</h3>
+    <p>
+      Same sort, then one scan. Every index whose value is wrong hands you a missing number directly — the
+      index plus one. Duplicates in the input are what create the empty slots.
+    </p>
+    <pre>def find_disappeared(nums):
+    i = 0
+    while i &lt; len(nums):
+        home = nums[i] - 1
+        if nums[i] != nums[home]:
+            nums[i], nums[home] = nums[home], nums[i]
+        else:
+            i += 1
+    return [i + 1 for i, v in enumerate(nums) if v != i + 1]</pre>
+
+    <h3>The duplicate</h3>
+    <p>
+      Mirror image: after sorting, the first index whose value is wrong is holding the <em>extra</em> copy, so
+      you return the value rather than the index.
+    </p>
+    <pre>def find_duplicate(nums):
+    i = 0
+    while i &lt; len(nums):
+        home = nums[i] - 1
+        if nums[i] != nums[home]:
+            nums[i], nums[home] = nums[home], nums[i]
+        else:
+            i += 1
+    for i, v in enumerate(nums):
+        if v != i + 1:
+            return v
+    return -1</pre>
+    <p class="muted">
+      If the problem forbids modifying the array, the same question can be answered with
+      <a href="fast-slow-pointers.html">fast and slow pointers</a>, treating <code>i → nums[i]</code> as a
+      linked list and finding where the cycle starts.
+    </p>
+
+    <h3>Junk values mixed in (first missing positive)</h3>
+    <p>
+      The array may hold negatives, zeros, and huge numbers. Those have no home in <code>1..n</code>, so leave
+      them where they fall and just skip past them. Everything that <em>does</em> belong still gets placed, and
+      the first wrong index is still the answer.
+    </p>
+    <pre>def first_missing_positive(nums):
+    n = len(nums)
+    i = 0
+    while i &lt; n:
+        home = nums[i] - 1
+        if 0 &lt;= home &lt; n and nums[i] != nums[home]:   # ignore anything outside 1..n
+            nums[i], nums[home] = nums[home], nums[i]
+        else:
+            i += 1
+    for i in range(n):
+        if nums[i] != i + 1:
+            return i + 1
+    return n + 1</pre>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong>Advancing <code>i</code> after a swap.</strong> Writing this as a <code>for i in range(n)</code>
+      loop with a swap inside quietly abandons the value that just landed at <code>i</code>. Use a
+      <code>while</code> and only increment in the <code>else</code> branch.
+    </div>
+    <div class="callout gotcha">
+      <strong>Comparing indices instead of values.</strong> <code>if i != home:</code> looks equivalent and
+      passes on inputs with no duplicates. On <code>[1, 1]</code> it spins forever, swapping a 1 with an
+      identical 1. Always compare <code>nums[i] != nums[home]</code>.
+    </div>
+    <div class="callout gotcha">
+      <strong>Mixing up the two index maps.</strong> For values <code>1..n</code> the home of <code>v</code> is
+      <code>v - 1</code>; for values <code>0..n</code> it is <code>v</code>. Using the wrong one gives an
+      <code>IndexError</code> or a silently wrong answer. Read the problem's range before writing the line.
+    </div>
+    <div class="callout gotcha">
+      <strong>Swapping without bounds-checking on messy input.</strong> If values can fall outside the range —
+      as in First Missing Positive — <code>nums[i] - 1</code> may be negative or past the end. An index past
+      the end raises <code>IndexError</code>, which at least tells you; a negative one silently wraps around to
+      the other end of the array and corrupts it, which does not. Guard with <code>0 &lt;= home &lt; n</code>.
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Time:</strong> O(n). Each loop iteration either advances <code>i</code> or fixes one value permanently, and each of those can happen at most <code>n</code> times, so the body runs at most <code>2n</code> times.</li>
+      <li><strong>Space:</strong> O(1). The swaps happen inside the input array; nothing is allocated. (The "all missing numbers" variant returns a list, but that is the output, not working memory.)</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <p>No walkthroughs use this pattern yet.</p>
+    <p class="muted">
+      Classic LeetCode problems to try: Missing Number (#268), Find All Numbers Disappeared in an Array (#448),
+      Find the Duplicate Number (#287), Find All Duplicates in an Array (#442), Set Mismatch (#645), First
+      Missing Positive (#41).
+    </p>
+    <p class="muted">
+      The nearest thing in the repo is
+      <a href="../easy/003-contains-duplicate/walkthrough.html">Contains Duplicate</a>, which answers a similar
+      question with a hash set because its values are unbounded — a useful contrast with the
+      <a href="hash-map.html">Hash Maps &amp; Sets</a> page. See also
+      <a href="time-space-complexity.html">Time &amp; Space Complexity</a> for why "at most <code>n</code>
+      swaps" makes a nested-looking loop linear.
+    </p>
+  </section>
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>

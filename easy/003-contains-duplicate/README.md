@@ -1,6 +1,6 @@
 # 003. Contains Duplicate
 
-**Difficulty:** Easy | **Pattern:** [hash-set](../../patterns/hash-set.md) | **Source:** LeetCode #217
+**Difficulty:** Easy | **Pattern:** [hash-set](../../patterns/hash-set.md) ([explained](../../concepts/hash-map.html)) | **Source:** LeetCode #217
 
 ## Problem
 

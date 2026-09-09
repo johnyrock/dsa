@@ -1,6 +1,6 @@
 # 001. Two Sum
 
-**Difficulty:** Easy | **Pattern:** [hash-map](../../patterns/hash-map.md) | **Source:** LeetCode #1
+**Difficulty:** Easy | **Pattern:** [hash-map](../../patterns/hash-map.md) ([explained](../../concepts/hash-map.html)) | **Source:** LeetCode #1
 
 ## Problem
 

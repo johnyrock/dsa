@@ -1,6 +1,6 @@
 # 009. Merge Intervals
 
-**Difficulty:** Medium | **Pattern:** [intervals](../../patterns/intervals.md) | **Source:** LeetCode #56
+**Difficulty:** Medium | **Pattern:** [intervals](../../patterns/intervals.md) ([explained](../../concepts/intervals.html)) | **Source:** LeetCode #56
 
 ## Problem
 

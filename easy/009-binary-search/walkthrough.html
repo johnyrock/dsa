@@ -54,6 +54,11 @@
     max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
   }
   header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
   header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
   header p { margin: 0; color: var(--muted); max-width: 640px; }
   header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
@@ -173,10 +178,11 @@
 <body>
 
 <header>
-  <a class="home" href="../../index.html">← All walkthroughs</a>
+  <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Binary Search · LeetCode #704</div>
   <h1>Binary Search, narrated</h1>
   <p>Scroll through the thinking, from the linear scan to the loop that throws away half the array per comparison, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/binary-search.html">Binary Search</a> <span class="how">inclusive bounds, `lo <= hi`</span></p>
 </header>
 
 <div class="layout">
@@ -324,7 +330,7 @@
 </div>
 
 <footer>
-  Source files: <a href="binary_search.py">binary_search.py</a> · <a href="binary_search_annotated.py">binary_search_annotated.py</a> · <a href="test_binary_search.py">test_binary_search.py</a> · <a href="../../md.html?f=easy/009-binary-search/notes.md">notes.md</a> · <a href="../../index.html">All walkthroughs</a>
+  Source files: <a href="binary_search.py">binary_search.py</a> · <a href="binary_search_annotated.py">binary_search_annotated.py</a> · <a href="test_binary_search.py">test_binary_search.py</a> · <a href="../../md.html?f=easy/009-binary-search/notes.md">notes.md</a> · <a href="../../index.html#easy">All walkthroughs</a>
 </footer>
 
 <script>

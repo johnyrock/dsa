@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Graph Traversal, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Graph Traversal, Explained</h1>
+  <p class="lede">Representing a graph, BFS for shortest paths, DFS for connectivity, and union-find for grouping.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      Think of a map of five towns joined by roads. You are standing in town A and you want to know which
+      towns you can reach, or how few roads it takes to get to town E. You cannot see the whole map at once;
+      all you can do at each town is read the signpost listing the roads out of it.
+    </p>
+    <p>
+      That map is a <strong>graph</strong>. The towns are <strong>nodes</strong> (also called vertices) and
+      the roads are <strong>edges</strong>. If a road can be driven both ways the graph is
+      <strong>undirected</strong>; if it is one-way it is <strong>directed</strong>. Unlike a
+      <a href="tree-traversal.html">tree</a>, a graph can have loops — you can leave A, drive around, and end
+      up back at A — and there can be more than one route between two towns. That single difference is what
+      makes graph code look the way it does.
+    </p>
+    <p>
+      <strong>Graph traversal</strong> is a systematic way to visit every town reachable from where you
+      started, without ever visiting one twice. There are two ways to do it, and they differ by exactly one
+      line of code.
+    </p>
+    <div class="callout why">
+      <strong>Why it's fast:</strong> a set of visited nodes means each node is expanded exactly once and
+      each edge is looked at a fixed number of times. That is O(V + E) — the number of towns plus the number
+      of roads. Without the visited set the same traversal never finishes at all, so the set is not an
+      optimisation, it is the algorithm.
+    </div>
+
+    <h3>First: how you store a graph</h3>
+    <p>
+      Before you can traverse anything you have to decide how the graph lives in memory. Problems usually
+      hand you an <strong>edge list</strong>: a list of pairs saying which nodes are joined.
+    </p>
+    <pre>edges = [("A", "B"), ("A", "C"), ("B", "D"), ("C", "D"), ("D", "E")]</pre>
+    <p>
+      An edge list is useless for traversal, because answering "what is next to D?" means scanning the whole
+      list. So the first thing you do, almost every time, is convert it into an <strong>adjacency
+      list</strong>: a dict mapping each node to the list of its neighbours. That is the signpost at each
+      town.
+    </p>
+    <pre>from collections import defaultdict
+
+graph = defaultdict(list)
+for u, v in edges:
+    graph[u].append(v)
+    graph[v].append(u)      # drop this line if the edges are one-way</pre>
+    <p>Which gives you:</p>
+    <pre>{
+    "A": ["B", "C"],
+    "B": ["A", "D"],
+    "C": ["A", "D"],
+    "D": ["B", "C", "E"],
+    "E": ["D"],
+}</pre>
+    <p>
+      Now <code>graph[node]</code> is an instant lookup of the neighbours. <code>defaultdict(list)</code>
+      just means "if this key is missing, pretend it maps to an empty list", which saves you a pile of
+      <code>if node not in graph</code> checks. Everything from here on assumes you have built this dict.
+    </p>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <ul>
+      <li><strong>The input is a list of pairs</strong> — <code>edges</code>, <code>connections</code>, <code>prerequisites</code>, <code>friendships</code>, <code>flights</code>. Pairs almost always mean "build an adjacency list".</li>
+      <li><strong>The input is a 2D grid</strong> and you move up/down/left/right. A grid <em>is</em> a graph: each cell is a node, its in-bounds neighbours are the edges. You just never build the dict.</li>
+      <li><strong>The question says "reachable", "connected", "region", "island", "province", "group".</strong> That is a connectivity question: DFS, BFS, or union-find.</li>
+      <li><strong>The question asks for the fewest steps / shortest path</strong> and every step costs the same. That is BFS, and only BFS.</li>
+      <li><strong>The question asks whether an ordering exists</strong> under dependencies. That is <a href="topological-sort.html">topological sort</a>, which is a traversal in a hat.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>
+      Here is the code a beginner writes for "is there a path from <code>start</code> to <code>goal</code>?"
+      It is the obvious recursive idea: I am at a node, so try each neighbour in turn.
+    </p>
+    <pre>def has_path_broken(graph, start, goal):
+    if start == goal:
+        return True
+    for nxt in graph[start]:
+        if has_path_broken(graph, nxt, goal):
+            return True
+    return False</pre>
+    <p>
+      On a tree this is correct. On a graph it never returns. Follow it on our map: from A we go to B, from B
+      the neighbours are <code>["A", "D"]</code>, so we go straight back to A, which goes to B, which goes to
+      A. Python gives up with <code>RecursionError: maximum recursion depth exceeded</code>.
+    </p>
+    <p>
+      The wasted work is not a slow loop, it is an infinite one. Every undirected edge is a two-way street,
+      and any cycle in a directed graph does the same thing. The fix is one set.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>
+      Both traversals are the same five lines: take a node out of a container, record it, and put its unseen
+      neighbours in. The container decides everything.
+    </p>
+
+    <h3>BFS — a queue, closest nodes first</h3>
+    <p>
+      A <strong>queue</strong> is first-in-first-out: the node that has been waiting longest comes out next.
+      <code>collections.deque</code> gives you that with <code>append</code> (add to the back) and
+      <code>popleft</code> (take from the front).
+    </p>
+    <pre>from collections import deque
+
+def bfs(graph, start):
+    visited = {start}                 # mark BEFORE you enqueue
+    queue = deque([start])
+    order = []
+    while queue:
+        node = queue.popleft()        # oldest node first
+        order.append(node)
+        for nxt in graph[node]:
+            if nxt not in visited:
+                visited.add(nxt)
+                queue.append(nxt)
+    return order</pre>
+    <p>
+      The line that matters is <code>visited.add(nxt)</code> sitting <em>next to</em>
+      <code>queue.append(nxt)</code>, not later. Read it as "the moment I decide to visit you, you are
+      spoken for." If you instead mark nodes when you pop them, a node with three neighbours can be pushed
+      three times before any of those copies comes out, and the queue blows up. Mark on push.
+    </p>
+
+    <h3>BFS gives shortest paths for free</h3>
+    <p>
+      Because BFS finishes every node one step away before touching anything two steps away, the first time
+      it reaches a node is by the shortest route. Carry the step count along with the node:
+    </p>
+    <pre>def shortest_path_length(graph, start, goal):
+    if start == goal:
+        return 0
+    visited = {start}
+    queue = deque([(start, 0)])       # (node, steps taken to get here)
+    while queue:
+        node, dist = queue.popleft()
+        for nxt in graph[node]:
+            if nxt == goal:
+                return dist + 1
+            if nxt not in visited:
+                visited.add(nxt)
+                queue.append((nxt, dist + 1))
+    return -1                         # goal is not reachable</pre>
+    <p class="muted">
+      This only holds when every edge costs the same. Weighted edges need Dijkstra's algorithm, which is BFS
+      with a <a href="heap.html">heap</a> instead of a queue.
+    </p>
+
+    <h3>DFS — a stack, one branch to the end</h3>
+    <p>
+      Swap the queue for a <a href="stack.html">stack</a> (last in, first out) and you get depth-first
+      search: it charges down one branch as far as it goes before backing up. Usually you write it with
+      recursion, which uses the call stack instead of a list.
+    </p>
+    <pre>def dfs(graph, node, visited, order):
+    visited.add(node)
+    order.append(node)
+    for nxt in graph[node]:
+        if nxt not in visited:
+            dfs(graph, nxt, visited, order)
+    return order</pre>
+    <p>Or with your own stack, which never hits Python's recursion limit:</p>
+    <pre>def dfs_iterative(graph, start):
+    visited, order, stack = set(), [], [start]
+    while stack:
+        node = stack.pop()            # newest node first
+        if node in visited:
+            continue                  # a duplicate copy; skip it
+        visited.add(node)
+        order.append(node)
+        for nxt in graph[node]:
+            if nxt not in visited:
+                stack.append(nxt)
+    return order</pre>
+    <p>
+      Compare that with <code>bfs</code> above. Same loop, same pushes; <code>stack.pop()</code> instead of
+      <code>queue.popleft()</code>. That is the entire difference between the two algorithms. (The two DFS
+      versions above visit our map in different orders — <code>A, B, D, C, E</code> recursively versus
+      <code>A, C, D, E, B</code> iteratively — because a stack hands back the <em>last</em> neighbour you
+      pushed. Both are valid depth-first orders.) DFS does
+      <em>not</em> find shortest paths — it finds <em>a</em> path — so use it when you only care whether
+      things are connected, and BFS when you care how far apart they are.
+    </p>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>BFS from A on the five-town map, using the adjacency list built above.</p>
+
+<pre class="art">      A
+     / \
+    B   C
+     \ /
+      D
+      |
+      E</pre>
+    <p class="caption">Start. Every line is a two-way road. Note the diamond A-B-D-C-A: two different routes from A to D.</p>
+
+    <p>
+      <code>visited = {A}</code> and <code>queue = [A]</code> before the loop begins. Each row is one turn of
+      the <code>while</code> loop.
+    </p>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>Step</th><th>Popped</th><th>Its neighbours</th><th>Action</th><th>Queue after</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>A</code></td><td><code>B, C</code></td><td>both new: mark and push both</td><td><code>[B, C]</code></td></tr>
+          <tr><td>2</td><td><code>B</code></td><td><code>A, D</code></td><td>A already visited, skip; D is new, push</td><td><code>[C, D]</code></td></tr>
+          <tr class="hi"><td>3</td><td><code>C</code></td><td><code>A, D</code></td><td>both already visited: push nothing</td><td><code>[D]</code></td></tr>
+          <tr><td>4</td><td><code>D</code></td><td><code>B, C, E</code></td><td>B and C visited; E is new, push</td><td><code>[E]</code></td></tr>
+          <tr><td>5</td><td><code>E</code></td><td><code>D</code></td><td>visited; queue is now empty, loop ends</td><td><code>[]</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+<pre class="art">      A      &lt;- 0 steps
+     / \
+    B   C    &lt;- 1 step
+     \ /
+      D      &lt;- 2 steps
+      |
+      E      &lt;- 3 steps</pre>
+    <p class="caption">End. Visit order was A, B, C, D, E — and it is grouped by distance from A, which is exactly why BFS answers shortest-path questions.</p>
+
+    <p>
+      Notice what happened at step 3. C looked at D and did nothing, because B had already claimed it at step
+      2. Both of those are genuine one-road routes from a neighbour of A, and both would have found D at
+      distance 2 — but only the first one counts, and the <code>visited</code> check is what enforces that.
+      Delete the check and step 3 pushes a second copy of D, step 4 pops one D and pushes E, step 5 pops the
+      other D and pushes a second E, and on a bigger graph that doubling never stops.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>Grids are graphs</h3>
+    <p>
+      For a 2D grid you skip the adjacency list entirely. A cell's neighbours are the four cells around it
+      that are still inside the grid, so you compute them on the spot:
+    </p>
+    <pre>def neighbours(r, c, grid):
+    for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+        nr, nc = r + dr, c + dc
+        if 0 &lt;= nr &lt; len(grid) and 0 &lt;= nc &lt; len(grid[0]):
+            yield nr, nc</pre>
+    <p>
+      The <code>visited</code> set holds <code>(row, col)</code> tuples instead of node names. Everything
+      else is unchanged. That is the whole of
+      <a href="../medium/010-number-of-islands/walkthrough.html">Number of Islands</a>.
+    </p>
+
+    <h3>Counting connected components</h3>
+    <p>
+      One traversal only reaches the nodes connected to where you started. To count the separate clumps of a
+      graph, start a fresh traversal from every node you have not seen yet, and count how many times you had
+      to start.
+    </p>
+    <pre>def count_components(graph):
+    visited = set()
+    count = 0
+    for node in graph:
+        if node not in visited:
+            count += 1                       # a brand new clump
+            dfs(graph, node, visited, [])    # swallow the whole clump
+    return count</pre>
+    <p>
+      The <code>visited</code> set is shared across all the traversals — that is what stops you counting the
+      same clump twice. This one function is Number of Islands, Number of Provinces, and half a dozen others.
+    </p>
+
+    <h3>Union-find, for grouping without traversal</h3>
+    <p>
+      Sometimes you do not need to walk the graph at all; you only need to know which nodes ended up in the
+      same group. <strong>Union-find</strong> (also called disjoint set union, or DSU) does that directly.
+    </p>
+    <p>
+      The idea is a chain of command. Every node starts as its own boss. <code>find(x)</code> follows the
+      chain up until it reaches someone who is their own boss — that person's name <em>is</em> the group's
+      name. <code>union(a, b)</code> takes the two bosses and makes one report to the other, merging two
+      groups into one. Two nodes are in the same group exactly when <code>find</code> returns the same boss.
+    </p>
+    <pre>class UnionFind:
+    def __init__(self, items):
+        self.parent = {x: x for x in items}   # everyone starts as their own boss
+        self.size = {x: 1 for x in items}
+
+    def find(self, x):
+        while self.parent[x] != x:
+            self.parent[x] = self.parent[self.parent[x]]   # path compression
+            x = self.parent[x]
+        return x
+
+    def union(self, a, b):
+        ra, rb = self.find(a), self.find(b)
+        if ra == rb:
+            return False                       # already in the same group
+        if self.size[ra] &lt; self.size[rb]:      # hang the smaller tree off the bigger
+            ra, rb = rb, ra
+        self.parent[rb] = ra
+        self.size[ra] += self.size[rb]
+        return True</pre>
+    <p>
+      Two small tricks keep the chains short. <strong>Path compression</strong> is the line inside
+      <code>find</code>: as you climb, you re-point each node at its grandparent, so the next climb is
+      shorter. <strong>Union by size</strong> always hangs the smaller group under the bigger one, so the
+      chain never gets tall in the first place. With both, <code>find</code> and <code>union</code> are
+      effectively constant time.
+    </p>
+    <p>Counting components becomes a subtraction — start with one group per node and drop one for each merge that actually did something:</p>
+    <pre>def count_components_uf(nodes, edges):
+    uf = UnionFind(nodes)
+    groups = len(nodes)
+    for u, v in edges:
+        if uf.union(u, v):
+            groups -= 1
+    return groups</pre>
+    <p>
+      Reach for union-find when the edges arrive one at a time and you have to answer "connected?" as you go,
+      or when you only care about the grouping and never about the paths. Reach for BFS or DFS when you need
+      the route, the distance, or the order of visits.
+    </p>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong>No visited set.</strong> The single most common graph bug. Any cycle — including the trivial
+      one made by an undirected edge — sends you round forever. If your graph code hangs or throws
+      <code>RecursionError</code>, this is why.
+    </div>
+    <div class="callout gotcha">
+      <strong>Marking visited on pop instead of on push.</strong> The traversal still terminates, but a node
+      can sit in the queue several times, so the queue can grow to the number of <em>edges</em> rather than
+      nodes, and nodes get expanded again and again. The distances stay correct, but the cost does not. Add to
+      <code>visited</code> in the same breath as the <code>append</code>.
+    </div>
+    <div class="callout gotcha">
+      <strong>Only adding one direction of an undirected edge.</strong> If the problem says "a road between
+      u and v", you need both <code>graph[u].append(v)</code> and <code>graph[v].append(u)</code>. Forget one
+      and half the graph silently becomes unreachable.
+    </div>
+    <div class="callout gotcha">
+      <strong>Using DFS for a shortest path.</strong> DFS finds a path, not the short one. If the question
+      says "minimum number of steps" and the steps all cost the same, it must be BFS.
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Time:</strong> O(V + E) for BFS and DFS — every node comes off the container once, and each of its edges is inspected once. For an <code>m &times; n</code> grid that is O(m&nbsp;&times;&nbsp;n), since each cell has at most four neighbours. Union-find is O(E &alpha;(V)), where &alpha; grows so slowly it is under 5 for any input you will ever see; treat it as O(E).</li>
+      <li><strong>Space:</strong> O(V + E) to hold the adjacency list, plus O(V) for the visited set and the queue or stack. DFS recursion can stack V frames deep on a long chain.</li>
+    </ul>
+    <p class="muted">
+      If those symbols are unfamiliar, start with <a href="time-space-complexity.html">time and space complexity</a>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <ul class="problems">
+      <li><span class="id">medium/010</span><a href="../medium/010-number-of-islands/walkthrough.html">Number of Islands</a><span class="note">grid as a graph, one traversal per component</span></li>
+    </ul>
+    <p class="muted" style="margin-top:14px">
+      Classic LeetCode problems not yet in the repo: Clone Graph (#133), Rotting Oranges (#994),
+      Pacific Atlantic Water Flow (#417), Number of Provinces (#547), Word Ladder (#127),
+      Graph Valid Tree (#261), Redundant Connection (#684, union-find).
+    </p>
+  </section>
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>

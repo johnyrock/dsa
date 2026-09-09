@@ -1,6 +1,6 @@
 # 002. Product of Array Except Self
 
-**Difficulty:** Medium | **Pattern:** [prefix-sum](../../patterns/prefix-sum.md) | **Source:** LeetCode #238
+**Difficulty:** Medium | **Pattern:** [prefix-sum](../../patterns/prefix-sum.md) ([explained](../../concepts/prefix-sum.html)) | **Source:** LeetCode #238
 
 ## Problem
 

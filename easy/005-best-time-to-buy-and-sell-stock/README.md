@@ -1,6 +1,6 @@
 # 005. Best Time to Buy and Sell Stock
 
-**Difficulty:** Easy | **Pattern:** [sliding-window](../../patterns/sliding-window.md) | **Source:** LeetCode #121
+**Difficulty:** Easy | **Pattern:** [sliding-window](../../patterns/sliding-window.md) ([explained](../../concepts/sliding-window.html)) | **Source:** LeetCode #121
 
 ## Problem
 

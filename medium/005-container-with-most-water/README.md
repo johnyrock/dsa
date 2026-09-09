@@ -1,6 +1,6 @@
 # 005. Container With Most Water
 
-**Difficulty:** Medium | **Pattern:** [two-pointers](../../patterns/two-pointers.md) | **Source:** LeetCode #11
+**Difficulty:** Medium | **Pattern:** [two-pointers](../../patterns/two-pointers.md) ([explained](../../concepts/two-pointers.html)) | **Source:** LeetCode #11
 
 ## Problem
 

@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backtracking, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Backtracking, Explained</h1>
+  <p class="lede">Build a candidate one choice at a time and undo when it fails: subsets, permutations, and combinations from scratch.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      You are in a hedge maze with a piece of chalk. At every junction you pick a path and draw an arrow on the
+      ground so you know you took it. If you hit a dead end, you walk back to the last junction and
+      <em>rub the arrow out</em> before trying the next path. Rubbing it out matters: if you left old arrows
+      lying around, the next path you try would look like it already had a wrong turn in it.
+    </p>
+    <p>
+      Backtracking is that, in code. It is <a href="recursion.html">recursion</a> where you build a partial
+      answer one choice at a time, and after the recursive call comes back you <strong>undo</strong> that choice
+      before trying the next one. Three beats, always in this order:
+      <strong>choose → explore → un-choose</strong>.
+    </p>
+    <div class="callout why">
+      <strong>Why it's useful:</strong> it enumerates every valid combination without ever building an invalid
+      one, and without keeping every half-finished candidate in memory. There is only ever <em>one</em> partial
+      answer alive — the list you are pushing onto and popping off. And because you check the rules as you build,
+      you can throw away a whole branch the moment it becomes hopeless (that is called
+      <strong>pruning</strong>), which is where the real speed-up lives.
+    </div>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <p>Backtracking is almost always the answer when the problem says:</p>
+    <ul>
+      <li><strong>"Return <em>all</em>…"</strong> — all subsets, all permutations, all combinations, all valid strings, all paths. If the output is a list of lists, think backtracking.</li>
+      <li><strong>The answer is built from a sequence of choices</strong>, and each choice narrows what you can pick next.</li>
+      <li><strong>There are rules to satisfy</strong> that you can check partway through: no two queens on a diagonal, sum must not exceed the target, no repeated letters.</li>
+      <li><strong>The number of answers is exponential</strong> — n items have 2<sup>n</sup> subsets and n! orderings — so no clever formula is going to save you. You genuinely have to walk them all.</li>
+      <li><strong>You would need k nested loops</strong> where k is an input, not a constant.</li>
+    </ul>
+    <p>
+      One negative signal: if the problem only asks <em>how many</em> or <em>what is the best one</em> rather
+      than to list them all, backtracking works but is often too slow — that is usually
+      <a href="dynamic-programming.html">dynamic programming</a> territory.
+    </p>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>
+      Take <em>list every ordering (permutation) of <code>[1, 2, 3]</code></em>. The instinct is: generate every
+      possible tuple of three items, then throw away the ones with repeats.
+    </p>
+    <pre>from itertools import product
+
+def permutations_slow(nums):
+    results = []
+    for candidate in product(nums, repeat=len(nums)):   # every n^n tuple
+        if len(set(candidate)) == len(nums):            # keep only the valid ones
+            results.append(list(candidate))
+    return results</pre>
+    <p>
+      It works. It builds 3<sup>3</sup> = 27 candidates and keeps 6. Now count for eight items: it builds
+      8<sup>8</sup> = <strong>16,777,216</strong> candidates and keeps 40,320. Over 99.7% of the work is
+      building things that were doomed from the start.
+    </p>
+    <p>
+      And look <em>where</em> they were doomed. The candidate <code>(1, 1, 2)</code> was already invalid at the
+      second position — the moment a <code>1</code> appeared twice. But this code cheerfully finishes the tuple,
+      and then finishes every other tuple that starts with <code>1, 1</code>, before checking anything.
+      Backtracking's whole trick is to notice at position two and skip that entire branch.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>
+      Here is the template on the simplest problem: list every <strong>subset</strong> of a list (a subset is any
+      selection of the elements, including none of them and all of them).
+    </p>
+    <pre>def subsets(nums):
+    results = []
+    path = []                                # the candidate we are building right now
+
+    def backtrack(start):
+        results.append(path[:])              # record a copy of the current candidate
+        for i in range(start, len(nums)):
+            path.append(nums[i])             # CHOOSE
+            backtrack(i + 1)                 # EXPLORE everything after it
+            path.pop()                       # UN-CHOOSE
+
+    backtrack(0)
+    return results
+
+subsets([1, 2, 3])
+# [[], [1], [1, 2], [1, 2, 3], [1, 3], [2], [2, 3], [3]]</pre>
+    <p>
+      The line that matters is <code>path.pop()</code>. Read it as: <em>"the recursive call above me has finished
+      exploring everything that starts with this choice, so put the world back exactly as I found it."</em>
+      Because <code>path</code> is one shared list, every branch has to hand it back in the state it borrowed it.
+      Delete that line and the leftovers from one branch pollute the next.
+    </p>
+    <p>
+      The second thing to notice is <code>start</code>. Passing <code>i + 1</code> means "you may only pick things
+      after the one I just picked", which is what stops <code>[1, 2]</code> and <code>[2, 1]</code> both showing
+      up. Changing that one argument is how you turn this into a different problem — see the variations below.
+    </p>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>Run <code>subsets([1, 2, 3])</code> by hand. Here is the input, with <code>start = 0</code>:</p>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="Array 1 2 3 with start at index 0">
+        <div class="cell hi"><span class="idx">0</span>1<span class="ptr">start</span></div>
+        <div class="cell"><span class="idx">1</span>2</div>
+        <div class="cell"><span class="idx">2</span>3</div>
+      </div>
+    </div>
+    <p class="caption">Start. <code>path</code> is empty, <code>results</code> is empty.</p>
+
+    <p>
+      The recursion draws a tree. Every node is one call to <code>backtrack</code>, and every node records
+      whatever <code>path</code> holds when it is entered:
+    </p>
+    <pre class="art">backtrack(0)   path = []           record []
+   |
+   |-- choose 1 -> backtrack(1)   path = [1]       record [1]
+   |      |-- choose 2 -> backtrack(2)   path = [1,2]     record [1,2]
+   |      |      \-- choose 3 -> backtrack(3)   path = [1,2,3]   record [1,2,3]
+   |      \-- choose 3 -> backtrack(3)   path = [1,3]     record [1,3]
+   |
+   |-- choose 2 -> backtrack(2)   path = [2]       record [2]
+   |      \-- choose 3 -> backtrack(3)   path = [2,3]     record [2,3]
+   |
+   \-- choose 3 -> backtrack(3)   path = [3]       record [3]</pre>
+
+    <p>And here is every single thing that happens to <code>path</code>, in order:</p>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>Step</th><th>Action</th><th>path after</th><th>results so far</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>enter <code>backtrack(0)</code>, record</td><td><code>[]</code></td><td><code>[[]]</code></td></tr>
+          <tr><td>2</td><td>choose <code>1</code>, enter <code>backtrack(1)</code>, record</td><td><code>[1]</code></td><td><code>… [1]</code></td></tr>
+          <tr><td>3</td><td>choose <code>2</code>, enter <code>backtrack(2)</code>, record</td><td><code>[1, 2]</code></td><td><code>… [1,2]</code></td></tr>
+          <tr><td>4</td><td>choose <code>3</code>, enter <code>backtrack(3)</code>, record</td><td><code>[1, 2, 3]</code></td><td><code>… [1,2,3]</code></td></tr>
+          <tr class="hi"><td>5</td><td>loop over, <strong>un-choose 3</strong></td><td><code>[1, 2]</code></td><td>unchanged</td></tr>
+          <tr class="hi"><td>6</td><td>loop over, <strong>un-choose 2</strong></td><td><code>[1]</code></td><td>unchanged</td></tr>
+          <tr><td>7</td><td>choose <code>3</code>, enter <code>backtrack(3)</code>, record</td><td><code>[1, 3]</code></td><td><code>… [1,3]</code></td></tr>
+          <tr><td>8</td><td>un-choose 3</td><td><code>[1]</code></td><td>unchanged</td></tr>
+          <tr><td>9</td><td>un-choose 1</td><td><code>[]</code></td><td>unchanged</td></tr>
+          <tr><td>10</td><td>choose <code>2</code>, enter <code>backtrack(2)</code>, record</td><td><code>[2]</code></td><td><code>… [2]</code></td></tr>
+          <tr><td>11</td><td>choose <code>3</code>, enter <code>backtrack(3)</code>, record</td><td><code>[2, 3]</code></td><td><code>… [2,3]</code></td></tr>
+          <tr><td>12</td><td>un-choose 3</td><td><code>[2]</code></td><td>unchanged</td></tr>
+          <tr><td>13</td><td>un-choose 2</td><td><code>[]</code></td><td>unchanged</td></tr>
+          <tr><td>14</td><td>choose <code>3</code>, enter <code>backtrack(3)</code>, record</td><td><code>[3]</code></td><td><code>… [3]</code></td></tr>
+          <tr><td>15</td><td>un-choose 3, loop over, done</td><td><code>[]</code></td><td>8 subsets</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cells-wrap">
+      <div class="cells" aria-label="The eight subsets collected">
+        <div class="cell ok">[ ]</div>
+        <div class="cell ok">[1]</div>
+        <div class="cell ok">[1,2]</div>
+        <div class="cell ok">[1,2,3]</div>
+        <div class="cell ok">[1,3]</div>
+        <div class="cell ok">[2]</div>
+        <div class="cell ok">[2,3]</div>
+        <div class="cell ok">[3]</div>
+      </div>
+    </div>
+    <p class="caption">End. Eight subsets for three elements — 2<sup>3</sup>, as promised — in exactly the order the tree was walked.</p>
+
+    <p>
+      Notice what happened at steps 5 and 6. Two pops in a row, with nothing recorded in between. That is the
+      code climbing back up two levels of the tree because both <code>for</code> loops ran out of options. Every
+      pop is a rung on the ladder back up, and by step 9 <code>path</code> is empty again — completely clean,
+      ready for the branch that starts with <code>2</code>. If the pops were missing, step 10 would start from
+      <code>[1, 2, 3]</code> instead of <code>[]</code> and every result after it would be garbage.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>Permutations: every ordering</h3>
+    <p>
+      Order matters now, so there is no <code>start</code> index — every unused element is fair game at every
+      position. You need a way to know what is already in the path; a <code>used</code> flag list is the
+      clearest. Note that un-choosing now has <em>two</em> halves, and both must be undone.
+    </p>
+    <pre>def permutations(nums):
+    results, path = [], []
+    used = [False] * len(nums)
+
+    def backtrack():
+        if len(path) == len(nums):        # complete: every slot filled
+            results.append(path[:])
+            return
+        for i in range(len(nums)):
+            if used[i]:
+                continue                  # already in the path, skip it
+            used[i] = True
+            path.append(nums[i])
+            backtrack()
+            path.pop()                    # undo both halves
+            used[i] = False
+
+    backtrack()
+    return results
+
+permutations([1, 2, 3])
+# [[1,2,3], [1,3,2], [2,1,3], [2,3,1], [3,1,2], [3,2,1]]</pre>
+
+    <h3>Combinations: pick exactly k</h3>
+    <p>
+      The subsets template plus a size check. Instead of recording at every node, record only at the nodes where
+      the path has reached length <code>k</code>.
+    </p>
+    <pre>def combinations(n, k):
+    results, path = [], []
+
+    def backtrack(start):
+        if len(path) == k:
+            results.append(path[:])
+            return
+        for i in range(start, n + 1):
+            path.append(i)
+            backtrack(i + 1)
+            path.pop()
+
+    backtrack(1)
+    return results
+
+combinations(4, 2)   # [[1,2], [1,3], [1,4], [2,3], [2,4], [3,4]]</pre>
+
+    <h3>Pruning: quit a branch early</h3>
+    <p>
+      This is what makes backtracking beat brute force. Before you make a choice, ask whether it can possibly
+      lead anywhere; if not, <code>continue</code> and never open that branch at all. Here, any coin bigger than
+      what is left is hopeless. Notice <code>backtrack(i, …)</code> rather than <code>i + 1</code> — that lets a
+      number be reused.
+    </p>
+    <pre>def combination_sum(candidates, target):
+    results, path = [], []
+
+    def backtrack(start, remaining):
+        if remaining == 0:
+            results.append(path[:])
+            return
+        for i in range(start, len(candidates)):
+            if candidates[i] &gt; remaining:
+                continue                              # PRUNE: this branch can never work
+            path.append(candidates[i])
+            backtrack(i, remaining - candidates[i])   # i, not i+1: reuse allowed
+            path.pop()
+
+    backtrack(0, target)
+    return results
+
+combination_sum([2, 3, 6, 7], 7)   # [[2, 2, 3], [7]]</pre>
+
+    <h3>Counting instead of collecting</h3>
+    <p>
+      If the question is "how many" rather than "which ones", you do not need <code>path</code> at all — return
+      numbers up the stack and add them. Note that this shape has no explicit undo, because nothing was mutated
+      to begin with.
+    </p>
+    <pre>def count_subsets_summing_to(nums, target):
+    def backtrack(i, remaining):
+        if i == len(nums):
+            return 1 if remaining == 0 else 0
+        return (backtrack(i + 1, remaining - nums[i])     # take nums[i]
+                + backtrack(i + 1, remaining))            # skip nums[i]
+    return backtrack(0, target)
+
+count_subsets_summing_to([1, 2, 3], 3)   # 2, namely [1,2] and [3]</pre>
+    <p>
+      Once you are counting rather than listing, the same <code>(i, remaining)</code> pair keeps coming back on
+      different branches — and caching those answers turns this into
+      <a href="dynamic-programming.html">dynamic programming</a>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong>Appending <code>path</code> instead of <code>path[:]</code>.</strong> The single most common
+      backtracking bug. <code>results.append(path)</code> stores a <em>reference</em> to the one list you keep
+      mutating, so at the end every entry in <code>results</code> points at the same now-empty list:
+      <code>[[], [], [], [], [], [], [], []]</code>. Always append a copy — <code>path[:]</code>,
+      <code>list(path)</code>, or <code>path.copy()</code>.
+    </div>
+    <div class="callout gotcha">
+      <strong>Forgetting the pop, or popping in the wrong place.</strong> Without <code>path.pop()</code>,
+      <code>subsets([1,2,3])</code> returns nonsense like <code>[1,2,3,3,2,3,3]</code> as its last entry. The pop
+      must be immediately <em>after</em> the recursive call, not inside the <code>if</code>, and every early
+      <code>return</code> inside the loop is a chance to skip it — which is why the template returns only at the
+      top of the function, never in the middle of the loop.
+    </div>
+    <div class="callout gotcha">
+      <strong>Confusing <code>i</code>, <code>i + 1</code>, and <code>start</code>.</strong> These three choices
+      are three different problems. <code>backtrack(i + 1)</code> = each element used at most once.
+      <code>backtrack(i)</code> = elements may repeat. <code>backtrack(start)</code> unchanged, or looping from
+      <code>0</code> = order matters, so you get permutations and probably an infinite recursion. Say out loud
+      which one you want before you type it.
+    </div>
+    <div class="callout gotcha">
+      <strong>Pruning after the recursive call instead of before it.</strong> Checking whether the path is valid
+      once you get to the bottom is just brute force with extra steps. The check has to happen
+      <em>before</em> you recurse, so the branch is never opened. That is the difference between 27 candidates
+      and 6.
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Time:</strong> (number of nodes in the recursion tree) × (work per node). For subsets that is O(n · 2<sup>n</sup>) — 2<sup>n</sup> subsets, and copying each one costs up to n. For permutations it is O(n · n!). Pruning does not change the worst case, but on real inputs it often removes most of the tree.</li>
+      <li><strong>Space:</strong> O(n) for <code>path</code> plus O(n) for the recursion depth, <em>not counting</em> the output list. Since the output itself can be exponential, always say whether you are counting it.</li>
+    </ul>
+    <p class="muted">
+      Exponential is not automatically "too slow" here — if the problem asks for all 2<sup>n</sup> subsets, any
+      correct solution must be at least that big just to write the answer down. See
+      <a href="time-space-complexity.html">time &amp; space complexity</a>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <p>No walkthroughs use this pattern yet.</p>
+    <p class="muted">
+      Classic LeetCode problems to start with, in roughly increasing difficulty: Subsets (#78),
+      Combinations (#77), Permutations (#46), Letter Combinations of a Phone Number (#17),
+      Generate Parentheses (#22), Combination Sum (#39), Word Search (#79), Palindrome Partitioning (#131),
+      N-Queens (#51).
+    </p>
+    <p class="muted">
+      For recursion practice in the meantime, the closest things in the repo are
+      <a href="../medium/010-number-of-islands/walkthrough.html">Number of Islands</a> (recursive search over a
+      grid — though it never undoes a choice, because it deliberately does not want to revisit anything) and the
+      <a href="recursion.html">recursion</a> page.
+    </p>
+  </section>
+
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>

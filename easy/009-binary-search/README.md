@@ -1,6 +1,6 @@
 # 009. Binary Search
 
-**Difficulty:** Easy | **Pattern:** [binary-search](../../patterns/binary-search.md) | **Source:** LeetCode #704
+**Difficulty:** Easy | **Pattern:** [binary-search](../../patterns/binary-search.md) ([explained](../../concepts/binary-search.html)) | **Source:** LeetCode #704
 
 ## Problem
 

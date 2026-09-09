@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tree Traversal (DFS &amp; BFS), Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Tree Traversal (DFS &amp; BFS), Explained</h1>
+  <p class="lede">Preorder, inorder, postorder, and level order, and which one to reach for.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      Picture the org chart of a small company. The CEO is at the top. Two people report to the CEO, a few
+      people report to each of them, and so on down to the people with nobody under them. Now you have to
+      say hello to everybody exactly once. There are only two sensible plans.
+    </p>
+    <p>
+      <strong>Plan one:</strong> pick one person, then their first report, then <em>that</em> person's first
+      report, all the way to the bottom of that branch, then back up one step and take the next branch. You go
+      deep before you go wide. That is <strong>depth-first search</strong>, or DFS.
+    </p>
+    <p>
+      <strong>Plan two:</strong> say hello to the CEO, then to everyone one level down, then everyone two
+      levels down. You finish a whole floor before touching the next one. That is <strong>breadth-first
+      search</strong>, or BFS, also called <strong>level order</strong>.
+    </p>
+    <p>
+      First, the vocabulary. A <strong>tree</strong> is a set of boxes called <strong>nodes</strong>, each
+      holding a value and pointing at some nodes below it. The one at the top is the <strong>root</strong>.
+      The nodes a node points at are its <strong>children</strong>; a node with no children is a
+      <strong>leaf</strong>. A node plus everything hanging beneath it is a <strong>subtree</strong>. In a
+      <strong>binary tree</strong> each node has at most two children, called <code>left</code> and
+      <code>right</code>. Nothing ever points back upward, so there are no loops: from the root there is
+      exactly one path down to any node.
+    </p>
+    <pre>class TreeNode:
+    def __init__(self, val, left=None, right=None):
+        self.val = val
+        self.left = left      # another TreeNode, or None
+        self.right = right    # another TreeNode, or None</pre>
+    <div class="callout why">
+      <strong>Why traversal is the whole game:</strong> almost every tree question is "visit every node and
+      do a little bit of bookkeeping". Depth, sum, search, invert, validate, serialise — all of them are a
+      traversal with three or four extra lines. Once you can write the traversal from memory, the problem
+      shrinks to "what do I record at each node, and when?"
+    </div>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <p>You are looking at a traversal problem when:</p>
+    <ul>
+      <li><strong>The input is a tree</strong> and the answer is a single number about all of it: depth, sum, node count, "is it balanced".</li>
+      <li><strong>The question mentions levels or rows:</strong> "level order", "right side view", "the widest level", "zigzag". That word <em>level</em> is BFS shouting at you.</li>
+      <li><strong>The question mentions sorted order</strong> on a binary search tree: "the k-th smallest", "validate this BST". Inorder DFS is the move.</li>
+      <li><strong>You need information from the children before you can answer for the parent:</strong> height, "does this subtree contain X", subtree sums. That is postorder DFS.</li>
+      <li><strong>The shortest path from the root</strong> to a node matching some condition. BFS finds it first, so you can stop early.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>
+      Before you know traversal, the instinct is to reach down the tree by hand, one dotted attribute at a
+      time. Here is someone trying to find whether a value is anywhere in the tree:
+    </p>
+    <pre>def contains_slow(root, target):
+    if root is None:
+        return False
+    if root.val == target:
+        return True
+    if root.left is not None:
+        if root.left.val == target:
+            return True
+        if root.left.left is not None and root.left.left.val == target:
+            return True
+        # ...and on and on, one level at a time, forever
+    return False</pre>
+    <p>
+      This cannot work, and the reason is worth naming. You do not know how deep the tree is when you write
+      the code, so there is no number of <code>if</code> blocks that is enough. You also wrote
+      <code>root.left</code> and <code>root.left.left</code> as separate cases when they are the
+      <em>same job</em> applied to a smaller tree. The wasted work here is not CPU time, it is you: you are
+      hand-unrolling a loop whose length you will never know. The fix is to let a function call itself, which
+      is <a href="recursion.html">recursion</a>.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>Every depth-first traversal of a binary tree is this shape. Memorise it and the rest is decoration.</p>
+    <pre>def dfs(node):
+    if node is None:          # base case: fell off the bottom, nothing to do
+        return
+    # (A) preorder position: you are here, children not visited yet
+    dfs(node.left)            # go all the way down the left side
+    # (B) inorder position: left side done, right side not started
+    dfs(node.right)           # then all the way down the right side
+    # (C) postorder position: both children are fully done</pre>
+    <p>
+      The line that matters is <code>if node is None: return</code>. Everything else in the function assumes
+      <code>node</code> is real, so this single guard is what stops the recursion falling off the edge of the
+      tree. Write it first, every time, before you write anything else.
+    </p>
+    <p>
+      The three comment positions are the only choice you actually make. Put your work at <strong>(A)</strong>
+      and you get <strong>preorder</strong>: a node is handled before its children. Put it at
+      <strong>(B)</strong> and you get <strong>inorder</strong>: the whole left subtree, then the node, then
+      the right subtree. Put it at <strong>(C)</strong> and you get <strong>postorder</strong>: the node is
+      handled only after everything below it is finished, which means the children can hand results
+      <em>up</em> to it.
+    </p>
+    <pre>def preorder(node, out):
+    if node is None:
+        return out
+    out.append(node.val)      # visit BEFORE the children
+    preorder(node.left, out)
+    preorder(node.right, out)
+    return out
+
+def inorder(node, out):
+    if node is None:
+        return out
+    inorder(node.left, out)
+    out.append(node.val)      # visit BETWEEN the children
+    inorder(node.right, out)
+    return out
+
+def postorder(node, out):
+    if node is None:
+        return out
+    postorder(node.left, out)
+    postorder(node.right, out)
+    out.append(node.val)      # visit AFTER the children
+    return out</pre>
+    <p>
+      BFS is a different shape entirely, because it does not use recursion. It uses a
+      <strong>queue</strong>: a list you add to at one end and remove from the other, so the node that has
+      been waiting longest comes out next. Python's <code>collections.deque</code> gives you that with
+      <code>append</code> and <code>popleft</code>.
+    </p>
+    <pre>from collections import deque
+
+def level_order(root):
+    if root is None:
+        return []
+    levels = []
+    queue = deque([root])
+    while queue:
+        level = []
+        for _ in range(len(queue)):   # exactly the nodes sitting on this level
+            node = queue.popleft()
+            level.append(node.val)
+            if node.left:
+                queue.append(node.left)
+            if node.right:
+                queue.append(node.right)
+        levels.append(level)
+    return levels</pre>
+    <p>
+      Here the line that matters is <code>for _ in range(len(queue))</code>. You measure the queue length
+      <em>once</em>, before the inner loop starts. Everything in the queue at that instant is exactly one
+      level, and everything you push during the loop belongs to the next one. That one snapshot is what
+      separates "a flat list of nodes" from "a list of levels".
+    </p>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>Here is a six-node tree. We will run <code>inorder</code> on it and write down every step.</p>
+
+<pre class="art">             4
+           /   \
+          2     6
+         / \     \
+        1   3     7</pre>
+    <p class="caption">Start. The root is 4. The leaves are 1, 3 and 7.</p>
+
+    <p>
+      Each row below is one moment in the recursion. "Call" is the function invocation we are inside;
+      "returns to" means that call finished and we popped back up to the caller.
+    </p>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>Step</th><th>Call</th><th>What happens</th><th>Output so far</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>inorder(4)</code></td><td>not None, so go left first — nothing recorded yet</td><td><code>[]</code></td></tr>
+          <tr><td>2</td><td><code>inorder(2)</code></td><td>not None, go left first</td><td><code>[]</code></td></tr>
+          <tr><td>3</td><td><code>inorder(1)</code></td><td>left is <code>None</code> and returns at once, so record 1, then right is <code>None</code> too</td><td><code>[1]</code></td></tr>
+          <tr class="hi"><td>4</td><td>back in <code>inorder(2)</code></td><td>left subtree is finished, so now record 2</td><td><code>[1, 2]</code></td></tr>
+          <tr><td>5</td><td><code>inorder(3)</code></td><td>no children, record 3</td><td><code>[1, 2, 3]</code></td></tr>
+          <tr class="hi"><td>6</td><td>back in <code>inorder(4)</code></td><td>the entire left subtree is finished, so now record 4</td><td><code>[1, 2, 3, 4]</code></td></tr>
+          <tr><td>7</td><td><code>inorder(6)</code></td><td>left is <code>None</code>, record 6</td><td><code>[1, 2, 3, 4, 6]</code></td></tr>
+          <tr><td>8</td><td><code>inorder(7)</code></td><td>no children, record 7 — every call now returns</td><td><code>[1, 2, 3, 4, 6, 7]</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+<pre class="art">              (4)
+               4
+             /   \
+          (2)     (5)
+           2       6
+          / \       \
+       (1)   (3)     (6)
+        1     3       7</pre>
+    <p class="caption">End. The number in brackets above each node is when it was recorded. Reading them in order gives 1, 2, 3, 4, 6, 7 — sorted.</p>
+
+    <p>
+      Notice what happened at step 6. Node 4 is the root, the very first call we made, and it was the
+      <em>fourth</em> value recorded. It had to sit and wait while its whole left subtree finished. That
+      waiting is the entire difference between the three orders: preorder would have recorded 4 at step 1,
+      postorder would have recorded it last. Nothing else about the code changes.
+    </p>
+    <p>
+      This tree is also a <strong>binary search tree</strong> (BST): every value in a node's left subtree is
+      smaller than the node, every value in its right subtree is larger. That is exactly why inorder came out
+      sorted. "Inorder on a BST gives sorted order" is worth memorising — it is the trick behind a whole
+      family of problems.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>Postorder for anything that flows upward</h3>
+    <p>
+      When the parent's answer is built out of the children's answers, do the work at position (C) and let
+      the return value carry it up. Depth is the cleanest example: a tree's depth is one more than the deeper
+      of its two subtrees.
+    </p>
+    <pre>def max_depth(node):
+    if node is None:
+        return 0
+    return 1 + max(max_depth(node.left), max_depth(node.right))</pre>
+    <p>
+      Read it as a promise: "assume the two recursive calls already give me the correct depths." You never
+      trace it in your head. Subtree sums, "is this balanced", and "count the good nodes" are all this shape.
+    </p>
+
+    <h3>DFS without recursion, using an explicit stack</h3>
+    <p>
+      Recursion uses the call stack behind your back. You can carry your own <a href="stack.html">stack</a>
+      instead, which matters when the tree is deep enough to blow Python's recursion limit (about 1000 frames
+      by default).
+    </p>
+    <pre>def preorder_iterative(root):
+    if root is None:
+        return []
+    out, stack = [], [root]
+    while stack:
+        node = stack.pop()             # a stack: last in, first out
+        out.append(node.val)
+        if node.right:
+            stack.append(node.right)   # push right FIRST
+        if node.left:
+            stack.append(node.left)    # so left comes off the stack first
+    return out</pre>
+    <p>
+      Compare this with <code>level_order</code> above. Same loop, same pushes. The only difference is
+      <code>stack.pop()</code> versus <code>queue.popleft()</code> — last-in-first-out gives you DFS,
+      first-in-first-out gives you BFS. That one swap is the whole distinction.
+    </p>
+
+    <h3>BFS when you want the shallowest answer</h3>
+    <p>
+      BFS reaches every node at depth 1 before any node at depth 2. So if you are looking for the
+      <em>closest</em> node matching a condition, BFS finds it first and you can return immediately. DFS
+      would have to search the entire tree and keep a running minimum. Same idea powers shortest paths in
+      <a href="graph-traversal.html">graph traversal</a>.
+    </p>
+
+    <h3>Binary search trees: skip half the tree</h3>
+    <p>
+      In a BST you do not need to visit everything. Comparing the target with the current value tells you
+      which side it must be on, so you throw the other side away — the same halving idea as
+      <a href="binary-search.html">binary search</a>.
+    </p>
+    <pre>def bst_search(root, target):
+    node = root
+    while node is not None:
+        if node.val == target:
+            return True
+        node = node.left if target &lt; node.val else node.right
+    return False</pre>
+    <p>
+      That is O(h) where <code>h</code> is the height, not O(n). On a balanced tree of a million nodes, about
+      twenty steps.
+    </p>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong>Forgetting the <code>None</code> base case.</strong> Leaves have <code>left</code> and
+      <code>right</code> set to <code>None</code>, and you <em>will</em> recurse into them. Without
+      <code>if node is None: return</code> at the very top you get
+      <code>AttributeError: 'NoneType' object has no attribute 'val'</code>. Write the guard before you write
+      the body.
+    </div>
+    <div class="callout gotcha">
+      <strong>Reading the queue length inside the loop.</strong> In level order, if you write
+      <code>while queue:</code> and pop one at a time without the <code>for _ in range(len(queue))</code>
+      snapshot, you get every node in BFS order but no idea where one level ends and the next begins. Measure
+      the length before you start popping.
+    </div>
+    <div class="callout gotcha">
+      <strong>Mixing up "inorder gives sorted" and "any tree".</strong> Inorder produces sorted output only
+      on a binary search tree. On an arbitrary binary tree it produces a perfectly valid traversal that means
+      nothing in particular.
+    </div>
+    <div class="callout gotcha">
+      <strong>Pushing left before right in the iterative DFS.</strong> A stack reverses what you put in, so
+      pushing <code>left</code> then <code>right</code> makes you visit the right child first. If your
+      preorder comes out mirrored, this is why.
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Time:</strong> O(n) for any full traversal — every node is visited exactly once, and the work per node is constant. Searching a balanced BST is O(log n) because each comparison discards half the remaining tree.</li>
+      <li><strong>Space:</strong> O(h) for DFS, where <code>h</code> is the height, because that is how many calls are stacked up at the deepest moment: O(log n) if the tree is balanced, O(n) if it is a single long chain. BFS is O(w) where <code>w</code> is the widest level, which for a full tree is about n/2, so O(n).</li>
+    </ul>
+    <p class="muted">
+      If those symbols are unfamiliar, start with <a href="time-space-complexity.html">time and space complexity</a>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <p>No walkthroughs use this pattern yet.</p>
+    <p class="muted">
+      Classic LeetCode problems to try: Maximum Depth of Binary Tree (#104), Invert Binary Tree (#226),
+      Same Tree (#100), Binary Tree Level Order Traversal (#102), Validate Binary Search Tree (#98),
+      Kth Smallest Element in a BST (#230), Lowest Common Ancestor of a BST (#235), Binary Tree Right Side
+      View (#199).
+    </p>
+    <p class="muted">
+      The closest thing in the repo today is <a href="../medium/010-number-of-islands/walkthrough.html">Number of Islands</a>,
+      which is the same DFS shape run over a grid instead of a tree.
+    </p>
+  </section>
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>
