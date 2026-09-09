@@ -2,10 +2,15 @@ from add_two_numbers import ListNode, add_two_numbers
 
 
 def from_list(values):
-    head = None
-    for v in reversed(values):
-        head = ListNode(v, head)
-    return head
+    # Build the chain front to back. `dummy` is a throwaway node so there is
+    # always something to hang the first real node off, and `tail` is the last
+    # node added, so the next value goes straight into tail.next.
+    dummy = ListNode()
+    tail = dummy
+    for v in values:
+        tail.next = ListNode(v)
+        tail = tail.next
+    return dummy.next   # dummy is scaffolding, the real head is the node after it
 
 
 def to_list(head, limit=10000):

@@ -13,6 +13,15 @@ Reversing the list is just flipping every arrow, one node at a time. The only th
 - Time: O(n), each node is visited and rewired exactly once.
 - Space: O(1), only three pointers regardless of list length.
 
+## Building the test list
+
+The tests need a helper that turns `[1, 2, 3]` into a chain of nodes. Two ways work:
+
+- **Front to back (used here).** Keep a `dummy` node in front and a `tail` pointer at the last node added, then `tail.next = ListNode(v); tail = tail.next` for every value, and return `dummy.next`. The dummy exists only so the first value is not a special case — without it you need an `if head is None` branch. Same shape as the splicing code in Merge Two Sorted Lists and Add Two Numbers.
+- **Back to front.** `for v in reversed(values): head = ListNode(v, head)`. Shorter, no tail pointer, because a node can be created already pointing at the current head — but that only works if the tail is built first, hence the `reversed()`. Correct, just harder to read at a glance.
+
+Both are O(n). Prefer the first; see [concepts/linked-list.html](../../concepts/linked-list.html) for a traced comparison.
+
 ## Mistakes to watch for
 
 - Saving `next_node = curr.next` *after* the rewiring instead of before. By then `curr.next` is `prev`, so you walk backwards into the part you already reversed and lose the tail.

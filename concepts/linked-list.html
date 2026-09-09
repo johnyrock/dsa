@@ -217,6 +217,64 @@ while curr:
   </section>
 
   <section>
+    <h2>Building a list from an array</h2>
+    <p>
+      Problems hand you <code>[1, 2, 3, 4, 5]</code>, but the function under test wants a chain of nodes. So every
+      test file needs a helper that turns one into the other. The straightforward way is to build it
+      <strong>front to back</strong>, in the same order you read the array:
+    </p>
+    <pre>def from_list(values):
+    dummy = ListNode()          # a throwaway node that sits in front of the real list
+    tail = dummy                # tail always points at the last node added so far
+    for v in values:
+        tail.next = ListNode(v) # hang the new node off the current tail
+        tail = tail.next        # the new node is now the tail
+    return dummy.next           # dummy is scaffolding — the real head is the node after it</pre>
+
+    <p>
+      Watch it run on <code>[1, 2]</code>. The dashed box is <code>dummy</code>, which never becomes part of the
+      answer:
+    </p>
+    <pre>start:   dummy → None                 tail = dummy
+v = 1:   dummy → 1 → None             tail = node(1)
+v = 2:   dummy → 1 → 2 → None         tail = node(2)
+return:          1 → 2 → None         (dummy.next)</pre>
+
+    <div class="callout why">
+      <strong>Why the dummy node?</strong> Without it the first value is a special case — there is no
+      <code>tail</code> yet, so you'd need <code>if head is None: head = tail = ListNode(v) else: ...</code>.
+      The dummy gives the loop something to attach to on iteration one, so every value is handled by the same
+      two lines. This "dummy head" trick reappears everywhere you build or splice a list —
+      <a href="../easy/008-merge-two-sorted-lists/README.md">Merge Two Sorted Lists</a> and
+      <a href="../medium/006-add-two-numbers/README.md">Add Two Numbers</a> both lean on it.
+    </div>
+
+    <h3>The shorter version you'll also see</h3>
+    <p>
+      There is a second way to write this, and it looks clever enough to be confusing the first time you meet it:
+    </p>
+    <pre>def from_list(values):
+    head = None
+    for v in reversed(values):   # walk the array backwards
+        head = ListNode(v, head) # each new node points at what was the head
+    return head</pre>
+    <p>
+      It builds the chain <strong>back to front</strong>. Because a new node can be created already pointing at
+      the rest of the list (<code>ListNode(v, head)</code>), you never need a <code>tail</code> pointer — but you
+      do have to iterate in reverse, since the tail must exist before anything can point at it. On
+      <code>[1, 2]</code> that means node <code>2</code> is created first:
+    </p>
+    <pre>start:   head = None
+v = 2:   head = 2 → None
+v = 1:   head = 1 → 2 → None</pre>
+    <p class="muted">
+      Both produce exactly the same list in O(n) time. The dummy-head version is the one worth memorising: it
+      reads in the same order as the input, and it is the same shape as the real merging and splicing code you
+      write in later problems. The <code>reversed()</code> one is a neat trick, not a pattern.
+    </p>
+  </section>
+
+  <section>
     <h2>Reversing a linked list</h2>
     <p>
       This is the classic interview question, and the trickiest part conceptually. Reversing means every arrow
