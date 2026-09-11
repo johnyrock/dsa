@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Search in Rotated Sorted Array Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; flex-wrap: wrap; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem; min-width: 44px;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; margin-bottom: 6px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Binary Search · LeetCode #33</div>
+  <h1>Search in Rotated Sorted Array, narrated</h1>
+  <p>Scroll through identifying which half of the array is a normal sorted run at each step, and discarding the other.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/binary-search.html">Binary Search</a> <span class="how">at every mid, one half is a contiguous sorted run — check it, discard the other if the target can't be in it</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+<section class="step" data-state="problem"><div class="n">STEP 1</div><h2>The problem</h2><p>Find a target's index in an ascending array that's been rotated at an unknown pivot, in O(log n) time.</p><div class="callout">Running example: <code>[4,5,6,7,0,1,2]</code>, target = 0. Answer: index 4.</div></section>
+<section class="step" data-state="idea"><div class="n">STEP 2</div><h2>The key idea: one half is always properly sorted</h2><p>Even after rotation, comparing <code>nums[left]</code> to <code>nums[mid]</code> reveals which half — left-to-mid, or mid-to-right — is a normal ascending run with no rotation inside it. Check whether the target falls in that sorted half's range; if so, search there, otherwise search the other half.</p></section>
+<section class="step" data-state="t1"><div class="n">STEP 3</div><h2>Trace it: first mid</h2><p>left=0, right=6, mid=3 (value 7). <code>nums[0]=4 &lt;= nums[3]=7</code> — left half is sorted. Is target 0 in <code>[4, 7)</code>? No. Search the other half: left = mid+1 = 4.</p></section>
+<section class="step" data-state="t2"><div class="n">STEP 4</div><h2>Trace it: second mid</h2><p>left=4, right=6, mid=5 (value 1). <code>nums[4]=0 &lt;= nums[5]=1</code> — left half [4,5] sorted. Is 0 in <code>[0, 1)</code>? Yes. Search there: right = mid-1 = 4.</p></section>
+<section class="step" data-state="t3"><div class="n">STEP 5</div><h2>Trace it: found</h2><p>left=4, right=4, mid=4 (value 0). <code>nums[4] == target</code> — return 4.</p></section>
+<section class="step" data-state="pitfall"><div class="n">STEP 6</div><h2>Where this goes wrong</h2><p>Using <code>&lt;</code> instead of <code>&lt;=</code> in <code>nums[left] &lt;= nums[mid]</code> breaks the 2-element window case, where <code>left == mid</code> must still count as "sorted". Getting the two branches backwards — treating the mid-to-right half as sorted when it's actually the left half — silently searches the wrong side.</p></section>
+<section class="step" data-state="complexity"><div class="n">STEP 7</div><h2>Time and space</h2><p><strong>O(log n) time</strong> — still standard binary search, just with an extra branch each step. <strong>O(1) space</strong>.</p></section>
+<section class="step" data-state="final"><div class="n">STEP 8</div><h2>The final solution</h2><ul><li>Standard binary-search loop with <code>left &lt;= right</code>.</li><li>Check <code>nums[mid] == target</code> first.</li><li>Determine which half is sorted via <code>nums[left] &lt;= nums[mid]</code>.</li><li>Check whether target falls in that sorted half's range to decide which side to keep.</li></ul></section>
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>nums · [4,5,6,7,0,1,2], target = 0</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>pointers</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="search_in_rotated_sorted_array.py">search_in_rotated_sorted_array.py</a> · <a href="search_in_rotated_sorted_array_annotated.py">search_in_rotated_sorted_array_annotated.py</a> · <a href="test_search_in_rotated_sorted_array.py">test_search_in_rotated_sorted_array.py</a> · <a href="../../md.html?f=medium/021-search-in-rotated-sorted-array/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = ["class Solution:", "    def search(self, nums, target):", "        left, right = 0, len(nums) - 1", "        while left <= right:", "            mid = (left + right) // 2", "            if nums[mid] == target:", "                return mid", "            if nums[left] <= nums[mid]:", "                if nums[left] <= target < nums[mid]:", "                    right = mid - 1", "                else:", "                    left = mid + 1", "            else:", "                if nums[mid] < target <= nums[right]:", "                    left = mid + 1", "                else:", "                    right = mid - 1", "        return -1"];
+
+  var STATES = {
+  "problem": {
+    "caption": "Find target 0 in a rotated sorted array.",
+    "dp": [
+      [
+        "4",
+        "4"
+      ],
+      [
+        "5",
+        "5"
+      ],
+      [
+        "6",
+        "6"
+      ],
+      [
+        "7",
+        "7"
+      ],
+      [
+        "0",
+        "0"
+      ],
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "2"
+      ]
+    ],
+    "cur": -1,
+    "hits": [],
+    "dim": [],
+    "vars": [],
+    "meta": "target = 0",
+    "hl": []
+  },
+  "idea": {
+    "caption": "One half of [left, mid, right] is always a normal sorted run.",
+    "dp": [
+      [
+        "4",
+        "4"
+      ],
+      [
+        "5",
+        "5"
+      ],
+      [
+        "6",
+        "6"
+      ],
+      [
+        "7",
+        "7"
+      ],
+      [
+        "0",
+        "0"
+      ],
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "2"
+      ]
+    ],
+    "cur": -1,
+    "hits": [],
+    "dim": [],
+    "vars": [
+      [
+        "left",
+        "0",
+        "new"
+      ],
+      [
+        "right",
+        "6",
+        "new"
+      ]
+    ],
+    "meta": "",
+    "hl": [
+      7,
+      8,
+      9,
+      10,
+      11
+    ]
+  },
+  "t1": {
+    "caption": "mid=3 (7). Left half [4..7] sorted; 0 not in [4,7) -> search right half.",
+    "dp": [
+      [
+        "4",
+        "4"
+      ],
+      [
+        "5",
+        "5"
+      ],
+      [
+        "6",
+        "6"
+      ],
+      [
+        "7",
+        "7"
+      ],
+      [
+        "0",
+        "0"
+      ],
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "2"
+      ]
+    ],
+    "cur": 3,
+    "hits": [],
+    "dim": [
+      0,
+      1,
+      2
+    ],
+    "vars": [
+      [
+        "left",
+        "4",
+        "new"
+      ],
+      [
+        "right",
+        "6"
+      ]
+    ],
+    "meta": "",
+    "hl": [
+      7,
+      8,
+      9,
+      10
+    ]
+  },
+  "t2": {
+    "caption": "mid=5 (1). Left half [0..1] sorted; 0 is in [0,1) -> search left half.",
+    "dp": [
+      [
+        "4",
+        "4"
+      ],
+      [
+        "5",
+        "5"
+      ],
+      [
+        "6",
+        "6"
+      ],
+      [
+        "7",
+        "7"
+      ],
+      [
+        "0",
+        "0"
+      ],
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "2"
+      ]
+    ],
+    "cur": 5,
+    "hits": [
+      4
+    ],
+    "dim": [
+      6
+    ],
+    "vars": [
+      [
+        "left",
+        "4"
+      ],
+      [
+        "right",
+        "4",
+        "new"
+      ]
+    ],
+    "meta": "",
+    "hl": [
+      7,
+      8,
+      9
+    ]
+  },
+  "t3": {
+    "caption": "mid=4 (0). nums[mid] == target -> found at index 4.",
+    "dp": [
+      [
+        "4",
+        "4"
+      ],
+      [
+        "5",
+        "5"
+      ],
+      [
+        "6",
+        "6"
+      ],
+      [
+        "7",
+        "7"
+      ],
+      [
+        "0",
+        "0"
+      ],
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "2"
+      ]
+    ],
+    "cur": 4,
+    "hits": [
+      4
+    ],
+    "dim": [],
+    "vars": [
+      [
+        "left",
+        "4"
+      ],
+      [
+        "right",
+        "4"
+      ]
+    ],
+    "meta": "",
+    "hl": [
+      5,
+      6
+    ],
+    "big": "4",
+    "bigNote": "index of target 0"
+  },
+  "pitfall": {
+    "caption": "Off-by-one on the sorted-half check, or swapped branches, break edge cases.",
+    "dp": [
+      [
+        "4",
+        "4"
+      ],
+      [
+        "5",
+        "5"
+      ],
+      [
+        "6",
+        "6"
+      ],
+      [
+        "7",
+        "7"
+      ],
+      [
+        "0",
+        "0"
+      ],
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "2"
+      ]
+    ],
+    "cur": -1,
+    "hits": [],
+    "dim": [],
+    "vars": [],
+    "meta": "nums[left] <= nums[mid] must use <=, not <.",
+    "hl": [
+      7
+    ]
+  },
+  "complexity": {
+    "caption": "Standard binary search, one extra branch per step.",
+    "dp": [
+      [
+        "4",
+        "4"
+      ],
+      [
+        "5",
+        "5"
+      ],
+      [
+        "6",
+        "6"
+      ],
+      [
+        "7",
+        "7"
+      ],
+      [
+        "0",
+        "0"
+      ],
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "2"
+      ]
+    ],
+    "cur": -1,
+    "hits": [],
+    "dim": [],
+    "vars": [],
+    "meta": "",
+    "hl": [],
+    "big": "O(log n) time \u00b7 O(1) space",
+    "bigNote": ""
+  },
+  "final": {
+    "caption": "The whole solution.",
+    "dp": [
+      [
+        "4",
+        "4"
+      ],
+      [
+        "5",
+        "5"
+      ],
+      [
+        "6",
+        "6"
+      ],
+      [
+        "7",
+        "7"
+      ],
+      [
+        "0",
+        "0"
+      ],
+      [
+        "1",
+        "1"
+      ],
+      [
+        "2",
+        "2"
+      ]
+    ],
+    "cur": -1,
+    "hits": [],
+    "dim": [],
+    "vars": [],
+    "meta": "",
+    "hl": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ]
+  }
+};
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.dp.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.dim.indexOf(i) !== -1) cls += " dim";
+      arr += '<div class="' + cls + '">' + s.dp[i][1] + '<span class="idx">' + s.dp[i][0] + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not seeded yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

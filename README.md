@@ -45,6 +45,8 @@ Problems are chosen by interview frequency: the easy and medium tiers of the Bli
 | easy/008 | [Merge Two Sorted Lists](easy/008-merge-two-sorted-lists/) | Easy | [linked-list](patterns/linked-list.md) · [explained](concepts/linked-list.html) | - | - | not yet solved |
 | easy/009 | [Binary Search](easy/009-binary-search/) | Easy | [binary-search](patterns/binary-search.md) · [explained](concepts/binary-search.html) | - | - | not yet solved |
 | easy/010 | [Climbing Stairs](easy/010-climbing-stairs/) | Easy | [dynamic-programming](patterns/dynamic-programming.md) · [explained](concepts/dynamic-programming.html) | - | - | not yet solved |
+| easy/011 | [Invert Binary Tree](easy/011-invert-binary-tree/) | Easy | [tree](patterns/tree.md) · [explained](concepts/tree-traversal.html) | - | - | not yet solved |
+| easy/012 | [Linked List Cycle](easy/012-linked-list-cycle/) | Easy | [fast-slow-pointers](patterns/fast-slow-pointers.md) · [explained](concepts/fast-slow-pointers.html) | - | - | not yet solved |
 | medium/001 | [Group Anagrams](medium/001-group-anagrams/) | Medium | [hash-map](patterns/hash-map.md) · [explained](concepts/hash-map.html) | - | - | not yet solved |
 | medium/002 | [Product of Array Except Self](medium/002-product-of-array-except-self/) | Medium | [prefix-sum](patterns/prefix-sum.md) · [explained](concepts/prefix-sum.html) | - | - | not yet solved |
 | medium/003 | [Longest Substring Without Repeating Characters](medium/003-longest-substring-without-repeating-characters/) | Medium | [sliding-window](patterns/sliding-window.md) · [explained](concepts/sliding-window.html) | - | - | not yet solved |
@@ -57,6 +59,17 @@ Problems are chosen by interview frequency: the easy and medium tiers of the Bli
 | medium/010 | [Number of Islands](medium/010-number-of-islands/) | Medium | [graph](patterns/graph.md) · [explained](concepts/graph-traversal.html) | - | - | not yet solved |
 | medium/011 | [LRU Cache](medium/011-lru-cache/) | Medium | [linked-list](patterns/linked-list.md) · [explained](concepts/linked-list.html) | - | - | not yet solved |
 | medium/012 | [Longest Palindromic Substring](medium/012-longest-palindromic-substring/) | Medium | [two-pointers](patterns/two-pointers.md) · [explained](concepts/two-pointers.html) | - | - | not yet solved |
+| medium/013 | [Longest Repeating Character Replacement](medium/013-longest-repeating-character-replacement/) | Medium | [sliding-window](patterns/sliding-window.md) · [explained](concepts/sliding-window.html) | - | - | not yet solved |
+| medium/014 | [Binary Tree Level Order Traversal](medium/014-binary-tree-level-order-traversal/) | Medium | [tree](patterns/tree.md) · [explained](concepts/tree-traversal.html) | - | - | not yet solved |
+| medium/015 | [Validate Binary Search Tree](medium/015-validate-binary-search-tree/) | Medium | [tree](patterns/tree.md) · [explained](concepts/tree-traversal.html) | - | - | not yet solved |
+| medium/016 | [Lowest Common Ancestor of a BST](medium/016-lowest-common-ancestor-of-a-bst/) | Medium | [tree](patterns/tree.md) · [explained](concepts/tree-traversal.html) | - | - | not yet solved |
+| medium/017 | [Kth Smallest Element in a BST](medium/017-kth-smallest-element-in-a-bst/) | Medium | [tree](patterns/tree.md) · [explained](concepts/tree-traversal.html) | - | - | not yet solved |
+| medium/018 | [Course Schedule](medium/018-course-schedule/) | Medium | [topological-sort](patterns/topological-sort.md) · [explained](concepts/topological-sort.html) | - | - | not yet solved |
+| medium/019 | [Clone Graph](medium/019-clone-graph/) | Medium | [graph](patterns/graph.md) · [explained](concepts/graph-traversal.html) | - | - | not yet solved |
+| medium/020 | [Insert Interval](medium/020-insert-interval/) | Medium | [intervals](patterns/intervals.md) · [explained](concepts/intervals.html) | - | - | not yet solved |
+| medium/021 | [Search in Rotated Sorted Array](medium/021-search-in-rotated-sorted-array/) | Medium | [binary-search](patterns/binary-search.md) · [explained](concepts/binary-search.html) | - | - | not yet solved |
+| medium/022 | [Random Pick with Weight](medium/022-random-pick-with-weight/) | Medium | [prefix-sum](patterns/prefix-sum.md) · [explained](concepts/prefix-sum.html) | - | - | not yet solved |
+| medium/023 | [Serialize and Deserialize Binary Tree](medium/023-serialize-and-deserialize-binary-tree/) | Medium | [tree](patterns/tree.md) · [explained](concepts/tree-traversal.html) | - | - | not yet solved |
 
 ## Due for review
 
@@ -83,14 +96,17 @@ Beginner explainers under `concepts/`, one per pattern. Suggested reading order,
 | [hash-map](patterns/hash-map.md) · [explained](concepts/hash-map.html) | easy/001, easy/002, medium/001 |
 | [hash-set](patterns/hash-set.md) · [explained](concepts/hash-map.html) | easy/003 |
 | [stack](patterns/stack.md) · [explained](concepts/stack.html) | easy/004 |
-| [sliding-window](patterns/sliding-window.md) · [explained](concepts/sliding-window.html) | easy/005, medium/003 |
+| [sliding-window](patterns/sliding-window.md) · [explained](concepts/sliding-window.html) | easy/005, medium/003, medium/013 |
 | [two-pointers](patterns/two-pointers.md) · [explained](concepts/two-pointers.html) | easy/006, medium/004, medium/005, medium/012 |
 | [linked-list](patterns/linked-list.md) · [explained](concepts/linked-list.html) | easy/007, easy/008, medium/006, medium/011 |
-| [binary-search](patterns/binary-search.md) · [explained](concepts/binary-search.html) | easy/009 |
+| [binary-search](patterns/binary-search.md) · [explained](concepts/binary-search.html) | easy/009, medium/021 |
 | [dynamic-programming](patterns/dynamic-programming.md) · [explained](concepts/dynamic-programming.html) | easy/010, medium/007, medium/008 |
-| [prefix-sum](patterns/prefix-sum.md) · [explained](concepts/prefix-sum.html) | medium/002 |
-| [intervals](patterns/intervals.md) · [explained](concepts/intervals.html) | medium/009 |
-| [graph](patterns/graph.md) · [explained](concepts/graph-traversal.html) | medium/010 |
+| [prefix-sum](patterns/prefix-sum.md) · [explained](concepts/prefix-sum.html) | medium/002, medium/022 |
+| [intervals](patterns/intervals.md) · [explained](concepts/intervals.html) | medium/009, medium/020 |
+| [graph](patterns/graph.md) · [explained](concepts/graph-traversal.html) | medium/010, medium/019 |
+| [tree](patterns/tree.md) · [explained](concepts/tree-traversal.html) | easy/011, medium/014, medium/015, medium/016, medium/017, medium/023 |
+| [fast-slow-pointers](patterns/fast-slow-pointers.md) · [explained](concepts/fast-slow-pointers.html) | easy/012 |
+| [topological-sort](patterns/topological-sort.md) · [explained](concepts/topological-sort.html) | medium/018 |
 
 ## Layout
 

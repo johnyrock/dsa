@@ -56,7 +56,9 @@
   .menu {
     max-width: 1100px; margin: 0 auto; padding: 0 24px;
     display: flex; gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; -ms-overflow-style: none;
   }
+  .menu::-webkit-scrollbar { display: none; }
   .tab {
     appearance: none; background: none; border: 0; border-bottom: 3px solid transparent;
     color: var(--muted); font: inherit; font-size: 1rem; font-weight: 600;
@@ -79,6 +81,19 @@
   .chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
   .chip .count { color: var(--muted); font-size: 0.8rem; margin-left: 4px; }
   .chip[hidden] { display: none; }
+
+  .search-bar { max-width: 1100px; margin: 0 auto; padding: 16px 24px 0; }
+  .search {
+    display: block; width: 100%;
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+    border-radius: 10px; padding: 10px 16px; font: inherit; font-size: 1rem;
+  }
+  .search:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .search::placeholder { color: var(--muted); }
+
+  @media (max-width: 600px) {
+    .search-bar { padding: 12px 16px 0; }
+  }
 
   section[hidden] { display: none; }
   section h2 { font-size: 1.3rem; margin: 0 0 4px; }
@@ -123,6 +138,10 @@
   <h1>Walkthroughs</h1>
   <p>Concept pages explain each pattern from scratch. Problem walkthroughs narrate a solution from the first instinct to the interview answer. Pick a section, then filter by pattern.</p>
 </header>
+
+<div class="search-bar">
+  <input class="search" id="search" type="search" placeholder="Search problems…" aria-label="Search problems">
+</div>
 
 <div class="menu-wrap">
   <nav class="menu" id="menu" role="tablist" aria-label="Sections"></nav>
@@ -409,7 +428,21 @@
         <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
       </a>
 
-    
+      <a class="card" href="easy/011-invert-binary-tree/walkthrough.html" data-pattern="tree">
+        <div class="meta">easy/011 · LeetCode #226</div>
+        <h3>Invert Binary Tree</h3>
+        <p>Mirror a tree recursively: invert both children first, then swap the results.</p>
+        <div class="foot"><span class="pill">Tree</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/012-linked-list-cycle/walkthrough.html" data-pattern="fast-slow-pointers">
+        <div class="meta">easy/012 · LeetCode #141</div>
+        <h3>Linked List Cycle</h3>
+        <p>The tortoise-and-hare trick: two pointers at different speeds, no extra memory.</p>
+        <div class="foot"><span class="pill">Fast &amp; Slow Pointers</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+
 
     </div>
     <p class="none" hidden>No easy walkthroughs use this pattern yet.</p>
@@ -504,7 +537,82 @@
         <div class="foot"><span class="pill">Two Pointers</span><span class="open">Open walkthrough →</span></div>
       </a>
 
-    
+      <a class="card" href="medium/013-longest-repeating-character-replacement/walkthrough.html" data-pattern="sliding-window">
+        <div class="meta">medium/013 · LeetCode #424</div>
+        <h3>Longest Repeating Character Replacement</h3>
+        <p>A window that only grows: valid when window length minus the majority-letter count fits the replacement budget.</p>
+        <div class="foot"><span class="pill">Sliding Window</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/014-binary-tree-level-order-traversal/walkthrough.html" data-pattern="tree">
+        <div class="meta">medium/014 · LeetCode #102</div>
+        <h3>Binary Tree Level Order Traversal</h3>
+        <p>A BFS queue with the level boundary drawn by snapshotting the queue's length.</p>
+        <div class="foot"><span class="pill">Tree</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/015-validate-binary-search-tree/walkthrough.html" data-pattern="tree">
+        <div class="meta">medium/015 · LeetCode #98</div>
+        <h3>Validate Binary Search Tree</h3>
+        <p>Carry an inherited (low, high) bound down the recursion instead of comparing to just the parent.</p>
+        <div class="foot"><span class="pill">Tree</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/016-lowest-common-ancestor-of-a-bst/walkthrough.html" data-pattern="tree">
+        <div class="meta">medium/016 · LeetCode #235</div>
+        <h3>Lowest Common Ancestor of a BST</h3>
+        <p>Walk down from the root; the node where p and q stop sharing a side is the answer.</p>
+        <div class="foot"><span class="pill">Tree</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/017-kth-smallest-element-in-a-bst/walkthrough.html" data-pattern="tree">
+        <div class="meta">medium/017 · LeetCode #230</div>
+        <h3>Kth Smallest Element in a BST</h3>
+        <p>An iterative in-order traversal that stops the instant the k-th node is visited.</p>
+        <div class="foot"><span class="pill">Tree</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/018-course-schedule/walkthrough.html" data-pattern="topological-sort">
+        <div class="meta">medium/018 · LeetCode #207</div>
+        <h3>Course Schedule</h3>
+        <p>Kahn's algorithm: take zero-prerequisite courses first; a cycle leaves the rest permanently stuck.</p>
+        <div class="foot"><span class="pill">Topological Sort</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/019-clone-graph/walkthrough.html" data-pattern="graph">
+        <div class="meta">medium/019 · LeetCode #133</div>
+        <h3>Clone Graph</h3>
+        <p>DFS with an original-to-clone map that dedupes nodes and breaks cycles safely.</p>
+        <div class="foot"><span class="pill">Graph</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/020-insert-interval/walkthrough.html" data-pattern="intervals">
+        <div class="meta">medium/020 · LeetCode #57</div>
+        <h3>Insert Interval</h3>
+        <p>One linear pass: intervals before, the merged block, intervals after.</p>
+        <div class="foot"><span class="pill">Intervals</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/021-search-in-rotated-sorted-array/walkthrough.html" data-pattern="binary-search">
+        <div class="meta">medium/021 · LeetCode #33</div>
+        <h3>Search in Rotated Sorted Array</h3>
+        <p>At every midpoint, one half is a normal sorted run — check it, discard the other if it can't hold the target.</p>
+        <div class="foot"><span class="pill">Binary Search</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/022-random-pick-with-weight/walkthrough.html" data-pattern="prefix-sum">
+        <div class="meta">medium/022 · LeetCode #528</div>
+        <h3>Random Pick with Weight</h3>
+        <p>Prefix sums turn weights into ranges on a line; a random point plus binary search does the picking.</p>
+        <div class="foot"><span class="pill">Prefix Sum</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/023-serialize-and-deserialize-binary-tree/walkthrough.html" data-pattern="tree">
+        <div class="meta">medium/023 · LeetCode #297</div>
+        <h3>Serialize and Deserialize Binary Tree</h3>
+        <p>Pre-order encoding with explicit null markers records every branching decision, making decoding unambiguous.</p>
+        <div class="foot"><span class="pill">Tree</span><span class="open">Open walkthrough →</span></div>
+      </a>
 
     </div>
     <p class="none" hidden>No medium walkthroughs use this pattern yet.</p>
@@ -520,13 +628,22 @@
     var sections = Array.prototype.slice.call(document.querySelectorAll('main > section'));
     var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
     var menu = document.getElementById('menu');
+    var searchInput = document.getElementById('search');
     var tabs = [];
 
     function patternsOf(card) {
       return (card.dataset.pattern || '').split(/\s+/).filter(Boolean);
     }
-    function matches(card, pattern) {
+    function matchesPattern(card, pattern) {
       return pattern === 'all' || patternsOf(card).indexOf(pattern) !== -1;
+    }
+    function matchesSearch(card, query) {
+      if (!query) return true;
+      var text = card.textContent.toLowerCase();
+      return text.indexOf(query) !== -1;
+    }
+    function matches(card, pattern) {
+      return matchesPattern(card, pattern) && matchesSearch(card, currentSearch);
     }
 
     // Build the menu from the sections so adding a section adds a tab.
@@ -544,25 +661,34 @@
 
     var currentSection = sections[0].dataset.section;
     var currentPattern = 'all';
+    var currentSearch = '';
 
     function apply(sectionId, pattern) {
       currentSection = sectionId;
       currentPattern = pattern;
 
+      // A non-empty search spans every section instead of just the active tab,
+      // so a query can surface a concept page while an easy/medium tab is selected.
+      var searching = !!currentSearch;
+
       tabs.forEach(function (t) {
-        t.setAttribute('aria-selected', t.dataset.section === sectionId ? 'true' : 'false');
+        t.setAttribute('aria-selected', (!searching && t.dataset.section === sectionId) ? 'true' : 'false');
       });
 
       var active = null;
       sections.forEach(function (sec) {
-        var on = sec.dataset.section === sectionId;
+        var on = searching || sec.dataset.section === sectionId;
         sec.hidden = !on;
-        if (on) active = sec;
+        if (sec.dataset.section === sectionId) active = sec;
       });
 
-      var cards = Array.prototype.slice.call(active.querySelectorAll('.card'));
+      var scopeSections = searching ? sections : [active];
+      var cards = [];
+      scopeSections.forEach(function (sec) {
+        cards = cards.concat(Array.prototype.slice.call(sec.querySelectorAll('.card')));
+      });
 
-      // Chip counts reflect the active section; chips with nothing to show are hidden.
+      // Chip counts reflect the current scope; chips with nothing to show are hidden.
       var available = false;
       chips.forEach(function (chip) {
         var p = chip.dataset.pattern;
@@ -578,14 +704,16 @@
 
       cards.forEach(function (card) { card.hidden = !matches(card, pattern); });
 
-      // Hide group headings whose cards are all hidden.
-      Array.prototype.forEach.call(active.querySelectorAll('.group'), function (h) {
-        var grid = h.nextElementSibling;
-        h.hidden = !grid || grid.querySelectorAll('.card:not([hidden])').length === 0;
-      });
+      // Hide group headings whose cards are all hidden, and each section's "none" message.
+      scopeSections.forEach(function (sec) {
+        Array.prototype.forEach.call(sec.querySelectorAll('.group'), function (h) {
+          var grid = h.nextElementSibling;
+          h.hidden = !grid || grid.querySelectorAll('.card:not([hidden])').length === 0;
+        });
 
-      var none = active.querySelector('.none');
-      if (none) none.hidden = active.querySelectorAll('.card:not([hidden])').length > 0;
+        var none = sec.querySelector('.none');
+        if (none) none.hidden = sec.querySelectorAll('.card:not([hidden])').length > 0;
+      });
 
       try {
         var hash = sectionId + (pattern === 'all' ? '' : '/' + pattern);
@@ -596,6 +724,13 @@
     chips.forEach(function (chip) {
       chip.addEventListener('click', function () { apply(currentSection, chip.dataset.pattern); });
     });
+
+    if (searchInput) {
+      searchInput.addEventListener('input', function () {
+        currentSearch = searchInput.value.trim().toLowerCase();
+        apply(currentSection, currentPattern);
+      });
+    }
 
     function fromHash() {
       var parts = location.hash.replace('#', '').split('/');
