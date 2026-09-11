@@ -322,17 +322,18 @@
 <script>
 (function () {
   var CODE = [
-    "def is_anagram(s, t):",
-    "    if len(s) != len(t):",
-    "        return False",
-    "    counts = {}",
-    "    for ch in s:",
-    "        counts[ch] = counts.get(ch, 0) + 1",
-    "    for ch in t:",
-    "        if counts.get(ch, 0) == 0:",
+    "class Solution:",
+    "    def is_anagram(self, s: str, t: str) -> bool:",
+    "        if len(s) != len(t):",
     "            return False",
-    "        counts[ch] -= 1",
-    "    return True"
+    "        counts = {}",
+    "        for ch in s:",
+    "            counts[ch] = counts.get(ch, 0) + 1",
+    "        for ch in t:",
+    "            if counts.get(ch, 0) == 0:",
+    "                return False",
+    "            counts[ch] -= 1",
+    "        return True"
   ];
 
   var S = ["a", "n", "a", "g", "r", "a", "m"];
@@ -355,30 +356,30 @@
     },
     idea: {
       caption: "Tally s in a dictionary, then cancel one copy per character of t.",
-      chars: S, t: "nagaram", cur: -1, hits: [], counts: [], meta: "Guard on length first, then count, then cancel.", hl: [1, 5, 7, 9]
+      chars: S, t: "nagaram", cur: -1, hits: [], counts: [], meta: "Guard on length first, then count, then cancel.", hl: [2, 6, 8, 10]
     },
     build: {
       caption: "First pass: walk s and count every character. The tally is now complete.",
-      chars: S, t: "nagaram", cur: 6, hits: [], counts: [["a", 3, "new"], ["n", 1, "new"], ["g", 1, "new"], ["r", 1, "new"], ["m", 1, "new"]], meta: "i = 6, last character <b>m</b> · tally is <b>a×3, n, g, r, m</b>", hl: [5]
+      chars: S, t: "nagaram", cur: 6, hits: [], counts: [["a", 3, "new"], ["n", 1, "new"], ["g", 1, "new"], ["r", 1, "new"], ["m", 1, "new"]], meta: "i = 6, last character <b>m</b> · tally is <b>a×3, n, g, r, m</b>", hl: [6]
     },
     cancel: {
       caption: "Second pass: every character of t found a copy left, so all counts hit zero.",
-      chars: S, t: "nagaram", cur: -1, hits: [0, 1, 2, 3, 4, 5, 6], counts: [["a", 0, "found"], ["n", 0, "found"], ["g", 0, "found"], ["r", 0, "found"], ["m", 0, "found"]], meta: "cancelled <b>n a g a r a m</b> · nothing ran out", hl: [9, 10],
+      chars: S, t: "nagaram", cur: -1, hits: [0, 1, 2, 3, 4, 5, 6], counts: [["a", 0, "found"], ["n", 0, "found"], ["g", 0, "found"], ["r", 0, "found"], ["m", 0, "found"]], meta: "cancelled <b>n a g a r a m</b> · nothing ran out", hl: [10, 11],
       big: "True", bigNote: "loop finished with the lengths equal"
     },
     pitfall: {
       caption: "s = \"rat\", t = \"car\". Same length, so the guard passes — but the first character of t already fails.",
-      chars: RAT, t: "car", cur: -1, hits: [], counts: [["r", 1], ["a", 1], ["t", 1]], meta: "ch = <b>c</b> · counts.get(\"c\", 0) = <b>0</b> · no copy to cancel", hl: [7, 8],
+      chars: RAT, t: "car", cur: -1, hits: [], counts: [["r", 1], ["a", 1], ["t", 1]], meta: "ch = <b>c</b> · counts.get(\"c\", 0) = <b>0</b> · no copy to cancel", hl: [8, 9],
       big: "False", bigNote: "returned after one character of t"
     },
     complexity: {
       caption: "Two passes of O(1) work, and one dictionary entry per distinct character.",
-      chars: S, t: "nagaram", cur: -1, hits: [], counts: [["a", 3], ["n", 1], ["g", 1], ["r", 1], ["m", 1]], meta: "5 distinct characters here, at most 26 for lowercase letters.", hl: [4, 6],
+      chars: S, t: "nagaram", cur: -1, hits: [], counts: [["a", 3], ["n", 1], ["g", 1], ["r", 1], ["m", 1]], meta: "5 distinct characters here, at most 26 for lowercase letters.", hl: [5, 7],
       big: "O(n) time · O(k) space", bigNote: "versus O(n log n) time for sorting"
     },
     final: {
       caption: "The whole solution.",
-      chars: S, t: "nagaram", cur: -1, hits: [], counts: [], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      chars: S, t: "nagaram", cur: -1, hits: [], counts: [], meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     }
   };
 

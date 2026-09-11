@@ -1,4 +1,5 @@
-from add_two_numbers import ListNode, add_two_numbers
+import unittest
+from add_two_numbers import ListNode, Solution
 
 
 def from_list(values):
@@ -21,31 +22,30 @@ def to_list(head, limit=10000):
     return values
 
 
-def test_add_two_numbers():
-    cases = [
-        # (l1, l2, expected)
-        ([2, 4, 3], [5, 6, 4], [7, 0, 8]),                        # 342 + 465 = 807
-        ([0], [0], [0]),                                          # zero plus zero
-        ([9, 9, 9, 9, 9, 9, 9], [9, 9, 9, 9], [8, 9, 9, 9, 0, 0, 0, 1]),  # different lengths, carry chain
-        ([5], [5], [0, 1]),                                       # single digits producing a new digit
-        ([1], [9, 9, 9], [0, 0, 0, 1]),                           # carry ripples through the longer list
-        ([9, 9], [1], [0, 0, 1]),                                 # same, longer list first
-        ([1, 8], [0], [1, 8]),                                    # adding zero changes nothing
-        ([2, 4, 3], [5, 6], [7, 0, 4]),                           # 342 + 65 = 407
-        ([0, 1], [0, 1], [0, 2]),                                 # 10 + 10 = 20, zero in the ones place
-        ([9] * 100, [1], [0] * 100 + [1]),                        # upper bound length with a full carry chain
-    ]
+class TestAddTwoNumbers(unittest.TestCase):
+    def setUp(self):
+        self.solution = Solution()
 
-    failures = 0
-    for a, b, expected in cases:
-        result = to_list(add_two_numbers(from_list(a), from_list(b)))
-        status = "PASS" if result == expected else "FAIL"
-        if status == "FAIL":
-            failures += 1
-        shown = (a, b) if len(a) < 20 else ("[9]*100", b)
-        print(f"{status}  l1, l2={shown} -> {result if len(result) < 20 else str(result[:5]) + '...'} (expected {expected if len(expected) < 20 else str(expected[:5]) + '...'})")
+    def test_add_two_numbers(self):
+        cases = [
+            # (l1, l2, expected)
+            ([2, 4, 3], [5, 6, 4], [7, 0, 8]),                        # 342 + 465 = 807
+            ([0], [0], [0]),                                          # zero plus zero
+            ([9, 9, 9, 9, 9, 9, 9], [9, 9, 9, 9], [8, 9, 9, 9, 0, 0, 0, 1]),  # different lengths, carry chain
+            ([5], [5], [0, 1]),                                       # single digits producing a new digit
+            ([1], [9, 9, 9], [0, 0, 0, 1]),                           # carry ripples through the longer list
+            ([9, 9], [1], [0, 0, 1]),                                 # same, longer list first
+            ([1, 8], [0], [1, 8]),                                    # adding zero changes nothing
+            ([2, 4, 3], [5, 6], [7, 0, 4]),                           # 342 + 65 = 407
+            ([0, 1], [0, 1], [0, 2]),                                 # 10 + 10 = 20, zero in the ones place
+            ([9] * 100, [1], [0] * 100 + [1]),                        # upper bound length with a full carry chain
+        ]
 
-    print(f"\n{len(cases) - failures}/{len(cases)} passed")
+        for a, b, expected in cases:
+            with self.subTest(l1=a, l2=b):
+                result = to_list(self.solution.add_two_numbers(from_list(a), from_list(b)))
+                self.assertEqual(result, expected)
 
 
-test_add_two_numbers()
+if __name__ == '__main__':
+    unittest.main()

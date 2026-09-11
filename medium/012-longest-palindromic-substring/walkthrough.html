@@ -318,17 +318,18 @@
 <script>
 (function () {
   var CODE = [
-    "def longest_palindrome(s):",
-    "    best_start, best_len = 0, 0",
-    "    for centre in range(len(s)):",
-    "        for left, right in ((centre, centre), (centre, centre + 1)):",
-    "            while left >= 0 and right < len(s) and s[left] == s[right]:",
-    "                left -= 1",
-    "                right += 1",
-    "            length = right - left - 1",
-    "            if length > best_len:",
-    "                best_start, best_len = left + 1, length",
-    "    return s[best_start:best_start + best_len]"
+    "class Solution:",
+    "    def longest_palindrome(self, s: str) -> str:",
+    "        best_start, best_len = 0, 0",
+    "        for centre in range(len(s)):",
+    "            for left, right in ((centre, centre), (centre, centre + 1)):",
+    "                while left >= 0 and right < len(s) and s[left] == s[right]:",
+    "                    left -= 1",
+    "                    right += 1",
+    "                length = right - left - 1",
+    "                if length > best_len:",
+    "                    best_start, best_len = left + 1, length",
+    "        return s[best_start:best_start + best_len]"
   ];
 
   var S = "babad".split("");
@@ -354,34 +355,34 @@
     idea: {
       caption: "From each centre, push two pointers outward while the characters match.",
       s: S, centre: 2, gapAfter: -1, pal: null, stop: [], chips: [["left", "2", "new"], ["right", "2", "new"], ["best_len", "0"]],
-      meta: "Two runs per index: (centre, centre) and (centre, centre + 1).", hl: [2, 3, 4, 5, 6]
+      meta: "Two runs per index: (centre, centre) and (centre, centre + 1).", hl: [3, 4, 5, 6, 7]
     },
     t1: {
       caption: "Centre 1, odd: a matches a, then b matches b, then left goes out of bounds. Length 3 − (−1) − 1 = 3.",
       s: S, centre: 1, gapAfter: -1, pal: [0, 2], stop: [], chips: [["left", "−1"], ["right", "3"], ["length", "3"], ["best", "\"bab\"", "found"]],
-      meta: "best_start = left + 1 = <b>0</b>, best_len = <b>3</b>.", hl: [4, 5, 6, 7, 8, 9]
+      meta: "best_start = left + 1 = <b>0</b>, best_len = <b>3</b>.", hl: [5, 6, 7, 8, 9, 10]
     },
     t2: {
       caption: "Centre 2, odd: a and a match, then b and d do not. Length 4 − 0 − 1 = 3, a tie, so \"bab\" is kept.",
       s: S, centre: 2, gapAfter: -1, pal: [1, 3], stop: [0, 4], chips: [["left", "0"], ["right", "4"], ["length", "3"], ["best", "\"bab\"", "found"]],
-      meta: "3 &gt; 3 is false. No later centre beats it.", hl: [4, 7, 8],
+      meta: "3 &gt; 3 is false. No later centre beats it.", hl: [5, 8, 9],
       big: "\"bab\"", bigNote: "found from the centre at index 1"
     },
     pitfall: {
       caption: "s = \"cbbd\": only the even expansion between indices 1 and 2 finds \"bb\". Odd centres all stop at length 1.",
       s: "cbbd".split(""), centre: -1, gapAfter: 1, pal: [1, 2], stop: [0, 3], chips: [["left", "0"], ["right", "3"], ["length", "3 − 0 − 1 = 2"], ["best", "\"bb\"", "found"]],
-      meta: "Without the (centre, centre + 1) run the answer would wrongly be a single character.", hl: [3, 7],
+      meta: "Without the (centre, centre + 1) run the answer would wrongly be a single character.", hl: [4, 8],
       big: "\"bb\"", bigNote: "even-length palindromes live on the gaps"
     },
     complexity: {
       caption: "2n − 1 centres, each expansion at most n/2 steps, two pointers of state.",
       s: S, centre: -1, gapAfter: -1, pal: [0, 2], stop: [], chips: [["best", "\"bab\""]],
-      meta: "Most expansions fail on the first comparison, so the constant is small.", hl: [2, 3, 4],
+      meta: "Most expansions fail on the first comparison, so the constant is small.", hl: [3, 4, 5],
       big: "O(n²) time · O(1) space", bigNote: "versus O(n³) for checking every substring"
     },
     final: {
       caption: "The whole solution.",
-      s: S, centre: -1, gapAfter: -1, pal: [0, 2], stop: [], chips: [["best", "\"bab\"", "found"]], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      s: S, centre: -1, gapAfter: -1, pal: [0, 2], stop: [], chips: [["best", "\"bab\"", "found"]], meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     }
   };
 

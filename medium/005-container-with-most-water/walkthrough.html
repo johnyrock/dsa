@@ -321,18 +321,19 @@
 <script>
 (function () {
   var CODE = [
-    "def max_area(height):",
-    "    left, right = 0, len(height) - 1",
-    "    best = 0",
-    "    while left < right:",
-    "        area = (right - left) * min(height[left], height[right])",
-    "        if area > best:",
-    "            best = area",
-    "        if height[left] < height[right]:",
-    "            left += 1",
-    "        else:",
-    "            right -= 1",
-    "    return best"
+    "class Solution:",
+    "    def max_area(self, height: list[int]) -> int:",
+    "        left, right = 0, len(height) - 1",
+    "        best = 0",
+    "        while left < right:",
+    "            area = (right - left) * min(height[left], height[right])",
+    "            if area > best:",
+    "                best = area",
+    "            if height[left] < height[right]:",
+    "                left += 1",
+    "            else:",
+    "                right -= 1",
+    "        return best"
   ];
 
   var H = [1, 8, 6, 2, 5, 4, 8, 3, 7];
@@ -357,34 +358,34 @@
     idea: {
       caption: "Two pointers from the ends; each step retires the shorter wall.",
       h: H, left: 0, right: 8, retired: [], chips: [["left", "0", "new"], ["right", "8", "new"], ["best", "0", "new"]],
-      meta: "At most n − 1 moves before the pointers meet.", hl: [1, 3, 7, 8, 9, 10]
+      meta: "At most n − 1 moves before the pointers meet.", hl: [2, 4, 8, 9, 10, 11]
     },
     t1: {
       caption: "Width 8 × min(1, 7) = 8. The left wall is shorter, so left moves in.",
       h: H, left: 0, right: 8, retired: [], chips: [["left", "0"], ["right", "8"], ["area", "8"], ["best", "8", "new"]],
-      meta: "height[0] = 1 &lt; height[8] = 7 → <b>left += 1</b>", hl: [4, 5, 6, 7, 8]
+      meta: "height[0] = 1 &lt; height[8] = 7 → <b>left += 1</b>", hl: [5, 6, 7, 8, 9]
     },
     t2: {
       caption: "Width 7 × min(8, 7) = 49. The right wall is shorter now, so right moves in.",
       h: H, left: 1, right: 8, retired: [0], chips: [["left", "1"], ["right", "8"], ["area", "49"], ["best", "49", "found"]],
-      meta: "8 ≥ 7 → <b>right −= 1</b>. Later pairs (1,7)=18, (1,6)=40, … never beat 49.", hl: [4, 5, 6, 9, 10],
+      meta: "8 ≥ 7 → <b>right −= 1</b>. Later pairs (1,7)=18, (1,6)=40, … never beat 49.", hl: [5, 6, 7, 10, 11],
       big: "49", bigNote: "found on the second iteration"
     },
     pitfall: {
       caption: "Always moving the taller wall: index 0 (height 1) never moves, every area is width × 1, and the rule reports 8.",
       h: H, left: 0, right: 1, retired: [2, 3, 4, 5, 6, 7, 8], chips: [["move taller wall", "8"], ["correct", "49", "found"]],
-      meta: "The shorter wall caps the height, so shrinking the width around it can never gain.", hl: [7, 8, 9, 10],
+      meta: "The shorter wall caps the height, so shrinking the width around it can never gain.", hl: [8, 9, 10, 11],
       big: "8, not 49", bigNote: "the shorter wall is the only one worth moving"
     },
     complexity: {
       caption: "One pointer moves per iteration; they meet after at most n − 1 iterations.",
       h: H, left: 4, right: 5, retired: [0, 1, 2, 3, 6, 7, 8], chips: [["best", "49"]],
-      meta: "Every skipped pair was provably beaten by a computed one.", hl: [3, 7, 8, 9, 10],
+      meta: "Every skipped pair was provably beaten by a computed one.", hl: [4, 8, 9, 10, 11],
       big: "O(n) time · O(1) space", bigNote: "versus O(n²) for every pair"
     },
     final: {
       caption: "The whole solution.",
-      h: H, left: 1, right: 8, retired: [], chips: [["best", "49", "found"]], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+      h: H, left: 1, right: 8, retired: [], chips: [["best", "49", "found"]], meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     }
   };
 

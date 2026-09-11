@@ -1,28 +1,29 @@
-from valid_anagram import is_anagram
+import unittest
+from valid_anagram import Solution
 
 
-def test_is_anagram():
-    cases = [
-        # (s, t, expected)
-        ("anagram", "nagaram", True),
-        ("rat", "car", False),
-        ("aa", "a", False),                 # different lengths, must exit early
-        ("a", "aa", False),                 # same mismatch the other way round
-        ("a", "a", True),                   # single character
-        ("aacc", "ccac", False),            # same letter set, wrong counts
-        ("ab", "ba", True),                 # simple swap
-        ("abc", "abd", False),              # same length, one letter differs
-    ]
+class TestValidAnagram(unittest.TestCase):
+    def setUp(self):
+        self.solution = Solution()
 
-    failures = 0
-    for s, t, expected in cases:
-        result = is_anagram(s, t)
-        status = "PASS" if result == expected else "FAIL"
-        if status == "FAIL":
-            failures += 1
-        print(f"{status}  s={s!r} t={t!r} -> {result} (expected {expected})")
+    def test_is_anagram(self):
+        cases = [
+            # (s, t, expected)
+            ("anagram", "nagaram", True),
+            ("rat", "car", False),
+            ("aa", "a", False),                 # different lengths, must exit early
+            ("a", "aa", False),                 # same mismatch the other way round
+            ("a", "a", True),                   # single character
+            ("aacc", "ccac", False),            # same letter set, wrong counts
+            ("ab", "ba", True),                 # simple swap
+            ("abc", "abd", False),              # same length, one letter differs
+        ]
 
-    print(f"\n{len(cases) - failures}/{len(cases)} passed")
+        for s, t, expected in cases:
+            with self.subTest(s=s, t=t):
+                result = self.solution.is_anagram(s, t)
+                self.assertEqual(result, expected)
 
 
-test_is_anagram()
+if __name__ == '__main__':
+    unittest.main()

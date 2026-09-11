@@ -327,23 +327,24 @@
 <script>
 (function () {
   var CODE = [
-    "def num_islands(grid):",
-    "    rows, cols = len(grid), len(grid[0])",
-    "    count = 0",
-    "    for r in range(rows):",
-    "        for c in range(cols):",
-    "            if grid[r][c] != \"1\":",
-    "                continue",
-    "            count += 1",
-    "            grid[r][c] = \"0\"",
-    "            stack = [(r, c)]",
-    "            while stack:",
-    "                cr, cc = stack.pop()",
-    "                for nr, nc in ((cr + 1, cc), (cr - 1, cc), (cr, cc + 1), (cr, cc - 1)):",
-    "                    if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == \"1\":",
-    "                        grid[nr][nc] = \"0\"",
-    "                        stack.append((nr, nc))",
-    "    return count"
+    "class Solution:",
+    "    def num_islands(self, grid: list[list[str]]) -> int:",
+    "        rows, cols = len(grid), len(grid[0])",
+    "        count = 0",
+    "        for r in range(rows):",
+    "            for c in range(cols):",
+    "                if grid[r][c] != \"1\":",
+    "                    continue",
+    "                count += 1",
+    "                grid[r][c] = \"0\"",
+    "                stack = [(r, c)]",
+    "                while stack:",
+    "                    cr, cc = stack.pop()",
+    "                    for nr, nc in ((cr + 1, cc), (cr - 1, cc), (cr, cc + 1), (cr, cc - 1)):",
+    "                        if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == \"1\":",
+    "                            grid[nr][nc] = \"0\"",
+    "                            stack.append((nr, nc))",
+    "        return count"
   ];
 
   // 1 = land, 0 = water, 2 = sunk (already flood-filled)
@@ -392,36 +393,36 @@
     idea: {
       caption: "Scan every cell; on a '1', count it and flood-fill with a stack, sinking cells to '0' as they are pushed.",
       g: G0, cur: null, scan: [0, 0], chips: [["count", "0", "new"], ["stack", "[]", "new"]],
-      meta: "Sinking is the visited set. Mark on push so nothing is pushed twice.", hl: [5, 6, 7, 8, 9, 13, 14, 15]
+      meta: "Sinking is the visited set. Mark on push so nothing is pushed twice.", hl: [6, 7, 8, 9, 10, 14, 15, 16]
     },
     t1: {
       caption: "(0, 0) is land: count = 1. The flood fill sinks (0, 0), (1, 0), (0, 1), (1, 1).",
       g: [[2, 2, 0, 0, 0], [2, 1, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 1, 1]], cur: [0, 1], scan: [0, 0],
       chips: [["count", "1", "found"], ["stack", "[(1,0), (1,1)]", "new"]],
-      meta: "Pop (0, 1): neighbour (1, 1) is land → sink, push. Later scan steps see water here.", hl: [10, 11, 12, 13, 14, 15]
+      meta: "Pop (0, 1): neighbour (1, 1) is land → sink, push. Later scan steps see water here.", hl: [11, 12, 13, 14, 15, 16]
     },
     t2: {
       caption: "(2, 2) alone: count = 2. (3, 3) then (3, 4): count = 3. Scan ends.",
       g: G2, cur: [3, 4], scan: [3, 3], chips: [["count", "3", "found"], ["stack", "[]"]],
-      meta: "Every land cell pushed once, every cell scanned once.", hl: [7, 16],
+      meta: "Every land cell pushed once, every cell scanned once.", hl: [8, 17],
       big: "3", bigNote: "each island counted on its first cell only"
     },
     pitfall: {
       caption: "A checkerboard has 8 islands. Adding diagonal neighbours would merge them into 1.",
       g: CHECKER, cur: null, scan: null, chips: [["4 directions", "8", "found"], ["8 directions", "1"]],
-      meta: "Also: 0 ≤ nr, not just nr &lt; rows, or grid[-1] wraps to the last row.", hl: [12, 13],
+      meta: "Also: 0 ≤ nr, not just nr &lt; rows, or grid[-1] wraps to the last row.", hl: [13, 14],
       big: "8, not 1", bigNote: "only edges connect, never corners"
     },
     complexity: {
       caption: "Every cell scanned once; every land cell pushed and popped at most once.",
       g: G2, cur: null, scan: null, chips: [["cells", "20"], ["pushes", "7"]],
-      meta: "The grid doubles as the visited set, so no extra memory for that.", hl: [3, 4, 10],
+      meta: "The grid doubles as the visited set, so no extra memory for that.", hl: [4, 5, 11],
       big: "O(m × n) time · O(m × n) stack worst case", bigNote: "an explicit stack avoids the recursion limit"
     },
     final: {
       caption: "The whole solution.",
       g: G2, cur: null, scan: null, chips: [["count", "3", "found"]], meta: "",
-      hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+      hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
     }
   };
 

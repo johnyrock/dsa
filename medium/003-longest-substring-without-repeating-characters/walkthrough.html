@@ -318,16 +318,17 @@
 <script>
 (function () {
   var CODE = [
-    "def length_of_longest_substring(s):",
-    "    last_seen = {}",
-    "    left = 0",
-    "    best = 0",
-    "    for right, ch in enumerate(s):",
-    "        if ch in last_seen and last_seen[ch] >= left:",
-    "            left = last_seen[ch] + 1",
-    "        last_seen[ch] = right",
-    "        best = max(best, right - left + 1)",
-    "    return best"
+    "class Solution:",
+    "    def length_of_longest_substring(self, s: str) -> int:",
+    "        last_seen = {}",
+    "        left = 0",
+    "        best = 0",
+    "        for right, ch in enumerate(s):",
+    "            if ch in last_seen and last_seen[ch] >= left:",
+    "                left = last_seen[ch] + 1",
+    "            last_seen[ch] = right",
+    "            best = max(best, right - left + 1)",
+    "        return best"
   ];
 
   var S = "abcabcbb".split("");
@@ -352,34 +353,34 @@
     idea: {
       caption: "A dictionary of last-seen indices tells left exactly where to jump.",
       s: S, left: 0, right: -1, chips: [["last_seen", "{}", "new"], ["left", "0", "new"], ["best", "0", "new"]],
-      meta: "Jump only if the earlier copy is inside the window: last_seen[ch] ≥ left.", hl: [1, 2, 3, 5, 6]
+      meta: "Jump only if the earlier copy is inside the window: last_seen[ch] ≥ left.", hl: [2, 3, 4, 6, 7]
     },
     t2: {
       caption: "a, b, c are all new. The window grows to \"abc\" and best becomes 3.",
       s: S, left: 0, right: 2, chips: [["a", "0"], ["b", "1"], ["c", "2", "new"], ["left", "0"], ["best", "3", "found"]],
-      meta: "right = 2 · window length 2 − 0 + 1 = <b>3</b>", hl: [7, 8]
+      meta: "right = 2 · window length 2 − 0 + 1 = <b>3</b>", hl: [8, 9]
     },
     t3: {
       caption: "right = 3 is another a. last_seen[a] = 0 ≥ left, so left jumps to 1. Window: \"bca\".",
       s: S, left: 1, right: 3, chips: [["a", "3", "new"], ["b", "1"], ["c", "2"], ["left", "1", "new"], ["best", "3"]],
-      meta: "left = 0 + 1 = <b>1</b> · window length 3 − 1 + 1 = 3, best unchanged", hl: [5, 6, 7],
+      meta: "left = 0 + 1 = <b>1</b> · window length 3 − 1 + 1 = 3, best unchanged", hl: [6, 7, 8],
       big: "3", bigNote: "every later window is also at most 3 wide"
     },
     pitfall: {
       caption: "s = \"abba\": the final a was last seen at 0, but left is already 2. Do not move left backwards.",
       s: "abba".split(""), left: 2, right: 3, chips: [["a", "0 → 3"], ["b", "2"], ["left", "2 (not 1)", "found"], ["best", "2"]],
-      meta: "0 ≥ 2 is false, so no jump. Window \"ba\", length <b>2</b>. Without the check: \"bba\", wrongly 3.", hl: [5],
+      meta: "0 ≥ 2 is false, so no jump. Window \"ba\", length <b>2</b>. Without the check: \"bba\", wrongly 3.", hl: [6],
       big: "2, not 3", bigNote: "the ≥ left check keeps left moving one way"
     },
     complexity: {
       caption: "right moves n times, left moves forward at most n times, every step is O(1).",
       s: S, left: 7, right: 7, chips: [["last_seen", "≤ alphabet entries"], ["best", "3"]],
-      meta: "The dictionary never holds more than one entry per distinct character.", hl: [4, 5, 6],
+      meta: "The dictionary never holds more than one entry per distinct character.", hl: [5, 6, 7],
       big: "O(n) time · O(alphabet) space", bigNote: "versus O(n²) for checking every substring"
     },
     final: {
       caption: "The whole solution.",
-      s: S, left: 7, right: 7, chips: [["best", "3", "found"]], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+      s: S, left: 7, right: 7, chips: [["best", "3", "found"]], meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     }
   };
 

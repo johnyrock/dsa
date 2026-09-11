@@ -341,19 +341,20 @@
 <script>
 (function () {
   var CODE = [
-    "def merge_two_lists(list1, list2):",
-    "    dummy = ListNode()",
-    "    tail = dummy",
-    "    while list1 and list2:",
-    "        if list1.val <= list2.val:",
-    "            tail.next = list1",
-    "            list1 = list1.next",
-    "        else:",
-    "            tail.next = list2",
-    "            list2 = list2.next",
-    "        tail = tail.next",
-    "    tail.next = list1 or list2",
-    "    return dummy.next"
+    "class Solution:",
+    "    def merge_two_lists(self, list1: ListNode | None, list2: ListNode | None) -> ListNode | None:",
+    "        dummy = ListNode()",
+    "        tail = dummy",
+    "        while list1 and list2:",
+    "            if list1.val <= list2.val:",
+    "                tail.next = list1",
+    "                list1 = list1.next",
+    "            else:",
+    "                tail.next = list2",
+    "                list2 = list2.next",
+    "            tail = tail.next",
+    "        tail.next = list1 or list2",
+    "        return dummy.next"
   ];
 
   var L1 = [1, 2, 4];
@@ -377,46 +378,46 @@
     reframe: {
       caption: "Both lists are sorted, so the next smallest node is one of the two heads.",
       l1: L1, l2: L2, cur1: 0, cur2: 0, done1: 0, done2: 0, merged: [],
-      meta: "Only <b>1</b> and <b>1</b> can be next. Nothing deeper in either list can beat them.", hl: [4]
+      meta: "Only <b>1</b> and <b>1</b> can be next. Nothing deeper in either list can beat them.", hl: [5]
     },
     idea: {
       caption: "A dummy node sits in front of the result so the first append is not a special case.",
       l1: L1, l2: L2, cur1: 0, cur2: 0, done1: 0, done2: 0, merged: [],
-      meta: "tail starts on the dummy, so <b>tail.next = node</b> works even when nothing is attached.", hl: [1, 2]
+      meta: "tail starts on the dummy, so <b>tail.next = node</b> works even when nothing is attached.", hl: [2, 3]
     },
     t1: {
       caption: "Compare 1 and 1. 1 ≤ 1, so list1's node goes first. Merged: 1.",
       l1: L1, l2: L2, cur1: 0, cur2: 0, done1: 0, done2: 0, merged: [[1, "new"]],
-      meta: "1 ≤ 1 → <b>take from list1</b> · list1 advances to 2, tail moves onto the 1.", hl: [4, 5, 6, 10]
+      meta: "1 ≤ 1 → <b>take from list1</b> · list1 advances to 2, tail moves onto the 1.", hl: [5, 6, 7, 11]
     },
     t2: {
       caption: "Compare 2 and 1. 2 ≤ 1 is false, so list2's node goes next. Merged: 1 → 1.",
       l1: L1, l2: L2, cur1: 1, cur2: 0, done1: 1, done2: 0, merged: [[1, ""], [1, "new"]],
-      meta: "2 ≤ 1 is false → <b>take from list2</b> · list2 advances to 3.", hl: [7, 8, 9, 10]
+      meta: "2 ≤ 1 is false → <b>take from list2</b> · list2 advances to 3.", hl: [8, 9, 10, 11]
     },
     t3: {
       caption: "Compare 2 and 3. 2 ≤ 3, so list1 gives up a node again. Merged: 1 → 1 → 2.",
       l1: L1, l2: L2, cur1: 1, cur2: 1, done1: 1, done2: 1, merged: [[1, ""], [1, ""], [2, "new"]],
-      meta: "2 ≤ 3 → <b>take from list1</b> · same loop body, only the pointer that moves changes.", hl: [4, 5, 6, 10]
+      meta: "2 ≤ 3 → <b>take from list1</b> · same loop body, only the pointer that moves changes.", hl: [5, 6, 7, 11]
     },
     leftover: {
       caption: "The loop stops the moment list1 empties, leaving a 4 stranded in list2.",
       l1: L1, l2: L2, cur1: -1, cur2: 2, done1: 3, done2: 2,
       merged: [[1, ""], [1, ""], [2, ""], [3, ""], [4, ""], [4, "found"]],
-      meta: "list1 is empty, list2 still holds <b>4</b>. One link, <b>tail.next = list1 or list2</b>, attaches it.", hl: [3, 11]
+      meta: "list1 is empty, list2 still holds <b>4</b>. One link, <b>tail.next = list1 or list2</b>, attaches it.", hl: [4, 12]
     },
     complexity: {
       caption: "Each node is compared once, relinked once, and never looked at again.",
       l1: L1, l2: L2, cur1: -1, cur2: -1, done1: 3, done2: 3,
       merged: [[1, ""], [1, ""], [2, ""], [3, ""], [4, ""], [4, ""]],
-      meta: "Six nodes in, six loop-or-link steps out. Only the dummy is allocated.", hl: [3, 10, 11],
+      meta: "Six nodes in, six loop-or-link steps out. Only the dummy is allocated.", hl: [4, 11, 12],
       big: "O(n + m) time · O(1) space", bigNote: "versus O((n+m) log(n+m)) time for collect-sort-rebuild"
     },
     final: {
       caption: "The whole solution.",
       l1: L1, l2: L2, cur1: -1, cur2: -1, done1: 3, done2: 3,
       merged: [[1, ""], [1, ""], [2, ""], [3, ""], [4, ""], [4, ""]],
-      meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
     }
   };
 

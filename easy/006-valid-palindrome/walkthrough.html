@@ -327,18 +327,19 @@
 <script>
 (function () {
   var CODE = [
-    "def is_palindrome(s):",
-    "    left, right = 0, len(s) - 1",
-    "    while left < right:",
-    "        while left < right and not s[left].isalnum():",
+    "class Solution:",
+    "    def is_palindrome(self, s: str) -> bool:",
+    "        left, right = 0, len(s) - 1",
+    "        while left < right:",
+    "            while left < right and not s[left].isalnum():",
+    "                left += 1",
+    "            while left < right and not s[right].isalnum():",
+    "                right -= 1",
+    "            if s[left].lower() != s[right].lower():",
+    "                return False",
     "            left += 1",
-    "        while left < right and not s[right].isalnum():",
     "            right -= 1",
-    "        if s[left].lower() != s[right].lower():",
-    "            return False",
-    "        left += 1",
-    "        right -= 1",
-    "    return True"
+    "        return True"
   ];
 
   var S = "No 'x' in Nixon";        // indices 2, 3, 5, 6, 9 are not alphanumeric
@@ -362,43 +363,43 @@
     reframe: {
       caption: "Comparing to the reverse is really just comparing mirrored pairs.",
       s: S, left: 0, right: 14, hits: [], dim: SKIPS, pairs: [],
-      meta: "left = <b>0</b>, right = <b>14</b> · position i against its mirror, walking inward.", hl: [1]
+      meta: "left = <b>0</b>, right = <b>14</b> · position i against its mirror, walking inward.", hl: [2]
     },
     idea: {
       caption: "Two pointers walk toward each other; each skips non-alphanumerics on its own side.",
       s: S, left: 0, right: 14, hits: [], dim: SKIPS, pairs: [],
-      meta: "left = <b>0</b>, right = <b>14</b> · skip, compare, step inward. No copy.", hl: [2, 3, 5]
+      meta: "left = <b>0</b>, right = <b>14</b> · skip, compare, step inward. No copy.", hl: [3, 4, 6]
     },
     t0: {
       caption: "left = 0, right = 14. Both are letters already, and 'N'.lower() == 'n'.",
       s: S, left: 0, right: 14, hits: [], dim: SKIPS,
       pairs: [["N = n", "found"]],
-      meta: "left = <b>0</b>, right = <b>14</b> · match, so both step inward.", hl: [7, 9, 10]
+      meta: "left = <b>0</b>, right = <b>14</b> · match, so both step inward.", hl: [8, 10, 11]
     },
     t1: {
       caption: "left skipped the space at 2 and the quote at 3 and stopped on x at 4.",
       s: S, left: 4, right: 12, hits: [0, 1, 13, 14], dim: SKIPS,
       pairs: [["N = n", "found"], ["o = o", "found"], ["x = x", "found"]],
-      meta: "left = <b>4</b>, right = <b>12</b> · the skip loop moved left twice, right not at all.", hl: [3, 4]
+      meta: "left = <b>4</b>, right = <b>12</b> · the skip loop moved left twice, right not at all.", hl: [4, 5]
     },
     pitfall: {
       caption: "s = \"race a car\". right skipped the space at 6 and landed on a; e does not match a.",
       s: BAD, left: 3, right: 5, hits: [0, 1, 2, 7, 8, 9], dim: [4, 6],
       pairs: [["r = r", "found"], ["a = a", "found"], ["c = c", "found"], ["e ≠ a", "bad"]],
-      meta: "left = <b>3</b>, right = <b>5</b> · one mismatch decides the whole string.", hl: [7, 8],
+      meta: "left = <b>3</b>, right = <b>5</b> · one mismatch decides the whole string.", hl: [8, 9],
       big: "False", bigNote: "returned immediately, middle never read"
     },
     complexity: {
       caption: "Each pointer only moves inward, so together they cross each position at most once.",
       s: S, left: -1, right: -1, hits: [0, 1, 4, 7, 8, 10, 11, 12, 13, 14], dim: SKIPS,
       pairs: [["N = n", "found"], ["o = o", "found"], ["x = x", "found"], ["i = i", "found"], ["n = N", "found"]],
-      meta: "Five pairs checked, two integers stored.", hl: [2, 3, 5, 7],
+      meta: "Five pairs checked, two integers stored.", hl: [3, 4, 6, 8],
       big: "O(n) time · O(1) space", bigNote: "versus O(n) space for the cleaned copy"
     },
     final: {
       caption: "The whole solution.",
       s: S, left: -1, right: -1, hits: [], dim: SKIPS, pairs: [],
-      meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     }
   };
 

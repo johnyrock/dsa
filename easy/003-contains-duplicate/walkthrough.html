@@ -324,13 +324,14 @@
 <script>
 (function () {
   var CODE = [
-    "def contains_duplicate(nums):",
-    "    seen = set()",
-    "    for n in nums:",
-    "        if n in seen:",
-    "            return True",
-    "        seen.add(n)",
-    "    return False"
+    "class Solution:",
+    "    def contains_duplicate(self, nums: list[int]) -> bool:",
+    "        seen = set()",
+    "        for n in nums:",
+    "            if n in seen:",
+    "                return True",
+    "            seen.add(n)",
+    "        return False"
   ];
 
   var NUMS = [1, 2, 3, 1];
@@ -349,34 +350,34 @@
     },
     reframe: {
       caption: "Each element only asks one thing: have I walked past this value already?",
-      nums: NUMS, cur: 3, hits: [], seen: [], meta: "n = 1 · the question is membership, not comparison.", hl: [3]
+      nums: NUMS, cur: 3, hits: [], seen: [], meta: "n = 1 · the question is membership, not comparison.", hl: [4]
     },
     idea: {
       caption: "A set remembers the values we have passed. Membership is O(1) on average.",
-      nums: NUMS, cur: -1, hits: [], seen: [], meta: "Check for the value first, then add the current one.", hl: [3, 5]
+      nums: NUMS, cur: -1, hits: [], seen: [], meta: "Check for the value first, then add the current one.", hl: [4, 6]
     },
     t1: {
       caption: "Indices 0, 1, 2. Every value misses, so every value gets added.",
-      nums: NUMS, cur: 2, hits: [], seen: [[1], [2], [3, "new"]], meta: "3 in seen? <b>no</b> · seen = { 1, 2, 3 }", hl: [5]
+      nums: NUMS, cur: 2, hits: [], seen: [[1], [2], [3, "new"]], meta: "3 in seen? <b>no</b> · seen = { 1, 2, 3 }", hl: [6]
     },
     t2: {
       caption: "Index 3, n = 1. Already in seen, so the answer is True.",
-      nums: NUMS, cur: 3, hits: [0], seen: [[1, "found"], [2], [3]], meta: "1 in seen? <b>yes</b> · return immediately, index 3 is never added", hl: [4],
+      nums: NUMS, cur: 3, hits: [0], seen: [[1, "found"], [2], [3]], meta: "1 in seen? <b>yes</b> · return immediately, index 3 is never added", hl: [5],
       big: "True", bigNote: "returned, loop stops here"
     },
     allunique: {
       caption: "nums = [1, 2, 3, 4]. Every check misses and the set fills completely.",
-      nums: UNIQ, cur: -1, hits: [], seen: [[1], [2], [3], [4]], meta: "Loop ran off the end · seen holds all 4 values.", hl: [6],
+      nums: UNIQ, cur: -1, hits: [], seen: [[1], [2], [3], [4]], meta: "Loop ran off the end · seen holds all 4 values.", hl: [7],
       big: "False", bigNote: "the trailing return does the work"
     },
     complexity: {
       caption: "One pass, O(1) work per element.",
-      nums: UNIQ, cur: -1, hits: [], seen: [[1], [2], [3], [4]], meta: "Worst case the set holds every element.", hl: [2, 3, 5],
+      nums: UNIQ, cur: -1, hits: [], seen: [[1], [2], [3], [4]], meta: "Worst case the set holds every element.", hl: [3, 4, 6],
       big: "O(n) time · O(n) space", bigNote: "versus O(n²) brute force, O(n log n) sorting"
     },
     final: {
       caption: "The whole solution.",
-      nums: NUMS, cur: -1, hits: [], seen: [], meta: "", hl: [0, 1, 2, 3, 4, 5, 6]
+      nums: NUMS, cur: -1, hits: [], seen: [], meta: "", hl: [1, 2, 3, 4, 5, 6, 7]
     }
   };
 

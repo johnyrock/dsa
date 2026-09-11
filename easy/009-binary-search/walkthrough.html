@@ -336,17 +336,18 @@
 <script>
 (function () {
   var CODE = [
-    "def search(nums, target):",
-    "    lo, hi = 0, len(nums) - 1",
-    "    while lo <= hi:",
-    "        mid = (lo + hi) // 2",
-    "        if nums[mid] == target:",
-    "            return mid",
-    "        if nums[mid] < target:",
-    "            lo = mid + 1",
-    "        else:",
-    "            hi = mid - 1",
-    "    return -1"
+    "class Solution:",
+    "    def search(self, nums: list[int], target: int) -> int:",
+    "        lo, hi = 0, len(nums) - 1",
+    "        while lo <= hi:",
+    "            mid = (lo + hi) // 2",
+    "            if nums[mid] == target:",
+    "                return mid",
+    "            if nums[mid] < target:",
+    "                lo = mid + 1",
+    "            else:",
+    "                hi = mid - 1",
+    "        return -1"
   ];
 
   var NUMS = [-1, 0, 3, 5, 9, 12];
@@ -366,44 +367,44 @@
     reframe: {
       caption: "In a sorted array, one comparison in the middle decides a whole half.",
       nums: NUMS, target: 9, lo: 0, hi: 5, mid: 2, ptrs: [["lo", 0, "found"], ["mid", 2, "new"], ["hi", 5, "found"]],
-      meta: "nums[2] = 3 &lt; 9, so indices <b>0, 1 and 2</b> are all too small.", hl: [3]
+      meta: "nums[2] = 3 &lt; 9, so indices <b>0, 1 and 2</b> are all too small.", hl: [4]
     },
     loop: {
       caption: "lo and hi bound the window that could still contain the target.",
       nums: NUMS, target: 9, lo: 0, hi: 5, mid: 2, ptrs: [["lo", 0, "found"], ["mid", 2, "new"], ["hi", 5, "found"]],
-      meta: "The window is nums[lo .. hi]. It is non-empty while <b>lo &lt;= hi</b>.", hl: [1, 2, 3]
+      meta: "The window is nums[lo .. hi]. It is non-empty while <b>lo &lt;= hi</b>.", hl: [2, 3, 4]
     },
     t1: {
       caption: "Step 1 · lo = 0, mid = 2, hi = 5.",
       nums: NUMS, target: 9, lo: 0, hi: 5, mid: 2, ptrs: [["lo", 0, "found"], ["mid", 2, "new"], ["hi", 5, "found"]],
-      meta: "nums[2] = 3 &lt; 9 → search right: <b>lo = mid + 1 = 3</b>", hl: [3, 6, 7]
+      meta: "nums[2] = 3 &lt; 9 → search right: <b>lo = mid + 1 = 3</b>", hl: [4, 7, 8]
     },
     t2: {
       caption: "Step 2 · lo = 3, mid = 4, hi = 5. Half the array is already gone.",
       nums: NUMS, target: 9, lo: 3, hi: 5, mid: 4, ptrs: [["lo", 3, "found"], ["mid", 4, "new"], ["hi", 5, "found"]],
-      meta: "Window nums[3 .. 5] · new <b>mid = (3 + 5) // 2 = 4</b>", hl: [2, 3]
+      meta: "Window nums[3 .. 5] · new <b>mid = (3 + 5) // 2 = 4</b>", hl: [3, 4]
     },
     t3: {
       caption: "Step 3 · nums[mid] == target, so return mid.",
       nums: NUMS, target: 9, lo: 3, hi: 5, mid: 4, ptrs: [["lo", 3, "found"], ["mid", 4, "new"], ["hi", 5, "found"]],
-      meta: "nums[4] = 9 == target · <b>found at index 4</b>", hl: [4, 5],
+      meta: "nums[4] = 9 == target · <b>found at index 4</b>", hl: [5, 6],
       big: "4", bigNote: "returned after 2 comparisons"
     },
     pitfall: {
       caption: "target = 2 is missing. lo walks past hi and the window empties.",
       nums: NUMS, target: 2, lo: 2, hi: 1, mid: -1, ptrs: [["lo", 2, "found"], ["mid", "—", ""], ["hi", 1, "found"]],
-      meta: "lo = 2 &gt; hi = 1 → the window is empty, so <b>2 is not in nums</b>.", hl: [2, 10],
+      meta: "lo = 2 &gt; hi = 1 → the window is empty, so <b>2 is not in nums</b>.", hl: [3, 11],
       big: "-1", bigNote: "lo crossing hi is the proof of absence"
     },
     complexity: {
       caption: "Each pass halves the window: 6 → 3 → 1 → 0.",
       nums: NUMS, target: 9, lo: 0, hi: 5, mid: 2, ptrs: [["lo", 0, "found"], ["mid", 2, "new"], ["hi", 5, "found"]],
-      meta: "Constant work per pass, and the window never grows.", hl: [2, 3],
+      meta: "Constant work per pass, and the window never grows.", hl: [3, 4],
       big: "O(log n) time · O(1) space", bigNote: "versus O(n) time for the linear scan"
     },
     final: {
       caption: "The whole solution.",
-      nums: NUMS, target: 9, lo: -1, hi: -1, mid: -1, ptrs: [], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      nums: NUMS, target: 9, lo: -1, hi: -1, mid: -1, ptrs: [], meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     }
   };
 

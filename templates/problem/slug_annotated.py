@@ -1,3 +1,4 @@
 # Line-by-line commented version. Fill in after the clean solution is reviewed.
-def solve():
-    pass
+class Solution:
+    def solve(self, nums: list[int]) -> int:
+        pass

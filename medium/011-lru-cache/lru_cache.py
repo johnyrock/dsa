@@ -1,5 +1,5 @@
 class Node:
-    def __init__(self, key=0, val=0):
+    def __init__(self, key: int = 0, val: int = 0) -> None:
         self.key = key
         self.val = val
         self.prev = None
@@ -7,7 +7,7 @@ class Node:
 
 
 class LRUCache:
-    def __init__(self, capacity):
+    def __init__(self, capacity: int) -> None:
         self.capacity = capacity
         self.nodes = {}        # key -> Node
         self.head = Node()     # sentinel: most recently used side
@@ -15,17 +15,17 @@ class LRUCache:
         self.head.next = self.tail
         self.tail.prev = self.head
 
-    def _unlink(self, node):
+    def _unlink(self, node: Node) -> None:
         node.prev.next = node.next
         node.next.prev = node.prev
 
-    def _push_front(self, node):
+    def _push_front(self, node: Node) -> None:
         node.prev = self.head
         node.next = self.head.next
         self.head.next.prev = node
         self.head.next = node
 
-    def get(self, key):
+    def get(self, key: int) -> int:
         if key not in self.nodes:
             return -1
         node = self.nodes[key]
@@ -33,7 +33,7 @@ class LRUCache:
         self._push_front(node)
         return node.val
 
-    def put(self, key, value):
+    def put(self, key: int, value: int) -> None:
         if key in self.nodes:
             node = self.nodes[key]
             node.val = value

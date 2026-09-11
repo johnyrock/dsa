@@ -1,6 +1,6 @@
 # A doubly linked node. It stores its own key so that when it is evicted from the tail we can also delete it from the dictionary.
 class Node:
-    def __init__(self, key=0, val=0):
+    def __init__(self, key: int = 0, val: int = 0) -> None:
         self.key = key
         self.val = val
         self.prev = None
@@ -8,7 +8,7 @@ class Node:
 
 
 class LRUCache:
-    def __init__(self, capacity):
+    def __init__(self, capacity: int) -> None:
         self.capacity = capacity
         # The dictionary gives O(1) lookup by key. Its values are nodes, not plain values, so a hit also tells us WHERE the key sits in the recency order.
         self.nodes = {}        # key -> Node
@@ -19,18 +19,18 @@ class LRUCache:
         self.tail.prev = self.head
 
     # Detach a node from wherever it is. O(1) because the node knows both its neighbours.
-    def _unlink(self, node):
+    def _unlink(self, node: Node) -> None:
         node.prev.next = node.next
         node.next.prev = node.prev
 
     # Insert a node right after head, making it the most recently used.
-    def _push_front(self, node):
+    def _push_front(self, node: Node) -> None:
         node.prev = self.head
         node.next = self.head.next
         self.head.next.prev = node
         self.head.next = node
 
-    def get(self, key):
+    def get(self, key: int) -> int:
         if key not in self.nodes:
             return -1
         node = self.nodes[key]
@@ -39,7 +39,7 @@ class LRUCache:
         self._push_front(node)
         return node.val
 
-    def put(self, key, value):
+    def put(self, key: int, value: int) -> None:
         if key in self.nodes:
             # Update in place, then treat it as a use. The size does not change, so no eviction check is needed.
             node = self.nodes[key]

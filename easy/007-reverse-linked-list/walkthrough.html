@@ -340,15 +340,16 @@
 <script>
 (function () {
   var CODE = [
-    "def reverse_list(head):",
-    "    prev = None",
-    "    curr = head",
-    "    while curr:",
-    "        next_node = curr.next",
-    "        curr.next = prev",
-    "        prev = curr",
-    "        curr = next_node",
-    "    return prev"
+    "class Solution:",
+    "    def reverse_list(self, head: ListNode | None) -> ListNode | None:",
+    "        prev = None",
+    "        curr = head",
+    "        while curr:",
+    "            next_node = curr.next",
+    "            curr.next = prev",
+    "            prev = curr",
+    "            curr = next_node",
+    "        return prev"
   ];
 
   // Index 0 is the None sentinel; indices 1..4 are the nodes 1, 2, 3, 4.
@@ -377,42 +378,42 @@
       phase: "about to flip node 1",
       nodes: NODES, arrows: FWD, cur: 1, prev: -1, nxt: -1, dim: [2, 3, 4],
       chips: [["prev", "None", ""], ["curr", "1", "new"], ["next", "?", "lost"]],
-      meta: "Set <b>1.next = None</b> right now and nodes 2, 3, 4 become unreachable.", hl: [5]
+      meta: "Set <b>1.next = None</b> right now and nodes 2, 3, 4 become unreachable.", hl: [6]
     },
     idea: {
       caption: "Three pointers: prev behind, curr here, next_node saved before the flip.",
       phase: "before the loop",
       nodes: NODES, arrows: FWD, cur: 1, prev: -1, nxt: 2, dim: [3, 4],
       chips: [["prev", "None", ""], ["curr", "1", "new"], ["next", "2", "found"]],
-      meta: "Save, flip, advance — the same four moves every iteration.", hl: [4, 5, 6, 7]
+      meta: "Save, flip, advance — the same four moves every iteration.", hl: [5, 6, 7, 8]
     },
     t1: {
       caption: "Iteration 1. Save next = 2, flip 1 to point at None, then advance both pointers.",
       phase: "flipping",
       nodes: NODES, arrows: ["←", "→", "→", "→"], cur: 1, prev: -1, nxt: 2, dim: [3, 4],
       chips: [["prev", "None", ""], ["curr", "1", "new"], ["next", "2", "found"]],
-      meta: "After the flip: <b>prev = 1</b>, <b>curr = 2</b>. Reversed so far: None &larr; 1", hl: [4, 5, 6, 7]
+      meta: "After the flip: <b>prev = 1</b>, <b>curr = 2</b>. Reversed so far: None &larr; 1", hl: [5, 6, 7, 8]
     },
     t2: {
       caption: "Iteration 2. Save next = 3, flip 2 to point back at 1, then advance.",
       phase: "flipping",
       nodes: NODES, arrows: ["←", "←", "→", "→"], cur: 2, prev: 1, nxt: 3, dim: [4],
       chips: [["prev", "1", ""], ["curr", "2", "new"], ["next", "3", "found"]],
-      meta: "After the flip: <b>prev = 2</b>, <b>curr = 3</b>. Reversed so far: None &larr; 1 &larr; 2", hl: [4, 5, 6, 7]
+      meta: "After the flip: <b>prev = 2</b>, <b>curr = 3</b>. Reversed so far: None &larr; 1 &larr; 2", hl: [5, 6, 7, 8]
     },
     t3: {
       caption: "Iteration 3. Save next = 4, flip 3 to point back at 2, then advance.",
       phase: "flipping",
       nodes: NODES, arrows: ["←", "←", "←", "→"], cur: 3, prev: 2, nxt: 4, dim: [],
       chips: [["prev", "2", ""], ["curr", "3", "new"], ["next", "4", "found"]],
-      meta: "After the flip: <b>prev = 3</b>, <b>curr = 4</b>. One iteration left.", hl: [4, 5, 6, 7]
+      meta: "After the flip: <b>prev = 3</b>, <b>curr = 4</b>. One iteration left.", hl: [5, 6, 7, 8]
     },
     pitfall: {
       caption: "Flip before saving and next_node reads the link you just overwrote. The tail is lost.",
       phase: "broken",
       nodes: NODES, arrows: ["←", "·", "→", "→"], cur: -1, prev: 1, nxt: -1, dim: [2, 3, 4],
       chips: [["prev", "1", ""], ["curr", "None", "lost"], ["next", "None", "lost"]],
-      meta: "The loop exits after one iteration and 2 &rarr; 3 &rarr; 4 is unreachable.", hl: [4, 5],
+      meta: "The loop exits after one iteration and 2 &rarr; 3 &rarr; 4 is unreachable.", hl: [5, 6],
       big: "[1]", bigNote: "silently wrong, no error raised"
     },
     complexity: {
@@ -420,14 +421,14 @@
       phase: "done",
       nodes: NODES, arrows: REV, cur: -1, prev: 4, nxt: -1, dim: [],
       chips: [["prev", "4", "found"], ["curr", "None", ""], ["next", "None", ""]],
-      meta: "curr fell off the end, so the loop stopped. prev is the new head.", hl: [3, 4, 5, 6, 7],
+      meta: "curr fell off the end, so the loop stopped. prev is the new head.", hl: [4, 5, 6, 7, 8],
       big: "O(n) time · O(1) space", bigNote: "versus O(n) space for copying the values out"
     },
     final: {
       caption: "The whole solution.",
       phase: "done",
       nodes: NODES, arrows: REV, cur: -1, prev: 4, nxt: -1, dim: [],
-      chips: [["prev", "4", "found"]], meta: "<b>return prev</b> hands back the node holding 4.", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+      chips: [["prev", "4", "found"]], meta: "<b>return prev</b> hands back the node holding 4.", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9],
       big: "4 → 3 → 2 → 1", bigNote: "same nodes, every arrow flipped"
     }
   };

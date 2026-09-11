@@ -1,20 +1,21 @@
-from slug import solve
+import unittest
+from slug import Solution
 
 
-def test_solve():
-    cases = [
-        # (input, expected)
-    ]
+class TestSlug(unittest.TestCase):
+    def setUp(self):
+        self.solution = Solution()
 
-    failures = 0
-    for args, expected in cases:
-        result = solve(args)
-        status = "PASS" if result == expected else "FAIL"
-        if status == "FAIL":
-            failures += 1
-        print(f"{status}  input={args} -> {result} (expected {expected})")
+    def test_solve(self):
+        cases = [
+            # (nums, expected)
+        ]
 
-    print(f"\n{len(cases) - failures}/{len(cases)} passed")
+        for nums, expected in cases:
+            with self.subTest(nums=nums):
+                result = self.solution.solve(nums)
+                self.assertEqual(result, expected)
 
 
-test_solve()
+if __name__ == '__main__':
+    unittest.main()

@@ -320,14 +320,15 @@
 <script>
 (function () {
   var CODE = [
-    "def two_sum(nums, target):",
-    "    seen = {}",
-    "    for i, n in enumerate(nums):",
-    "        complement = target - n",
-    "        if complement in seen:",
-    "            return [seen[complement], i]",
-    "        seen[n] = i",
-    "    return []"
+    "class Solution:",
+    "    def two_sum(self, nums: list[int], target: int) -> list[int]:",
+    "        seen = {}",
+    "        for i, n in enumerate(nums):",
+    "            complement = target - n",
+    "            if complement in seen:",
+    "                return [seen[complement], i]",
+    "            seen[n] = i",
+    "        return []"
   ];
 
   var NUMS = [2, 7, 11, 15];
@@ -345,33 +346,33 @@
     },
     reframe: {
       caption: "Each element only needs one specific partner: target − n.",
-      nums: NUMS, target: 9, cur: 0, hits: [], seen: [], meta: "n = 2, so the complement is 9 − 2 = <b>7</b>.", hl: [3]
+      nums: NUMS, target: 9, cur: 0, hits: [], seen: [], meta: "n = 2, so the complement is 9 − 2 = <b>7</b>.", hl: [4]
     },
     idea: {
       caption: "A dictionary remembers values we have passed, mapped to their index.",
-      nums: NUMS, target: 9, cur: -1, hits: [], seen: [], meta: "Check for the complement first, then store the current value.", hl: [4, 6]
+      nums: NUMS, target: 9, cur: -1, hits: [], seen: [], meta: "Check for the complement first, then store the current value.", hl: [5, 7]
     },
     t0: {
       caption: "i = 0, n = 2. Complement 7 is not in seen. Store 2 → 0.",
-      nums: NUMS, target: 9, cur: 0, hits: [], seen: [[2, 0, "new"]], meta: "complement = 9 − 2 = <b>7</b> · <b>not found</b>", hl: [6]
+      nums: NUMS, target: 9, cur: 0, hits: [], seen: [[2, 0, "new"]], meta: "complement = 9 − 2 = <b>7</b> · <b>not found</b>", hl: [7]
     },
     t1: {
       caption: "i = 1, n = 7. Complement 2 is in seen at index 0. Return [0, 1].",
-      nums: NUMS, target: 9, cur: 1, hits: [0], seen: [[2, 0, "found"]], meta: "complement = 9 − 7 = <b>2</b> · <b>found at index 0</b>", hl: [5],
+      nums: NUMS, target: 9, cur: 1, hits: [0], seen: [[2, 0, "found"]], meta: "complement = 9 − 7 = <b>2</b> · <b>found at index 0</b>", hl: [6],
       big: "[0, 1]", bigNote: "returned, loop stops here"
     },
     selfpair: {
       caption: "nums = [4, 1, 7], target = 8. At i = 0 the complement of 4 is 4 itself.",
-      nums: [4, 1, 7], target: 8, cur: 0, hits: [], seen: [], meta: "Check first: 4 is not in seen yet, so no self-match. Then store 4 → 0.", hl: [4, 6]
+      nums: [4, 1, 7], target: 8, cur: 0, hits: [], seen: [], meta: "Check first: 4 is not in seen yet, so no self-match. Then store 4 → 0.", hl: [5, 7]
     },
     complexity: {
       caption: "One pass, O(1) work per element.",
-      nums: NUMS, target: 9, cur: -1, hits: [], seen: [[2, 0], [7, 1], [11, 2], [15, 3]], meta: "Worst case the dictionary holds every element.", hl: [2, 4, 6],
+      nums: NUMS, target: 9, cur: -1, hits: [], seen: [[2, 0], [7, 1], [11, 2], [15, 3]], meta: "Worst case the dictionary holds every element.", hl: [3, 5, 7],
       big: "O(n) time · O(n) space", bigNote: "versus O(n²) time for brute force"
     },
     final: {
       caption: "The whole solution.",
-      nums: NUMS, target: 9, cur: -1, hits: [], seen: [], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7]
+      nums: NUMS, target: 9, cur: -1, hits: [], seen: [], meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8]
     }
   };
 

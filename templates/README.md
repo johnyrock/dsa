@@ -2,7 +2,9 @@
 
 To start a new problem, copy `problem/` to `<difficulty>/<NNN>-<slug>/` and rename the three
 `slug*` files to the problem's snake_case name, e.g. `two_sum.py`, `two_sum_annotated.py`,
-`test_two_sum.py`. Run a test with `python3 <folder>/test_<slug>.py`.
+`test_two_sum.py`; `main.py` keeps its name. Fix the import in `test_<slug>.py` and `main.py`,
+rename `solve` to the method the problem asks for, and adjust the type hints. Run a test with
+`cd <folder> && python3 test_<slug>.py`.
 
 ```bash
 cp -R templates/problem easy/002-valid-anagram

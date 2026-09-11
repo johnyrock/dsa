@@ -1,4 +1,5 @@
-from reverse_linked_list import ListNode, reverse_list
+import unittest
+from reverse_linked_list import ListNode, Solution
 
 
 def from_list(values):
@@ -21,28 +22,28 @@ def to_list(head, limit=10000):
     return values
 
 
-def test_reverse_list():
-    cases = [
-        # (values, expected)
-        ([1, 2, 3, 4, 5], [5, 4, 3, 2, 1]),
-        ([1, 2, 3, 4], [4, 3, 2, 1]),
-        ([1, 2], [2, 1]),
-        ([], []),                                   # empty list, head is None
-        ([7], [7]),                                 # single node, unchanged
-        ([1, 1, 2, 2], [2, 2, 1, 1]),               # duplicate values
-        ([-5000, 0, 5000], [5000, 0, -5000]),       # negatives and bounds
-        (list(range(10)), list(range(9, -1, -1))),  # longer list
-    ]
+class TestReverseLinkedList(unittest.TestCase):
+    def setUp(self):
+        self.solution = Solution()
 
-    failures = 0
-    for values, expected in cases:
-        result = to_list(reverse_list(from_list(values)))
-        status = "PASS" if result == expected else "FAIL"
-        if status == "FAIL":
-            failures += 1
-        print(f"{status}  values={values} -> {result} (expected {expected})")
+    def test_reverse_list(self):
+        cases = [
+            # (values, expected)
+            ([1, 2, 3, 4, 5], [5, 4, 3, 2, 1]),
+            ([1, 2, 3, 4], [4, 3, 2, 1]),
+            ([1, 2], [2, 1]),
+            ([], []),                                   # empty list, head is None
+            ([7], [7]),                                 # single node, unchanged
+            ([1, 1, 2, 2], [2, 2, 1, 1]),               # duplicate values
+            ([-5000, 0, 5000], [5000, 0, -5000]),       # negatives and bounds
+            (list(range(10)), list(range(9, -1, -1))),  # longer list
+        ]
 
-    print(f"\n{len(cases) - failures}/{len(cases)} passed")
+        for values, expected in cases:
+            with self.subTest(values=values):
+                result = to_list(self.solution.reverse_list(from_list(values)))
+                self.assertEqual(result, expected)
 
 
-test_reverse_list()
+if __name__ == '__main__':
+    unittest.main()

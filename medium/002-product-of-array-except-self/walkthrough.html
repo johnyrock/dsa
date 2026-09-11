@@ -316,18 +316,19 @@
 <script>
 (function () {
   var CODE = [
-    "def product_except_self(nums):",
-    "    n = len(nums)",
-    "    result = [1] * n",
-    "    prefix = 1",
-    "    for i in range(n):",
-    "        result[i] = prefix",
-    "        prefix *= nums[i]",
-    "    suffix = 1",
-    "    for i in range(n - 1, -1, -1):",
-    "        result[i] *= suffix",
-    "        suffix *= nums[i]",
-    "    return result"
+    "class Solution:",
+    "    def product_except_self(self, nums: list[int]) -> list[int]:",
+    "        n = len(nums)",
+    "        result = [1] * n",
+    "        prefix = 1",
+    "        for i in range(n):",
+    "            result[i] = prefix",
+    "            prefix *= nums[i]",
+    "        suffix = 1",
+    "        for i in range(n - 1, -1, -1):",
+    "            result[i] *= suffix",
+    "            suffix *= nums[i]",
+    "        return result"
   ];
 
   var NUMS = [1, 2, 3, 4];
@@ -360,29 +361,29 @@
     prefix: {
       caption: "Sweep left to right, writing the running prefix into result before folding in nums[i].",
       nums: NUMS, cur: 3, hits: [0, 1, 2], result: [1, 1, 2, 6], chips: [["prefix", "24", "new"]],
-      meta: "result = [1, 1, 2, 6]: each slot holds the product of everything to its left.", hl: [3, 4, 5, 6]
+      meta: "result = [1, 1, 2, 6]: each slot holds the product of everything to its left.", hl: [4, 5, 6, 7]
     },
     suffix: {
       caption: "Sweep right to left, multiplying the running suffix on top of what is already there.",
       nums: NUMS, cur: 0, hits: [1, 2, 3], result: [24, 12, 8, 6], chips: [["suffix", "24", "new"]],
-      meta: "Slot 0: 1 × 24 = <b>24</b>. Every slot is now left × right.", hl: [7, 8, 9, 10],
+      meta: "Slot 0: 1 × 24 = <b>24</b>. Every slot is now left × right.", hl: [8, 9, 10, 11],
       big: "[24, 12, 8, 6]", bigNote: "two passes, output array as the only storage"
     },
     zeros: {
       caption: "With a zero present, both sweeps produce zeros on the correct side and only the zero's own slot survives.",
       nums: [-1, 1, 0, -3, 3], cur: 2, hits: [], result: [0, 0, 9, 0, 0], chips: [["prefixes", "1, −1, −1, 0, 0"], ["suffixes", "0, 0, −9, 3, 1"]],
-      meta: "Slot 2: −1 × −9 = <b>9</b>. Everything else has a 0 on one side.", hl: [5, 9],
+      meta: "Slot 2: −1 × −9 = <b>9</b>. Everything else has a 0 on one side.", hl: [6, 10],
       big: "[0, 0, 9, 0, 0]", bigNote: "no zero counting, no special cases"
     },
     complexity: {
       caption: "Two linear passes, two scalars, and the output array.",
       nums: NUMS, cur: -1, hits: [], result: [24, 12, 8, 6], chips: [["prefix", "24"], ["suffix", "24"]],
-      meta: "Nothing grows with n except the answer itself.", hl: [4, 8],
+      meta: "Nothing grows with n except the answer itself.", hl: [5, 9],
       big: "O(n) time · O(1) extra space", bigNote: "versus O(n²) for the nested loop"
     },
     final: {
       caption: "The whole solution.",
-      nums: NUMS, cur: -1, hits: [], result: [24, 12, 8, 6], chips: [["prefix", "24"], ["suffix", "24"]], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+      nums: NUMS, cur: -1, hits: [], result: [24, 12, 8, 6], chips: [["prefix", "24"], ["suffix", "24"]], meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     }
   };
 

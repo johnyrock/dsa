@@ -321,15 +321,16 @@
 <script>
 (function () {
   var CODE = [
-    "def max_profit(prices):",
-    "    min_price = float(\"inf\")",
-    "    best = 0",
-    "    for price in prices:",
-    "        if price < min_price:",
-    "            min_price = price",
-    "        elif price - min_price > best:",
-    "            best = price - min_price",
-    "    return best"
+    "class Solution:",
+    "    def max_profit(self, prices: list[int]) -> int:",
+    "        min_price = float(\"inf\")",
+    "        best = 0",
+    "        for price in prices:",
+    "            if price < min_price:",
+    "                min_price = price",
+    "            elif price - min_price > best:",
+    "                best = price - min_price",
+    "        return best"
   ];
 
   var PRICES = [7, 1, 5, 3, 6, 4];
@@ -349,39 +350,39 @@
     reframe: {
       caption: "Stand on the sell day instead: the only buy worth making is the cheapest day before it.",
       prices: PRICES, cur: 4, hits: [1], chips: [["min price", "1"], ["best profit", "0"]],
-      meta: "Sell on day 4 at 6, buy at the cheapest earlier day: 6 − 1 = <b>5</b>.", hl: [6]
+      meta: "Sell on day 4 at 6, buy at the cheapest earlier day: 6 − 1 = <b>5</b>.", hl: [7]
     },
     idea: {
       caption: "Carry two numbers through one forward pass: the minimum so far and the best profit so far.",
       prices: PRICES, cur: -1, hits: [], chips: [["min price", "inf", "new"], ["best profit", "0", "new"]],
-      meta: "min_price starts at infinity, best starts at 0 so a losing trade is never taken.", hl: [1, 2]
+      meta: "min_price starts at infinity, best starts at 0 so a losing trade is never taken.", hl: [2, 3]
     },
     t1: {
       caption: "Days 0 and 1 are both new lows, so min_price falls to 1 and best stays 0.",
       prices: PRICES, cur: 1, hits: [1], chips: [["min price", "1", "new"], ["best profit", "0"]],
-      meta: "price = 1 &lt; min_price = 7 · <b>new low, no sale considered</b>", hl: [4, 5]
+      meta: "price = 1 &lt; min_price = 7 · <b>new low, no sale considered</b>", hl: [5, 6]
     },
     t4: {
       caption: "Day 4, price 6. Selling now against the 1 on day 1 gives a profit of 5.",
       prices: PRICES, cur: 4, hits: [1], chips: [["min price", "1"], ["best profit", "5", "found"]],
-      meta: "6 − 1 = <b>5</b>, which beats the previous best of 4.", hl: [6, 7],
+      meta: "6 − 1 = <b>5</b>, which beats the previous best of 4.", hl: [7, 8],
       big: "5", bigNote: "buy day 1 at 1, sell day 4 at 6"
     },
     falling: {
       caption: "prices = [7, 6, 4, 3, 1]. Every day is a new low, so no sale is ever considered.",
       prices: [7, 6, 4, 3, 1], cur: 4, hits: [4], chips: [["min price", "1"], ["best profit", "0", "found"]],
-      meta: "The elif never runs. best keeps its starting value.", hl: [2, 8],
+      meta: "The elif never runs. best keeps its starting value.", hl: [3, 9],
       big: "0", bigNote: "decline to trade, never return a loss"
     },
     complexity: {
       caption: "One pass, O(1) work per day, and only two variables held.",
       prices: PRICES, cur: -1, hits: [], chips: [["min price", "1"], ["best profit", "5"]],
-      meta: "Nothing grows with the size of the input.", hl: [3, 4, 6],
+      meta: "Nothing grows with the size of the input.", hl: [4, 5, 7],
       big: "O(n) time · O(1) space", bigNote: "versus O(n²) time for brute force"
     },
     final: {
       caption: "The whole solution.",
-      prices: PRICES, cur: -1, hits: [], chips: [["min price", "1"], ["best profit", "5"]], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+      prices: PRICES, cur: -1, hits: [], chips: [["min price", "1"], ["best profit", "5"]], meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9]
     }
   };
 

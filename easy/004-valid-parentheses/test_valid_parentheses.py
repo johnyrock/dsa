@@ -1,28 +1,29 @@
-from valid_parentheses import is_valid
+import unittest
+from valid_parentheses import Solution
 
 
-def test_is_valid():
-    cases = [
-        # (s, expected)
-        ("()", True),
-        ("()[]{}", True),
-        ("([]{})", True),                   # nested and sequential mixed
-        ("([)]", False),                    # counts balance but the order crosses
-        ("((", False),                      # leftover openers, stack not empty at the end
-        (")", False),                       # closer with nothing open
-        ("]", False),                       # single closer, minimum length
-        ("{[()]}", True),                   # fully nested, three levels deep
-    ]
+class TestValidParentheses(unittest.TestCase):
+    def setUp(self):
+        self.solution = Solution()
 
-    failures = 0
-    for s, expected in cases:
-        result = is_valid(s)
-        status = "PASS" if result == expected else "FAIL"
-        if status == "FAIL":
-            failures += 1
-        print(f"{status}  s={s!r} -> {result} (expected {expected})")
+    def test_is_valid(self):
+        cases = [
+            # (s, expected)
+            ("()", True),
+            ("()[]{}", True),
+            ("([]{})", True),                   # nested and sequential mixed
+            ("([)]", False),                    # counts balance but the order crosses
+            ("((", False),                      # leftover openers, stack not empty at the end
+            (")", False),                       # closer with nothing open
+            ("]", False),                       # single closer, minimum length
+            ("{[()]}", True),                   # fully nested, three levels deep
+        ]
 
-    print(f"\n{len(cases) - failures}/{len(cases)} passed")
+        for s, expected in cases:
+            with self.subTest(s=s):
+                result = self.solution.is_valid(s)
+                self.assertEqual(result, expected)
 
 
-test_is_valid()
+if __name__ == '__main__':
+    unittest.main()

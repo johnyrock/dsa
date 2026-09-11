@@ -324,17 +324,18 @@
 <script>
 (function () {
   var CODE = [
-    "def group_anagrams(strs):",
-    "    groups = {}",
-    "    for word in strs:",
-    "        counts = [0] * 26",
-    "        for ch in word:",
-    "            counts[ord(ch) - ord(\"a\")] += 1",
-    "        key = tuple(counts)",
-    "        if key not in groups:",
-    "            groups[key] = []",
-    "        groups[key].append(word)",
-    "    return list(groups.values())"
+    "class Solution:",
+    "    def group_anagrams(self, strs: list[str]) -> list[list[str]]:",
+    "        groups = {}",
+    "        for word in strs:",
+    "            counts = [0] * 26",
+    "            for ch in word:",
+    "                counts[ord(ch) - ord(\"a\")] += 1",
+    "            key = tuple(counts)",
+    "            if key not in groups:",
+    "                groups[key] = []",
+    "            groups[key].append(word)",
+    "        return list(groups.values())"
   ];
 
   var WORDS = ["eat", "tea", "tan", "ate", "nat", "bat"];
@@ -361,35 +362,35 @@
     idea: {
       caption: "One pass: compute the key, append the word to groups[key].",
       words: WORDS, cur: -1, done: 0, buckets: [],
-      meta: "The key here is a 26-slot letter tally frozen into a tuple, built in O(k).", hl: [1, 3, 4, 5, 6]
+      meta: "The key here is a 26-slot letter tally frozen into a tuple, built in O(k).", hl: [2, 4, 5, 6, 7]
     },
     t1: {
       caption: "eat opens the aet bucket, tea joins it, tan opens ant.",
       words: WORDS, cur: 2, done: 2, buckets: [["aet", ["eat", "tea"], ""], ["ant", ["tan"], "new"]],
-      meta: "tan → key <b>ant</b> not in groups → open bucket, append.", hl: [6, 7, 8, 9]
+      meta: "tan → key <b>ant</b> not in groups → open bucket, append.", hl: [7, 8, 9, 10]
     },
     t2: {
       caption: "ate and nat join existing buckets; bat opens a third.",
       words: WORDS, cur: 5, done: 5, buckets: [["aet", ["eat", "tea", "ate"], ""], ["ant", ["tan", "nat"], ""], ["abt", ["bat"], "new"]],
-      meta: "Six words, six dictionary operations, three buckets returned.", hl: [9, 10],
+      meta: "Six words, six dictionary operations, three buckets returned.", hl: [10, 11],
       big: "3 groups", bigNote: "[eat, tea, ate] · [tan, nat] · [bat]"
     },
     pitfall: {
       caption: "A lossy key such as a sum of character codes merges words that are not anagrams.",
       words: ["bdddddddddd", "bbbbbbbbbbc"], cur: 1, done: 1, buckets: [["sum 1098", ["bdddddddddd", "bbbbbbbbbbc"], "new"]],
-      meta: "Equal code sums, different letters. The tally keeps them apart; the sum does not.", hl: [3, 4, 5, 6],
+      meta: "Equal code sums, different letters. The tally keeps them apart; the sum does not.", hl: [4, 5, 6, 7],
       big: "wrong merge", bigNote: "the key must describe the full letter multiset"
     },
     complexity: {
       caption: "Every word is touched once and every letter inside it once.",
       words: WORDS, cur: -1, done: 6, buckets: [["aet", ["eat", "tea", "ate"], ""], ["ant", ["tan", "nat"], ""], ["abt", ["bat"], ""]],
-      meta: "No word is ever compared to another word.", hl: [2, 4, 9],
+      meta: "No word is ever compared to another word.", hl: [3, 5, 10],
       big: "O(n · k) time · O(n · k) space", bigNote: "versus O(n² · k) for comparing against every group"
     },
     final: {
       caption: "The whole solution.",
       words: WORDS, cur: -1, done: 6, buckets: [["aet", ["eat", "tea", "ate"], ""], ["ant", ["tan", "nat"], ""], ["abt", ["bat"], ""]],
-      meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     }
   };
 

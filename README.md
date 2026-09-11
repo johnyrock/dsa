@@ -4,10 +4,14 @@ LeetCode-style practice, organized by difficulty and pattern.
 
 ## How to use
 
-No dependencies. Each problem's test file is a plain script that prints PASS or FAIL per case.
+No dependencies beyond the standard library. Every problem follows the same shape as `practice/src`:
+the solution is a `Solution` class with a type-hinted method, `test_<slug>.py` is a `unittest.TestCase`
+(one `subTest` per case), and `main.py` is a small demo runner. Run them from inside the folder:
 
 ```bash
-python3 easy/001-two-sum/test_two_sum.py
+cd easy/001-two-sum
+python3 test_two_sum.py -v
+python3 main.py
 ```
 
 Open `index.html` in a browser for a home page with a Concepts / Easy / Medium menu. Each section links to its pages and can be filtered by pattern.
@@ -94,13 +98,15 @@ Beginner explainers under `concepts/`, one per pattern. Suggested reading order,
 index.html                home page with a Concepts / Easy / Medium menu, open in a browser
 easy/NNN-slug/
   README.md               statement, examples, constraints
-  <slug>.py               clean interview version, e.g. two_sum.py
-  <slug>_annotated.py     line-by-line commented version
-  test_<slug>.py          plain script, prints PASS/FAIL per case
+  <slug>.py               clean interview version: class Solution with a type-hinted method
+  <slug>_annotated.py     line-by-line commented version, same shape
+  test_<slug>.py          unittest.TestCase, a cases table checked with subTest, run directly
+  main.py                 demo runner that imports Solution and prints a few example calls
   notes.md                attempts, sticking points, key insight, complexity
   walkthrough.html        optional: scroll-driven narration of the solution, open in a browser
 medium/NNN-slug/          same shape, numbering restarts per difficulty
 patterns/<name>.md        when to use it, template code, problems that use it
 concepts/<slug>.html      from-scratch explainer per pattern or data structure, open in a browser
 templates/problem/        skeleton copied for each new problem (see templates/README.md)
+practice/src/             reference for the file structure and coding style (echo.py / tests.py / main.py)
 ```

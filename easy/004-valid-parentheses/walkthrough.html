@@ -330,16 +330,17 @@
 <script>
 (function () {
   var CODE = [
-    "def is_valid(s):",
-    '    pairs = {")": "(", "]": "[", "}": "{"}',
-    "    stack = []",
-    "    for ch in s:",
-    "        if ch in pairs:",
-    "            if not stack or stack.pop() != pairs[ch]:",
-    "                return False",
-    "        else:",
-    "            stack.append(ch)",
-    "    return not stack"
+    "class Solution:",
+    "    def is_valid(self, s: str) -> bool:",
+    '        pairs = {")": "(", "]": "[", "}": "{"}',
+    "        stack = []",
+    "        for ch in s:",
+    "            if ch in pairs:",
+    "                if not stack or stack.pop() != pairs[ch]:",
+    "                    return False",
+    "            else:",
+    "                stack.append(ch)",
+    "        return not stack"
   ];
 
   var CHARS = ["(", "[", "]", "{", "}", ")"];
@@ -362,34 +363,34 @@
     },
     idea: {
       caption: "A stack keeps the pending openers in the order they arrived.",
-      chars: CHARS, target: '"([]{})"', cur: -1, hits: [], stack: [], meta: "Opener &rarr; push. Closer &rarr; pop and compare with pairs[ch].", hl: [1, 4, 8]
+      chars: CHARS, target: '"([]{})"', cur: -1, hits: [], stack: [], meta: "Opener &rarr; push. Closer &rarr; pop and compare with pairs[ch].", hl: [2, 5, 9]
     },
     t0: {
       caption: "i = 0 and i = 1 are openers, so both get pushed. Top is now [.",
-      chars: CHARS, target: '"([]{})"', cur: 1, hits: [], stack: [["(", ""], ["[", "new"]], meta: "nothing to check yet &middot; two brackets pending", hl: [8]
+      chars: CHARS, target: '"([]{})"', cur: 1, hits: [], stack: [["(", ""], ["[", "new"]], meta: "nothing to check yet &middot; two brackets pending", hl: [9]
     },
     t1: {
       caption: "i = 2 is ]. Pop the top: it is [, the required partner. Match.",
-      chars: CHARS, target: '"([]{})"', cur: 2, hits: [1], stack: [["(", ""]], meta: 'pairs["]"] = <b>[</b> &middot; popped <b>[</b> &middot; <b>match</b>', hl: [5]
+      chars: CHARS, target: '"([]{})"', cur: 2, hits: [1], stack: [["(", ""]], meta: 'pairs["]"] = <b>[</b> &middot; popped <b>[</b> &middot; <b>match</b>', hl: [6]
     },
     t2: {
       caption: "i = 5 is ). Pop gives (, a match, and the stack is now empty.",
-      chars: CHARS, target: '"([]{})"', cur: 5, hits: [0], stack: [], meta: 'pairs[")"] = <b>(</b> &middot; popped <b>(</b> &middot; stack <b>empty</b> at the end', hl: [5, 9],
+      chars: CHARS, target: '"([]{})"', cur: 5, hits: [0], stack: [], meta: 'pairs[")"] = <b>(</b> &middot; popped <b>(</b> &middot; stack <b>empty</b> at the end', hl: [6, 10],
       big: "True", bigNote: "every opener closed, nothing left over"
     },
     pitfall: {
       caption: 's = "([)]". At i = 2 the closer is ) but the top of the stack is [.',
-      chars: BAD, target: '"([)]"', cur: 2, hits: [], stack: [["(", ""], ["[", "new"]], meta: 'pairs[")"] = <b>(</b> &middot; top of stack is <b>[</b> &middot; <b>mismatch</b>', hl: [5, 6],
+      chars: BAD, target: '"([)]"', cur: 2, hits: [], stack: [["(", ""], ["[", "new"]], meta: 'pairs[")"] = <b>(</b> &middot; top of stack is <b>[</b> &middot; <b>mismatch</b>', hl: [6, 7],
       big: "False", bigNote: "crossed brackets, caught on the pop"
     },
     complexity: {
       caption: "Each character is pushed at most once and popped at most once.",
-      chars: ["(", "(", "(", "(", "("], target: '"((((("', cur: -1, hits: [], stack: [["(", ""], ["(", ""], ["(", ""], ["(", ""], ["(", ""]], meta: "Worst case the stack holds every character, and the answer is False.", hl: [3, 4, 8],
+      chars: ["(", "(", "(", "(", "("], target: '"((((("', cur: -1, hits: [], stack: [["(", ""], ["(", ""], ["(", ""], ["(", ""], ["(", ""]], meta: "Worst case the stack holds every character, and the answer is False.", hl: [4, 5, 9],
       big: "O(n) time &middot; O(n) space", bigNote: "the counter is just as fast and simply wrong"
     },
     final: {
       caption: "The whole solution.",
-      chars: CHARS, target: '"([]{})"', cur: -1, hits: [], stack: [], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+      chars: CHARS, target: '"([]{})"', cur: -1, hits: [], stack: [], meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     }
   };
 

@@ -315,13 +315,14 @@
 <script>
 (function () {
   var CODE = [
-    "def max_sub_array(nums):",
-    "    best = nums[0]",
-    "    current = nums[0]",
-    "    for x in nums[1:]:",
-    "        current = max(x, current + x)",
-    "        best = max(best, current)",
-    "    return best"
+    "class Solution:",
+    "    def max_sub_array(self, nums: list[int]) -> int:",
+    "        best = nums[0]",
+    "        current = nums[0]",
+    "        for x in nums[1:]:",
+    "            current = max(x, current + x)",
+    "            best = max(best, current)",
+    "        return best"
   ];
 
   var NUMS = [-2, 1, -3, 4, -1, 2, 1, -5, 4];
@@ -341,39 +342,39 @@
     reframe: {
       caption: "Ask a narrower question at each index: best sum of a subarray that ends exactly here.",
       nums: NUMS, cur: 6, runStart: 3, chips: [["ending at 6", "6"]],
-      meta: "Either x alone, or x glued onto the best run ending at the previous index.", hl: [4]
+      meta: "Either x alone, or x glued onto the best run ending at the previous index.", hl: [5]
     },
     idea: {
       caption: "current = max(x, current + x). A negative previous run is dropped automatically.",
       nums: NUMS, cur: 0, runStart: 0, chips: [["current", "−2", "new"], ["best", "−2", "new"]],
-      meta: "Seed both with nums[0], not 0, so all-negative input still works.", hl: [1, 2, 4]
+      meta: "Seed both with nums[0], not 0, so all-negative input still works.", hl: [2, 3, 5]
     },
     t1: {
       caption: "Index 3: max(4, −2 + 4) = 4. The run worth −2 is dropped and a new one starts.",
       nums: NUMS, cur: 3, runStart: 3, chips: [["current", "4", "new"], ["best", "4", "found"]],
-      meta: "Previous current = −2 (from [1, −3]) · <b>restart at 4</b>", hl: [4, 5]
+      meta: "Previous current = −2 (from [1, −3]) · <b>restart at 4</b>", hl: [5, 6]
     },
     t2: {
       caption: "Index 6: max(1, 5 + 1) = 6. The −1 at index 4 was absorbed because the run stayed positive.",
       nums: NUMS, cur: 6, runStart: 3, chips: [["current", "6", "new"], ["best", "6", "found"]],
-      meta: "Then −5 drags current to 1, and 4 lifts it to 5. Nothing beats 6.", hl: [4, 5],
+      meta: "Then −5 drags current to 1, and 4 lifts it to 5. Nothing beats 6.", hl: [5, 6],
       big: "6", bigNote: "[4, −1, 2, 1], never stored, only summed"
     },
     pitfall: {
       caption: "nums = [−3, −1, −2] with best seeded at 0 returns 0, which is not the sum of any subarray.",
       nums: [-3, -1, -2], cur: 1, runStart: 1, chips: [["seed 0 → best", "0"], ["seed nums[0] → best", "−1", "found"]],
-      meta: "current: −3, then max(−1, −4) = <b>−1</b>, then max(−2, −3) = −2.", hl: [1, 2],
+      meta: "current: −3, then max(−1, −4) = <b>−1</b>, then max(−2, −3) = −2.", hl: [2, 3],
       big: "−1, not 0", bigNote: "the empty subarray is not allowed"
     },
     complexity: {
       caption: "One pass, two comparisons per element, two integers held.",
       nums: NUMS, cur: 8, runStart: 3, chips: [["current", "5"], ["best", "6"]],
-      meta: "The DP table is one cell wide because each step needs only the previous answer.", hl: [3, 4, 5],
+      meta: "The DP table is one cell wide because each step needs only the previous answer.", hl: [4, 5, 6],
       big: "O(n) time · O(1) space", bigNote: "versus O(n²) for the running-sum brute force"
     },
     final: {
       caption: "The whole solution.",
-      nums: NUMS, cur: -1, runStart: -1, chips: [["best", "6", "found"]], meta: "", hl: [0, 1, 2, 3, 4, 5, 6]
+      nums: NUMS, cur: -1, runStart: -1, chips: [["best", "6", "found"]], meta: "", hl: [1, 2, 3, 4, 5, 6, 7]
     }
   };
 

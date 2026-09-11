@@ -1,9 +1,10 @@
-def max_profit(prices):
-    min_price = float("inf")  # cheapest day seen so far
-    best = 0
-    for price in prices:
-        if price < min_price:
-            min_price = price
-        elif price - min_price > best:
-            best = price - min_price
-    return best
+class Solution:
+    def max_profit(self, prices: list[int]) -> int:
+        min_price = float("inf")  # cheapest day seen so far
+        best = 0
+        for price in prices:
+            if price < min_price:
+                min_price = price
+            elif price - min_price > best:
+                best = price - min_price
+        return best
