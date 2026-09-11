@@ -70,6 +70,7 @@ Problems are chosen by interview frequency: the easy and medium tiers of the Bli
 | medium/021 | [Search in Rotated Sorted Array](medium/021-search-in-rotated-sorted-array/) | Medium | [binary-search](patterns/binary-search.md) · [explained](concepts/binary-search.html) | - | - | not yet solved |
 | medium/022 | [Random Pick with Weight](medium/022-random-pick-with-weight/) | Medium | [prefix-sum](patterns/prefix-sum.md) · [explained](concepts/prefix-sum.html) | - | - | not yet solved |
 | medium/023 | [Serialize and Deserialize Binary Tree](medium/023-serialize-and-deserialize-binary-tree/) | Medium | [tree](patterns/tree.md) · [explained](concepts/tree-traversal.html) | - | - | not yet solved |
+| medium/024 | [Word Container](medium/024-word-container/) | Medium | [trie](patterns/trie.md) · [explained](concepts/trie.html) | - | - | not yet solved |
 
 ## Due for review
 
@@ -105,6 +106,7 @@ Beginner explainers under `concepts/`, one per pattern. Suggested reading order,
 | [intervals](patterns/intervals.md) · [explained](concepts/intervals.html) | medium/009, medium/020 |
 | [graph](patterns/graph.md) · [explained](concepts/graph-traversal.html) | medium/010, medium/019 |
 | [tree](patterns/tree.md) · [explained](concepts/tree-traversal.html) | easy/011, medium/014, medium/015, medium/016, medium/017, medium/023 |
+| [trie](patterns/trie.md) · [explained](concepts/trie.html) | medium/024 |
 | [fast-slow-pointers](patterns/fast-slow-pointers.md) · [explained](concepts/fast-slow-pointers.html) | easy/012 |
 | [topological-sort](patterns/topological-sort.md) · [explained](concepts/topological-sort.html) | medium/018 |
 

@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Word Container Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; min-width: 70px; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 6px 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.3rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 60px; padding: 5px 4px 3px; font-size: 0.9rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.05rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Trie · Custom problem</div>
+  <h1>Word Container, narrated</h1>
+  <p>Scroll through the thinking, from comparing every pair of words to a single shared trie walked from every starting index, with the state of the search shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/trie.html">Trie</a> <span class="how">insert every word once, then walk from each index looking for a completed word</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>A <code>WordList</code> holds a collection of words. A <code>Solver</code> looks at that list and returns every word that has some <em>other</em> word from the same list sitting inside it as a substring.</p>
+      <div class="callout">Running example: <code>["apple", "app", "banana", "nana"]</code>. The answer is <code>["apple", "banana"]</code> — "apple" contains "app", "banana" contains "nana".</div>
+      <p>"app" and "nana" are not in the answer: nothing else in the list is a substring of either of them.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: compare every pair</h2>
+      <p>For each word, check it against every other word with the <code>in</code> operator:</p>
+      <pre class="code"><span class="ln">result = []</span><span class="ln">for word in words:</span><span class="ln">    for other in words:</span><span class="ln">        if other is not word and other in word:</span><span class="ln">            result.append(word)</span><span class="ln">            break</span></pre>
+      <p style="margin-top:14px">Correct, and fine for small lists. But this is <strong>O(n² · L)</strong> — for each of n words, scan up to n others, each substring check costing up to O(L). With 10,000 words that is 100 million substring scans.</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: stop comparing pairs, index once</h2>
+      <p>The n² cost comes from re-scanning the whole word list for every single word. But the word list itself never changes while we search — so build one shared structure over it, and query that structure instead of the raw list.</p>
+      <div class="callout">A <strong>trie</strong> stores every word as a path from the root, one character per edge, with the end of each word marked. Checking "does any word in the list equal this substring?" becomes a walk of that substring's length, regardless of how many words are stored.</div>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: walk from every starting index</h2>
+      <p>Insert every word into one trie. Then, for a given word <code>W</code> of length <code>n</code>, try each starting index <code>0..n-1</code>: follow the trie one character at a time from that index, and stop the moment either the trie has no such branch, or a completed word is found.</p>
+      <ul>
+        <li>If a completed word is found <em>and</em> it isn't <code>W</code> matching itself in full — that's a hit.</li>
+        <li>If the branch dead-ends, abandon only that starting index and try the next one.</li>
+      </ul>
+      <div class="callout">The self-match exclusion matters: <code>start == 0 and end == n - 1</code> is <code>W</code> checking against itself, which the trie cannot distinguish from a real match without that explicit check.</div>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: checking "apple"</h2>
+      <p>Trie holds: apple, app, banana, nana. Start at index 0 of "apple": a → p → p is already a completed word ("app"), and this is not a full self-match (end=2, n-1=4) — hit.</p>
+      <div class="callout">"apple" contains "app". No need to try the other starting indices — one hit is enough.</div>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: checking "app"</h2>
+      <p>Start at index 0: a → p → p reaches the end of "app" itself — but start=0, end=2=n-1, so this is excluded as a self-match. No other starting index (1: "pp", 2: "p") completes a word in the trie.</p>
+      <div class="callout">"app" is correctly left out of the answer.</div>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: checking "banana"</h2>
+      <p>Try starting indices in turn. At index 2 ("nana"): n → a → n → a reaches the end of "nana", and this is not <code>W</code> itself (start=2, not a full-length match) — hit.</p>
+      <div class="callout">"banana" contains "nana", found from a starting index other than 0 — this is exactly why every starting index has to be tried.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong</h2>
+      <p><strong>Only trying index 0.</strong> "banana" contains "nana" starting at index 2 — checking only prefixes would miss it entirely.</p>
+      <p><strong>Not excluding the self-match.</strong> Without the <code>start == 0 and end == n - 1</code> guard, every word would trivially "contain itself" and the whole list would come back as the answer.</p>
+      <p><strong>Breaking the outer loop on a dead branch.</strong> When the trie has no edge for the next character, only that starting index is a dead end — other starting positions can still succeed.</p>
+      <div class="callout warn">Duplicate identical words ("same", "same") do not count as containing each other either — the trie only records whether a word exists, not how many times, so the same self-match guard covers this case too.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Compare every pair</td><td>O(n² · L)</td><td>O(n · L) to store the words</td></tr>
+        <tr><td>Shared trie, walk from every index</td><td>O(n · L²) worst case</td><td>O(n · L) for the trie</td></tr>
+      </table>
+      <p>Building the trie is O(n · L). Checking one word costs up to L starting positions, each walking up to L trie steps — O(L²) per word, O(n · L²) total. That drops the dependence on n from quadratic to linear.</p>
+      <div class="callout">A further step — not needed here, but worth naming — is Aho-Corasick, which builds failure links so the whole list can be scanned against every word in roughly O(total characters), independent of L².</div>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p><code>WordList</code> builds the trie once. <code>Solver</code> runs the from-every-index walk against it for each word.</p>
+      <ul>
+        <li><code>_insert</code> — one pass per word, building/reusing shared trie nodes.</li>
+        <li><code>has_other_word_inside</code> — nested loop over starting index and walk length, bounded by the trie.</li>
+        <li>The self-match guard is the one line that keeps "contains itself" from being a false positive.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>insert every word into one trie, then for each word try every starting index and stop at the first completed word that isn't the word matching itself in full.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>words</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>trie walk</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="word_container.py">word_container.py</a> · <a href="word_container_annotated.py">word_container_annotated.py</a> · <a href="test_word_container.py">test_word_container.py</a> · <a href="../../md.html?f=medium/024-word-container/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class WordList:",
+    "    def __init__(self, words):",
+    "        self.words = list(words)",
+    "        self.root = TrieNode()",
+    "        for word in self.words:",
+    "            self._insert(word)",
+    "",
+    "    def has_other_word_inside(self, word):",
+    "        n = len(word)",
+    "        for start in range(n):",
+    "            node = self.root",
+    "            for end in range(start, n):",
+    "                node = node.children.get(word[end])",
+    "                if node is None:",
+    "                    break",
+    "                if node.is_word and not (start == 0 and end == n - 1):",
+    "                    return True",
+    "        return False"
+  ];
+
+  var WORDS = ["apple", "app", "banana", "nana"];
+
+  function wordCells(hits, cur, dim) {
+    return WORDS.map(function (w, i) {
+      return [i, w];
+    });
+  }
+
+  var STATES = {
+    problem: {
+      caption: 'Which words contain another word from the list as a substring?',
+      cells: WORDS, cur: -1, hits: [], dim: [],
+      vars: [], meta: 'Expected answer: <b>apple, banana</b>.', hl: []
+    },
+    brute: {
+      caption: 'Compare every word against every other word with the "in" operator.',
+      cells: WORDS, cur: 0, hits: [], dim: [],
+      vars: [['checking', '"apple" in "app"? in "banana"? in "nana"?', 'new']],
+      meta: 'O(n² · L): every word re-scans the whole list.', hl: []
+    },
+    reframe: {
+      caption: 'Build one trie over all four words instead of re-scanning the list each time.',
+      cells: WORDS, cur: -1, hits: [], dim: [],
+      vars: [['trie holds', 'apple, app, banana, nana', 'new']],
+      meta: 'The word list is fixed during the search — index it once.', hl: [1, 2, 3, 4, 5]
+    },
+    idea: {
+      caption: 'For a word W, try every starting index and walk the trie until a completed word appears.',
+      cells: WORDS, cur: -1, hits: [], dim: [],
+      vars: [['rule', 'stop at a completed word that is not W itself in full']],
+      meta: 'Self-match guard: start == 0 and end == n - 1 is excluded.', hl: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    },
+    t1: {
+      caption: '"apple": start at index 0, walk a → p → p. "app" completes here — hit.',
+      cells: WORDS, cur: 0, hits: [], dim: [],
+      vars: [['start', 0], ['walk', 'a, p, p'], ['found', '"app" (not self-match)', 'found']],
+      meta: '"apple" contains "app".', hl: [12, 15, 16]
+    },
+    t2: {
+      caption: '"app": the only completed word found is "app" itself in full — excluded as a self-match.',
+      cells: WORDS, cur: 1, hits: [], dim: [0],
+      vars: [['start', 0], ['walk', 'a, p, p'], ['found', 'self-match, excluded']],
+      meta: '"app" is correctly left out of the answer.', hl: [15]
+    },
+    t3: {
+      caption: '"banana": start at index 2, walk n → a → n → a. "nana" completes here — hit.',
+      cells: WORDS, cur: 2, hits: [0], dim: [1],
+      vars: [['start', 2], ['walk', 'n, a, n, a'], ['found', '"nana" (not self-match)', 'found']],
+      meta: 'Found from a non-zero starting index — this is why every index must be tried.', hl: [9, 10, 11, 12, 15, 16]
+    },
+    pitfall: {
+      caption: 'Only trying index 0 would miss "nana" inside "banana" entirely.',
+      cells: WORDS, cur: 2, hits: [0], dim: [1],
+      vars: [['bug', 'checking only start = 0']],
+      meta: 'A dead branch only rules out its own starting index, not the whole word.', hl: [9]
+    },
+    complexity: {
+      caption: 'One trie, one walk-from-every-index pass per word.',
+      cells: WORDS, cur: -1, hits: [0, 2], dim: [1, 3],
+      vars: [['build trie', 'O(n · L)'], ['per word', 'O(L²)']],
+      meta: 'O(n · L²) total, versus O(n² · L) for pairwise comparison.', hl: [],
+      big: 'O(n · L²) time · O(n · L) space', bigNote: 'versus O(n² · L) time for pairwise comparison'
+    },
+    final: {
+      caption: 'The whole solution.',
+      cells: WORDS, cur: -1, hits: [0, 2], dim: [1, 3],
+      vars: [['result', 'apple, banana', 'found']],
+      meta: '', hl: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.cells.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.dim.indexOf(i) !== -1) cls += " dim";
+      arr += '<div class="' + cls + '">' + s.cells[i] + '<span class="idx">word ' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>
