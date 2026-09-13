@@ -108,6 +108,24 @@
   .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
   .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
   .cell.dim { opacity: 0.5; }
+  .tree { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .tree .edge { stroke: var(--line); stroke-width: 2.5; fill: none; transition: stroke 0.25s; }
+  .tree .edge.hit { stroke: var(--ok); }
+  .tree .edge.bad { stroke: var(--warn); stroke-dasharray: 5 4; }
+  .tree .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .tree .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 17px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .tree .node.cur circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3.5; }
+  .tree .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .tree .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .tree .node.dim circle, .tree .node.dim text { opacity: 0.4; }
+  .tree .swap { fill: none; stroke: var(--ok); stroke-width: 2.5; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .tree .swap-head { fill: var(--ok); }
+  .tree .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .array.compact { gap: 4px; margin-top: 2px; }
+  .array.compact .cell { min-width: 28px; padding: 3px 0 2px; font-size: 0.9rem; border-width: 1.5px; border-radius: 6px; }
+  .array.compact .cell.cur { transform: none; }
+  .cell.bad { border-color: var(--warn); background: var(--warn-soft); }
   .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
   .meta b { color: var(--ink); }
 
@@ -180,7 +198,7 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Tree · LeetCode #226</div>
   <h1>Invert Binary Tree, narrated</h1>
-  <p>Scroll through mirroring a tree recursively, with the level-order state of the tree shown alongside.</p>
+  <p>Scroll through mirroring a tree recursively, with the tree drawn alongside so you can watch each swap happen.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/tree-traversal.html">Tree</a> <span class="how">post-order swap: invert both children, then swap them into each other's slot</span></p>
 </header>
 
@@ -206,8 +224,9 @@
       <div class="caption" id="caption"></div>
 
       <div class="block">
-        <h3>level order · root = [4,2,7,1,3,6,9]</h3>
-        <div class="array" id="array"></div>
+        <h3>tree · root = [4,2,7,1,3,6,9]</h3>
+        <svg class="tree" id="tree" viewBox="0 0 400 240" aria-label="binary tree"></svg>
+        <div class="array compact" id="array"></div>
         <div class="meta" id="meta"></div>
       </div>
 
@@ -236,466 +255,115 @@
 (function () {
   var CODE = ["class Solution:", "    def invert_tree(self, root):", "        if root is None:", "            return None", "        root.left, root.right = (", "            self.invert_tree(root.right),", "            self.invert_tree(root.left),", "        )", "        return root"];
 
+  // tree: level-order values. cur/hits/dim/bad: level-order indices. swap: [a, b] draws an exchange arrow.
   var STATES = {
-  "problem": {
-    "caption": "Mirror every node's children, top to bottom.",
-    "dp": [
-      [
-        "4",
-        "4"
-      ],
-      [
-        "2",
-        "2"
-      ],
-      [
-        "7",
-        "7"
-      ],
-      [
-        "1",
-        "1"
-      ],
-      [
-        "3",
-        "3"
-      ],
-      [
-        "6",
-        "6"
-      ],
-      [
-        "9",
-        "9"
-      ]
-    ],
-    "cur": 0,
-    "hits": [],
-    "dim": [
-      1,
-      2,
-      3,
-      4,
-      5,
-      6
-    ],
-    "vars": [],
-    "meta": "Original level order: 4, 2, 7, 1, 3, 6, 9.",
-    "hl": []
-  },
-  "instinct": {
-    "caption": "Swapping only the root's two children leaves everything below wrong.",
-    "dp": [
-      [
-        "4",
-        "4"
-      ],
-      [
-        "2",
-        "7"
-      ],
-      [
-        "7",
-        "2"
-      ],
-      [
-        "1",
-        "1"
-      ],
-      [
-        "3",
-        "3"
-      ],
-      [
-        "6",
-        "6"
-      ],
-      [
-        "9",
-        "9"
-      ]
-    ],
-    "cur": -1,
-    "hits": [
-      1,
-      2
-    ],
-    "dim": [],
-    "vars": [],
-    "meta": "1 and 3 should now be under 7's old position, but they weren't touched.",
-    "hl": [],
-    "big": "wrong",
-    "bigNote": "only the top level mirrored"
-  },
-  "idea": {
-    "caption": "Recurse to the bottom, then swap results on the way back up.",
-    "dp": [
-      [
-        "4",
-        "4"
-      ],
-      [
-        "2",
-        "2"
-      ],
-      [
-        "7",
-        "7"
-      ],
-      [
-        "1",
-        "1"
-      ],
-      [
-        "3",
-        "3"
-      ],
-      [
-        "6",
-        "6"
-      ],
-      [
-        "9",
-        "9"
-      ]
-    ],
-    "cur": 0,
-    "hits": [],
-    "dim": [],
-    "vars": [
-      [
-        "current node",
-        "4",
-        "new"
-      ]
-    ],
-    "meta": "Post-order shape: children finish before the parent swaps them.",
-    "hl": [
-      1,
-      2,
-      3
-    ]
-  },
-  "t1": {
-    "caption": "Node 7: invert leaves 6 and 9 (no-ops), then swap them.",
-    "dp": [
-      [
-        "4",
-        "4"
-      ],
-      [
-        "2",
-        "2"
-      ],
-      [
-        "7",
-        "7"
-      ],
-      [
-        "1",
-        "1"
-      ],
-      [
-        "3",
-        "3"
-      ],
-      [
-        "9",
-        "6"
-      ],
-      [
-        "6",
-        "9"
-      ]
-    ],
-    "cur": 2,
-    "hits": [
-      5,
-      6
-    ],
-    "dim": [
-      0,
-      1,
-      3,
-      4
-    ],
-    "vars": [
-      [
-        "current node",
-        "7",
-        "new"
-      ]
-    ],
-    "meta": "7.left = 9, 7.right = 6.",
-    "hl": [
-      4,
-      5,
-      6,
-      7
-    ]
-  },
-  "t2": {
-    "caption": "Node 2: invert leaves 1 and 3 (no-ops), then swap them.",
-    "dp": [
-      [
-        "4",
-        "4"
-      ],
-      [
-        "2",
-        "2"
-      ],
-      [
-        "9",
-        "7"
-      ],
-      [
-        "3",
-        "1"
-      ],
-      [
-        "1",
-        "3"
-      ],
-      [
-        "9",
-        "6"
-      ],
-      [
-        "6",
-        "9"
-      ]
-    ],
-    "cur": 1,
-    "hits": [
-      3,
-      4
-    ],
-    "dim": [
-      0,
-      2,
-      5,
-      6
-    ],
-    "vars": [
-      [
-        "current node",
-        "2",
-        "new"
-      ]
-    ],
-    "meta": "2.left = 3, 2.right = 1.",
-    "hl": [
-      4,
-      5,
-      6,
-      7
-    ]
-  },
-  "t3": {
-    "caption": "Root: swap the (already mirrored) left and right subtrees.",
-    "dp": [
-      [
-        "4",
-        "4"
-      ],
-      [
-        "7",
-        "7"
-      ],
-      [
-        "2",
-        "2"
-      ],
-      [
-        "9",
-        "9"
-      ],
-      [
-        "6",
-        "6"
-      ],
-      [
-        "3",
-        "3"
-      ],
-      [
-        "1",
-        "1"
-      ]
-    ],
-    "cur": 0,
-    "hits": [
-      1,
-      2
-    ],
-    "dim": [
-      3,
-      4,
-      5,
-      6
-    ],
-    "vars": [
-      [
-        "current node",
-        "4",
-        "found"
-      ]
-    ],
-    "meta": "root.left = mirrored-7-subtree, root.right = mirrored-2-subtree.",
-    "hl": [
-      4,
-      5,
-      6,
-      7,
-      8
-    ],
-    "big": "[4,7,2,9,6,3,1]",
-    "bigNote": "final level order"
-  },
-  "pitfall": {
-    "caption": "Two separate assignments recurse fully but never swap.",
-    "dp": [
-      [
-        "4",
-        "4"
-      ],
-      [
-        "2",
-        "2"
-      ],
-      [
-        "7",
-        "7"
-      ],
-      [
-        "1",
-        "1"
-      ],
-      [
-        "3",
-        "3"
-      ],
-      [
-        "6",
-        "6"
-      ],
-      [
-        "9",
-        "9"
-      ]
-    ],
-    "cur": -1,
-    "hits": [],
-    "dim": [
-      1,
-      2,
-      3,
-      4,
-      5,
-      6
-    ],
-    "vars": [],
-    "meta": "Every subtree got inverted in place, but left and right were never exchanged.",
-    "hl": [
-      4,
-      5,
-      6,
-      7
-    ],
-    "big": "still [4,2,7,...]",
-    "bigNote": "no top-level swap happened"
-  },
-  "complexity": {
-    "caption": "One visit per node, stack as deep as the tree is tall.",
-    "dp": [
-      [
-        "4",
-        "4"
-      ],
-      [
-        "7",
-        "7"
-      ],
-      [
-        "2",
-        "2"
-      ],
-      [
-        "9",
-        "9"
-      ],
-      [
-        "6",
-        "6"
-      ],
-      [
-        "3",
-        "3"
-      ],
-      [
-        "1",
-        "1"
-      ]
-    ],
-    "cur": -1,
-    "hits": [],
-    "dim": [],
-    "vars": [],
-    "meta": "n = 7 nodes, height h = 3.",
-    "hl": [],
-    "big": "O(n) time \u00b7 O(h) space",
-    "bigNote": "h = log n balanced, n worst case"
-  },
-  "final": {
-    "caption": "The whole solution.",
-    "dp": [
-      [
-        "4",
-        "4"
-      ],
-      [
-        "7",
-        "7"
-      ],
-      [
-        "2",
-        "2"
-      ],
-      [
-        "9",
-        "9"
-      ],
-      [
-        "6",
-        "6"
-      ],
-      [
-        "3",
-        "3"
-      ],
-      [
-        "1",
-        "1"
-      ]
-    ],
-    "cur": -1,
-    "hits": [],
-    "dim": [],
-    "vars": [],
-    "meta": "",
-    "hl": [
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7,
-      8
-    ]
+    problem: {
+      caption: "Mirror every node's children, top to bottom.",
+      tree: [4, 2, 7, 1, 3, 6, 9], cur: 0, hits: [], dim: [], bad: [],
+      vars: [], meta: "Level order: 4, 2, 7, 1, 3, 6, 9. Target: 4, 7, 2, 9, 6, 3, 1.", hl: []
+    },
+    instinct: {
+      caption: "Swapping only the root's two children leaves everything below wrong.",
+      tree: [4, 7, 2, 6, 9, 1, 3], cur: 0, hits: [1, 2], dim: [], bad: [3, 4, 5, 6], swap: [1, 2],
+      vars: [], meta: "7 and 2 moved, but 6/9 and 1/3 are still in their original left/right order.", hl: [],
+      big: "wrong", bigNote: "only the top level mirrored"
+    },
+    idea: {
+      caption: "Recurse to the bottom, then swap results on the way back up.",
+      tree: [4, 2, 7, 1, 3, 6, 9], cur: 0, hits: [], dim: [], bad: [],
+      vars: [["current node", "4", "new"]], meta: "Post-order shape: children finish before the parent swaps them.", hl: [1, 2, 3]
+    },
+    t1: {
+      caption: "Node 7: invert leaves 6 and 9 (no-ops), then swap them.",
+      tree: [4, 2, 7, 1, 3, 9, 6], cur: 2, hits: [5, 6], dim: [0, 1, 3, 4], bad: [], swap: [5, 6],
+      vars: [["current node", "7", "new"]], meta: "7.left = 9, 7.right = 6.", hl: [4, 5, 6, 7]
+    },
+    t2: {
+      caption: "Node 2: invert leaves 1 and 3 (no-ops), then swap them.",
+      tree: [4, 2, 7, 3, 1, 9, 6], cur: 1, hits: [3, 4], dim: [0, 2, 5, 6], bad: [], swap: [3, 4],
+      vars: [["current node", "2", "new"]], meta: "2.left = 3, 2.right = 1.", hl: [4, 5, 6, 7]
+    },
+    t3: {
+      caption: "Root: swap the (already mirrored) left and right subtrees.",
+      tree: [4, 7, 2, 9, 6, 3, 1], cur: 0, hits: [1, 2, 3, 4, 5, 6], dim: [], bad: [], swap: [1, 2],
+      vars: [["current node", "4", "found"]], meta: "root.left = mirrored 7-subtree, root.right = mirrored 2-subtree.", hl: [4, 5, 6, 7, 8],
+      big: "[4,7,2,9,6,3,1]", bigNote: "final level order"
+    },
+    pitfall: {
+      caption: "Two separate assignments recurse fully but never swap.",
+      tree: [4, 2, 7, 3, 1, 9, 6], cur: 0, hits: [3, 4, 5, 6], dim: [], bad: [1, 2],
+      vars: [], meta: "Each subtree was inverted in place, but 2 and 7 were never exchanged.", hl: [4, 5, 6, 7],
+      big: "[4,2,7,3,1,9,6]", bigNote: "no top-level swap happened"
+    },
+    complexity: {
+      caption: "One visit per node, stack as deep as the tree is tall.",
+      tree: [4, 7, 2, 9, 6, 3, 1], cur: -1, hits: [], dim: [], bad: [],
+      vars: [], meta: "n = 7 nodes, height h = 3.", hl: [],
+      big: "O(n) time \u00b7 O(h) space", bigNote: "h = log n balanced, n worst case"
+    },
+    final: {
+      caption: "The whole solution.",
+      tree: [4, 7, 2, 9, 6, 3, 1], cur: -1, hits: [], dim: [], bad: [],
+      vars: [], meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8]
+    }
+  };
+
+  // Fixed layout for a complete 3-level tree, indexed in level order.
+  var POS = [[200, 32], [105, 102], [295, 102], [55, 172], [155, 172], [245, 172], [345, 172]];
+  var R = 21;
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
   }
-};
+  var treeSvg = document.getElementById("tree");
+  var edges = [], nodes = [], texts = [];
+  for (var i = 1; i < POS.length; i++) {
+    var p = POS[(i - 1) >> 1];
+    var e = el("line", { "class": "edge", x1: p[0], y1: p[1], x2: POS[i][0], y2: POS[i][1] });
+    treeSvg.appendChild(e); edges[i] = e;
+  }
+  var swapLayer = el("g", {}); treeSvg.appendChild(swapLayer);
+  for (var j = 0; j < POS.length; j++) {
+    var g = el("g", { "class": "node" });
+    g.appendChild(el("circle", { cx: POS[j][0], cy: POS[j][1], r: R }));
+    var t = el("text", { x: POS[j][0], y: POS[j][1] });
+    g.appendChild(t);
+    treeSvg.appendChild(g); nodes[j] = g; texts[j] = t;
+  }
+  var defs = el("defs", {});
+  var marker = el("marker", { id: "arrow", viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "6", markerHeight: "6", orient: "auto-start-reverse" });
+  marker.appendChild(el("path", { d: "M0,0 L10,5 L0,10 z", "class": "swap-head" }));
+  defs.appendChild(marker); treeSvg.appendChild(defs);
+
+  function renderTree(s) {
+    for (var i = 0; i < POS.length; i++) {
+      var cls = "node";
+      if (i === s.cur) cls += " cur";
+      else if (s.bad.indexOf(i) !== -1) cls += " bad";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.dim.indexOf(i) !== -1) cls += " dim";
+      nodes[i].setAttribute("class", cls);
+      texts[i].textContent = s.tree[i];
+      if (i > 0) {
+        var ec = "edge";
+        if (s.bad.indexOf(i) !== -1) ec += " bad";
+        else if (s.hits.indexOf(i) !== -1) ec += " hit";
+        edges[i].setAttribute("class", ec);
+      }
+    }
+    while (swapLayer.firstChild) swapLayer.removeChild(swapLayer.firstChild);
+    if (s.swap) {
+      var a = POS[s.swap[0]], b = POS[s.swap[1]];
+      var dip = a[1] + R + 22;
+      var d = "M" + (a[0] + R * 0.6) + "," + (a[1] + R * 0.85) + " Q" + ((a[0] + b[0]) / 2) + "," + (dip + 10) + " " + (b[0] - R * 0.6) + "," + (b[1] + R * 0.85);
+      swapLayer.appendChild(el("path", { d: d, "class": "swap", "marker-start": "url(#arrow)", "marker-end": "url(#arrow)" }));
+      var lt = el("text", { x: (a[0] + b[0]) / 2, y: dip + 20, "class": "lbl" });
+      lt.textContent = "swap";
+      swapLayer.appendChild(lt);
+    }
+  }
 
   var $ = function (id) { return document.getElementById(id); };
 
@@ -706,13 +374,16 @@
     $("caption").textContent = s.caption;
     $("meta").innerHTML = s.meta;
 
+    renderTree(s);
+
     var arr = "";
-    for (var i = 0; i < s.dp.length; i++) {
+    for (var i = 0; i < s.tree.length; i++) {
       var cls = "cell";
       if (i === s.cur) cls += " cur";
+      else if (s.bad.indexOf(i) !== -1) cls += " bad";
       else if (s.hits.indexOf(i) !== -1) cls += " hit";
       else if (s.dim.indexOf(i) !== -1) cls += " dim";
-      arr += '<div class="' + cls + '">' + s.dp[i][1] + '<span class="idx">' + s.dp[i][0] + '</span></div>';
+      arr += '<div class="' + cls + '">' + s.tree[i] + '</div>';
     }
     $("array").innerHTML = arr;
 

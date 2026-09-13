@@ -108,6 +108,26 @@
   .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
   .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
   .cell.dim { opacity: 0.5; }
+  .list { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .list .edge { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  .list .edge.cycle { stroke: var(--warn); stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .list .edge.dead { stroke: var(--line); }
+  .list .head { fill: var(--muted); }
+  .list .head.cycle { fill: var(--warn); }
+  .list .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .list .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 16px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
+  .list .node.slow circle { fill: var(--accent-soft); stroke: var(--accent); }
+  .list .node.fast circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .list .node.meet circle { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 4; }
+  .list .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .list .node.dim circle, .list .node.dim text { opacity: 0.4; }
+  .list .nil { fill: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 13px; text-anchor: middle; dominant-baseline: central; }
+  .list .tag { font-family: ui-monospace, Menlo, monospace; font-size: 11px; font-weight: 700; text-anchor: middle; }
+  .list .tag.slow { fill: var(--accent); }
+  .list .tag.fast { fill: var(--ok); }
+  .list .tag.bad { fill: var(--warn); }
+  .list .lbl { fill: var(--warn); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
   .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
   .meta b { color: var(--ink); }
 
@@ -207,8 +227,8 @@
       <div class="caption" id="caption"></div>
 
       <div class="block">
-        <h3>list · [3,2,0,-4] cycling back to index 1</h3>
-        <div class="array" id="array"></div>
+        <h3>list · <span id="target">[3,2,0,-4], -4.next → 2</span></h3>
+        <svg class="list" id="list" viewBox="0 0 400 150" aria-label="linked list"></svg>
         <div class="meta" id="meta"></div>
       </div>
 
@@ -237,386 +257,133 @@
 (function () {
   var CODE = ["class Solution:", "    def has_cycle(self, head):", "        slow = fast = head", "        while fast is not None and fast.next is not None:", "            slow = slow.next", "            fast = fast.next.next", "            if slow is fast:", "                return True", "        return False"];
 
+  var CYC = [3, 2, 0, -4];
+  // nodes: values in order. cycleTo: index the last node points back to, or -1 for a None tail.
+  // slow / fast: node index, "None" for the tail marker, or -1 when the pointer is not in play.
   var STATES = {
-  "problem": {
-    "caption": "Does this list ever return to a node it already visited?",
-    "dp": [
-      [
-        "3",
-        "3"
-      ],
-      [
-        "2",
-        "2"
-      ],
-      [
-        "0",
-        "0"
-      ],
-      [
-        "-4",
-        "-4"
-      ]
-    ],
-    "cur": -1,
-    "hits": [],
-    "dim": [],
-    "vars": [],
-    "meta": "-4's next loops back to node 2 (index 1) instead of None.",
-    "hl": []
-  },
-  "naive": {
-    "caption": "A visited-set works but costs O(n) extra space.",
-    "dp": [
-      [
-        "3",
-        "3"
-      ],
-      [
-        "2",
-        "2"
-      ],
-      [
-        "0",
-        "0"
-      ],
-      [
-        "-4",
-        "-4"
-      ]
-    ],
-    "cur": -1,
-    "hits": [],
-    "dim": [],
-    "vars": [],
-    "meta": "The problem wants O(1) extra space instead.",
-    "hl": []
-  },
-  "idea": {
-    "caption": "Run two pointers at different speeds instead of remembering nodes.",
-    "dp": [
-      [
-        "3",
-        "3"
-      ],
-      [
-        "2",
-        "2"
-      ],
-      [
-        "0",
-        "0"
-      ],
-      [
-        "-4",
-        "-4"
-      ]
-    ],
-    "cur": 0,
-    "hits": [],
-    "dim": [],
-    "vars": [
-      [
-        "slow",
-        "3",
-        "new"
-      ],
-      [
-        "fast",
-        "3",
-        "new"
-      ]
-    ],
-    "meta": "Both start at the head.",
-    "hl": [
-      2
-    ]
-  },
-  "t1": {
-    "caption": "Step 1: slow -> 2, fast -> 0.",
-    "dp": [
-      [
-        "3",
-        "3"
-      ],
-      [
-        "2",
-        "2"
-      ],
-      [
-        "0",
-        "0"
-      ],
-      [
-        "-4",
-        "-4"
-      ]
-    ],
-    "cur": -1,
-    "hits": [
-      1
-    ],
-    "dim": [],
-    "vars": [
-      [
-        "slow",
-        "2",
-        "new"
-      ],
-      [
-        "fast",
-        "0",
-        "new"
-      ]
-    ],
-    "meta": "slow moved 1 hop, fast moved 2 hops.",
-    "hl": [
-      4,
-      5
-    ]
-  },
-  "t2": {
-    "caption": "Step 2: slow -> 0, fast -> 2 (wrapping through the cycle).",
-    "dp": [
-      [
-        "3",
-        "3"
-      ],
-      [
-        "2",
-        "2"
-      ],
-      [
-        "0",
-        "0"
-      ],
-      [
-        "-4",
-        "-4"
-      ]
-    ],
-    "cur": -1,
-    "hits": [
-      2
-    ],
-    "dim": [],
-    "vars": [
-      [
-        "slow",
-        "0",
-        "new"
-      ],
-      [
-        "fast",
-        "2",
-        "new"
-      ]
-    ],
-    "meta": "fast went -4 -> 2, following the cycle's next pointer.",
-    "hl": [
-      4,
-      5
-    ]
-  },
-  "t3": {
-    "caption": "Step 3: slow -> -4, fast -> -4. They meet.",
-    "dp": [
-      [
-        "3",
-        "3"
-      ],
-      [
-        "2",
-        "2"
-      ],
-      [
-        "0",
-        "0"
-      ],
-      [
-        "-4",
-        "-4"
-      ]
-    ],
-    "cur": 3,
-    "hits": [
-      3
-    ],
-    "dim": [],
-    "vars": [
-      [
-        "slow",
-        "-4",
-        "found"
-      ],
-      [
-        "fast",
-        "-4",
-        "found"
-      ]
-    ],
-    "meta": "slow is fast -> True.",
-    "hl": [
-      6,
-      7
-    ],
-    "big": "True",
-    "bigNote": "cycle detected"
-  },
-  "nocycle": {
-    "caption": "On a straight list, fast simply runs off the end first.",
-    "dp": [
-      [
-        "1",
-        "1"
-      ],
-      [
-        "2",
-        "2"
-      ],
-      [
-        "3",
-        "3"
-      ],
-      [
-        "4",
-        "4"
-      ],
-      [
-        "5",
-        "5"
-      ]
-    ],
-    "cur": -1,
-    "hits": [],
-    "dim": [
-      0,
-      1,
-      2,
-      3,
-      4
-    ],
-    "vars": [
-      [
-        "slow",
-        "3"
-      ],
-      [
-        "fast",
-        "None"
-      ]
-    ],
-    "meta": "fast.next becomes None before slow and fast ever coincide.",
-    "hl": [
-      3
-    ],
-    "big": "False",
-    "bigNote": "no cycle"
-  },
-  "pitfall": {
-    "caption": "Checking only fast, not fast.next, crashes on even-length lists.",
-    "dp": [
-      [
-        "1",
-        "1"
-      ],
-      [
-        "2",
-        "2"
-      ],
-      [
-        "3",
-        "3"
-      ],
-      [
-        "4",
-        "4"
-      ]
-    ],
-    "cur": -1,
-    "hits": [],
-    "dim": [],
-    "vars": [
-      [
-        "fast",
-        "4"
-      ],
-      [
-        "fast.next",
-        "None"
-      ]
-    ],
-    "meta": "fast.next.next raises AttributeError if fast.next is None.",
-    "hl": [
-      3
-    ]
-  },
-  "complexity": {
-    "caption": "Fast closes the gap by one node per step once inside the cycle.",
-    "dp": [
-      [
-        "3",
-        "3"
-      ],
-      [
-        "2",
-        "2"
-      ],
-      [
-        "0",
-        "0"
-      ],
-      [
-        "-4",
-        "-4"
-      ]
-    ],
-    "cur": -1,
-    "hits": [],
-    "dim": [],
-    "vars": [],
-    "meta": "",
-    "hl": [],
-    "big": "O(n) time \u00b7 O(1) space",
-    "bigNote": "versus O(n) space for a visited set"
-  },
-  "final": {
-    "caption": "The whole solution.",
-    "dp": [
-      [
-        "3",
-        "3"
-      ],
-      [
-        "2",
-        "2"
-      ],
-      [
-        "0",
-        "0"
-      ],
-      [
-        "-4",
-        "-4"
-      ]
-    ],
-    "cur": -1,
-    "hits": [],
-    "dim": [],
-    "vars": [],
-    "meta": "",
-    "hl": [
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7,
-      8
-    ]
+    problem: {
+      caption: "Does this list ever return to a node it already visited?",
+      phase: "[3,2,0,-4], -4.next \u2192 2", nodes: CYC, cycleTo: 1, slow: -1, fast: -1, dim: [],
+      vars: [], meta: "-4's next loops back to node 2 (index 1) instead of None.", hl: []
+    },
+    naive: {
+      caption: "A visited-set works but costs O(n) extra space.",
+      phase: "[3,2,0,-4], -4.next \u2192 2", nodes: CYC, cycleTo: 1, slow: -1, fast: -1, dim: [],
+      vars: [["visited", "{3, 2, 0, -4}", ""]], meta: "The problem wants O(1) extra space instead.", hl: []
+    },
+    idea: {
+      caption: "Run two pointers at different speeds instead of remembering nodes.",
+      phase: "[3,2,0,-4], -4.next \u2192 2", nodes: CYC, cycleTo: 1, slow: 0, fast: 0, dim: [],
+      vars: [["slow", "3", "new"], ["fast", "3", "new"]], meta: "Both start at the head.", hl: [2]
+    },
+    t1: {
+      caption: "Step 1: slow -> 2, fast -> 0.",
+      phase: "[3,2,0,-4], -4.next \u2192 2", nodes: CYC, cycleTo: 1, slow: 1, fast: 2, dim: [],
+      vars: [["slow", "2", "new"], ["fast", "0", "new"]], meta: "slow moved 1 hop, fast moved 2 hops.", hl: [4, 5]
+    },
+    t2: {
+      caption: "Step 2: slow -> 0, fast -> 2 (wrapping through the cycle).",
+      phase: "[3,2,0,-4], -4.next \u2192 2", nodes: CYC, cycleTo: 1, slow: 2, fast: 1, dim: [],
+      vars: [["slow", "0", "new"], ["fast", "2", "new"]], meta: "fast went -4 -> 2, following the cycle's next pointer.", hl: [4, 5]
+    },
+    t3: {
+      caption: "Step 3: slow -> -4, fast -> -4. They meet.",
+      phase: "[3,2,0,-4], -4.next \u2192 2", nodes: CYC, cycleTo: 1, slow: 3, fast: 3, dim: [],
+      vars: [["slow", "-4", "found"], ["fast", "-4", "found"]], meta: "slow is fast -> True.", hl: [6, 7],
+      big: "True", bigNote: "cycle detected"
+    },
+    nocycle: {
+      caption: "On a straight list, fast simply runs off the end first.",
+      phase: "[1,2,3,4,5], no cycle", nodes: [1, 2, 3, 4, 5], cycleTo: -1, slow: 2, fast: "None", dim: [],
+      vars: [["slow", "3"], ["fast", "None"]], meta: "fast.next becomes None before slow and fast ever coincide.", hl: [3],
+      big: "False", bigNote: "no cycle"
+    },
+    pitfall: {
+      caption: "Checking only fast, not fast.next, crashes on even-length lists.",
+      phase: "[1,2,3,4], no cycle", nodes: [1, 2, 3, 4], cycleTo: -1, slow: -1, fast: 3, bad: "None", dim: [],
+      vars: [["fast", "4"], ["fast.next", "None"]], meta: "fast.next.next raises AttributeError if fast.next is None.", hl: [3]
+    },
+    complexity: {
+      caption: "Fast closes the gap by one node per step once inside the cycle.",
+      phase: "[3,2,0,-4], -4.next \u2192 2", nodes: CYC, cycleTo: 1, slow: -1, fast: -1, dim: [],
+      vars: [], meta: "", hl: [],
+      big: "O(n) time \u00b7 O(1) space", bigNote: "versus O(n) space for a visited set"
+    },
+    final: {
+      caption: "The whole solution.",
+      phase: "[3,2,0,-4], -4.next \u2192 2", nodes: CYC, cycleTo: 1, slow: -1, fast: -1, dim: [],
+      vars: [], meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8]
+    }
+  };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
   }
-};
+  var listSvg = document.getElementById("list");
+  var R = 20, Y = 70;
+
+  function renderList(s) {
+    while (listSvg.firstChild) listSvg.removeChild(listSvg.firstChild);
+    var defs = el("defs", {});
+    ["head", "head cycle"].forEach(function (cls, i) {
+      var m = el("marker", { id: i ? "arrow-cycle" : "arrow", viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "6", markerHeight: "6", orient: "auto" });
+      m.appendChild(el("path", { d: "M0,0 L10,5 L0,10 z", "class": cls }));
+      defs.appendChild(m);
+    });
+    listSvg.appendChild(defs);
+
+    var n = s.nodes.length, hasNil = s.cycleTo < 0;
+    var slots = n + (hasNil ? 1 : 0);
+    var step = Math.min(84, (400 - 90) / (slots - 1));
+    var x0 = (400 - step * (slots - 1)) / 2;
+    var xs = [];
+    for (var i = 0; i < slots; i++) xs.push(x0 + i * step);
+
+    // forward edges
+    for (var i = 0; i < slots - 1; i++) {
+      var isNilEdge = hasNil && i === n - 1;
+      listSvg.appendChild(el("line", { "class": "edge" + (isNilEdge ? " dead" : ""), x1: xs[i] + R + 2, y1: Y, x2: xs[i + 1] - (isNilEdge ? 24 : R + 2), y2: Y, "marker-end": "url(#arrow)" }));
+    }
+    // cycle edge: from the last node underneath back up into cycleTo
+    if (!hasNil) {
+      var a = xs[n - 1], b = xs[s.cycleTo], dip = Y + R + 34;
+      var d = "M" + a + "," + (Y + R) + " C" + a + "," + dip + " " + b + "," + dip + " " + b + "," + (Y + R + 2);
+      listSvg.appendChild(el("path", { "class": "edge cycle", d: d, "marker-end": "url(#arrow-cycle)" }));
+      listSvg.appendChild(el("text", { "class": "lbl", x: (a + b) / 2, y: dip + 4 }, "next \u2192 back to " + s.nodes[s.cycleTo]));
+    }
+    // nodes
+    for (var i = 0; i < n; i++) {
+      var cls = "node";
+      if (s.slow === i && s.fast === i) cls += " meet";
+      else if (s.slow === i) cls += " slow";
+      else if (s.fast === i) cls += " fast";
+      if (s.dim.indexOf(i) !== -1) cls += " dim";
+      var g = el("g", { "class": cls });
+      g.appendChild(el("circle", { cx: xs[i], cy: Y, r: R }));
+      g.appendChild(el("text", { x: xs[i], y: Y }, s.nodes[i]));
+      listSvg.appendChild(g);
+    }
+    if (hasNil) {
+      listSvg.appendChild(el("text", { "class": "nil", x: xs[n], y: Y }, "None"));
+    }
+    // pointer tags above the slot each pointer sits on
+    function tagX(v) { return v === "None" ? xs[n] : xs[v]; }
+    var tags = {};
+    function addTag(v, name) { if (v === -1 || v === undefined) return; var k = String(v); tags[k] = (tags[k] || []).concat(name); }
+    addTag(s.slow, "slow"); addTag(s.fast, "fast"); addTag(s.bad, "fast.next");
+    for (var k in tags) {
+      var v = k === "None" ? "None" : +k;
+      var names = tags[k], y = Y - R - 12;
+      for (var t = 0; t < names.length; t++) {
+        var nm = names[t];
+        listSvg.appendChild(el("text", { "class": "tag " + (nm === "fast.next" ? "bad" : nm), x: tagX(v), y: y - (names.length - 1 - t) * 13 }, nm + " \u25bc"));
+      }
+    }
+  }
 
   var $ = function (id) { return document.getElementById(id); };
 
@@ -627,15 +394,8 @@
     $("caption").textContent = s.caption;
     $("meta").innerHTML = s.meta;
 
-    var arr = "";
-    for (var i = 0; i < s.dp.length; i++) {
-      var cls = "cell";
-      if (i === s.cur) cls += " cur";
-      else if (s.hits.indexOf(i) !== -1) cls += " hit";
-      else if (s.dim.indexOf(i) !== -1) cls += " dim";
-      arr += '<div class="' + cls + '">' + s.dp[i][1] + '<span class="idx">' + s.dp[i][0] + '</span></div>';
-    }
-    $("array").innerHTML = arr;
+    $("target").textContent = s.phase;
+    renderList(s);
 
     if (s.vars.length === 0) {
       $("dict").innerHTML = '<span class="empty">not seeded yet</span>';

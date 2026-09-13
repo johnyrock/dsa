@@ -23,6 +23,7 @@ class TestTwoSum(unittest.TestCase):
             with self.subTest(nums=nums, target=target):
                 result = self.solution.two_sum(nums, target)
                 self.assertEqual(sorted(result), sorted(expected))
+                print(f'{sorted(result)} == {sorted(expected)} -- PASS')
 
 
 if __name__ == '__main__':

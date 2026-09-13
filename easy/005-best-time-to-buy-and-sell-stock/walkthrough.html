@@ -108,6 +108,27 @@
   .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
   .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
   .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
   .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
   .meta b { color: var(--ink); }
 
@@ -293,6 +314,7 @@
 
       <div class="block">
         <h3>prices · blue = today, green = min so far</h3>
+        <svg class="fig" id="fig" viewBox="0 0 400 170" aria-label="price chart"></svg>
         <div class="array" id="array"></div>
         <div class="meta" id="meta"></div>
       </div>
@@ -388,6 +410,45 @@
 
   var $ = function (id) { return document.getElementById(id); };
 
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var figSvg = document.getElementById("fig");
+  function clearFig(h) { while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild); figSvg.setAttribute("viewBox", "0 0 400 " + h); }
+
+  function renderChart(s) {
+    var H = 170, base = 132, top = 28, n = s.prices.length;
+    clearFig(H);
+    var defs = el("defs", {});
+    var mk = el("marker", { id: "arrow", viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "6", markerHeight: "6", orient: "auto" });
+    mk.appendChild(el("path", { d: "M0,0 L10,5 L0,10 z", "class": "head" })); defs.appendChild(mk); figSvg.appendChild(defs);
+    var max = Math.max.apply(null, s.prices), slot = 400 / n, bw = Math.min(40, slot * 0.55);
+    var xs = [], tops = [];
+    figSvg.appendChild(el("line", { "class": "ground", x1: 10, y1: base, x2: 390, y2: base }));
+    for (var i = 0; i < n; i++) {
+      var x = slot * i + slot / 2, h = (base - top) * s.prices[i] / max, y = base - h;
+      xs.push(x); tops.push(y);
+      var cls = "bar";
+      if (i === s.cur) cls += " cur";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.cur !== -1 && i > s.cur) cls += " dim";
+      figSvg.appendChild(el("rect", { "class": cls, x: x - bw / 2, y: y, width: bw, height: h, rx: 4 }));
+      figSvg.appendChild(el("text", { "class": "val" + (i === s.cur ? " cur-txt" : (s.hits.indexOf(i) !== -1 ? " hit-txt" : "")), x: x, y: y - 6 }, s.prices[i]));
+      figSvg.appendChild(el("text", { "class": "lbl", x: x, y: base + 16 }, "day " + i));
+    }
+    // one min-so-far marked and a sell day after it: draw the trade
+    if (s.cur !== -1 && s.hits.length === 1 && s.hits[0] < s.cur) {
+      var a = s.hits[0], b = s.cur, profit = s.prices[b] - s.prices[a];
+      var y0 = tops[a] - 18, y1 = tops[b] - 18, peak = Math.min(y0, y1) - 20;
+      figSvg.appendChild(el("path", { "class": "span", d: "M" + xs[a] + "," + y0 + " Q" + ((xs[a] + xs[b]) / 2) + "," + peak + " " + xs[b] + "," + y1, "marker-end": "url(#arrow)" }));
+      figSvg.appendChild(el("text", { "class": "val hit-txt", x: (xs[a] + xs[b]) / 2, y: peak + 4 }, (profit >= 0 ? "+" : "") + profit));
+    }
+  }
   function render(name) {
     var s = STATES[name];
     if (!s) return;
@@ -404,6 +465,7 @@
       arr += '<div class="' + cls + '">' + s.prices[i] + '<span class="idx">' + i + '</span></div>';
     }
     $("array").innerHTML = arr;
+    renderChart(s);
 
     if (s.chips.length === 0) {
       $("dict").innerHTML = '<span class="empty">not started yet</span>';

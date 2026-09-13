@@ -108,6 +108,19 @@
   .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
   .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
   .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .edge { stroke: var(--muted); stroke-width: 2; fill: none; opacity: 0.6; transition: opacity 0.25s, stroke 0.25s; }
+  .fig .edge.dim { opacity: 0.2; }
+  .fig .edge.hit { stroke: var(--ok); opacity: 1; stroke-width: 3; }
+  .fig .edge.bad { stroke: var(--warn); opacity: 1; stroke-width: 3; }
+  .fig .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .node.end circle { stroke: var(--muted); stroke-width: 3; }
+  .fig .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .fig .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .fig .node.dim circle, .fig .node.dim text { opacity: 0.3; }
+  .fig .root circle { fill: var(--code-bg); }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
   .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
   .meta b { color: var(--ink); }
 
@@ -292,6 +305,11 @@
       </div>
 
       <div class="block">
+        <h3>trie · thick ring = end of a word</h3>
+        <svg class="fig" id="fig" viewBox="0 0 400 300" aria-label="trie"></svg>
+      </div>
+
+      <div class="block">
         <h3>trie walk</h3>
         <div class="dict" id="dict"></div>
       </div>
@@ -356,6 +374,7 @@
       meta: 'O(n² · L): every word re-scans the whole list.', hl: []
     },
     reframe: {
+      walk: { paths: ['apple', 'app', 'banana', 'nana'], cls: 'hit' },
       caption: 'Build one trie over all four words instead of re-scanning the list each time.',
       cells: WORDS, cur: -1, hits: [], dim: [],
       vars: [['trie holds', 'apple, app, banana, nana', 'new']],
@@ -368,24 +387,28 @@
       meta: 'Self-match guard: start == 0 and end == n - 1 is excluded.', hl: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
     },
     t1: {
+      walk: { paths: ['app'], cls: 'hit', dimRest: true },
       caption: '"apple": start at index 0, walk a → p → p. "app" completes here — hit.',
       cells: WORDS, cur: 0, hits: [], dim: [],
       vars: [['start', 0], ['walk', 'a, p, p'], ['found', '"app" (not self-match)', 'found']],
       meta: '"apple" contains "app".', hl: [12, 15, 16]
     },
     t2: {
+      walk: { paths: ['app'], cls: 'bad', dimRest: true },
       caption: '"app": the only completed word found is "app" itself in full — excluded as a self-match.',
       cells: WORDS, cur: 1, hits: [], dim: [0],
       vars: [['start', 0], ['walk', 'a, p, p'], ['found', 'self-match, excluded']],
       meta: '"app" is correctly left out of the answer.', hl: [15]
     },
     t3: {
+      walk: { paths: ['nana'], cls: 'hit', dimRest: true },
       caption: '"banana": start at index 2, walk n → a → n → a. "nana" completes here — hit.',
       cells: WORDS, cur: 2, hits: [0], dim: [1],
       vars: [['start', 2], ['walk', 'n, a, n, a'], ['found', '"nana" (not self-match)', 'found']],
       meta: 'Found from a non-zero starting index — this is why every index must be tried.', hl: [9, 10, 11, 12, 15, 16]
     },
     pitfall: {
+      walk: { paths: ['banana'], cls: 'bad', dimRest: true },
       caption: 'Only trying index 0 would miss "nana" inside "banana" entirely.',
       cells: WORDS, cur: 2, hits: [0], dim: [1],
       vars: [['bug', 'checking only start = 0']],
@@ -399,6 +422,7 @@
       big: 'O(n · L²) time · O(n · L) space', bigNote: 'versus O(n² · L) time for pairwise comparison'
     },
     final: {
+      walk: { paths: ['app', 'nana'], cls: 'hit' },
       caption: 'The whole solution.',
       cells: WORDS, cur: -1, hits: [0, 2], dim: [1, 3],
       vars: [['result', 'apple, banana', 'found']],
@@ -407,6 +431,62 @@
   };
 
   var $ = function (id) { return document.getElementById(id); };
+
+
+  // ---- trie figure ----
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var TRIE = { ch: "", kids: {}, end: false, path: "" };
+  WORDS.forEach(function (w) {
+    var n = TRIE;
+    for (var i = 0; i < w.length; i++) {
+      if (!n.kids[w[i]]) n.kids[w[i]] = { ch: w[i], kids: {}, end: false, path: w.slice(0, i + 1) };
+      n = n.kids[w[i]];
+    }
+    n.end = true;
+  });
+  var TR = 14, levelH = 42, leafSlot = 0, trieNodes = [], trieEdges = [], trieDepth = 0;
+  (function layout(n, depth) {
+    n.depth = depth; trieDepth = Math.max(trieDepth, depth);
+    var keys = Object.keys(n.kids);
+    if (!keys.length) { n.slot = leafSlot++; }
+    else {
+      var sum = 0;
+      keys.forEach(function (k) { layout(n.kids[k], depth + 1); sum += n.kids[k].slot; trieEdges.push([n, n.kids[k]]); });
+      n.slot = sum / keys.length;
+    }
+    trieNodes.push(n);
+  })(TRIE, 0);
+  var stepX = (400 - 120) / Math.max(1, leafSlot - 1);
+  trieNodes.forEach(function (n) { n.x = 60 + n.slot * stepX; n.y = 24 + n.depth * levelH; });
+  var figSvg = document.getElementById("fig");
+  figSvg.setAttribute("viewBox", "0 0 400 " + (24 + trieDepth * levelH + 24));
+
+  function renderTrie(s) {
+    while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild);
+    var w = s.walk || { paths: [], cls: "" };
+    function on(path) {
+      if (path === "") return w.paths.length ? w.cls : "";
+      for (var i = 0; i < w.paths.length; i++) if (w.paths[i].indexOf(path) === 0) return w.cls;
+      return w.dimRest ? "dim" : "";
+    }
+    trieEdges.forEach(function (e) {
+      var st = on(e[1].path);
+      figSvg.appendChild(el("line", { "class": "edge " + st, x1: e[0].x, y1: e[0].y + TR, x2: e[1].x, y2: e[1].y - TR }));
+    });
+    trieNodes.forEach(function (n) {
+      var cls = "node " + on(n.path) + (n.end ? " end" : "") + (n.path === "" ? " root" : "");
+      var g = el("g", { "class": cls });
+      g.appendChild(el("circle", { cx: n.x, cy: n.y, r: TR }));
+      g.appendChild(el("text", { x: n.x, y: n.y }, n.path === "" ? "•" : n.ch));
+      figSvg.appendChild(g);
+    });
+  }
 
   function render(name) {
     var s = STATES[name];
@@ -424,6 +504,7 @@
       arr += '<div class="' + cls + '">' + s.cells[i] + '<span class="idx">word ' + i + '</span></div>';
     }
     $("array").innerHTML = arr;
+    renderTrie(s);
 
     if (s.vars.length === 0) {
       $("dict").innerHTML = '<span class="empty">not started yet</span>';

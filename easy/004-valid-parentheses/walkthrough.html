@@ -108,6 +108,28 @@
   .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
   .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
   .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .dict[hidden] { display: none; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
   .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
   .meta b { color: var(--ink); }
 
@@ -307,8 +329,9 @@
       </div>
 
       <div class="block">
-        <h3>stack (top on the right)</h3>
-        <div class="dict" id="stack"></div>
+        <h3>stack · top is the highest box</h3>
+        <svg class="fig" id="fig" viewBox="0 0 400 120" aria-label="stack"></svg>
+        <div class="dict" id="stack" hidden></div>
       </div>
 
       <div class="block" id="bigwrap" hidden>
@@ -396,6 +419,31 @@
 
   var $ = function (id) { return document.getElementById(id); };
 
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var figSvg = document.getElementById("fig");
+  function clearFig(h) { while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild); figSvg.setAttribute("viewBox", "0 0 400 " + h); }
+
+  function renderStack(s) {
+    var n = s.stack.length, bh = 26, gap = 4, H = Math.max(90, 24 + n * (bh + gap) + 20), base = H - 14;
+    clearFig(H);
+    var cx = 200, w = 120;
+    figSvg.appendChild(el("path", { "class": "wall", d: "M" + (cx - w / 2 - 10) + "," + (base - Math.max(2, n) * (bh + gap) - 12) + " V" + base + " H" + (cx + w / 2 + 10) + " V" + (base - Math.max(2, n) * (bh + gap) - 12) }));
+    if (!n) { figSvg.appendChild(el("text", { "class": "lbl", x: cx, y: base - 22 }, "empty")); return; }
+    for (var k = 0; k < n; k++) {
+      var y = base - (k + 1) * (bh + gap) + gap;
+      figSvg.appendChild(el("rect", { "class": "box " + (s.stack[k][1] || ""), x: cx - w / 2, y: y, width: w, height: bh, rx: 5 }));
+      figSvg.appendChild(el("text", { "class": "val", x: cx, y: y + bh / 2 + 5 }, s.stack[k][0]));
+    }
+    var ty = base - n * (bh + gap) + gap + bh / 2 + 4;
+    figSvg.appendChild(el("text", { "class": "lbl", x: cx + w / 2 + 34, y: ty }, "← top"));
+  }
   function render(name) {
     var s = STATES[name];
     if (!s) return;
@@ -424,6 +472,7 @@
       }
       $("stack").innerHTML = d;
     }
+    renderStack(s);
 
     if (s.big) {
       $("bigwrap").hidden = false;

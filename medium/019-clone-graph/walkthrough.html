@@ -108,6 +108,26 @@
   .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
   .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
   .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .edge { stroke: var(--muted); stroke-width: 2.5; fill: none; opacity: 0.7; transition: opacity 0.25s, stroke 0.25s; }
+  .fig .edge.dim { opacity: 0.25; }
+  .fig .edge.hit { stroke: var(--ok); opacity: 1; }
+  .fig .edge.cycle { stroke: var(--warn); stroke-dasharray: 6 4; animation: dash 1s linear infinite; opacity: 1; }
+  .fig .head { fill: var(--muted); }
+  .fig .head.cycle { fill: var(--warn); }
+  .fig .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 16px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .fig .node.cur circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3.5; }
+  .fig .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .fig .node.dim circle, .fig .node.dim text { opacity: 0.35; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .array.compact { gap: 4px; margin-top: 2px; }
+  .array[hidden] { display: none; }
+  .array.compact .cell { min-width: 28px; padding: 3px 0 2px; font-size: 0.9rem; border-width: 1.5px; border-radius: 6px; }
+  .array.compact .cell .idx { display: none; }
+  .array.compact .cell.cur { transform: none; }
   .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
   .meta b { color: var(--ink); }
 
@@ -206,7 +226,8 @@
 
       <div class="block">
         <h3>graph · 1-2-3-1 triangle (each pair connected)</h3>
-        <div class="array" id="array"></div>
+        <svg class="fig" id="fig" viewBox="0 0 400 200" aria-label="figure"></svg>
+        <div class="array compact" id="array" hidden></div>
         <div class="meta" id="meta"></div>
       </div>
 
@@ -491,6 +512,109 @@
 
   var $ = function (id) { return document.getElementById(id); };
 
+
+  // ---- figure renderer: a binary tree from a level-order spec, or a graph from nodes + edges ----
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var R = 19;
+  // level-order-with-null spec -> { nodes: [{val, x, y, parent}], edges: [[parentIdx, childIdx]] }; node index = order among non-null values
+  function layoutTree(spec) {
+    var nodes = [], queue = [], i = 0;
+    if (!spec.length || spec[0] === null) return { nodes: [], edges: [], h: 60 };
+    nodes.push({ val: spec[0], depth: 0, parent: -1, kids: [null, null] });
+    queue.push(0); i = 1;
+    while (queue.length && i < spec.length) {
+      var p = queue.shift();
+      for (var side = 0; side < 2 && i < spec.length; side++, i++) {
+        if (spec[i] === null) continue;
+        var idx = nodes.length;
+        nodes.push({ val: spec[i], depth: nodes[p].depth + 1, parent: p, kids: [null, null] });
+        nodes[p].kids[side] = idx;
+        queue.push(idx);
+      }
+    }
+    // in-order slot assignment: x by in-order rank, so children sit either side of their parent
+    var slot = 0, maxDepth = 0;
+    function walk(n) {
+      if (n === null) return;
+      walk(nodes[n].kids[0]);
+      nodes[n].slot = slot++;
+      maxDepth = Math.max(maxDepth, nodes[n].depth);
+      walk(nodes[n].kids[1]);
+    }
+    walk(0);
+    var levelH = 64, margin = 34, W = 400;
+    var stepX = slot > 1 ? (W - 2 * margin) / (slot - 1) : 0;
+    var edges = [];
+    nodes.forEach(function (n, idx) {
+      n.x = slot > 1 ? margin + n.slot * stepX : W / 2;
+      n.y = 30 + n.depth * levelH;
+      if (n.parent >= 0) edges.push([n.parent, idx]);
+    });
+    return { nodes: nodes, edges: edges, h: 30 + maxDepth * levelH + 32 };
+  }
+  function layoutGraph(g) {
+    var nodes = g.nodes.map(function (n) { return { val: n[0], x: n[1], y: n[2] }; });
+    return { nodes: nodes, edges: g.edges, directed: !!g.directed, h: g.h || 200 };
+  }
+  var figSvg = document.getElementById("fig");
+  function renderFig(fig, s) {
+    while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild);
+    figSvg.setAttribute("viewBox", "0 0 400 " + fig.h);
+    var defs = el("defs", {});
+    [["arrow", "head"], ["arrow-cycle", "head cycle"], ["arrow-hit", "head hit"]].forEach(function (m) {
+      var mk = el("marker", { id: m[0], viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "6", markerHeight: "6", orient: "auto" });
+      mk.appendChild(el("path", { d: "M0,0 L10,5 L0,10 z", "class": m[1] }));
+      defs.appendChild(mk);
+    });
+    figSvg.appendChild(defs);
+    var bad = s.bad || [];
+    function state(i) {
+      if (i === s.cur) return "cur";
+      if (bad.indexOf(i) !== -1) return "bad";
+      if (s.hits.indexOf(i) !== -1) return "hit";
+      if (s.dim.indexOf(i) !== -1) return "dim";
+      return "";
+    }
+    var seen = {};
+    fig.edges.forEach(function (e) {
+      var a = fig.nodes[e[0]], b = fig.nodes[e[1]];
+      var sa = state(e[0]), sb = state(e[1]);
+      var cls = "edge";
+      if (sa === "dim" || sb === "dim") cls += " dim";
+      else if ((sa === "hit" || sa === "cur") && (sb === "hit" || sb === "cur")) cls += " hit";
+      var reverse = seen[e[1] + "-" + e[0]];
+      var dx = b.x - a.x, dy = b.y - a.y, len = Math.sqrt(dx * dx + dy * dy) || 1;
+      var ux = dx / len, uy = dy / len;
+      var x1 = a.x + ux * (R + 2), y1 = a.y + uy * (R + 2), x2 = b.x - ux * (R + 3), y2 = b.y - uy * (R + 3);
+      var attrs = { "class": cls + (fig.cycleEdges ? " cycle" : "") };
+      if (fig.directed) attrs["marker-end"] = fig.cycleEdges ? "url(#arrow-cycle)" : (cls.indexOf("hit") !== -1 ? "url(#arrow-hit)" : "url(#arrow)");
+      if (fig.directed && (reverse || fig.edges.some(function (o) { return o[0] === e[1] && o[1] === e[0]; }))) {
+        var nx = -uy * 18, ny = ux * 18;
+        attrs.d = "M" + x1 + "," + y1 + " Q" + ((x1 + x2) / 2 + nx) + "," + ((y1 + y2) / 2 + ny) + " " + x2 + "," + y2;
+        figSvg.appendChild(el("path", attrs));
+      } else {
+        attrs.x1 = x1; attrs.y1 = y1; attrs.x2 = x2; attrs.y2 = y2;
+        figSvg.appendChild(el("line", attrs));
+      }
+      seen[e[0] + "-" + e[1]] = true;
+    });
+    fig.nodes.forEach(function (n, i) {
+      var g = el("g", { "class": "node " + state(i) });
+      g.appendChild(el("circle", { cx: n.x, cy: n.y, r: R }));
+      g.appendChild(el("text", { x: n.x, y: n.y }, n.val));
+      figSvg.appendChild(g);
+    });
+    if (fig.note) figSvg.appendChild(el("text", { "class": "lbl", x: 200, y: fig.h - 8 }, fig.note));
+  }
+  var FIG = layoutGraph({ directed: false, h: 190, nodes: [[1, 200, 34], [2, 110, 150], [3, 290, 150]], edges: [[0, 1], [0, 2], [1, 2]] });
+  var FIG_BY_STATE = {};
+
   function render(name) {
     var s = STATES[name];
     if (!s) return;
@@ -507,6 +631,7 @@
       arr += '<div class="' + cls + '">' + s.dp[i][1] + '<span class="idx">' + s.dp[i][0] + '</span></div>';
     }
     $("array").innerHTML = arr;
+    renderFig(FIG_BY_STATE[name] || FIG, s);
 
     if (s.vars.length === 0) {
       $("dict").innerHTML = '<span class="empty">not seeded yet</span>';
