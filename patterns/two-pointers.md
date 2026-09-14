@@ -49,7 +49,9 @@ Move the pointer that can still improve the answer. In 3Sum that is decided by t
 | [medium/004 3Sum](../medium/004-3sum/) | Medium | sort, fix i, close left/right on the rest, skip duplicates |
 | [medium/005 Container With Most Water](../medium/005-container-with-most-water/) | Medium | start at the ends, always move the shorter wall |
 | [medium/012 Longest Palindromic Substring](../medium/012-longest-palindromic-substring/) | Medium | expand outward from each of the 2n - 1 centres while the ends match |
-
+| [easy/023 Plus One](../easy/023-plus-one/) | Easy | Propagate the carry from the rightmost digit. |
+| [medium/029 Two Sum II - Input Array Is Sorted](../medium/029-two-sum-ii-input-array-is-sorted/) | Medium | Because the array is sorted, the pair `(numbers[left], numbers[right])` with `left` at… |
+| [medium/041 Remove Nth Node From End of List](../medium/041-remove-nth-node-from-end-of-list/) | Medium | Two pointers that start together and are separated by exactly `n` steps stay `n` apart… |
 ## Common mistakes
 
 - Advancing both pointers when only one should move.

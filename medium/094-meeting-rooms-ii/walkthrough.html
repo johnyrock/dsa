@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meeting Rooms II Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  /* meeting-rooms-ii additions (easy/021 / medium/093 renderer): meetings drawn as bars on a shared number line, plus the heap as .array cells */
+  .timeline { position: relative; margin: 6px 0 4px; }
+  .tl-row { position: relative; height: 26px; margin-bottom: 4px; }
+  .tl-bar {
+    position: absolute; top: 3px; height: 20px; border-radius: 5px;
+    background: var(--panel); border: 2px solid var(--line);
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; line-height: 16px; text-align: center;
+    color: var(--ink); white-space: nowrap; overflow: visible; transition: all 0.25s;
+  }
+  .tl-bar.cur { border-color: var(--accent); background: var(--accent-soft); }
+  .tl-bar.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .tl-bar.bad { border-color: var(--warn); background: var(--warn-soft); }
+  .tl-bar.dim { opacity: 0.4; }
+  .tl-axis { position: relative; height: 16px; border-top: 1px solid var(--line); margin-top: 4px; }
+  .tl-axis span { position: absolute; top: 1px; transform: translateX(-50%); font-size: 0.65rem; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+  .tl-mark { position: absolute; top: 0; bottom: 20px; width: 0; border-left: 2px dashed var(--ok); opacity: 0.8; }
+  .dict .kv.bad { border-color: var(--warn); background: var(--warn-soft); }
+  .tl-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 6px 0 2px; }
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Intervals · LeetCode #253</div>
+  <h1>Meeting Rooms II, narrated</h1>
+  <p>Scroll through the thinking, from counting meetings at every instant to a sort plus a min-heap of room end times, with the meetings on a timeline and the heap shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/intervals.html">Intervals</a> <span class="how">Sorted by start, a meeting can reuse a room only if the room that frees up <em>soonest</em> is free; a min-heap of end times keeps that room at the top.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get a list of meetings, each a <code>[start, end]</code> pair. Two meetings that overlap in time need different rooms; a meeting may begin in a room at the exact moment the previous one there ends. Return the minimum number of rooms that lets every meeting happen.</p>
+      <div class="callout">Running example: <code>intervals = [[0, 30], [5, 10], [15, 20]]</code>. The answer is <strong>2</strong>: <code>[0, 30]</code> holds one room for the whole span, while <code>[5, 10]</code> and <code>[15, 20]</code> take turns in a second room.</div>
+      <p>The answer is really "how many meetings are running at the busiest moment". At <code>t = 5</code> two meetings are live, at <code>t = 15</code> two again, never three. The question is how to find that peak without checking every moment.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: count meetings at every instant</h2>
+      <p>For each meeting's start time, count how many meetings are running then, and keep the largest count. A meeting <code>[s, e]</code> is running at time <code>t</code> when <code>s &lt;= t &lt; e</code>.</p>
+      <pre class="code"><span class="ln">rooms = 0</span><span class="ln">for start, _ in intervals:</span><span class="ln">    live = 0</span><span class="ln">    for s, e in intervals:</span><span class="ln">        if s &lt;= start &lt; e:</span><span class="ln">            live += 1</span><span class="ln">    rooms = max(rooms, live)</span></pre>
+      <p style="margin-top:14px">Checking start times only is enough, because the number of live meetings can only go up at a start. It is correct and <strong>O(n²)</strong>: every start against every meeting. At the limit of <code>10^4</code> meetings that is a hundred million comparisons, which is slow but not impossible; the real objection is that it repeats the same work, re-scanning meetings that ended long ago.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: reuse the room that frees up first</h2>
+      <p>Sort the meetings by start time and hand out rooms in that order. When a meeting starts, every earlier meeting already has a room, so the only question is: <em>is any of those rooms free yet?</em> A room is free when the meeting in it has ended, so the room worth checking is the one with the <strong>smallest end time</strong>. If that one is still busy, every room is.</p>
+      <p>Keep one end time per room in a min-heap, <code>end_times</code>. Its top, <code>end_times[0]</code>, is the earliest-freeing room. If <code>end_times[0] &lt;= start</code>, that room is free: reuse it by swapping its end time for the new meeting's. Otherwise open a new room by pushing the new end time.</p>
+      <div class="callout">Rooms are never closed, so the heap only grows. Its final size is the peak number of meetings running at once, which is exactly the minimum number of rooms.</div>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>intervals.sort(key=lambda interval: interval[0])</code> puts the meetings in start order.</li>
+        <li><code>end_times = []</code> is the min-heap, one end time per room in use.</li>
+        <li><code>for start, end in intervals:</code> assigns rooms one meeting at a time.</li>
+        <li><code>if end_times and end_times[0] &lt;= start:</code> asks whether the earliest-freeing room is free. The <code>&lt;=</code> lets a meeting start exactly when another ends.</li>
+        <li><code>heapq.heapreplace(end_times, end)</code> pops that end time and pushes the new one in a single sift: same room, new occupant.</li>
+        <li><code>else: heapq.heappush(end_times, end)</code> opens a new room.</li>
+        <li><code>return len(end_times)</code>: the number of rooms ever opened.</li>
+      </ul>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the first meeting opens a room</h2>
+      <p>After sorting, the order is <code>[0, 30]</code>, <code>[5, 10]</code>, <code>[15, 20]</code>; the input was already sorted, so nothing moves.</p>
+      <p><code>[0, 30]</code> arrives with <code>end_times</code> empty. The condition <code>end_times and ...</code> is false on an empty list, so there is no room to reuse: push <code>30</code>. Now <code>end_times = [30]</code>, one room, busy until 30.</p>
+      <p>The dashed line on the timeline marks <code>end_times[0]</code>, the moment the earliest room frees up. For the next meeting to reuse a room it would have to start at or after that line.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: a second room</h2>
+      <p><code>[5, 10]</code> arrives. The earliest-freeing room is <code>end_times[0] = 30</code>, and <code>30 &lt;= 5</code> is false: that room is still busy, and since it is the soonest to free up, so is every room.</p>
+      <p>Push <code>10</code>. The heap sifts it to the top: <code>end_times = [10, 30]</code>. Two rooms are open, and the earliest-freeing one is now the <code>[5, 10]</code> room, at 10, which is where the dashed line moves.</p>
+      <p>This is the busiest the example gets: two meetings live at <code>t = 5</code>.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: reusing a room</h2>
+      <p><code>[15, 20]</code> arrives. <code>end_times[0] = 10</code>, and <code>10 &lt;= 15</code> is true: the room that held <code>[5, 10]</code> has been empty since 10. Reuse it: <code>heapreplace</code> pops the <code>10</code> and pushes <code>20</code>, giving <code>end_times = [20, 30]</code>. The heap size stays 2.</p>
+      <p>The loop ends and <code>len(end_times) = 2</code> is returned. Two rooms were opened, at <code>t = 0</code> and <code>t = 5</code>, and none after that.</p>
+      <div class="callout">Each meeting looked at exactly one room, the one at the top of the heap, and either reused it or opened a new one. The heap's size only ever went up, so it records the peak.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: losing a room</h2>
+      <p><strong>Popping without pushing back.</strong> Writing the reuse branch as <code>heapq.heappop(end_times)</code> and then forgetting <code>heappush(end_times, end)</code> makes the freed room vanish instead of being reused. On the example, <code>[15, 20]</code> pops the <code>10</code> and adds nothing, so <code>end_times = [30]</code> and the function returns <strong>1, not 2</strong>. The room count must never go down; <code>heapreplace</code> keeps the size fixed on a reuse.</p>
+      <p><strong>Using <code>&lt;</code> instead of <code>&lt;=</code>.</strong> With <code>end_times[0] &lt; start</code>, a meeting that starts exactly when another ends is treated as a conflict. <code>[[1, 2], [2, 3]]</code> then returns <strong>2</strong> instead of 1.</p>
+      <p><strong>Checking the most recent room instead of the earliest-freeing one.</strong> A single <code>prev_end</code> variable, as in Meeting Rooms I, compares against whichever meeting was assigned last. On <code>[[1, 5], [1, 10], [5, 8]]</code>, <code>prev_end</code> is 10 when <code>[5, 8]</code> arrives, so a third room is opened even though the <code>[1, 5]</code> room is free: <strong>3</strong> instead of 2. Only the minimum end time answers "is any room free".</p>
+      <div class="callout warn">Sort by start, check the heap top with <code>&lt;=</code>, and replace rather than pop: the heap size is the answer only if rooms are never closed.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Sorting is <strong>O(n log n)</strong>. Each meeting then does one heap operation, <code>heappush</code> or <code>heapreplace</code>, at O(log n), so the sweep is O(n log n) as well. The heap holds at most one entry per meeting, so <strong>O(n) space</strong> in the worst case where every meeting overlaps every other.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Count live meetings at every start</td><td>O(n²)</td><td>O(1)</td></tr>
+        <tr><td>Sort + min-heap of end times</td><td>O(n log n)</td><td>O(n)</td></tr>
+        <tr><td>Two sorted arrays, two pointers</td><td>O(n log n)</td><td>O(n)</td></tr>
+      </table>
+      <p>The two-pointer version sorts starts and ends separately and walks them together; same bound, no heap, but the room count has to be tracked as a running maximum rather than read off a structure.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Nine lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>intervals.sort(key=lambda interval: interval[0])</code> — start order.</li>
+        <li><code>end_times = []</code> — one end time per open room, min-heap.</li>
+        <li><code>for start, end in intervals:</code> — one meeting at a time.</li>
+        <li><code>if end_times and end_times[0] &lt;= start:</code> — is the earliest-freeing room free?</li>
+        <li><code>heapq.heapreplace(end_times, end)</code> — yes: reuse it.</li>
+        <li><code>heapq.heappush(end_times, end)</code> — no: open another.</li>
+        <li><code>return len(end_times)</code> — rooms opened, which is the peak.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>in start order, reuse the room that frees up soonest if it is free, else open one; the heap size is the answer.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>meetings on a timeline · <span id="target">input order</span></h3>
+        <div class="timeline" id="tl"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>end_times · min-heap, one per room</h3>
+        <div class="array" id="array"></div>
+      </div>
+
+      <div class="block">
+        <h3>comparison</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="meeting_rooms_ii.py">meeting_rooms_ii.py</a> · <a href="meeting_rooms_ii_annotated.py">meeting_rooms_ii_annotated.py</a> · <a href="test_meeting_rooms_ii.py">test_meeting_rooms_ii.py</a> · <a href="../../md.html?f=medium/094-meeting-rooms-ii/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def min_meeting_rooms(self, intervals: list[list[int]]) -> int:",
+    "        intervals.sort(key=lambda interval: interval[0])",
+    "        end_times = []",
+    "        for start, end in intervals:",
+    "            if end_times and end_times[0] <= start:",
+    "                heapq.heapreplace(end_times, end)",
+    "            else:",
+    "                heapq.heappush(end_times, end)",
+    "        return len(end_times)"
+  ];
+
+  var IV = [[0, 30], [5, 10], [15, 20]];
+
+  // inp = bars; cur = the meeting being placed (blue); kept = already placed (green); bad = lost (amber);
+  // mark = end_times[0] as a dashed line; heap = end_times array, hcur = index being compared, hhit = index just pushed.
+  var STATES = {
+    problem: {
+      caption: "Fewest rooms so that overlapping meetings never share one.",
+      phase: "input order", inp: IV, cur: -1, kept: [], bad: [], mark: null, lo: 0, hi: 30, heap: [], hcur: -1, hhit: [], vars: [],
+      meta: "Two meetings are live at t = 5 and at t = 15, never three. Answer: <b>2</b>.", hl: []
+    },
+    brute: {
+      caption: "Brute force counts the live meetings at every start time and keeps the maximum.",
+      phase: "every start against every meeting", inp: IV, cur: -1, kept: [], bad: [], mark: null, lo: 0, hi: 30, heap: [], hcur: -1, hhit: [],
+      vars: [["live at t = 0", "1"], ["live at t = 5", "2"], ["live at t = 15", "2"]],
+      meta: "Correct, but every start re-scans every meeting.", hl: [],
+      big: "O(n²)", bigNote: "n starts × n meetings"
+    },
+    insight: {
+      caption: "Sorted by start. A meeting can reuse a room only if the earliest-freeing room is free; keep end times in a min-heap.",
+      phase: "sorted by start", inp: IV, cur: -1, kept: [], bad: [], mark: null, lo: 0, hi: 30, heap: [], hcur: -1, hhit: [],
+      vars: [["reuse if", "end_times[0] <= start", "new"], ["else", "open a room", "new"]],
+      meta: "If the soonest-to-free room is busy, every room is.", hl: [2, 3, 5]
+    },
+    approach: {
+      caption: "For each meeting in start order: reuse the top room if it is free, else push a new end time.",
+      phase: "sorted by start", inp: IV, cur: -1, kept: [], bad: [], mark: null, lo: 0, hi: 30, heap: [], hcur: -1, hhit: [],
+      vars: [["end_times", "[]", "new"]],
+      meta: "The dashed line will mark end_times[0]. Green = placed.", hl: [4, 5, 6, 7, 8]
+    },
+    t1: {
+      caption: "[0, 30]: the heap is empty, so open a room. end_times = [30].",
+      phase: "[0, 30] placed", inp: IV, cur: 0, kept: [], bad: [], mark: 30, lo: 0, hi: 30, heap: [30], hcur: -1, hhit: [0],
+      vars: [["end_times", "empty → push 30", "new"], ["rooms", 1, ""]],
+      meta: "The earliest room frees at 30.", hl: [5, 7, 8]
+    },
+    t2: {
+      caption: "[5, 10]: end_times[0] = 30, and 30 ≤ 5 is false. Open a second room: end_times = [10, 30].",
+      phase: "[5, 10] placed", inp: IV, cur: 1, kept: [0], bad: [], mark: 10, lo: 0, hi: 30, heap: [10, 30], hcur: -1, hhit: [0],
+      vars: [["end_times[0] ≤ start", "30 ≤ 5, False", "bad"], ["push", 10, "new"], ["rooms", 2, ""]],
+      meta: "The 10 sifts to the top; the earliest room now frees at 10.", hl: [5, 7, 8]
+    },
+    t3: {
+      caption: "[15, 20]: end_times[0] = 10 ≤ 15, so reuse that room. heapreplace gives [20, 30]. Done: 2 rooms.",
+      phase: "[15, 20] placed", inp: IV, cur: 2, kept: [0, 1], bad: [], mark: 20, lo: 0, hi: 30, heap: [20, 30], hcur: -1, hhit: [0],
+      vars: [["end_times[0] ≤ start", "10 ≤ 15, True", "found"], ["replace", "10 → 20", "new"], ["rooms", 2, "found"]],
+      meta: "Same room, new occupant; the heap size stays 2.", hl: [5, 6, 9],
+      big: "2", bigNote: "len(end_times) after the sweep"
+    },
+    pitfall: {
+      caption: "heappop without a push: the freed room vanishes, end_times = [30], and the answer comes out 1.",
+      phase: "[15, 20] popped a room and lost it", inp: IV, cur: 2, kept: [0], bad: [1], mark: 30, lo: 0, hi: 30, heap: [30], hcur: -1, hhit: [],
+      vars: [["end_times (buggy)", "[30]", "bad"], ["end_times (correct)", "[20, 30]", ""]],
+      meta: "Rooms must never close; heapreplace keeps the size on a reuse.", hl: [6],
+      big: "1, not 2", bigNote: "a reused room still counts"
+    },
+    complexity: {
+      caption: "One sort, then one O(log n) heap operation per meeting.",
+      phase: "sorted by start", inp: IV, cur: -1, kept: [0, 1, 2], bad: [], mark: null, lo: 0, hi: 30, heap: [20, 30], hcur: -1, hhit: [],
+      vars: [["sort", "O(n log n)", ""], ["heap ops", "n × O(log n)", ""]],
+      meta: "The heap holds at most n end times.", hl: [2, 6, 8],
+      big: "O(n log n) time · O(n) space", bigNote: "versus O(n²) for counting at every start"
+    },
+    final: {
+      caption: "The whole solution.",
+      phase: "sorted by start", inp: IV, cur: -1, kept: [0, 1, 2], bad: [], mark: null, lo: 0, hi: 30, heap: [20, 30], hcur: -1, hhit: [],
+      vars: [["answer", 2, "found"]],
+      meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function bar(iv, cls, lo, hi) {
+    var span = hi - lo;
+    var left = ((iv[0] - lo) / span) * 100;
+    var width = Math.max(((iv[1] - iv[0]) / span) * 100, 3);
+    return '<div class="tl-bar ' + cls + '" style="left:' + left + '%;width:' + width + '%">' + iv[0] + '–' + iv[1] + '</div>';
+  }
+
+  function axis(lo, hi) {
+    var html = '<div class="tl-axis">';
+    var step = hi - lo > 20 ? 5 : hi - lo > 10 ? 2 : 1;
+    for (var t = lo; t <= hi; t += step) {
+      html += '<span style="left:' + (((t - lo) / (hi - lo)) * 100) + '%">' + t + '</span>';
+    }
+    return html + '</div>';
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.phase;
+    $("meta").innerHTML = s.meta;
+
+    var html = "";
+    for (var i = 0; i < s.inp.length; i++) {
+      var cls = i === s.cur ? "cur" : s.bad.indexOf(i) !== -1 ? "bad" : s.kept.indexOf(i) !== -1 ? "hit" : "";
+      html += '<div class="tl-row">' + bar(s.inp[i], cls, s.lo, s.hi) + '</div>';
+    }
+    if (s.mark !== null) {
+      html += '<div class="tl-mark" style="left:' + (((s.mark - s.lo) / (s.hi - s.lo)) * 100) + '%"></div>';
+    }
+    $("tl").innerHTML = html + axis(s.lo, s.hi);
+
+    var arr = "";
+    if (s.heap.length === 0) {
+      arr = '<div class="cell dim">&empty;<span class="idx">empty</span></div>';
+    }
+    for (var h = 0; h < s.heap.length; h++) {
+      var hc = "cell";
+      if (h === s.hcur) hc += " cur";
+      else if (s.hhit.indexOf(h) !== -1) hc += " hit";
+      arr += '<div class="' + hc + '">' + s.heap[h] + '<span class="idx">' + (h === 0 ? "top" : "i = " + h) + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">nothing decided yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rotate Image Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+
+  /* matrix additions: a grid of square cells with current-swap, done and dimmed states */
+  .grid { display: grid; gap: 4px; margin: 8px 0 4px; }
+  .gc {
+    aspect-ratio: 1; border-radius: 6px; border: 2px solid var(--line); background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1rem; color: var(--ink); transition: all 0.25s;
+  }
+  .gc.cur { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; transform: scale(1.06); }
+  .gc.hit { border-color: var(--ok); background: var(--ok-soft); font-weight: 600; }
+  .gc.dim { opacity: 0.45; }
+  .gc.diag { border-style: dashed; }
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Matrix · LeetCode #48</div>
+  <h1>Rotate Image, narrated</h1>
+  <p>Scroll through the thinking, from copying into a second matrix to the two-phase swap that rotates the image in place, with the state of the matrix shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/matrix.html">Matrix</a> <span class="how">a clockwise turn is a transpose followed by reversing every row</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You are given an <code>n × n</code> matrix representing an image. Turn it 90 degrees clockwise. The function returns nothing: the input list must be modified in place, without allocating a second matrix.</p>
+      <div class="callout">Running example: <code>matrix = [[1,2,3],[4,5,6],[7,8,9]]</code>. After rotating, it must read <code>[[7,4,1],[8,5,2],[9,6,3]]</code>.</div>
+      <p>Look at what moved. The left column <code>1, 4, 7</code> became the top row, but read <em>bottom-up</em>: <code>7, 4, 1</code>. The top row <code>1, 2, 3</code> became the right column, read top-down. In general, cell <code>(r, c)</code> lands at <code>(c, n - 1 - r)</code>: its row index becomes its column index, and its column index is flipped.</p>
+      <p>The in-place requirement is the whole difficulty. Reading from a fresh copy is easy; the interesting question is how to move every cell to its destination while the destination is still holding a value that has not been moved yet.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: build a second matrix</h2>
+      <p>The formula <code>(r, c) → (c, n - 1 - r)</code> translates directly into a copy loop:</p>
+      <pre class="code"><span class="ln">rotated = [[0] * n for _ in range(n)]</span><span class="ln">for r in range(n):</span><span class="ln">    for c in range(n):</span><span class="ln">        rotated[c][n - 1 - r] = matrix[r][c]</span><span class="ln">matrix[:] = rotated</span></pre>
+      <p style="margin-top:14px">This is correct and O(n²) time, which is optimal since every cell has to move. But it allocates a whole second <code>n × n</code> matrix, so the space is O(n²), and the problem says not to do that. The final <code>matrix[:] = rotated</code> only copies the answer back; it does not make the algorithm in-place.</p>
+      <p>The fix is not to find a cleverer formula. It is to notice that the rotation can be split into moves that each swap two cells, and a swap never needs more than one temporary.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: transpose, then reverse each row</h2>
+      <p>Compare the target <code>[[7,4,1],[8,5,2],[9,6,3]]</code> with the <strong>transpose</strong> of the input, <code>[[1,4,7],[2,5,8],[3,6,9]]</code>. Each row of the transpose is the same numbers as the row of the answer, just in the opposite order. Row 0 of the transpose is <code>1, 4, 7</code>; row 0 of the answer is <code>7, 4, 1</code>.</p>
+      <div class="callout">A clockwise rotation is a transpose (swap <code>(r, c)</code> with <code>(c, r)</code>) followed by reversing every row. Both halves are pure swaps inside the matrix, so neither needs extra memory.</div>
+      <p>Why does it work? The transpose turns column <code>c</code> into row <code>c</code>, read top-to-bottom. The rotation also puts column <code>c</code> into row <code>c</code>, but read bottom-to-top. Reversing the row fixes exactly that difference. Composing the two moves: <code>(r, c) → (c, r) → (c, n - 1 - r)</code>, which is the rotation formula from step 1.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: two loops, both in place</h2>
+      <ul>
+        <li><code>n = len(matrix)</code> — square, so one dimension serves both loops.</li>
+        <li><code>for r in range(n): for c in range(r + 1, n):</code> — visit every cell strictly above the main diagonal, once.</li>
+        <li><code>matrix[r][c], matrix[c][r] = matrix[c][r], matrix[r][c]</code> — swap it with its mirror below the diagonal. Tuple assignment reads both before writing either.</li>
+        <li><code>for row in matrix: row.reverse()</code> — flip each row end to end, in place.</li>
+      </ul>
+      <p>The inner range starting at <code>r + 1</code> is the important detail. The pair <code>(0, 1)</code> and <code>(1, 0)</code> is one swap; if the loop also visited <code>(1, 0)</code> it would swap the same pair back. Starting above the diagonal visits each pair exactly once, and the diagonal cells <code>(0,0)</code>, <code>(1,1)</code>, <code>(2,2)</code> stay put, which is right, since transposing never moves them.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: transpose, row 0</h2>
+      <p>With <code>r = 0</code> the inner loop runs <code>c = 1, 2</code>. First swap: <code>matrix[0][1]</code> (the 2) and <code>matrix[1][0]</code> (the 4) exchange, so row 0 becomes <code>1, 4, 3</code> and row 1 becomes <code>2, 5, 6</code>.</p>
+      <p>Second swap: <code>matrix[0][2]</code> (the 3) and <code>matrix[2][0]</code> (the 7) exchange. Now the matrix is <code>[[1,4,7],[2,5,6],[3,8,9]]</code>. Row 0 already reads <code>1, 4, 7</code>, which is the original left column: it has been turned into a row.</p>
+      <p>The dashed diagonal cells <code>1, 5, 9</code> were never touched. Every swap pairs one cell above the diagonal with one below it.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: transpose, row 1, and the phase ends</h2>
+      <p>With <code>r = 1</code> the inner loop is <code>range(2, 3)</code>, a single value <code>c = 2</code>. Swap <code>matrix[1][2]</code> (the 6) with <code>matrix[2][1]</code> (the 8). The matrix is now <code>[[1,4,7],[2,5,8],[3,6,9]]</code>, the full transpose.</p>
+      <p>With <code>r = 2</code> the inner loop is <code>range(3, 3)</code>, which is empty. Nothing to do: the last row has no cells above the diagonal. Three swaps in total for a 3 × 3 matrix, which is <code>n(n - 1) / 2 = 3</code>.</p>
+      <div class="callout">Every original column is now a row, read top-to-bottom. Compare with the target: each row is the right numbers, backwards.</div>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: reverse every row, the answer</h2>
+      <p><code>row.reverse()</code> on row 0 turns <code>1, 4, 7</code> into <code>7, 4, 1</code>. Row 1: <code>2, 5, 8</code> becomes <code>8, 5, 2</code>. Row 2: <code>3, 6, 9</code> becomes <code>9, 6, 3</code>.</p>
+      <p>The matrix now reads <code>[[7,4,1],[8,5,2],[9,6,3]]</code>, which is the expected output. Nothing is returned; the caller's list object was mutated through both phases, and at no point did a second matrix exist.</p>
+      <div class="callout">Check one cell against the formula: the 3 started at <code>(0, 2)</code>, and <code>(c, n - 1 - r) = (2, 2)</code>. It is in the bottom-right corner. Correct.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong</h2>
+      <p><strong>Transposing with <code>range(n)</code> instead of <code>range(r + 1, n)</code>.</strong> Now the loop visits <code>(0, 1)</code> and swaps it with <code>(1, 0)</code>, then later visits <code>(1, 0)</code> and swaps it with <code>(0, 1)</code> again. Every pair is swapped twice, which is no transpose at all. The matrix is unchanged going into the reverse phase, and the output is <code>[[3,2,1],[6,5,4],[9,8,7]]</code>: a mirror image, not a rotation. On the running example nothing crashes, so this passes a quick eyeball.</p>
+      <p><strong>Reversing the rows first, then transposing.</strong> The two phases do not commute. Reverse first and you get <code>[[3,2,1],[6,5,4],[9,8,7]]</code>, transpose that and you get <code>[[3,6,9],[2,5,8],[1,4,7]]</code>, which is the <em>counter</em>-clockwise rotation. Same for reversing columns instead of rows after the transpose.</p>
+      <p><strong>Returning a new list.</strong> <code>return [list(col)[::-1] for col in zip(*matrix)]</code> produces the right numbers, but the caller's <code>matrix</code> still holds the original. Any test that inspects the list it passed in sees <code>[[1,2,3],[4,5,6],[7,8,9]]</code>.</p>
+      <div class="callout warn">Each transpose swap must happen once, so only walk the cells above the diagonal. Transpose first, reverse rows second, for clockwise.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>The transpose performs <code>n(n - 1) / 2</code> swaps and the reverse phase touches every cell once more, so <strong>O(n²) time</strong>, which is unavoidable because every cell has to move. The only extra storage is the tuple-swap temporary and the loop indices: <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Extra space</th></tr>
+        <tr><td>Copy into a new matrix</td><td>O(n²)</td><td>O(n²)</td></tr>
+        <tr><td>Four-way cycle per layer</td><td>O(n²)</td><td>O(1)</td></tr>
+        <tr><td>Transpose + reverse rows</td><td>O(n²)</td><td>O(1)</td></tr>
+      </table>
+      <p>The four-way cycle (move each cell through <code>(r,c) → (c,n-1-r) → (n-1-r,n-1-c) → (n-1-c,r)</code> one layer at a time) is equally in-place but has four index expressions to get right. Transpose-and-reverse does the same job with two loops anyone can write from memory.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Seven lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>n = len(matrix)</code> — the side length.</li>
+        <li><code>for r in range(n): for c in range(r + 1, n):</code> — each above-diagonal cell once.</li>
+        <li><code>matrix[r][c], matrix[c][r] = matrix[c][r], matrix[r][c]</code> — the transpose swap.</li>
+        <li><code>for row in matrix: row.reverse()</code> — flip each row in place.</li>
+        <li>No <code>return</code>: the mutation is the result.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>clockwise 90° = transpose, then reverse each row; both are in-place swaps.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>matrix · <span id="phase">[[1,2,3],[4,5,6],[7,8,9]]</span></h3>
+        <div class="grid" id="grid"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>phase and swap</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="rotate_image.py">rotate_image.py</a> · <a href="rotate_image_annotated.py">rotate_image_annotated.py</a> · <a href="test_rotate_image.py">test_rotate_image.py</a> · <a href="../../md.html?f=medium/095-rotate-image/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def rotate(self, matrix: list[list[int]]) -> None:",
+    "        n = len(matrix)",
+    "        for r in range(n):",
+    "            for c in range(r + 1, n):",
+    "                matrix[r][c], matrix[c][r] = matrix[c][r], matrix[r][c]",
+    "        for row in matrix:",
+    "            row.reverse()"
+  ];
+
+  var ORIG = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+  var ROW0 = [[1, 4, 7], [2, 5, 6], [3, 8, 9]];
+  var TRANS = [[1, 4, 7], [2, 5, 8], [3, 6, 9]];
+  var DONE = [[7, 4, 1], [8, 5, 2], [9, 6, 3]];
+  var MIRROR = [[3, 2, 1], [6, 5, 4], [9, 8, 7]];
+  var DIAG = [[0, 0], [1, 1], [2, 2]];
+
+  // Each state describes what the sticky panel shows for one step.
+  // g = grid values, cur/hit/dim = lists of [r, c], diag = dashed diagonal cells, chips = dict block.
+  var STATES = {
+    problem: {
+      caption: "Rotate the 3 × 3 image 90° clockwise, in place.",
+      label: "input", g: ORIG, cur: [], hit: [], dim: [], diag: [], chips: [],
+      meta: "Target: <b>[[7,4,1],[8,5,2],[9,6,3]]</b>. The left column 1, 4, 7 becomes the top row read bottom-up.", hl: []
+    },
+    brute: {
+      caption: "Copy every (r, c) to (c, n − 1 − r) in a fresh matrix: right answer, wrong space.",
+      label: "input, copied into a second matrix", g: DONE, cur: [], hit: [], dim: [], diag: [], chips: [["rotated", "new n × n list"], ["extra space", "O(n²)"]],
+      meta: "The rotation formula is right; allocating a second matrix is what the problem forbids.", hl: [],
+      big: "O(n²) space", bigNote: "a whole second matrix for a job that only needs swaps"
+    },
+    insight: {
+      caption: "The transpose has each answer row's numbers, backwards. Reverse each row to finish.",
+      label: "transpose of the input", g: TRANS, cur: [], hit: [], dim: [], diag: DIAG, chips: [["row 0 of transpose", "1, 4, 7"], ["row 0 of answer", "7, 4, 1", "found"]],
+      meta: "(r, c) → (c, r) → (c, n − 1 − r): transpose then reverse composes to the rotation.", hl: [5, 7]
+    },
+    approach: {
+      caption: "Phase 1 swaps each above-diagonal cell with its mirror; phase 2 reverses every row.",
+      label: "input", g: ORIG, cur: [[0, 1], [0, 2], [1, 2]], hit: [], dim: [[1, 0], [2, 0], [2, 1]], diag: DIAG, chips: [["phase", "transpose", "new"], ["swaps", "n(n − 1) / 2 = 3"]],
+      meta: "Highlighted: the three cells above the diagonal, each swapped once with the dimmed cell below.", hl: [3, 4, 5, 6, 7]
+    },
+    t1: {
+      caption: "r = 0: swap (0,1)↔(1,0), then (0,2)↔(2,0). Row 0 is now the old column 0.",
+      label: "after row 0 of the transpose", g: ROW0, cur: [[0, 2], [2, 0]], hit: [[0, 1], [1, 0]], dim: [], diag: DIAG, chips: [["phase", "transpose"], ["r, c", "0, 2", "new"], ["swap", "3 ↔ 7", "new"]],
+      meta: "matrix = [[1,4,7],[2,5,6],[3,8,9]]. The diagonal 1, 5, 9 never moves.", hl: [4, 5]
+    },
+    t2: {
+      caption: "r = 1: swap (1,2)↔(2,1). r = 2 has nothing above the diagonal. Transpose complete.",
+      label: "full transpose", g: TRANS, cur: [[1, 2], [2, 1]], hit: [[0, 1], [1, 0], [0, 2], [2, 0]], dim: [], diag: DIAG, chips: [["phase", "transpose", "found"], ["r, c", "1, 2"], ["swap", "6 ↔ 8", "new"]],
+      meta: "matrix = [[1,4,7],[2,5,8],[3,6,9]]: every column of the input is now a row.", hl: [4, 5]
+    },
+    t3: {
+      caption: "Reverse each row: 1,4,7 → 7,4,1 and so on. The rotation is done.",
+      label: "after reversing every row", g: DONE, cur: [], hit: [[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2], [2, 0], [2, 1], [2, 2]], dim: [], diag: [], chips: [["phase", "reverse rows", "found"], ["row 0", "7, 4, 1"], ["row 1", "8, 5, 2"], ["row 2", "9, 6, 3"]],
+      meta: "matrix = [[7,4,1],[8,5,2],[9,6,3]]. Nothing is returned; the input list was mutated.", hl: [6, 7],
+      big: "[[7,4,1],[8,5,2],[9,6,3]]", bigNote: "three swaps and three row reversals, no second matrix"
+    },
+    pitfall: {
+      caption: "range(n) instead of range(r + 1, n) swaps every pair twice: the transpose cancels itself.",
+      label: "range(n) transpose, then reverse rows", g: MIRROR, cur: [[0, 1], [1, 0]], hit: [], dim: [], diag: DIAG, chips: [["phase", "reverse rows"], ["transpose", "undone"]],
+      meta: "(0,1)↔(1,0) is swapped at r = 0 and again at r = 1. Only the row reversal survives.", hl: [4],
+      big: "[[3,2,1],[6,5,4],[9,8,7]]", bigNote: "a mirror image, not a rotation"
+    },
+    complexity: {
+      caption: "n(n − 1) / 2 swaps plus one reversal per row; one temporary.",
+      label: "output", g: DONE, cur: [], hit: [], dim: [], diag: [], chips: [["swaps", "3"], ["reversals", "3"], ["extra space", "O(1)", "found"]],
+      meta: "Every cell has to move, so O(n²) time is the floor; the swaps keep the space constant.", hl: [3, 4, 5, 6, 7],
+      big: "O(n²) time · O(1) space", bigNote: "versus O(n²) space for the copy"
+    },
+    final: {
+      caption: "The whole solution.",
+      label: "output", g: DONE, cur: [], hit: [], dim: [], diag: [], chips: [["phase", "transpose"], ["then", "reverse rows", "found"]],
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function has(list, r, c) {
+    for (var i = 0; i < list.length; i++) if (list[i][0] === r && list[i][1] === c) return true;
+    return false;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("phase").textContent = s.label;
+    $("meta").innerHTML = s.meta;
+
+    var grid = $("grid");
+    grid.style.gridTemplateColumns = "repeat(" + s.g[0].length + ", 1fr)";
+    var html = "";
+    for (var r = 0; r < s.g.length; r++) {
+      for (var c = 0; c < s.g[r].length; c++) {
+        var cls = "gc";
+        if (has(s.cur, r, c)) cls += " cur";
+        else if (has(s.hit, r, c)) cls += " hit";
+        else if (has(s.dim, r, c)) cls += " dim";
+        if (has(s.diag, r, c)) cls += " diag";
+        html += '<div class="' + cls + '">' + s.g[r][c] + '</div>';
+      }
+    }
+    grid.innerHTML = html;
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.chips.length; k++) {
+        var e = s.chips[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var code = "";
+    for (var l = 0; l < CODE.length; l++) {
+      code += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = code;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

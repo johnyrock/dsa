@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diameter of Binary Tree Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  .tree { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .tree .edge { stroke: var(--line); stroke-width: 2.5; fill: none; transition: stroke 0.25s, opacity 0.25s; }
+  .tree .edge.hit { stroke: var(--ok); }
+  .tree .edge.bad { stroke: var(--warn); stroke-dasharray: 5 4; }
+  .tree .edge.dim { opacity: 0.35; }
+  .tree .edge.off { display: none; }
+  .tree .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .tree .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 17px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .tree .node.cur circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3.5; }
+  .tree .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .tree .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .tree .node.dim circle, .tree .node.dim text { opacity: 0.4; }
+  .tree .node.off { display: none; }
+  .tree .badge { fill: var(--accent); font-size: 11px; font-weight: 700; text-anchor: start; font-family: ui-monospace, Menlo, monospace; }
+  .tree .node text.badge { text-anchor: start; font-size: 11px; font-weight: 700; }
+  .tree .node.hit .badge { fill: var(--ok); }
+  .tree .node.bad .badge { fill: var(--warn); }
+  .tree .ghost { fill: none; stroke: var(--warn); stroke-width: 2; stroke-dasharray: 4 3; }
+  .tree .ghost-lbl { fill: var(--warn); font-size: 11px; text-anchor: middle; dominant-baseline: central; font-family: ui-monospace, Menlo, monospace; }
+  .tree .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .tree .title { fill: var(--muted); font-size: 12px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; letter-spacing: 0.05em; }
+  .array.compact { gap: 4px; margin-top: 2px; }
+  .array.compact .cell { min-width: 28px; padding: 3px 0 2px; font-size: 0.9rem; border-width: 1.5px; border-radius: 6px; }
+  .array.compact .cell.cur { transform: none; }
+  .cell.bad { border-color: var(--warn); background: var(--warn-soft); }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#easy">← All walkthroughs</a>
+  <div class="tag">Easy · Tree · LeetCode #543</div>
+  <h1>Diameter of Binary Tree, narrated</h1>
+  <p>Scroll from recomputing heights at every node to a single post-order pass that tracks the best left-plus-right sum, with each node's height shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/tree-traversal.html">Tree</a> <span class="how">The longest path may turn at any node. Child heights tell us the length of the path that turns through that node.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Given the root of a binary tree, return the length of its <em>diameter</em>: the longest path between any two nodes, measured in <strong>edges</strong>. The path may or may not pass through the root, and it never reuses a node.</p>
+      <div class="callout">Running example: <code>root = [1,2,3,4,5]</code> in level order. Node 1 has children 2 and 3; node 2 has children 4 and 5. The answer is <strong>3</strong>: the path <code>4 → 2 → 1 → 3</code> has 3 edges (and 4 nodes).</div>
+      <p>Two things to fix in your head before writing code. First, the unit is edges, so a single node has diameter 0 and a two-node tree has diameter 1. Second, the longest path here happens to go through the root, but it does not have to: in a tree whose left subtree is huge and right subtree is a single node, the longest path may live entirely inside the left subtree.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: at every node, measure both arms from scratch</h2>
+      <p>Any path has a topmost node where it turns. At that node the path goes down some distance on the left and some distance on the right, so its length is <code>height(node.left) + height(node.right)</code>, where height counts the nodes on the longest downward chain. So: for every node, compute both child heights with a plain height helper, add them, and keep the maximum.</p>
+      <pre class="code"><span class="ln">def height(node):</span><span class="ln">    if node is None:</span><span class="ln">        return 0</span><span class="ln">    return 1 + max(height(node.left), height(node.right))</span></pre>
+      <p style="margin-top:14px">This is correct, and the "turn at some node" idea in it is the real insight. The cost is that <code>height</code> is recomputed for every ancestor. On the running example node 1 walks its entire left subtree to learn its height, and then node 2 walks the very same nodes again; the panel's <code>h?</code> badges on 4 and 5 are those repeated visits. On a chain the node at depth <code>k</code> re-walks everything below it, and the total is <strong>O(n²)</strong>.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: the height walk already knows both arms</h2>
+      <p>Look at what the height helper does at node 2. It calls itself on 4 and on 5, gets <code>h=1</code> from each, and returns <code>1 + max(1, 1)</code>. At that exact moment it holds both child heights in its hands, and the path that turns at 2 is <code>1 + 1 = 2</code> edges, from 4 up to 2 and down to 5.</p>
+      <div class="callout">So do not throw those two numbers away. While computing the height, also compute <code>left_height + right_height</code> at every node and remember the largest one seen. That is the highlighted line: <code>diameter = max(diameter, left_height + right_height)</code>.</div>
+      <p>Two different quantities move through the recursion and it helps to name them. The <em>height</em> flows upward as the return value and counts nodes on the longest downward chain. The <em>through-path</em> is a side effect, counted in edges, and never goes up; it only updates a shared best.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: one post-order pass with a shared best</h2>
+      <p>Set <code>diameter = 0</code> in the outer function, then define a nested <code>height</code> that declares <code>nonlocal diameter</code> so it can update it. At every node:</p>
+      <ul>
+        <li><code>left_height = height(node.left)</code> — the left arm, computed once.</li>
+        <li><code>right_height = height(node.right)</code> — the right arm, computed once.</li>
+        <li><code>diameter = max(diameter, left_height + right_height)</code> — the path that turns here, kept if it beats the best so far.</li>
+        <li><code>return 1 + max(left_height, right_height)</code> — this node's height, for its parent.</li>
+      </ul>
+      <p>The panel shows the walk about to begin: <code>diameter = 0</code>, the root at <code>node = 1</code>, and its two children still marked <code>?</code> because post-order means the root answers last. Each node computes its height exactly once and its through-path exactly once.</p>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: leaf 4</h2>
+      <p>The recursion goes left first, down to node 4. Its two children are <code>None</code>, so <code>left_height = 0</code> and <code>right_height = 0</code>.</p>
+      <p>The through-path at 4 is <code>0 + 0 = 0</code> edges, a path consisting of just node 4, and <code>diameter = max(0, 0 + 0) = 0</code> leaves the best unchanged. Node 4 then returns its height, <code>1 + max(0, 0) = 1</code>, shown as the badge <code>h=1</code>.</p>
+      <p>Leaf 5 goes through exactly the same computation next: height 1, diameter still 0. Leaves never change the diameter, because a leaf has no arms.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: node 2</h2>
+      <p>Node 2 now has both answers: <code>left = 1</code> from node 4 and <code>right = 1</code> from node 5. The path that turns at 2 goes down one edge to 4 and one edge to 5, so it is <code>1 + 1 = 2</code> edges long.</p>
+      <p><code>diameter = max(0, 1 + 1) = 2</code>. The best path so far is <code>4 → 2 → 5</code>, and the panel highlights those three nodes.</p>
+      <p>Then node 2 returns its height for its parent: <code>1 + max(1, 1) = 2</code>. Note the two numbers are different things that happen to be equal here: 2 edges through, 2 nodes down.</p>
+    </section>
+
+    <section class="step" data-state="trace3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the root, and the answer</h2>
+      <p>Node 3 is a leaf on the right, so it returns height <code>1</code> and leaves the diameter alone. The root now has <code>left = 2</code> from node 2 and <code>right = 1</code> from node 3.</p>
+      <p>The path turning at the root is <code>2 + 1 = 3</code> edges: <code>4 → 2 → 1 → 3</code>. <code>diameter = max(2, 2 + 1) = 3</code>, a new best. The root returns its own height, <code>1 + max(2, 1) = 3</code>, but that return value is discarded: <code>height(root)</code> is called for its side effect, and the outer function returns <code>diameter</code>.</p>
+      <div class="callout">The answer is <strong>3</strong>. Root height also happens to be 3 in this example, which is a coincidence. Keep the two apart: the answer is the best through-path, not the height.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: nodes versus edges</h2>
+      <p><strong>Adding one to the through-path.</strong> The height line is <code>1 + max(...)</code>, and it is tempting to mirror it: <code>diameter = max(diameter, left_height + right_height + 1)</code>. That counts the turning node as well, which gives the number of <em>nodes</em> on the path. At the root it computes <code>2 + 1 + 1 = 4</code>, the panel's <code>2+1+1</code> badge, and the function returns <strong>4</strong> instead of 3. Four nodes, three edges; the problem asks for edges.</p>
+      <p><strong>Returning the height instead of the diameter.</strong> Ending with <code>return height(root)</code> returns <strong>3</strong> on this example, which is correct by accident, since the root's height and the diameter coincide here. On a tree whose longest path does not pass through the root, or on any lopsided tree, the height is a different number. The last line must be <code>height(root)</code> followed by <code>return diameter</code>.</p>
+      <p><strong>Forgetting <code>nonlocal diameter</code>.</strong> Without it, the assignment <code>diameter = max(...)</code> inside <code>height</code> creates a new local variable, and Python raises <code>UnboundLocalError</code> on the read side of that same line, because <code>diameter</code> is now local but not yet assigned. The outer variable would never be updated.</p>
+      <div class="callout warn">Sanity-check with two nodes: <code>[1,2]</code> must give 1. If you get 2, you are counting nodes.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Each node is entered by <code>height</code> exactly once and does constant work of its own: one addition, two <code>max</code> calls. So the time is <strong>O(n)</strong>. The five <code>h=</code> badges in the panel are the five heights, each computed once and reused by the parent.</p>
+      <p>The extra memory is the recursion stack, which is as deep as the tree is tall: <strong>O(h)</strong>. That is about <code>log n</code> for a balanced tree and <code>n</code> for a chain.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Height helper called at every node</td><td>O(n²) on a chain, O(n log n) when balanced</td><td>O(h) call stack</td></tr>
+        <tr><td>One post-order pass, shared best</td><td>O(n)</td><td>O(h) call stack</td></tr>
+      </table>
+      <p>The improvement is purely from not recomputing: the brute force and the final solution do the same additions at each node; the final solution just gets the child heights from the recursion instead of from a fresh walk.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>A nested height function with one side effect. Line by line:</p>
+      <ul>
+        <li><code>diameter = 0</code> — the best through-path seen so far; a single node has diameter 0.</li>
+        <li><code>def height(node):</code> with <code>nonlocal diameter</code> — the helper returns heights and is allowed to update the outer best.</li>
+        <li><code>if node is None: return 0</code> — an empty subtree has no nodes on its longest chain.</li>
+        <li><code>left_height = height(node.left)</code> and <code>right_height = height(node.right)</code> — post-order: both arms first, each computed once.</li>
+        <li><code>diameter = max(diameter, left_height + right_height)</code> — the path that turns at this node, in edges; keep it if it is the longest yet.</li>
+        <li><code>return 1 + max(left_height, right_height)</code> — this node's height, in nodes, for its parent.</li>
+        <li><code>height(root)</code> then <code>return diameter</code> — run the walk for its side effect and return the best, not the height.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>the longest path turns at some node, and there its length is left height plus right height, so track that sum while computing heights.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>tree · root = [1,2,3,4,5]</h3>
+        <svg class="tree" id="tree" viewBox="0 0 400 210" aria-label="binary tree"></svg>
+        <div class="array compact" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>current call · heights · running diameter</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="diameter_of_binary_tree.py">diameter_of_binary_tree.py</a> · <a href="diameter_of_binary_tree_annotated.py">diameter_of_binary_tree_annotated.py</a> · <a href="test_diameter_of_binary_tree.py">test_diameter_of_binary_tree.py</a> · <a href="../../md.html?f=easy/014-diameter-of-binary-tree/notes.md">notes.md</a> · <a href="../../index.html#easy">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = ["class Solution:", "    def diameter_of_binary_tree(self, root):", "        diameter = 0", "", "        def height(node):", "            nonlocal diameter", "            if node is None:", "                return 0", "            left_height = height(node.left)", "            right_height = height(node.right)", "            diameter = max(diameter, left_height + right_height)", "            return 1 + max(left_height, right_height)", "", "        height(root)", "        return diameter"];
+
+  // tree: level-order values (null = absent). cur/hits/dim/bad: level-order indices. badges: height returned by that node.
+  var STATES = {
+    problem: {"caption": "Longest path between any two nodes, counted in edges.", "tree": [1, 2, 3, 4, 5], "cur": -1, "hits": [3, 1, 0, 2], "dim": [], "bad": [], "badges": {}, "vars": [], "meta": "Path 4 → 2 → 1 → 3 has 3 edges. It does not need to pass through the root, but here it does.", "hl": []},
+    brute: {"caption": "For every node, compute left height and right height from scratch, then add them.", "tree": [1, 2, 3, 4, 5], "cur": 1, "hits": [], "dim": [2], "bad": [], "badges": {"3": "h?", "4": "h?"}, "vars": [["height calls", "one full subtree walk per node"]], "meta": "Node 1 walks its whole left subtree; node 2 walks it again. Repeated on a chain this is O(n²).", "hl": [], "big": "O(n²)", "bigNote": "heights recomputed for every ancestor"},
+    insight: {"caption": "The longest path turns at some node: its length there is left height + right height.", "tree": [1, 2, 3, 4, 5], "cur": 1, "hits": [3, 4], "dim": [0, 2], "bad": [], "badges": {"3": "h=1", "4": "h=1", "1": "1+1"}, "vars": [["through 2", "left 1 + right 1 = 2 edges", "new"]], "meta": "Heights count nodes downward; the turn adds the two arms as edges.", "hl": [10]},
+    approach: {"caption": "One post-order pass: return height upward, update a shared best at each node.", "tree": [1, 2, 3, 4, 5], "cur": 0, "hits": [], "dim": [3, 4], "bad": [], "badges": {"1": "?", "2": "?"}, "vars": [["diameter", "0", "new"], ["node", "1"]], "meta": "Each node computes its height once and the through-path once.", "hl": [8, 9, 10, 11]},
+    trace1: {"caption": "Leaf 4: both children return 0 → through-path 0 edges, height 1.", "tree": [1, 2, 3, 4, 5], "cur": 3, "hits": [], "dim": [0, 2, 4], "bad": [], "badges": {"3": "h=1"}, "vars": [["node", "4", "new"], ["left", "0"], ["right", "0"], ["diameter", "max(0, 0+0) = 0"], ["return", "1", "found"]], "meta": "Leaf 5 does the same next: height 1, diameter still 0.", "hl": [8, 9, 10, 11]},
+    trace2: {"caption": "Node 2: left = 1, right = 1 → through-path 2 edges; height 2.", "tree": [1, 2, 3, 4, 5], "cur": 1, "hits": [3, 4], "dim": [2], "bad": [], "badges": {"3": "h=1", "4": "h=1", "1": "h=2"}, "vars": [["node", "2", "new"], ["left", "1"], ["right", "1"], ["diameter", "max(0, 1+1) = 2", "found"], ["return", "2"]], "meta": "4 → 2 → 5 is the best path so far.", "hl": [10, 11]},
+    trace3: {"caption": "Root 1: left = 2, right = 1 → through-path 3 edges; diameter = 3.", "tree": [1, 2, 3, 4, 5], "cur": 0, "hits": [3, 1, 2], "dim": [], "bad": [], "badges": {"3": "h=1", "4": "h=1", "1": "h=2", "2": "h=1", "0": "h=3"}, "vars": [["node", "1", "new"], ["left", "2"], ["right", "1"], ["diameter", "max(2, 2+1) = 3", "found"], ["return", "3"]], "meta": "Path 4 → 2 → 1 → 3. Root height 3 is returned but the answer is <b>diameter</b>.", "hl": [10, 11, 13, 14], "big": "3", "bigNote": "diameter_of_binary_tree([1,2,3,4,5])"},
+    pitfall: {"caption": "Adding 1 to left + right counts nodes on the path, not edges.", "tree": [1, 2, 3, 4, 5], "cur": 0, "hits": [], "dim": [], "bad": [3, 1, 2], "badges": {"1": "h=2", "2": "h=1", "0": "2+1+1"}, "vars": [["diameter", "4", "bad"], ["expected", "3", "found"]], "meta": "Height is 1 + max(...) because it counts nodes; the through-path is a plain sum of edges.", "hl": [10], "big": "4 (wrong)", "bigNote": "off by one: 4 nodes, 3 edges"},
+    complexity: {"caption": "One visit per node; recursion depth equals tree height.", "tree": [1, 2, 3, 4, 5], "cur": -1, "hits": [0, 1, 2, 3, 4], "dim": [], "bad": [], "badges": {"3": "h=1", "4": "h=1", "1": "h=2", "2": "h=1", "0": "h=3"}, "vars": [["n", "5"], ["h", "3"]], "meta": "Each height is computed exactly once and reused by its parent.", "hl": [], "big": "O(n) time · O(h) space", "bigNote": "h = log n balanced, n for a chain"},
+    final: {"caption": "Return height, remember the best left + right.", "tree": [1, 2, 3, 4, 5], "cur": -1, "hits": [], "dim": [], "bad": [], "badges": {"3": "h=1", "4": "h=1", "1": "h=2", "2": "h=1", "0": "h=3"}, "vars": [["diameter", "3", "found"]], "meta": "", "hl": [2, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14]}
+  };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function makeTree(svg, POS, R, dx, title) {
+    var g0 = el("g", {}); svg.appendChild(g0);
+    if (title) g0.appendChild(el("text", { x: dx + POS[0][0], y: 12, "class": "title" }, title));
+    var edges = [], nodes = [], texts = [], badges = [];
+    for (var i = 1; i < POS.length; i++) {
+      var p = POS[(i - 1) >> 1];
+      var e = el("line", { "class": "edge", x1: dx + p[0], y1: p[1], x2: dx + POS[i][0], y2: POS[i][1] });
+      g0.appendChild(e); edges[i] = e;
+    }
+    var ghostLayer = el("g", {}); g0.appendChild(ghostLayer);
+    for (var j = 0; j < POS.length; j++) {
+      var g = el("g", { "class": "node" });
+      g.appendChild(el("circle", { cx: dx + POS[j][0], cy: POS[j][1], r: R }));
+      var t = el("text", { x: dx + POS[j][0], y: POS[j][1] });
+      g.appendChild(t);
+      var b = el("text", { x: dx + POS[j][0] + R + 3, y: POS[j][1] + 4, "class": "badge" });
+      g.appendChild(b);
+      g0.appendChild(g); nodes[j] = g; texts[j] = t; badges[j] = b;
+    }
+    function has(arr, i) { return arr && arr.indexOf(i) !== -1; }
+    return function draw(s) {
+      var tree = s.tree, badgeMap = s.badges || {};
+      for (var i = 0; i < POS.length; i++) {
+        var v = i < tree.length ? tree[i] : null;
+        var parentOff = i > 0 && (((i - 1) >> 1) >= tree.length || tree[(i - 1) >> 1] === null);
+        var off = v === null || parentOff;
+        var cls = "node";
+        if (off) cls += " off";
+        else if (i === s.cur) cls += " cur";
+        else if (has(s.bad, i)) cls += " bad";
+        else if (has(s.hits, i)) cls += " hit";
+        else if (has(s.dim, i)) cls += " dim";
+        nodes[i].setAttribute("class", cls);
+        texts[i].textContent = off ? "" : v;
+        badges[i].textContent = off ? "" : (badgeMap[i] !== undefined ? badgeMap[i] : "");
+        if (i > 0) {
+          var ec = "edge";
+          if (off) ec += " off";
+          else if (has(s.bad, i)) ec += " bad";
+          else if (has(s.hits, i)) ec += " hit";
+          else if (has(s.dim, i)) ec += " dim";
+          edges[i].setAttribute("class", ec);
+        }
+      }
+      while (ghostLayer.firstChild) ghostLayer.removeChild(ghostLayer.firstChild);
+      if (s.ghost) {
+        var gp = POS[s.ghost[0]];
+        var pp = POS[(s.ghost[0] - 1) >> 1];
+        ghostLayer.appendChild(el("line", { "class": "edge bad", x1: dx + pp[0], y1: pp[1], x2: dx + gp[0], y2: gp[1] }));
+        ghostLayer.appendChild(el("circle", { cx: dx + gp[0], cy: gp[1], r: R, "class": "ghost" }));
+        ghostLayer.appendChild(el("text", { x: dx + gp[0], y: gp[1], "class": "ghost-lbl" }, s.ghost[1]));
+      }
+    };
+  }
+  var POS7 = [[200, 32], [105, 102], [295, 102], [55, 172], [155, 172], [245, 172], [345, 172]];
+  var POS7S = [[100, 46], [55, 112], [145, 112], [30, 178], [80, 178], [120, 178], [170, 178]];
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function renderVars(vars) {
+    if (!vars || vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">nothing returned yet</span>';
+      return;
+    }
+    var d = "";
+    for (var k = 0; k < vars.length; k++) {
+      var e = vars[k];
+      d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+    }
+    $("dict").innerHTML = d;
+  }
+  function renderBig(s) {
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+  }
+  function renderCode(hl) {
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  var drawTree = makeTree(document.getElementById("tree"), POS7, 21, 0, "");
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+    drawTree(s);
+    var arr = "";
+    for (var i = 0; i < s.tree.length; i++) {
+      var v = s.tree[i];
+      var cls = "cell";
+      if (v === null) cls += " dim";
+      else if (i === s.cur) cls += " cur";
+      else if (s.bad.indexOf(i) !== -1) cls += " bad";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.dim.indexOf(i) !== -1) cls += " dim";
+      arr += '<div class="' + cls + '">' + (v === null ? "·" : v) + '</div>';
+    }
+    $("array").innerHTML = arr;
+    renderVars(s.vars);
+    renderBig(s);
+    renderCode(s.hl);
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

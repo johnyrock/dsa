@@ -44,6 +44,8 @@ def contains_another_word(root, word):
 | Problem | Difficulty | Note |
 |---------|------------|------|
 | [medium/024 Word Container](../medium/024-word-container/) | Medium | insert every word once, then walk from each starting index to test containment |
+| [medium/047 Implement Trie (Prefix Tree)](../medium/047-implement-trie-prefix-tree/) | Medium | Store words as a tree of characters: each node holds a dict of child nodes keyed by… |
+| [medium/048 Design Add and Search Words Data Structure](../medium/048-design-add-and-search-words-data-structure/) | Medium | Store the words in a trie exactly as in Implement Trie |
 
 ## Common mistakes
 

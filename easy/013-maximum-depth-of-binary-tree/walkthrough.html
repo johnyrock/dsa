@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maximum Depth of Binary Tree Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  .tree { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .tree .edge { stroke: var(--line); stroke-width: 2.5; fill: none; transition: stroke 0.25s, opacity 0.25s; }
+  .tree .edge.hit { stroke: var(--ok); }
+  .tree .edge.bad { stroke: var(--warn); stroke-dasharray: 5 4; }
+  .tree .edge.dim { opacity: 0.35; }
+  .tree .edge.off { display: none; }
+  .tree .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .tree .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 17px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .tree .node.cur circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3.5; }
+  .tree .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .tree .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .tree .node.dim circle, .tree .node.dim text { opacity: 0.4; }
+  .tree .node.off { display: none; }
+  .tree .badge { fill: var(--accent); font-size: 11px; font-weight: 700; text-anchor: start; font-family: ui-monospace, Menlo, monospace; }
+  .tree .node text.badge { text-anchor: start; font-size: 11px; font-weight: 700; }
+  .tree .node.hit .badge { fill: var(--ok); }
+  .tree .node.bad .badge { fill: var(--warn); }
+  .tree .ghost { fill: none; stroke: var(--warn); stroke-width: 2; stroke-dasharray: 4 3; }
+  .tree .ghost-lbl { fill: var(--warn); font-size: 11px; text-anchor: middle; dominant-baseline: central; font-family: ui-monospace, Menlo, monospace; }
+  .tree .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .tree .title { fill: var(--muted); font-size: 12px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; letter-spacing: 0.05em; }
+  .array.compact { gap: 4px; margin-top: 2px; }
+  .array.compact .cell { min-width: 28px; padding: 3px 0 2px; font-size: 0.9rem; border-width: 1.5px; border-radius: 6px; }
+  .array.compact .cell.cur { transform: none; }
+  .cell.bad { border-color: var(--warn); background: var(--warn-soft); }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#easy">← All walkthroughs</a>
+  <div class="tag">Easy · Tree · LeetCode #104</div>
+  <h1>Maximum Depth of Binary Tree, narrated</h1>
+  <p>Scroll through the path-listing instinct, the one base case that makes the recursion work, and a node-by-node trace of the three-line solution, with the tree and the returned depths shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/tree-traversal.html">Tree</a> <span class="how">A tree is empty at a missing child, so its depth is 0. Every real node contributes one level plus the larger child depth.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Given the root of a binary tree, return its <em>maximum depth</em>: the number of nodes on the longest path from the root down to a leaf. An empty tree has depth 0; a single node has depth 1.</p>
+      <div class="callout">Running example: <code>root = [3,9,20,null,null,15,7]</code> in level order. Node 3 has children 9 and 20; node 9 has no children; node 20 has children 15 and 7. The answer is <strong>3</strong>, because the longest path is <code>3 → 20 → 15</code> (or <code>3 → 20 → 7</code>), three nodes.</div>
+      <p>The path <code>3 → 9</code> is only two nodes, so it is not the one that counts. "Maximum" means we compare all root-to-leaf paths and keep the longest; we never have to say which path it was, only how long.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: list every path and measure each</h2>
+      <p>The definition talks about paths, so a literal approach is to enumerate them. Walk from the root, carrying the list of nodes seen so far; whenever you reach a leaf, record the path. Then take the longest.</p>
+      <p>On the running example that produces three paths, exactly what the panel shows: <code>[3,9]</code> with length 2, <code>[3,20,15]</code> with length 3 and <code>[3,20,7]</code> with length 3. The maximum is 3, and the answer is correct.</p>
+      <p>The trouble is what it costs. Every path shares its prefix with its neighbours; here <code>3 → 20</code> is walked (and copied into a list) twice, once for leaf 15 and once for leaf 7. On a bushy tree with many leaves each edge is copied once per leaf below it, and the path lists alone take <strong>O(n · h)</strong> memory, where <code>h</code> is the height. That is a lot of bookkeeping to remember a single integer.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: an empty tree has depth 0</h2>
+      <p>Forget the paths and ask what the depth of a subtree is in terms of its children. A node adds one level on top of whichever child subtree is taller. So <code>depth(node) = 1 + max(depth(node.left), depth(node.right))</code>.</p>
+      <div class="callout">The recursion needs a floor, and the floor is the empty tree. A missing child is an empty subtree with depth <strong>0</strong>. The panel draws that as the ghost <code>0</code> under node 9. This one base case, <code>if root is None: return 0</code>, ends every branch of the recursion.</div>
+      <p>There is no separate leaf case. A leaf is just a node whose two children are both empty: <code>1 + max(0, 0) = 1</code>, exactly what a single node should measure. Getting the <code>None</code> value right is what makes the whole formula work without special cases.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: post-order recursion</h2>
+      <p>The whole solution is the recurrence written as a function. At any node:</p>
+      <ul>
+        <li><code>if root is None: return 0</code> — the base case from the previous step.</li>
+        <li><code>self.max_depth(root.left)</code> — measure the left subtree.</li>
+        <li><code>self.max_depth(root.right)</code> — measure the right subtree.</li>
+        <li><code>return 1 + max(...)</code> — add this node's own level to the taller of the two.</li>
+      </ul>
+      <p>This is post-order: a node cannot answer until both children have. The panel shows the root sitting at <code>left = ?</code>, <code>right = ?</code>, waiting. Each node is entered exactly once and does a constant amount of work of its own, so no path or prefix is ever revisited.</p>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: node 9, a leaf</h2>
+      <p>The root calls <code>self.max_depth(root.left)</code>, which is node 9. Node 9 calls <code>max_depth</code> on its left child, gets <code>None</code>, and the base case returns <code>0</code>. Its right child is also <code>None</code>, so that returns <code>0</code> as well.</p>
+      <p>Now node 9 can compute its own answer: <code>1 + max(0, 0) = 1</code>. The panel badges it <code>→1</code>. A leaf has depth 1, which matches the definition: a path consisting of just that node has one node on it.</p>
+      <p>Back at the root, the left result is <code>1</code>. The root now calls <code>self.max_depth(root.right)</code> and the walk moves to node 20.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: node 20</h2>
+      <p>Node 20 has two children, and they finish first. Node 15 is a leaf: both its children are <code>None</code>, so it returns <code>1 + max(0, 0) = 1</code>. Node 7 does exactly the same and returns <code>1</code>.</p>
+      <p>Node 20 then has <code>left = 1</code> and <code>right = 1</code>, and returns <code>1 + max(1, 1) = 2</code>: the badge <code>→2</code>. Two nodes on the longest path below and including 20, which is right: <code>20 → 15</code> or <code>20 → 7</code>.</p>
+      <p>Notice that the tie between 15 and 7 does not matter. <code>max</code> only cares about the larger value, and both children are equally deep.</p>
+    </section>
+
+    <section class="step" data-state="trace3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the root, and the answer</h2>
+      <p>Both calls have returned to the root: <code>left = 1</code> from node 9 and <code>right = 2</code> from node 20. The root returns <code>1 + max(1, 2) = 3</code>.</p>
+      <p>That is the answer: <strong>3</strong>. The deepest path is <code>3 → 20 → 15</code> (or <code>3 → 20 → 7</code>), and the function never had to write it down. It only carried one integer up from each subtree.</p>
+      <div class="callout">Five nodes, five real calls plus six trivial <code>None</code> calls, each doing constant work. The path-listing approach walked <code>3 → 20</code> twice and built three lists to learn the same number.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the base case</h2>
+      <p>Almost every bug in this problem is a wrong value for the empty tree.</p>
+      <p><strong>Returning 1 for <code>None</code>.</strong> It is tempting to think "a node counts as one level, so return 1 at the bottom". But the bottom of the recursion is the empty child, not the leaf. With <code>if root is None: return 1</code>, leaf 9 computes <code>1 + max(1, 1) = 2</code>, node 20 computes <code>3</code>, and the root reports <strong>4</strong> instead of 3. The panel marks the ghost child with <code>1</code> and node 9 with <code>→2 ?</code> to show the inflation starting at the leaf.</p>
+      <p><strong>Special-casing leaves and forgetting empty input.</strong> Writing <code>if root.left is None and root.right is None: return 1</code> as the base case, without a <code>None</code> check first, crashes with <code>AttributeError</code> on an empty tree (<code>root = []</code>), and also on any node with exactly one child, because the recursion is then called on the missing child. The <code>None</code> base case covers all of those at once and makes the leaf case fall out for free.</p>
+      <div class="callout warn">Test with a single node: the answer must be 1. If you get 2, the empty tree is being counted as a level.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Every node is entered by <code>max_depth</code> exactly once, and beyond its two recursive calls it does one <code>max</code> and one addition. So the time is <strong>O(n)</strong>. The badges in the panel are the five values computed, one per node.</p>
+      <p>The only extra memory is the call stack, which is as deep as the tree is tall: <strong>O(h)</strong>. For a balanced tree that is about <code>log n</code>; for a chain where every node has one child it is <code>n</code>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Enumerate every root-to-leaf path</td><td>O(n · h)</td><td>O(n · h) for the path lists</td></tr>
+        <tr><td>Post-order recursion</td><td>O(n)</td><td>O(h) call stack</td></tr>
+      </table>
+      <p>A breadth-first version with a queue, counting levels, is also O(n) time; its extra memory is the widest level rather than the height, which can be better or worse depending on the shape.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Three lines of logic. Line by line:</p>
+      <ul>
+        <li><code>if root is None: return 0</code> — an empty subtree contributes no levels. This is the only base case, and it also handles an empty input tree.</li>
+        <li><code>self.max_depth(root.left)</code> and <code>self.max_depth(root.right)</code> — depths of the two child subtrees, each computed once.</li>
+        <li><code>return 1 + max(...)</code> — this node adds one level on top of its taller child.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>an empty tree has depth 0, and every node is one more than its taller child.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>tree · root = [3,9,20,null,null,15,7]</h3>
+        <svg class="tree" id="tree" viewBox="0 0 400 210" aria-label="binary tree"></svg>
+        <div class="array compact" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>current call · returned depths</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="maximum_depth_of_binary_tree.py">maximum_depth_of_binary_tree.py</a> · <a href="maximum_depth_of_binary_tree_annotated.py">maximum_depth_of_binary_tree_annotated.py</a> · <a href="test_maximum_depth_of_binary_tree.py">test_maximum_depth_of_binary_tree.py</a> · <a href="../../md.html?f=easy/013-maximum-depth-of-binary-tree/notes.md">notes.md</a> · <a href="../../index.html#easy">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = ["class Solution:", "    def max_depth(self, root):", "        if root is None:", "            return 0", "        return 1 + max(self.max_depth(root.left), self.max_depth(root.right))"];
+
+  // tree: level-order values (null = absent). cur/hits/dim/bad: level-order indices. badges: depth returned by that node. ghost: [idx, label] draws an empty child.
+  var STATES = {
+    problem: {"caption": "Count the levels on the longest root-to-leaf path.", "tree": [3, 9, 20, null, null, 15, 7], "cur": -1, "hits": [], "dim": [], "bad": [], "badges": {}, "vars": [], "meta": "Level order: 3, 9, 20, ·, ·, 15, 7. Longest path 3 → 20 → 15 has 3 nodes.", "hl": []},
+    brute: {"caption": "Enumerating every root-to-leaf path and measuring each repeats shared prefixes.", "tree": [3, 9, 20, null, null, 15, 7], "cur": -1, "hits": [0, 2, 5], "dim": [1, 3, 4, 6], "bad": [], "badges": {"1": "len 2", "5": "len 3", "6": "len 3"}, "vars": [["paths", "[3,9] [3,20,15] [3,20,7]"]], "meta": "3 → 20 is walked twice; on a bushy tree the prefix re-walks add up.", "hl": [], "big": "max of all paths", "bigNote": "works, but each edge is re-walked per leaf below it"},
+    insight: {"caption": "A missing child is an empty tree of depth 0; a node is 1 + its taller child.", "tree": [3, 9, 20, null, null, 15, 7], "cur": 0, "hits": [], "dim": [], "bad": [], "badges": {}, "ghost": [3, "0"], "vars": [["depth(None)", "0", "new"]], "meta": "Empty subtree → 0. That single base case ends every branch of the recursion.", "hl": [2, 3]},
+    approach: {"caption": "Post-order: measure left, measure right, then answer 1 + max at this node.", "tree": [3, 9, 20, null, null, 15, 7], "cur": 0, "hits": [], "dim": [3, 4, 5, 6], "bad": [], "badges": {"1": "?", "2": "?"}, "vars": [["node", "3", "new"], ["left", "?"], ["right", "?"]], "meta": "Root waits on both children before it can answer.", "hl": [4]},
+    trace1: {"caption": "Node 9: both children are None → 1 + max(0, 0) = 1.", "tree": [3, 9, 20, null, null, 15, 7], "cur": 1, "hits": [], "dim": [2, 5, 6], "bad": [], "badges": {"1": "→1"}, "ghost": [3, "0"], "vars": [["node", "9", "new"], ["left", "0"], ["right", "0"], ["return", "1", "found"]], "meta": "Leaf depth is 1. Root now holds left = 1 and moves on to the right child.", "hl": [4]},
+    trace2: {"caption": "Node 20: leaves 15 and 7 each return 1 → 1 + max(1, 1) = 2.", "tree": [3, 9, 20, null, null, 15, 7], "cur": 2, "hits": [5, 6], "dim": [1], "bad": [], "badges": {"1": "1", "5": "1", "6": "1", "2": "→2"}, "vars": [["node", "20", "new"], ["left", "1"], ["right", "1"], ["return", "2", "found"]], "meta": "Both leaves finish first (post-order), then 20 adds its own level.", "hl": [4]},
+    trace3: {"caption": "Root 3: left = 1, right = 2 → 1 + max(1, 2) = 3.", "tree": [3, 9, 20, null, null, 15, 7], "cur": 0, "hits": [2, 5], "dim": [], "bad": [], "badges": {"1": "1", "2": "2", "5": "1", "6": "1", "0": "→3"}, "vars": [["node", "3", "new"], ["left", "1"], ["right", "2"], ["return", "3", "found"]], "meta": "The deepest path is 3 → 20 → 15 (or 7), three nodes.", "hl": [4], "big": "3", "bigNote": "max_depth([3,9,20,null,null,15,7])"},
+    pitfall: {"caption": "If None returned 1, every leaf would report 2 and the answer inflates to 4.", "tree": [3, 9, 20, null, null, 15, 7], "cur": 1, "hits": [], "dim": [2, 5, 6], "bad": [1], "badges": {"1": "→2 ?"}, "ghost": [3, "1"], "vars": [["depth(None)", "1", "bad"], ["leaf 9", "1 + max(1, 1) = 2"]], "meta": "Wrong base case → off by one at every leaf. <code>None</code> must return 0.", "hl": [2, 3], "big": "4 (wrong)", "bigNote": "each empty child counted as a level"},
+    complexity: {"caption": "Each node is visited once; the stack is as deep as the tree is tall.", "tree": [3, 9, 20, null, null, 15, 7], "cur": -1, "hits": [0, 2, 5], "dim": [], "bad": [], "badges": {"0": "3", "1": "1", "2": "2", "5": "1", "6": "1"}, "vars": [["n", "5"], ["h", "3"]], "meta": "Every node gets exactly one call doing O(1) work beyond its recursive calls.", "hl": [], "big": "O(n) time · O(h) space", "bigNote": "h = log n balanced, n for a chain"},
+    final: {"caption": "Base case 0, then 1 + the taller child.", "tree": [3, 9, 20, null, null, 15, 7], "cur": -1, "hits": [], "dim": [], "bad": [], "badges": {"0": "3", "1": "1", "2": "2", "5": "1", "6": "1"}, "vars": [["max_depth(root)", "3", "found"]], "meta": "", "hl": [1, 2, 3, 4]}
+  };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function makeTree(svg, POS, R, dx, title) {
+    var g0 = el("g", {}); svg.appendChild(g0);
+    if (title) g0.appendChild(el("text", { x: dx + POS[0][0], y: 12, "class": "title" }, title));
+    var edges = [], nodes = [], texts = [], badges = [];
+    for (var i = 1; i < POS.length; i++) {
+      var p = POS[(i - 1) >> 1];
+      var e = el("line", { "class": "edge", x1: dx + p[0], y1: p[1], x2: dx + POS[i][0], y2: POS[i][1] });
+      g0.appendChild(e); edges[i] = e;
+    }
+    var ghostLayer = el("g", {}); g0.appendChild(ghostLayer);
+    for (var j = 0; j < POS.length; j++) {
+      var g = el("g", { "class": "node" });
+      g.appendChild(el("circle", { cx: dx + POS[j][0], cy: POS[j][1], r: R }));
+      var t = el("text", { x: dx + POS[j][0], y: POS[j][1] });
+      g.appendChild(t);
+      var b = el("text", { x: dx + POS[j][0] + R + 3, y: POS[j][1] + 4, "class": "badge" });
+      g.appendChild(b);
+      g0.appendChild(g); nodes[j] = g; texts[j] = t; badges[j] = b;
+    }
+    function has(arr, i) { return arr && arr.indexOf(i) !== -1; }
+    return function draw(s) {
+      var tree = s.tree, badgeMap = s.badges || {};
+      for (var i = 0; i < POS.length; i++) {
+        var v = i < tree.length ? tree[i] : null;
+        var parentOff = i > 0 && (((i - 1) >> 1) >= tree.length || tree[(i - 1) >> 1] === null);
+        var off = v === null || parentOff;
+        var cls = "node";
+        if (off) cls += " off";
+        else if (i === s.cur) cls += " cur";
+        else if (has(s.bad, i)) cls += " bad";
+        else if (has(s.hits, i)) cls += " hit";
+        else if (has(s.dim, i)) cls += " dim";
+        nodes[i].setAttribute("class", cls);
+        texts[i].textContent = off ? "" : v;
+        badges[i].textContent = off ? "" : (badgeMap[i] !== undefined ? badgeMap[i] : "");
+        if (i > 0) {
+          var ec = "edge";
+          if (off) ec += " off";
+          else if (has(s.bad, i)) ec += " bad";
+          else if (has(s.hits, i)) ec += " hit";
+          else if (has(s.dim, i)) ec += " dim";
+          edges[i].setAttribute("class", ec);
+        }
+      }
+      while (ghostLayer.firstChild) ghostLayer.removeChild(ghostLayer.firstChild);
+      if (s.ghost) {
+        var gp = POS[s.ghost[0]];
+        var pp = POS[(s.ghost[0] - 1) >> 1];
+        ghostLayer.appendChild(el("line", { "class": "edge bad", x1: dx + pp[0], y1: pp[1], x2: dx + gp[0], y2: gp[1] }));
+        ghostLayer.appendChild(el("circle", { cx: dx + gp[0], cy: gp[1], r: R, "class": "ghost" }));
+        ghostLayer.appendChild(el("text", { x: dx + gp[0], y: gp[1], "class": "ghost-lbl" }, s.ghost[1]));
+      }
+    };
+  }
+  var POS7 = [[200, 32], [105, 102], [295, 102], [55, 172], [155, 172], [245, 172], [345, 172]];
+  var POS7S = [[100, 46], [55, 112], [145, 112], [30, 178], [80, 178], [120, 178], [170, 178]];
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function renderVars(vars) {
+    if (!vars || vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">nothing returned yet</span>';
+      return;
+    }
+    var d = "";
+    for (var k = 0; k < vars.length; k++) {
+      var e = vars[k];
+      d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+    }
+    $("dict").innerHTML = d;
+  }
+  function renderBig(s) {
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+  }
+  function renderCode(hl) {
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  var drawTree = makeTree(document.getElementById("tree"), POS7, 21, 0, "");
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+    drawTree(s);
+    var arr = "";
+    for (var i = 0; i < s.tree.length; i++) {
+      var v = s.tree[i];
+      var cls = "cell";
+      if (v === null) cls += " dim";
+      else if (i === s.cur) cls += " cur";
+      else if (s.bad.indexOf(i) !== -1) cls += " bad";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.dim.indexOf(i) !== -1) cls += " dim";
+      arr += '<div class="' + cls + '">' + (v === null ? "·" : v) + '</div>';
+    }
+    $("array").innerHTML = arr;
+    renderVars(s.vars);
+    renderBig(s);
+    renderCode(s.hl);
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

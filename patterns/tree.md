@@ -69,7 +69,14 @@ while stack or node:
 | [medium/016 Lowest Common Ancestor of a BST](../medium/016-lowest-common-ancestor-of-a-bst/) | Medium | walk down; the split point where p and q diverge is the LCA |
 | [medium/017 Kth Smallest Element in a BST](../medium/017-kth-smallest-element-in-a-bst/) | Medium | iterative in-order traversal, stop at the k-th visit |
 | [medium/023 Serialize and Deserialize Binary Tree](../medium/023-serialize-and-deserialize-binary-tree/) | Medium | pre-order + explicit null markers make the encoding unambiguous |
-
+| [easy/013 Maximum Depth of Binary Tree](../easy/013-maximum-depth-of-binary-tree/) | Easy | Maximum depth is one plus the taller child subtree. |
+| [easy/014 Diameter of Binary Tree](../easy/014-diameter-of-binary-tree/) | Easy | Compute heights bottom-up while recording the best path through a node. |
+| [easy/015 Balanced Binary Tree](../easy/015-balanced-binary-tree/) | Easy | Return a height or an unbalanced sentinel in one post-order pass. |
+| [easy/016 Same Tree](../easy/016-same-tree/) | Easy | Compare values and corresponding children recursively. |
+| [easy/017 Subtree of Another Tree](../easy/017-subtree-of-another-tree/) | Easy | Try each root position, then compare the candidate structure. |
+| [medium/044 Binary Tree Right Side View](../medium/044-binary-tree-right-side-view/) | Medium | "Visible from the right" means "last node of its level", not "reachable by going right" |
+| [medium/045 Count Good Nodes in Binary Tree](../medium/045-count-good-nodes-in-binary-tree/) | Medium | A node is good exactly when `node.val >= max(values on the path above it)`, so the… |
+| [medium/046 Construct Binary Tree from Preorder and Inorder Traversal](../medium/046-construct-binary-tree-from-preorder-and-inorder-traversal/) | Medium | The first preorder value is the root |
 ## Common mistakes
 
 - Comparing a BST node only to its immediate parent instead of carrying bounds from every ancestor.

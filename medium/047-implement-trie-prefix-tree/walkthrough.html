@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Implement Trie (Prefix Tree) Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; min-width: 70px; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 6px 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  #array .cell { flex: 0 1 auto; min-width: 0; padding: 8px 10px 4px; font-size: 0.85rem; white-space: nowrap; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .edge { stroke: var(--muted); stroke-width: 2; fill: none; opacity: 0.6; transition: opacity 0.25s, stroke 0.25s; }
+  .fig .edge.dim { opacity: 0.2; }
+  .fig .edge.hit { stroke: var(--ok); opacity: 1; stroke-width: 3; }
+  .fig .edge.bad { stroke: var(--warn); opacity: 1; stroke-width: 3; }
+  .fig .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .node.end circle { stroke: var(--muted); stroke-width: 3; }
+  .fig .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .fig .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .fig .node.dim circle, .fig .node.dim text { opacity: 0.3; }
+  .fig .root circle { fill: var(--code-bg); }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.3rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 60px; padding: 5px 4px 3px; font-size: 0.9rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.05rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Trie · LeetCode #208</div>
+  <h1>Implement Trie (Prefix Tree), narrated</h1>
+  <p>Scroll from a set of strings plus prefix scans to a tree of characters with an end-of-word flag, with the trie's contents shown after every operation.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/trie.html">Trie</a> <span class="how">One node per character along a path; words that share a prefix share the path, and a flag marks where a word ends.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Design a class <code>Trie</code> with three methods: <code>insert(word)</code> stores a word, <code>search(word)</code> reports whether exactly that word was stored, and <code>starts_with(prefix)</code> reports whether <em>any</em> stored word begins with <code>prefix</code>. All strings are lowercase letters.</p>
+      <div class="callout">Running example, the sequence of operations from LeetCode: <code>insert("apple")</code>, <code>search("apple")</code> → <strong>true</strong>, <code>search("app")</code> → <strong>false</strong>, <code>starts_with("app")</code> → <strong>true</strong>, <code>insert("app")</code>, <code>search("app")</code> → <strong>true</strong>.</div>
+      <p>The two middle answers are the whole problem in miniature. After only "apple" is stored, "app" is a prefix of a stored word but is not itself stored, so <code>search</code> says no while <code>starts_with</code> says yes. Storing "app" afterwards flips <code>search("app")</code> to yes without changing anything about "apple".</p>
+      <p>The constraint that matters is the call count: up to 3·10⁴ operations on strings up to 2000 characters. Each operation should cost time proportional to its own argument, not to how many words are already stored.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: a set of words</h2>
+      <p>A Python <code>set</code> gives <code>insert</code> and <code>search</code> for free: <code>self.words.add(word)</code> and <code>word in self.words</code>, both O(L) for the hash. The trouble is <code>starts_with</code>, which has to look at every stored word:</p>
+      <pre class="code"><span class="ln">class Trie:</span><span class="ln">    def __init__(self):</span><span class="ln">        self.words = set()</span><span class="ln">    def insert(self, word):</span><span class="ln">        self.words.add(word)</span><span class="ln">    def search(self, word):</span><span class="ln">        return word in self.words</span><span class="ln">    def starts_with(self, prefix):</span><span class="ln">        return any(w.startswith(prefix) for w in self.words)</span></pre>
+      <p style="margin-top:14px">That <code>any</code> scans all <code>n</code> stored words and compares up to <code>L</code> characters of each: <strong>O(n · L)</strong> per prefix query. With 10⁴ stored words and 10⁴ queries it is 10⁸ character comparisons, and it gets worse the more you store, which is the opposite of what a data structure should do.</p>
+      <p>You could patch it with a second set holding every prefix of every inserted word, which makes <code>starts_with</code> O(L) but turns <code>insert</code> into O(L²) and stores 2000 strings for a single 2000-character word. The scan moved, it did not go away.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: store the characters as a tree</h2>
+      <p>Words that share a prefix should share the storage for it. Lay each word out as a path from a root node, one character per edge: "apple" becomes root → a → p → p → l → e. Then "app" is not a separate string anywhere; it is simply the first three edges of that same path.</p>
+      <div class="callout">Each <code>TrieNode</code> holds a dict <code>children</code> from a character to the next node, and a boolean <code>is_word</code> that is <code>True</code> only where an inserted word ends. Every node is a prefix of something; only the flagged nodes are words.</div>
+      <p>This makes the three operations three variations of one walk. <code>insert</code> walks the path, creating missing nodes, and flags the last one. <code>starts_with</code> walks the path and asks only "did I reach the end?". <code>search</code> walks the path and asks "did I reach the end, <em>and</em> is that node flagged?". That single flag is the difference between the two middle answers in the running example.</p>
+      <p>The panel shows the trie after <code>insert("apple")</code>: five nodes in a chain, with a thick ring on <code>e</code> and nowhere else.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: one walk helper, three thin methods</h2>
+      <ul>
+        <li><code>self.root = TrieNode()</code> — the empty prefix; never a word, parent of every first letter.</li>
+        <li><code>insert</code>: for each <code>ch</code>, <code>if ch not in node.children: node.children[ch] = TrieNode()</code>, then <code>node = node.children[ch]</code>. After the loop, <code>node.is_word = True</code>.</li>
+        <li><code>_walk(s)</code>: for each <code>ch</code>, <code>node = node.children.get(ch)</code>; <code>if node is None: return None</code>. Return the node reached.</li>
+        <li><code>search(word)</code>: <code>node = self._walk(word)</code>, then <code>return node is not None and node.is_word</code>.</li>
+        <li><code>starts_with(prefix)</code>: <code>return self._walk(prefix) is not None</code>.</li>
+      </ul>
+      <p>Notice that <code>insert</code> creates nodes only when they are missing. That is what lets a later <code>insert("app")</code> reuse the a-p-p nodes that "apple" built instead of overwriting them.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: insert("apple"), then search("apple")</h2>
+      <p>The trie starts as a lone root. <code>insert("apple")</code> walks a, p, p, l, e. At each step the character is missing from <code>node.children</code>, so a new <code>TrieNode</code> is created and the walk moves into it. After the loop <code>node</code> is the <code>e</code> node, and <code>node.is_word = True</code> flags it. Five nodes were created; the root's dict now has one key, <code>"a"</code>.</p>
+      <p><code>search("apple")</code> calls <code>_walk("apple")</code>. Each <code>children.get</code> finds its letter, so the walk reaches the <code>e</code> node. It is not <code>None</code>, and <code>is_word</code> is <code>True</code>, so <code>search</code> returns <strong>true</strong>.</p>
+      <p>The panel highlights the whole a-p-p-l-e path in green and shows the flag on the last node as a thick ring.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: search("app") vs starts_with("app")</h2>
+      <p><code>search("app")</code>: <code>_walk("app")</code> follows a, p, p and stops on the second <code>p</code> node. That node exists, so the walk returns it rather than <code>None</code>. But its <code>is_word</code> is <code>False</code>: nothing was ever inserted that ends here. So <code>node is not None and node.is_word</code> is <code>True and False</code>, and <code>search</code> returns <strong>false</strong>.</p>
+      <p><code>starts_with("app")</code>: the very same walk reaches the very same node. This method asks only <code>self._walk(prefix) is not None</code>, which is <code>True</code>, so it returns <strong>true</strong>.</p>
+      <div class="callout">Same path, same node, opposite answers. The panel shows the a-p-p path in amber for the failed <code>search</code>: reached, but the ring on the second <code>p</code> is thin.</div>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: insert("app"), then search("app")</h2>
+      <p><code>insert("app")</code> walks a, p, p again. This time every character is already in <code>node.children</code>, so the <code>if ch not in node.children</code> test is false at each step and no node is created. The walk ends on the existing second <code>p</code> node and sets <code>node.is_word = True</code>. The trie still has exactly five nodes; only one boolean changed.</p>
+      <p><code>search("app")</code> now walks to that node, finds <code>is_word</code> is <code>True</code>, and returns <strong>true</strong>. And <code>search("apple")</code> would still be true: the <code>l</code> and <code>e</code> nodes below were never touched.</p>
+      <p>The panel shows two thick rings, on the second <code>p</code> and on <code>e</code>, which is the whole content of the trie: the words "app" and "apple", sharing three nodes.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong</h2>
+      <p><strong>Forgetting the flag in <code>search</code>.</strong> Write <code>return self._walk(word) is not None</code> for <code>search</code>, the same body as <code>starts_with</code>. After <code>insert("apple")</code>, <code>search("app")</code> reaches the second <code>p</code> node and returns <strong>true</strong> instead of false. Every prefix of every stored word now counts as a word. The panel shows that state: the walk lands on an unflagged node and the method says yes anyway.</p>
+      <p><strong>Overwriting children in <code>insert</code>.</strong> Write <code>node.children[ch] = TrieNode()</code> without the <code>if ch not in node.children</code> guard. Then <code>insert("app")</code> replaces the root's <code>a</code> node with a fresh one, and the <code>p-p-l-e</code> chain under the old one is gone; <code>search("apple")</code> returns <strong>false</strong> after the second insert.</p>
+      <p><strong>Flagging every node on the path.</strong> Move <code>node.is_word = True</code> inside the loop and after <code>insert("apple")</code>, <code>search("a")</code>, <code>search("ap")</code>, and <code>search("app")</code> all return true.</p>
+      <div class="callout warn">Reaching a node means "this is a prefix". Only the flag means "this is a word". <code>search</code> needs both; <code>starts_with</code> needs only the first.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Each operation does one dict lookup (or one insertion) per character of its argument, so <code>insert</code>, <code>search</code>, and <code>starts_with</code> are all <strong>O(L)</strong>, where <code>L</code> is the length of that one string. The number of stored words never appears.</p>
+      <p>Space is at most one node per inserted character, <strong>O(total characters)</strong>, and less when words share prefixes: "app" cost zero new nodes.</p>
+      <table>
+        <tr><th>Approach</th><th>insert</th><th>search</th><th>starts_with</th><th>Space</th></tr>
+        <tr><td>Set of words</td><td>O(L)</td><td>O(L)</td><td>O(n · L)</td><td>O(total chars)</td></tr>
+        <tr><td>Set of words + set of all prefixes</td><td>O(L²)</td><td>O(L)</td><td>O(L)</td><td>O(total chars · L)</td></tr>
+        <tr><td>Trie</td><td>O(L)</td><td>O(L)</td><td>O(L)</td><td>O(total chars), shared prefixes free</td></tr>
+      </table>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>A node class with a dict and a flag, and a <code>Trie</code> with one walk helper. Line by line:</p>
+      <ul>
+        <li><code>self.root = TrieNode()</code> — the empty prefix.</li>
+        <li><code>if ch not in node.children: node.children[ch] = TrieNode()</code> — create a branch only when missing, so prefixes are shared.</li>
+        <li><code>node = node.children[ch]</code> — step down.</li>
+        <li><code>node.is_word = True</code> — after the loop, mark the last node and nothing else.</li>
+        <li><code>node = node.children.get(ch)</code> / <code>if node is None: return None</code> — the shared walk stops at the first missing letter.</li>
+        <li><code>return node is not None and node.is_word</code> — <code>search</code>: reached and flagged.</li>
+        <li><code>return self._walk(prefix) is not None</code> — <code>starts_with</code>: reached is enough.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>a trie is a tree of characters where reaching a node means "prefix" and a flag on the node means "word".</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>operations · in order</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>trie · thick ring = is_word</h3>
+        <svg class="fig" id="fig" viewBox="0 0 400 300" aria-label="trie"></svg>
+      </div>
+
+      <div class="block">
+        <h3>walk</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="implement_trie_prefix_tree.py">implement_trie_prefix_tree.py</a> · <a href="implement_trie_prefix_tree_annotated.py">implement_trie_prefix_tree_annotated.py</a> · <a href="test_implement_trie_prefix_tree.py">test_implement_trie_prefix_tree.py</a> · <a href="../../md.html?f=medium/047-implement-trie-prefix-tree/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Trie:",
+    "    def __init__(self):",
+    "        self.root = TrieNode()",
+    "",
+    "    def insert(self, word):",
+    "        node = self.root",
+    "        for ch in word:",
+    "            if ch not in node.children:",
+    "                node.children[ch] = TrieNode()",
+    "            node = node.children[ch]",
+    "        node.is_word = True",
+    "",
+    "    def search(self, word):",
+    "        node = self._walk(word)",
+    "        return node is not None and node.is_word",
+    "",
+    "    def starts_with(self, prefix):",
+    "        return self._walk(prefix) is not None",
+    "",
+    "    def _walk(self, s):",
+    "        node = self.root",
+    "        for ch in s:",
+    "            node = node.children.get(ch)",
+    "            if node is None:",
+    "                return None",
+    "        return node"
+  ];
+
+  // The running example: each op is [label, result shown once done].
+  var OPS = [
+    ['insert("apple")', ""],
+    ['search("apple")', "true"],
+    ['search("app")', "false"],
+    ['starts_with("app")', "true"],
+    ['insert("app")', ""],
+    ['search("app")', "true"]
+  ];
+
+  // words: what the trie holds at this moment. walk: {path, cls, dimRest}. cur/done: op indices.
+  var STATES = {
+    problem: {
+      caption: "Six operations. Note search(\"app\") is false while starts_with(\"app\") is true.",
+      words: [], walk: null, cur: -1, done: [],
+      vars: [], meta: "Expected results: true, false, true, then true after the second insert.", hl: []
+    },
+    brute: {
+      caption: "A set answers insert and search, but starts_with must scan every stored word.",
+      words: [], walk: null, cur: 3, done: [0, 1, 2],
+      vars: [["starts_with", 'any(w.startswith("app") for w in words)', "new"]],
+      meta: "O(n · L) per prefix query, and it grows with every insert.", hl: [],
+      big: "O(n · L)", bigNote: "per starts_with, scanning all n words"
+    },
+    insight: {
+      caption: "Store characters as a tree: shared prefixes share nodes, and a flag marks word ends.",
+      words: ["apple"], walk: { path: "apple", cls: "hit" }, cur: 0, done: [],
+      vars: [["children", "dict: char → node"], ["is_word", "true only on e", "new"]],
+      meta: "\"app\" is not stored anywhere separately; it is the first three edges of \"apple\".", hl: [7, 8, 9, 10, 14, 17]
+    },
+    approach: {
+      caption: "One _walk helper; insert creates missing nodes, search checks the flag, starts_with does not.",
+      words: [], walk: null, cur: -1, done: [],
+      vars: [["insert", "walk + create + flag"], ["search", "walk + is_word"], ["starts_with", "walk"]],
+      meta: "The trie starts as a single root with an empty children dict.", hl: [4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 16, 17, 19, 20, 21, 22, 23, 24, 25]
+    },
+    t1: {
+      caption: "insert(\"apple\") creates a → p → p → l → e and flags e. search(\"apple\") reaches e: flagged → true.",
+      words: ["apple"], walk: { path: "apple", cls: "hit" }, cur: 1, done: [0],
+      vars: [["created", "a, p, p, l, e (5 nodes)"], ["walk", "a → p → p → l → e"], ["e.is_word", "true"], ["search", "true", "found"]],
+      meta: "Root's children dict: {\"a\": …}. Only the e node is flagged.", hl: [7, 8, 9, 10, 13, 14]
+    },
+    t2: {
+      caption: "search(\"app\"): the walk reaches the second p, but it is not flagged → false. starts_with(\"app\") → true.",
+      words: ["apple"], walk: { path: "app", cls: "bad", dimRest: true }, cur: 2, done: [0, 1],
+      vars: [["walk", "a → p → p"], ["node", "second p, not None"], ["p.is_word", "false", "bad"], ["search", "false", "bad"], ["starts_with", "true", "found"]],
+      meta: "Same node, two questions: reached? yes. Flagged? no.", hl: [13, 14, 17]
+    },
+    t3: {
+      caption: "insert(\"app\") creates nothing and flags the second p. search(\"app\") now → true.",
+      words: ["apple", "app"], walk: { path: "app", cls: "hit", dimRest: true }, cur: 5, done: [0, 1, 2, 3, 4],
+      vars: [["created", "nothing, all 3 letters existed"], ["p.is_word", "true", "new"], ["search(\"app\")", "true", "found"], ["search(\"apple\")", "still true"]],
+      meta: "Still five nodes; two of them are flagged.", hl: [7, 9, 10, 13, 14],
+      big: "true, false, true, true", bigNote: "search, search, starts_with, search"
+    },
+    pitfall: {
+      caption: "search written as `_walk(word) is not None` says true for \"app\" after only \"apple\" was inserted.",
+      words: ["apple"], walk: { path: "app", cls: "bad", dimRest: true }, cur: 2, done: [0, 1],
+      vars: [["bug", "search ignores is_word"], ["walk", "a → p → p reached"], ["returns", "true", "bad"]],
+      meta: "Every prefix of every stored word now searches as a word.", hl: [14],
+      big: "true, not false", bigNote: "search(\"app\") before insert(\"app\")"
+    },
+    complexity: {
+      caption: "One dict lookup per character; the number of stored words never matters.",
+      words: ["apple", "app"], walk: null, cur: -1, done: [0, 1, 2, 3, 4, 5],
+      vars: [["per op", "O(L)"], ["nodes", "≤ total characters inserted"]],
+      meta: "\"app\" cost zero new nodes thanks to the shared prefix.", hl: [],
+      big: "O(L) per operation", bigNote: "versus O(n · L) starts_with on a set"
+    },
+    final: {
+      caption: "The whole class.",
+      words: ["apple", "app"], walk: null, cur: -1, done: [0, 1, 2, 3, 4, 5],
+      vars: [["trie holds", "apple, app", "found"]],
+      meta: "", hl: [1, 2, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 16, 17, 19, 20, 21, 22, 23, 24, 25]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---- trie figure (built per state from s.words, so it can grow op by op) ----
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var TR = 14, levelH = 42;
+  function buildTrie(words) {
+    var root = { ch: "", kids: {}, end: false, path: "" };
+    words.forEach(function (w) {
+      var n = root;
+      for (var i = 0; i < w.length; i++) {
+        if (!n.kids[w[i]]) n.kids[w[i]] = { ch: w[i], kids: {}, end: false, path: w.slice(0, i + 1) };
+        n = n.kids[w[i]];
+      }
+      n.end = true;
+    });
+    var leafSlot = 0, nodes = [], edges = [], depth = 0;
+    (function layout(n, d) {
+      n.depth = d; depth = Math.max(depth, d);
+      var keys = Object.keys(n.kids).sort();
+      if (!keys.length) { n.slot = leafSlot++; }
+      else {
+        var sum = 0;
+        keys.forEach(function (k) { layout(n.kids[k], d + 1); sum += n.kids[k].slot; edges.push([n, n.kids[k]]); });
+        n.slot = sum / keys.length;
+      }
+      nodes.push(n);
+    })(root, 0);
+    var stepX = leafSlot > 1 ? (400 - 120) / (leafSlot - 1) : 0;
+    nodes.forEach(function (n) { n.x = leafSlot > 1 ? 60 + n.slot * stepX : 200; n.y = 24 + n.depth * levelH; });
+    return { nodes: nodes, edges: edges, depth: depth };
+  }
+  var figSvg = document.getElementById("fig");
+
+  function renderTrie(s) {
+    while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild);
+    var t = buildTrie(s.words);
+    figSvg.setAttribute("viewBox", "0 0 400 " + (24 + Math.max(t.depth, 2) * levelH + 24));
+    var w = s.walk || { path: "", cls: "" };
+    function on(path) {
+      if (!w.path) return "";
+      if (path === "") return w.cls;
+      if (w.path.indexOf(path) === 0) return w.cls;
+      return w.dimRest ? "dim" : "";
+    }
+    t.edges.forEach(function (e) {
+      figSvg.appendChild(el("line", { "class": "edge " + on(e[1].path), x1: e[0].x, y1: e[0].y + TR, x2: e[1].x, y2: e[1].y - TR }));
+    });
+    t.nodes.forEach(function (n) {
+      var cls = "node " + on(n.path) + (n.end ? " end" : "") + (n.path === "" ? " root" : "");
+      var g = el("g", { "class": cls });
+      g.appendChild(el("circle", { cx: n.x, cy: n.y, r: TR }));
+      g.appendChild(el("text", { x: n.x, y: n.y }, n.path === "" ? "•" : n.ch));
+      figSvg.appendChild(g);
+    });
+    if (s.words.length === 0) {
+      figSvg.appendChild(el("text", { x: 200, y: 24 + levelH + 10, "class": "lbl" }, "empty: only the root"));
+    }
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < OPS.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.done.indexOf(i) !== -1) cls += " hit";
+      else cls += " dim";
+      var res = (i === s.cur || s.done.indexOf(i) !== -1) ? OPS[i][1] : "";
+      arr += '<div class="' + cls + '">' + OPS[i][0] + '<span class="idx">' + (res || "&nbsp;") + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+    renderTrie(s);
+
+    if (!s.vars || s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">no walk yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

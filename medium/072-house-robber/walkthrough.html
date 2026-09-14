@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>House Robber Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell.taken { border-style: dashed; }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; margin-bottom: 6px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell.taken { border-style: dashed; }
+  .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Dynamic Programming · LeetCode #198</div>
+  <h1>House Robber, narrated</h1>
+  <p>Scroll through the thinking, from trying every subset of houses to a loop with two rolling variables, with the best haul per house shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">best[i] = max(best[i-1], best[i-2] + nums[i]), kept in two variables</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Houses stand in a row, and <code>nums[i]</code> is the cash in house <code>i</code>. You can rob any set of houses, with one rule: two adjacent houses cannot both be robbed. Maximise the total.</p>
+      <p>There is no requirement to alternate. Skipping two or three houses in a row is fine if the numbers say so. The only forbidden pattern is two robbed houses side by side.</p>
+      <div class="callout">Running example: <code>nums = [2, 7, 9, 3, 1]</code>. Robbing houses 0, 2 and 4 yields <code>2 + 9 + 1 = 12</code>. The tempting <code>7 + 3 = 10</code> from houses 1 and 3 is worse. The answer is <strong>12</strong>.</div>
+      <p>We are asked only for the amount, not the set of houses. That is a hint that we can keep running totals rather than sets.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: recurse on rob-or-skip</h2>
+      <p>Stand at house <code>i</code>. Either you rob it, in which case house <code>i + 1</code> is off limits and you continue from <code>i + 2</code>, or you skip it and continue from <code>i + 1</code>. Take the better of the two:</p>
+      <pre class="code"><span class="ln">def best_from(i):</span><span class="ln">    if i &gt;= len(nums):</span><span class="ln">        return 0</span><span class="ln">    return max(nums[i] + best_from(i + 2), best_from(i + 1))</span></pre>
+      <p style="margin-top:14px">This is correct and it is the recurrence we will keep. It is also exponential: every call branches into two, so the call tree is roughly <strong>O(2ⁿ)</strong>. <code>best_from(2)</code> is reached from <code>best_from(0)</code> and again from <code>best_from(1)</code>, and each of those recomputes it from scratch.</p>
+      <p>The waste is the repeated subproblems. There are only <code>n</code> distinct values of <code>i</code>, yet the recursion evaluates them thousands of times.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: the best haul up to house i needs only the two before it</h2>
+      <p>Define <code>best[i]</code> as the most you can rob from houses <code>0..i</code>. To rob house <code>i</code> you must have left house <code>i - 1</code> alone, so your total is <code>best[i-2] + nums[i]</code>. To skip it, your total is simply <code>best[i-1]</code>. Hence:</p>
+      <div class="callout"><code>best[i] = max(best[i-1], best[i-2] + nums[i])</code></div>
+      <p>Filling that table left to right computes each entry once: O(n). And since only <code>best[i-1]</code> and <code>best[i-2]</code> are ever read, the table collapses to two variables. Call them <code>take</code> (best up to the previous house) and <code>skip</code> (best up to two houses back).</p>
+      <p>This is the Climbing Stairs shape exactly, with <code>max</code> where that problem had <code>+</code>. The base cases are even simpler: with no houses considered, both totals are 0.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: one tuple assignment per house</h2>
+      <ul>
+        <li><code>skip, take = 0, 0</code> — before any house, the best totals two back and one back are both 0.</li>
+        <li><code>for money in nums</code> — visit each house once.</li>
+        <li><code>skip, take = take, max(take, skip + money)</code> — the new "one back" is <code>max(leave it, rob it)</code>; the old "one back" slides into "two back".</li>
+        <li><code>return take</code> — after the last house, <code>take</code> is the best over the whole street.</li>
+      </ul>
+      <p>The tuple assignment evaluates its whole right-hand side before rebinding either name, so <code>skip + money</code> uses the old <code>skip</code>. That single detail is what step 8 is about.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: houses 0 and 1</h2>
+      <p>House 0, <code>money = 2</code>: <code>max(take, skip + money) = max(0, 0 + 2) = 2</code>. Now <code>skip = 0</code>, <code>take = 2</code>. Best from the first house alone is 2, obviously.</p>
+      <p>House 1, <code>money = 7</code>: <code>max(2, 0 + 7) = 7</code>. Rob house 1 instead of house 0. Now <code>skip = 2</code>, <code>take = 7</code>. Note that <code>skip</code> still remembers the 2, because the next house may want to combine with house 0 rather than house 1.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: houses 2 and 3</h2>
+      <p>House 2, <code>money = 9</code>: <code>max(7, 2 + 9) = 11</code>. Robbing house 2 on top of house 0 beats keeping house 1. Now <code>skip = 7</code>, <code>take = 11</code>.</p>
+      <p>House 3, <code>money = 3</code>: <code>max(11, 7 + 3) = 11</code>. Robbing house 3 would force us back to the house-1 total of 7, and <code>10 &lt; 11</code>, so leave it. <code>skip = 11</code>, <code>take = 11</code>. Both variables holding the same value means "the best total does not include the latest house".</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: house 4, the answer</h2>
+      <p>House 4, <code>money = 1</code>: <code>max(11, 11 + 1) = 12</code>. Because house 3 was skipped, <code>skip</code> already equals the full best of 11, and adding house 4 costs nothing in conflicts. <code>skip = 11</code>, <code>take = 12</code>.</p>
+      <p>The loop ends and <code>return take</code> gives <strong>12</strong>, matching <code>2 + 9 + 1</code>.</p>
+      <div class="callout">The exponential recursion would have made dozens of calls for five houses. The loop made five <code>max</code> calls.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: splitting the assignment, forcing alternation</h2>
+      <p><strong>Two statements instead of one tuple.</strong> Writing <code>skip = take</code> and then <code>take = max(take, skip + money)</code> looks equivalent. It is not: the second line now reads the <em>new</em> <code>skip</code>, which equals <code>take</code>, so it computes <code>take + money</code> every time and simply sums the street. On the example the totals run 2, 9, 18, 21, 22 and the function returns <strong>22</strong> instead of 12, robbing every house. The panel shows that run.</p>
+      <p><strong>Forcing alternation.</strong> <code>take = skip + money</code> without the <code>max</code> always robs the current house. It happens to return 12 here, which is what makes it dangerous, but on <code>[4, 1, 1, 4, 1]</code> it returns <strong>6</strong> (houses 0, 2, 4) instead of 8 (houses 0 and 3).</p>
+      <p><strong>Returning <code>skip</code>.</strong> After the loop <code>skip</code> is the best total <em>excluding</em> the last house: <strong>11</strong> instead of 12.</p>
+      <div class="callout warn">Keep the update as one tuple assignment so the right-hand side sees the old values, and keep the <code>max</code> so skipping any number of houses stays allowed.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>One pass over <code>nums</code> with a constant amount of work per house: <strong>O(n) time</strong>. Two integers regardless of input size: <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Plain recursion, rob or skip</td><td>O(2ⁿ)</td><td>O(n) call stack</td></tr>
+        <tr><td>Recursion + memo / full dp table</td><td>O(n)</td><td>O(n)</td></tr>
+        <tr><td>Two rolling variables</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>The memoised recursion already fixes the exponential blow-up. The two-variable loop is the final step, noticing that <code>best[i]</code> reads only <code>best[i-1]</code> and <code>best[i-2]</code>.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Four lines of logic. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>skip, take = 0, 0</code> — with no houses, the best totals are 0.</li>
+        <li><code>for money in nums</code> — one decision per house.</li>
+        <li><code>skip, take = take, max(take, skip + money)</code> — leave it (keep <code>take</code>) or rob it (<code>skip + money</code>), and slide the window.</li>
+        <li><code>return take</code> — the best total over the whole street.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>for each house, the best haul is the better of "skip it" and "rob it plus the best from two houses back".</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>houses · nums = [2, 7, 9, 3, 1]</h3>
+        <div class="array" id="array"></div>
+        <h3 style="margin-top:12px">best haul up to each house</h3>
+        <div class="array" id="best"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>rolling variables</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="house_robber.py">house_robber.py</a> · <a href="house_robber_annotated.py">house_robber_annotated.py</a> · <a href="test_house_robber.py">test_house_robber.py</a> · <a href="../../md.html?f=medium/072-house-robber/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def rob(self, nums: list[int]) -> int:",
+    "        skip, take = 0, 0",
+    "        for money in nums:",
+    "            skip, take = take, max(take, skip + money)",
+    "        return take"
+  ];
+
+  var NUMS = [2, 7, 9, 3, 1];
+  var Q = ["?", "?", "?", "?", "?"];
+  var FULL = [2, 7, 11, 11, 12];
+
+  // cur / hits / dim index houses; robbed marks the houses in the optimal set; best is the best[] row
+  var STATES = {
+    problem: {
+      caption: "Rob non-adjacent houses for the most money. Which subset of [2, 7, 9, 3, 1] is best?",
+      best: Q, cur: -1, hits: [], dim: [], robbed: [0, 2, 4], vars: [],
+      meta: "Houses 0, 2, 4 give 2 + 9 + 1 = <b>12</b>; houses 1, 3 give only 10.", hl: []
+    },
+    brute: {
+      caption: "Recurse: rob house i and continue from i + 2, or skip it and continue from i + 1.",
+      best: Q, cur: 0, hits: [1, 2], dim: [3, 4], robbed: [], vars: [],
+      meta: "best_from(0) = max(2 + best_from(2), best_from(1)) — and best_from(1) calls best_from(2) again.", hl: [],
+      big: "O(2ⁿ)", bigNote: "the same suffixes solved again and again"
+    },
+    insight: {
+      caption: "best[i] = max(best[i−1], best[i−2] + nums[i]). Only two earlier entries are ever read.",
+      best: Q, cur: 2, hits: [0, 1], dim: [3, 4], robbed: [], vars: [],
+      meta: "For house 2: leave it (best[1]) or rob it (best[0] + 9). Nothing before best[0] matters.", hl: [4]
+    },
+    approach: {
+      caption: "Seed both variables at 0 and update them with one tuple assignment per house.",
+      best: Q, cur: -1, hits: [], dim: [], robbed: [], vars: [["take", 0, "new"], ["skip", 0, "new"]],
+      meta: "Before the loop: <b>take = 0</b> (best one back), <b>skip = 0</b> (best two back).", hl: [2, 3, 4, 5]
+    },
+    t1: {
+      caption: "House 0: max(0, 0 + 2) = 2. House 1: max(2, 0 + 7) = 7.",
+      best: [2, 7, "?", "?", "?"], cur: 1, hits: [0], dim: [2, 3, 4], robbed: [],
+      vars: [["take", 7, "new"], ["skip", 2]],
+      meta: "best[1] = max(best[0], 0 + 7) = max(2, 7) = <b>7</b>", hl: [4]
+    },
+    t2: {
+      caption: "House 2: max(7, 2 + 9) = 11. House 3: max(11, 7 + 3) = 11, so house 3 is skipped.",
+      best: [2, 7, 11, 11, "?"], cur: 3, hits: [1, 2], dim: [0, 4], robbed: [],
+      vars: [["take", 11, "new"], ["skip", 11]],
+      meta: "best[3] = max(best[2], best[1] + 3) = max(11, 10) = <b>11</b>", hl: [4]
+    },
+    t3: {
+      caption: "House 4: max(11, 11 + 1) = 12. Last house, so take is the answer.",
+      best: FULL, cur: 4, hits: [2, 3], dim: [0, 1], robbed: [0, 2, 4],
+      vars: [["take", 12, "found"], ["skip", 11]],
+      meta: "best[4] = max(best[3], best[2] + 1) = max(11, 12) = <b>12</b>", hl: [4, 5],
+      big: "12", bigNote: "houses 0, 2 and 4"
+    },
+    pitfall: {
+      caption: "skip = take on its own line: the next line reads the new skip and just sums every house.",
+      best: [2, 9, 18, 21, 22], cur: 4, hits: [], dim: [], robbed: [0, 1, 2, 3, 4],
+      vars: [["take", 22], ["skip", 21]],
+      meta: "Each step computes take + money instead of max(take, skip + money).", hl: [4],
+      big: "22, not 12", bigNote: "adjacent houses were robbed together"
+    },
+    complexity: {
+      caption: "One pass, one max per house, two integers alive.",
+      best: FULL, cur: -1, hits: [], dim: [], robbed: [0, 2, 4],
+      vars: [["take", 12], ["skip", 11]],
+      meta: "The best[] row was never stored; the two variables slid across it.", hl: [3, 4],
+      big: "O(n) time · O(1) space", bigNote: "versus O(2ⁿ) for the plain recursion"
+    },
+    final: {
+      caption: "The whole solution.",
+      best: FULL, cur: -1, hits: [], dim: [], robbed: [0, 2, 4],
+      vars: [["take", 12, "found"], ["skip", 11]],
+      meta: "", hl: [1, 2, 3, 4, 5]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "", best = "";
+    for (var i = 0; i < NUMS.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.dim.indexOf(i) !== -1) cls += " dim";
+      var robbed = s.robbed.indexOf(i) !== -1;
+      arr += '<div class="' + cls + (robbed ? " taken" : "") + '">' + NUMS[i] + '<span class="idx">house ' + i + (robbed ? " ✓" : "") + '</span></div>';
+      best += '<div class="' + cls + '">' + s.best[i] + '<span class="idx">best[' + i + ']</span></div>';
+    }
+    $("array").innerHTML = arr;
+    $("best").innerHTML = best;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not seeded yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

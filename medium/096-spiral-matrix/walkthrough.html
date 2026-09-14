@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spiral Matrix Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+
+  /* matrix additions: a grid of square cells; dimmed = already emitted, blue = the walk in progress, dashed = the live bounds rectangle */
+  .grid { display: grid; gap: 4px; margin: 8px 0 4px; }
+  .gc {
+    aspect-ratio: 1; border-radius: 6px; border: 2px solid var(--line); background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1rem; color: var(--ink); transition: all 0.25s;
+  }
+  .gc.cur { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; transform: scale(1.06); }
+  .gc.hit { border-color: var(--ok); background: var(--ok-soft); font-weight: 600; }
+  .gc.dim { opacity: 0.4; text-decoration: line-through; }
+  .gc.inb { outline: 2px dashed var(--accent); outline-offset: -2px; }
+  .cell { font-size: 0.95rem; padding: 6px 0 4px; }
+  .dict .kv.bound { border-color: var(--accent); }
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Matrix · LeetCode #54</div>
+  <h1>Spiral Matrix, narrated</h1>
+  <p>Scroll through the thinking, from steering a cursor with a visited set to four bounds that shrink after every walk, with the state of the matrix and the output shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/matrix.html">Matrix</a> <span class="how">peel the outer layer with four walks, move the four bounds inward, repeat until they cross</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Given an <code>m × n</code> matrix, return all of its elements in spiral order: start at the top-left, go right along the top row, down the right column, left along the bottom row, up the left column, and then continue one layer inward until every cell has been listed once.</p>
+      <div class="callout">Running example: <code>matrix = [[1,2,3,4],[5,6,7,8],[9,10,11,12]]</code>, 3 rows by 4 columns. The answer is <code>[1,2,3,4,8,12,11,10,9,5,6,7]</code>.</div>
+      <p>Read the answer against the grid. <code>1,2,3,4</code> is the top row. <code>8,12</code> is the rest of the right column. <code>11,10,9</code> is the bottom row backwards. <code>5</code> is the rest of the left column going up. That completes the outer ring, and what remains is a single row, <code>6,7</code>, read left to right.</p>
+      <p>The matrix is not square, and the output has exactly <code>m × n = 12</code> entries. Those two facts are what a correct solution has to respect: every cell once, no cell twice, regardless of shape.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: steer a cursor and remember where you have been</h2>
+      <p>Simulate the walk literally. Keep a position <code>(r, c)</code>, a direction from the cycle right → down → left → up, and a <code>visited</code> set. Step forward; if the next cell is out of bounds or already visited, turn clockwise and try again:</p>
+      <pre class="code"><span class="ln">dirs = [(0, 1), (1, 0), (0, -1), (-1, 0)]</span><span class="ln">r = c = d = 0</span><span class="ln">for _ in range(m * n):</span><span class="ln">    result.append(matrix[r][c]); visited.add((r, c))</span><span class="ln">    nr, nc = r + dirs[d][0], c + dirs[d][1]</span><span class="ln">    if not (0 &lt;= nr &lt; m and 0 &lt;= nc &lt; n) or (nr, nc) in visited:</span><span class="ln">        d = (d + 1) % 4</span><span class="ln">        nr, nc = r + dirs[d][0], c + dirs[d][1]</span><span class="ln">    r, c = nr, nc</span></pre>
+      <p style="margin-top:14px">This works and runs in O(m × n) time, which is optimal. Its cost is the <code>visited</code> set: O(m × n) extra memory for information that is entirely predictable. The cursor never needs to <em>discover</em> that a cell is taken; the shape of a spiral tells you in advance that after the top row is done, the top row is gone.</p>
+      <p>A common in-place variant overwrites visited cells with a sentinel value, which saves the set but destroys the input. Neither is necessary.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: four bounds describe what is left</h2>
+      <p>At any moment the unvisited cells form a rectangle. Describe it with four inclusive bounds: <code>top</code>, <code>bottom</code>, <code>left</code>, <code>right</code>. Initially they are <code>0, 2, 0, 3</code> for the running example, the whole matrix.</p>
+      <div class="callout">One trip around the outer ring is four walks, and after each walk the edge just read is no longer part of the rectangle, so the matching bound moves inward by one: <code>top += 1</code>, <code>right -= 1</code>, <code>bottom -= 1</code>, <code>left += 1</code>.</div>
+      <p>That replaces the visited set with four integers. The rectangle shrinks from every side, and when <code>top &gt; bottom</code> or <code>left &gt; right</code> there are no cells left, which is the loop's stopping condition <code>while top &lt;= bottom and left &lt;= right</code>.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: one loop, four walks, two guards</h2>
+      <ul>
+        <li><code>for c in range(left, right + 1): result.append(matrix[top][c])</code> then <code>top += 1</code> — top row, left to right.</li>
+        <li><code>for r in range(top, bottom + 1): result.append(matrix[r][right])</code> then <code>right -= 1</code> — right column, top to bottom, starting below the row just done.</li>
+        <li><code>if top &lt;= bottom:</code> walk <code>range(right, left - 1, -1)</code> along <code>matrix[bottom]</code>, then <code>bottom -= 1</code> — bottom row, right to left.</li>
+        <li><code>if left &lt;= right:</code> walk <code>range(bottom, top - 1, -1)</code> down <code>matrix[r][left]</code>, then <code>left += 1</code> — left column, bottom to top.</li>
+      </ul>
+      <p>The two <code>if</code> guards are not decoration. After <code>top += 1</code> and <code>right -= 1</code>, the rectangle may already be empty in one dimension. If only one row remained, the top walk read it, and an unguarded bottom walk would read the same row a second time, backwards. The guard checks the bound <em>after</em> the shrink, so it sees the rectangle as it really is.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: top row, then right column</h2>
+      <p>Bounds start at <code>top = 0, bottom = 2, left = 0, right = 3</code>. The top walk runs <code>c = 0..3</code> on row 0 and appends <code>1, 2, 3, 4</code>. Then <code>top += 1</code>, so <code>top = 1</code>: row 0 is out of the rectangle for good.</p>
+      <p>The right walk runs <code>r = 1..2</code> on column 3 and appends <code>8, 12</code>. Note it started at the <em>new</em> <code>top</code>, which is why the 4 in the corner was not appended twice. Then <code>right -= 1</code>, so <code>right = 2</code>.</p>
+      <p>Output so far: <code>[1, 2, 3, 4, 8, 12]</code>. The live rectangle is rows 1–2, columns 0–2: six cells left.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: bottom row, then left column</h2>
+      <p>Guard: <code>top = 1 &lt;= bottom = 2</code>, so the bottom walk runs. It goes <code>c = 2, 1, 0</code> on row 2, appending <code>11, 10, 9</code>. The range is <code>range(right, left - 1, -1)</code>, and the <code>- 1</code> is what makes it reach column <code>left = 0</code>. Then <code>bottom -= 1</code>, so <code>bottom = 1</code>.</p>
+      <p>Guard: <code>left = 0 &lt;= right = 2</code>, so the left walk runs. It goes <code>r = 1..1</code> (from the new <code>bottom</code> up to <code>top</code>), a single cell, appending <code>5</code>. Then <code>left += 1</code>, so <code>left = 1</code>.</p>
+      <p>Output: <code>[1, 2, 3, 4, 8, 12, 11, 10, 9, 5]</code>, ten of twelve. The rectangle is now <code>top = 1, bottom = 1, left = 1, right = 2</code>: a single row holding <code>6, 7</code>.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the inner row, and why the guards matter</h2>
+      <p>The loop condition <code>1 &lt;= 1 and 1 &lt;= 2</code> holds, so a second lap begins. The top walk runs <code>c = 1..2</code> on row 1 and appends <code>6, 7</code>. Output complete: <code>[1,2,3,4,8,12,11,10,9,5,6,7]</code>. Then <code>top = 2</code>.</p>
+      <p>The right walk is <code>range(2, 2)</code>, empty, and <code>right = 1</code>. Now the first guard: <code>top = 2 &lt;= bottom = 1</code> is <strong>false</strong>, so the bottom walk is skipped. Without the guard it would have re-read row 1 from column 1 down to column 1 and appended a second <code>6</code>. The second guard <code>left = 1 &lt;= right = 1</code> is true, but its range <code>range(1, 1, -1)</code> is empty, so nothing is appended and <code>left = 2</code>.</p>
+      <div class="callout">Back at the top, <code>top = 2 &gt; bottom = 1</code> ends the loop. Twelve cells, twelve appends, no visited set.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong</h2>
+      <p><strong>Dropping <code>if top &lt;= bottom</code>.</strong> On the second lap of the running example, after the top walk reads <code>6, 7</code> and <code>top</code> becomes 2, the bottom walk runs on <code>matrix[bottom] = matrix[1]</code> from <code>right = 1</code> down to <code>left = 1</code>: it appends <code>6</code> again. The output is <code>[1,2,3,4,8,12,11,10,9,5,6,7,6]</code>, thirteen values for a twelve-cell matrix. On a one-row input <code>[[1,2,3]]</code> the same bug returns <code>[1,2,3,2,1]</code>.</p>
+      <p><strong>Dropping <code>if left &lt;= right</code>.</strong> Symmetric: on a one-column input <code>[[1],[2],[3]]</code> the right walk reads <code>1, 2, 3</code>, <code>right</code> becomes −1, and the unguarded left walk reads the column again upward, giving <code>[1,2,3,2,1]</code>.</p>
+      <p><strong>Stopping one short on the reverse walks.</strong> <code>range(right, left, -1)</code> never visits <code>left</code>, so the bottom-left corner <code>9</code> is skipped; <code>range(bottom, top, -1)</code> skips the cell at <code>top</code> on the left column. The <code>- 1</code> in both stop values is deliberate.</p>
+      <div class="callout warn">Check a bound <em>after</em> it has shrunk, before the walk that depends on it. A single leftover row or column is read by one walk, never two.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Each of the <code>m × n</code> cells is appended exactly once, and the bound updates are O(1) per walk, so <strong>O(m × n) time</strong>. Beyond the output list, the state is four integers: <strong>O(1) extra space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Extra space</th></tr>
+        <tr><td>Cursor + visited set</td><td>O(m × n)</td><td>O(m × n) set</td></tr>
+        <tr><td>Cursor + overwrite sentinel</td><td>O(m × n)</td><td>O(1), but destroys the input</td></tr>
+        <tr><td>Four shrinking bounds</td><td>O(m × n)</td><td>O(1), input untouched</td></tr>
+      </table>
+      <p>All three are linear in the number of cells. The bounds version is the one to reach for because it neither allocates a set nor mutates the caller's matrix.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Twenty lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>top, bottom = 0, len(matrix) - 1</code> and <code>left, right = 0, len(matrix[0]) - 1</code> — the whole matrix is the first rectangle.</li>
+        <li><code>while top &lt;= bottom and left &lt;= right:</code> — keep peeling while any cell is left.</li>
+        <li>Top walk, then <code>top += 1</code>; right walk, then <code>right -= 1</code>.</li>
+        <li><code>if top &lt;= bottom:</code> bottom walk, then <code>bottom -= 1</code>.</li>
+        <li><code>if left &lt;= right:</code> left walk, then <code>left += 1</code>.</li>
+        <li><code>return result</code> — every cell, once, in spiral order.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>four inclusive bounds, four walks per lap, shrink a bound after its walk, guard the last two walks.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>matrix · 3 × 4 · dashed = live bounds, blue = this walk, struck = emitted</h3>
+        <div class="grid" id="grid"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>result · appended so far</h3>
+        <div class="array" id="array"></div>
+      </div>
+
+      <div class="block">
+        <h3>the four bounds</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="spiral_matrix.py">spiral_matrix.py</a> · <a href="spiral_matrix_annotated.py">spiral_matrix_annotated.py</a> · <a href="test_spiral_matrix.py">test_spiral_matrix.py</a> · <a href="../../md.html?f=medium/096-spiral-matrix/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def spiral_order(self, matrix: list[list[int]]) -> list[int]:",
+    "        result = []",
+    "        top, bottom = 0, len(matrix) - 1",
+    "        left, right = 0, len(matrix[0]) - 1",
+    "        while top <= bottom and left <= right:",
+    "            for c in range(left, right + 1):",
+    "                result.append(matrix[top][c])",
+    "            top += 1",
+    "            for r in range(top, bottom + 1):",
+    "                result.append(matrix[r][right])",
+    "            right -= 1",
+    "            if top <= bottom:",
+    "                for c in range(right, left - 1, -1):",
+    "                    result.append(matrix[bottom][c])",
+    "                bottom -= 1",
+    "            if left <= right:",
+    "                for r in range(bottom, top - 1, -1):",
+    "                    result.append(matrix[r][left])",
+    "                left += 1",
+    "        return result"
+  ];
+
+  var M = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]];
+  var FULL = [1, 2, 3, 4, 8, 12, 11, 10, 9, 5, 6, 7];
+
+  // Each state describes what the sticky panel shows for one step.
+  // b = [top, bottom, left, right] live rectangle (null = none), cur = cells of the walk in progress,
+  // out = result so far, newN = how many trailing entries of out were just appended, chips = bounds block.
+  var STATES = {
+    problem: {
+      caption: "List the 12 cells clockwise from the top-left, spiralling inward.",
+      b: null, cur: [], out: [], newN: 0, chips: [],
+      meta: "Answer: <b>[1,2,3,4,8,12,11,10,9,5,6,7]</b>. Outer ring, then the inner row 6, 7.", hl: []
+    },
+    brute: {
+      caption: "A cursor that turns whenever the next cell is out of bounds or already visited.",
+      b: null, cur: [[0, 3]], out: [1, 2, 3, 4], newN: 4, chips: [["visited", "{(0,0), (0,1), (0,2), (0,3)}"], ["direction", "right → down"]],
+      meta: "Correct, but the visited set costs O(m × n) memory for facts the spiral shape already implies.", hl: [],
+      big: "O(m × n) extra space", bigNote: "a set that only ever records the obvious"
+    },
+    insight: {
+      caption: "The unvisited cells always form a rectangle. Four bounds describe it.",
+      b: [0, 2, 0, 3], cur: [], out: [], newN: 0,
+      chips: [["top", "0", "bound"], ["bottom", "2", "bound"], ["left", "0", "bound"], ["right", "3", "bound"]],
+      meta: "After each edge is read, its bound moves inward by one. When two bounds cross, nothing is left.", hl: [3, 4, 5]
+    },
+    approach: {
+      caption: "Four walks per lap; shrink the matching bound after each; guard the last two walks.",
+      b: [0, 2, 0, 3], cur: [], out: [], newN: 0,
+      chips: [["top", "0", "bound"], ["bottom", "2", "bound"], ["left", "0", "bound"], ["right", "3", "bound"]],
+      meta: "The guards check top ≤ bottom and left ≤ right <b>after</b> top and right have shrunk.", hl: [6, 7, 8, 9, 10, 11, 12, 16]
+    },
+    t1: {
+      caption: "Top row 1,2,3,4 then top = 1; right column 8,12 then right = 2.",
+      b: [1, 2, 0, 2], cur: [[0, 0], [0, 1], [0, 2], [0, 3], [1, 3], [2, 3]], out: [1, 2, 3, 4, 8, 12], newN: 6,
+      chips: [["top", "1", "new"], ["bottom", "2", "bound"], ["left", "0", "bound"], ["right", "2", "new"]],
+      meta: "The right walk starts at the new top = 1, so the corner 4 is not read twice.", hl: [6, 7, 8, 9, 10, 11]
+    },
+    t2: {
+      caption: "Bottom row 11,10,9 then bottom = 1; left column 5 then left = 1.",
+      b: [1, 1, 1, 2], cur: [[2, 2], [2, 1], [2, 0], [1, 0]], out: [1, 2, 3, 4, 8, 12, 11, 10, 9, 5], newN: 4,
+      chips: [["top", "1", "bound"], ["bottom", "1", "new"], ["left", "1", "new"], ["right", "2", "bound"]],
+      meta: "Both guards passed (1 ≤ 2 and 0 ≤ 2). The live rectangle is now the single row holding 6, 7.", hl: [12, 13, 14, 15, 16, 17, 18, 19]
+    },
+    t3: {
+      caption: "Second lap: top walk reads 6, 7. top = 2 > bottom = 1, so the bottom walk is skipped.",
+      b: null, cur: [[1, 1], [1, 2]], out: FULL, newN: 2,
+      chips: [["top", "2", "new"], ["bottom", "1", "bound"], ["left", "2", "new"], ["right", "1", "new"]],
+      meta: "The right walk range(2, 2) is empty; the guard top ≤ bottom fails; the loop condition fails next.", hl: [5, 6, 7, 8, 12, 20],
+      big: "[1,2,3,4,8,12,11,10,9,5,6,7]", bigNote: "12 cells, 12 appends, no visited set"
+    },
+    pitfall: {
+      caption: "Without `if top <= bottom`, the bottom walk re-reads row 1 and appends 6 again.",
+      b: null, cur: [[1, 1]], out: [1, 2, 3, 4, 8, 12, 11, 10, 9, 5, 6, 7, 6], newN: 1,
+      chips: [["top", "2"], ["bottom", "1"], ["left", "1"], ["right", "1"]],
+      meta: "matrix[bottom] is row 1; range(right, left − 1, −1) = range(1, 0, −1) visits column 1 once more.", hl: [12, 13, 14],
+      big: "13 values, not 12", bigNote: "a one-row leftover must be read by one walk, not two"
+    },
+    complexity: {
+      caption: "Every cell appended once; four integers of state.",
+      b: null, cur: [], out: FULL, newN: 0,
+      chips: [["cells", "12"], ["appends", "12", "found"], ["extra space", "4 ints"]],
+      meta: "Linear in the cell count, like the cursor version, but without the set.", hl: [3, 4, 5],
+      big: "O(m × n) time · O(1) extra space", bigNote: "versus O(m × n) for the visited set"
+    },
+    final: {
+      caption: "The whole solution.",
+      b: null, cur: [], out: FULL, newN: 0, chips: [["result", "12 values", "found"]],
+      meta: "", hl: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function has(list, r, c) {
+    for (var i = 0; i < list.length; i++) if (list[i][0] === r && list[i][1] === c) return true;
+    return false;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    // Cells already in the output (and not part of the current walk) are struck through.
+    var emitted = {};
+    for (var i = 0; i < s.out.length; i++) emitted[s.out[i]] = true;
+
+    var grid = $("grid");
+    grid.style.gridTemplateColumns = "repeat(" + M[0].length + ", 1fr)";
+    var html = "";
+    for (var r = 0; r < M.length; r++) {
+      for (var c = 0; c < M[r].length; c++) {
+        var v = M[r][c], cls = "gc";
+        if (has(s.cur, r, c)) cls += " cur";
+        else if (emitted[v]) cls += " dim";
+        if (s.b && r >= s.b[0] && r <= s.b[1] && c >= s.b[2] && c <= s.b[3]) cls += " inb";
+        html += '<div class="' + cls + '">' + v + '</div>';
+      }
+    }
+    grid.innerHTML = html;
+
+    var arr = "";
+    if (s.out.length === 0) {
+      arr = '<div class="cell dim">–<span class="idx">empty</span></div>';
+    }
+    for (var k = 0; k < s.out.length; k++) {
+      var cc = "cell" + (k >= s.out.length - s.newN ? " hit" : "");
+      arr += '<div class="' + cc + '">' + s.out[k] + '<span class="idx">' + k + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var j = 0; j < s.chips.length; j++) {
+        var e = s.chips[j];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var code = "";
+    for (var l = 0; l < CODE.length; l++) {
+      code += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = code;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

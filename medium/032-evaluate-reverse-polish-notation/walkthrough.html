@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evaluate Reverse Polish Notation Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+</head>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Stack · LeetCode #150</div>
+  <h1>Evaluate Reverse Polish Notation, narrated</h1>
+  <p>Scroll through the thinking, from rewriting the token list in place to a single pass with a stack of pending operands, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/stack.html">Stack</a> <span class="how">push numbers; an operator pops two, applies, pushes the result</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get an arithmetic expression as a list of string tokens in <em>Reverse Polish Notation</em>, also called postfix: each operator comes <em>after</em> its two operands. <code>["2", "1", "+"]</code> means <code>2 + 1</code>. The operators are <code>+</code>, <code>-</code>, <code>*</code> and <code>/</code>, and division truncates toward zero.</p>
+      <p>Return the integer value of the expression. The input is always valid, so an operator always has two operands waiting, and there is never a division by zero.</p>
+      <div class="callout">Running example: <code>tokens = ["4", "13", "5", "/", "+"]</code>. The answer is <strong>6</strong>: the <code>/</code> applies to <code>13</code> and <code>5</code>, giving <code>2</code> after truncation, and the <code>+</code> applies to <code>4</code> and that <code>2</code>.</div>
+      <p>Notice there are no parentheses and no precedence rules. Postfix does not need them; the position of each operator already says which values it consumes.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: rewrite the list in place</h2>
+      <p>Scan for the first operator, apply it to the two tokens immediately before it, splice the result back into the list, and repeat until one token is left.</p>
+      <pre class="code"><span class="ln">while len(tokens) &gt; 1:</span><span class="ln">    i = next(k for k, t in enumerate(tokens) if t in "+-*/")</span><span class="ln">    a, b = int(tokens[i - 2]), int(tokens[i - 1])</span><span class="ln">    tokens[i - 2:i + 1] = [str(apply(tokens[i], a, b))]</span></pre>
+      <p style="margin-top:14px">This gives the right answer because in valid RPN the first operator's operands are always the two tokens right before it. But every round rescans from the start and every splice shifts the rest of the list, so it is <strong>O(n²)</strong> on 10,000 tokens, and converting numbers to strings and back each time is clumsy.</p>
+      <p>The rescanning is the waste. After a splice, the next operator is never far from where we just were, and the values it needs are the ones we most recently produced.</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: an operator always takes the two most recent values</h2>
+      <p>Read the tokens left to right and think about what an operator needs at the moment it appears: the two values produced most recently before it, whether those are literal numbers or results of earlier operators. Everything older is untouched.</p>
+      <p>"Most recent first" is a stack. Push each number as it arrives. When an operator arrives, pop twice, compute, and push the result so it can be an operand for a later operator.</p>
+      <div class="callout">The first pop is the <strong>right</strong> operand (it was pushed last) and the second pop is the <strong>left</strong> operand. For <code>+</code> and <code>*</code> the order is irrelevant; for <code>-</code> and <code>/</code> it decides the answer.</div>
+      <p>When the tokens run out, the stack holds one value, the result. Nothing was ever rescanned.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The approach</h2>
+      <ul>
+        <li><code>stack = []</code>: the pending operands.</li>
+        <li>For each <code>token</code>: if it is <code>"+"</code>, <code>"-"</code>, <code>"*"</code> or <code>"/"</code>, do <code>b, a = stack.pop(), stack.pop()</code> and push <code>a op b</code>.</li>
+        <li>For <code>"/"</code> push <code>int(a / b)</code>, which truncates toward zero, rather than <code>a // b</code>, which floors.</li>
+        <li>Otherwise the token is a number, possibly negative like <code>"-11"</code>: <code>stack.append(int(token))</code>.</li>
+        <li>After the loop, <code>return stack[-1]</code>.</li>
+      </ul>
+      <p>The panel shows the token list with the current token in blue and consumed tokens in green, and draws the stack below it, top box uppermost.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: three numbers go on the stack</h2>
+      <p><code>"4"</code> is not an operator, so <code>int("4")</code> is pushed: <code>stack = [4]</code>. <code>"13"</code> is pushed: <code>stack = [4, 13]</code>. <code>"5"</code> is pushed: <code>stack = [4, 13, 5]</code>.</p>
+      <p>Nothing has been computed yet. The <code>4</code> at the bottom is waiting for an operator that may be a long way off, and that is fine; the stack holds it for as long as necessary while the newer values are dealt with first.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: "/" pops 5 then 13</h2>
+      <p>The token is <code>"/"</code>. The first pop returns the top, <code>b = 5</code>; the second returns <code>a = 13</code>. The expression is <code>a / b = 13 / 5 = 2.6</code>, and <code>int(2.6) = 2</code>. Push it: <code>stack = [4, 2]</code>.</p>
+      <p>Read the tokens again with that in mind: <code>13 5 /</code> is <code>13 / 5</code>, left operand first in the token order, which is exactly why the <em>second</em> pop is the left operand.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: "+" pops 2 then 4, the answer</h2>
+      <p>The token is <code>"+"</code>. Pop <code>b = 2</code>, then <code>a = 4</code>. Push <code>4 + 2 = 6</code>: <code>stack = [6]</code>.</p>
+      <p>That was the last token, and one value remains. <code>stack[-1]</code> is <strong>6</strong>. The <code>4</code> pushed at the very start finally met its operator two tokens later, after the division it depended on was resolved.</p>
+      <div class="callout">Five tokens, five constant-time steps, no rescans and no parentheses.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: operand order and floor division</h2>
+      <p><strong>Popping in the wrong order.</strong> Write <code>a, b = stack.pop(), stack.pop()</code> and then <code>a / b</code>. Now <code>a</code> is the top (<code>5</code>) and <code>b</code> is the one below (<code>13</code>), so the division computes <code>int(5 / 13) = 0</code> and the final sum is <code>4 + 0 = </code><strong>4</strong> instead of 6. Addition and multiplication hide this bug completely, which is why tests need a <code>-</code> or a <code>/</code>.</p>
+      <p><strong>Floor division.</strong> <code>a // b</code> rounds toward negative infinity, but the problem truncates toward zero. On the third LeetCode example, <code>6 // -132</code> is <code>-1</code> where <code>int(6 / -132)</code> is <code>0</code>, and the final answer comes out as <strong>12</strong> instead of 22.</p>
+      <p><strong>Mistaking a negative number for an operator.</strong> Testing <code>token[0] == "-"</code> or <code>not token.isdigit()</code> treats <code>"-11"</code> as subtraction and pops two values that were not meant for it. Compare against the four operator strings exactly and let <code>int()</code> parse the rest.</p>
+      <div class="callout warn">Pop the right operand first, then the left; use <code>int(a / b)</code> for truncation; and the only operators are the four exact strings.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Each token is handled once. A number is one push; an operator is two pops, one arithmetic operation, and one push. That is <strong>O(n) time</strong>. The stack holds at most the operands pushed so far, so <strong>O(n) space</strong>; a valid expression with <code>n</code> tokens has at most <code>(n + 1) / 2</code> operands.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Rescan and splice the list</td><td>O(n²)</td><td>O(n) (in place, but with string conversions)</td></tr>
+        <tr><td>Recursive descent from the right</td><td>O(n)</td><td>O(n) call stack</td></tr>
+        <tr><td>Stack of pending operands</td><td>O(n)</td><td>O(n)</td></tr>
+      </table>
+      <p>The recursive version reads the expression from the end (an operator's two arguments are the two sub-expressions before it) and is a neat way to see that postfix is a tree in disguise. The explicit stack does the same work without recursion depth limits.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Every line maps to a step above.</p>
+      <ul>
+        <li><code>stack = []</code> holds operands until an operator claims them.</li>
+        <li><code>b, a = stack.pop(), stack.pop()</code> in every operator branch: right operand first, then left.</li>
+        <li><code>stack.append(a + b)</code>, <code>a - b</code>, <code>a * b</code>: apply and push the result back for later operators.</li>
+        <li><code>stack.append(int(a / b))</code> truncates toward zero, matching the problem's definition of division.</li>
+        <li><code>stack.append(int(token))</code> parses every non-operator token, negative signs included.</li>
+        <li><code>return stack[-1]</code>: the single value left after the last token.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>numbers wait on a stack; each operator pops right then left, computes, and pushes the result.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>tokens = ["4", "13", "5", "/", "+"]</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>stack · top is the highest box</h3>
+        <svg class="fig" id="fig" viewBox="0 0 400 120" aria-label="stack"></svg>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="evaluate_reverse_polish_notation.py">evaluate_reverse_polish_notation.py</a> · <a href="evaluate_reverse_polish_notation_annotated.py">evaluate_reverse_polish_notation_annotated.py</a> · <a href="test_evaluate_reverse_polish_notation.py">test_evaluate_reverse_polish_notation.py</a> · <a href="../../md.html?f=medium/032-evaluate-reverse-polish-notation/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def eval_rpn(self, tokens: list[str]) -> int:",
+    "        stack = []",
+    "        for token in tokens:",
+    "            if token == \"+\":",
+    "                b, a = stack.pop(), stack.pop()",
+    "                stack.append(a + b)",
+    "            elif token == \"-\":",
+    "                b, a = stack.pop(), stack.pop()",
+    "                stack.append(a - b)",
+    "            elif token == \"*\":",
+    "                b, a = stack.pop(), stack.pop()",
+    "                stack.append(a * b)",
+    "            elif token == \"/\":",
+    "                b, a = stack.pop(), stack.pop()",
+    "                stack.append(int(a / b))",
+    "            else:",
+    "                stack.append(int(token))",
+    "        return stack[-1]"
+  ];
+
+  var TOKENS = ["4", "13", "5", "/", "+"];
+
+  // Each state describes what the sticky panel shows for one step.
+  // cur = index of the token being processed (-1 = none); stack = bottom-to-top [value, cls];
+  // vars = chips (a, b, result) under the figure.
+  var STATES = {
+    problem: {
+      caption: "Postfix: each operator follows its two operands. What does this evaluate to?",
+      cur: -1, stack: [], vars: [],
+      meta: "\"13 5 /\" is 13 / 5 = 2 (truncated), then \"4 2 +\" is 6.", hl: []
+    },
+    brute: {
+      caption: "Find the first operator, splice its result into the list, rescan from the start.",
+      cur: 3, stack: [], vars: [["round 1", "[4, 13, 5, /, +] → [4, 2, +]"], ["round 2", "[4, 2, +] → [6]"]],
+      meta: "Each round rescans and shifts the whole list.", hl: [],
+      big: "O(n²)", bigNote: "the operands are always the two most recent values, so no rescan is needed"
+    },
+    reframe: {
+      caption: "An operator consumes the two most recently produced values. Most-recent-first is a stack.",
+      cur: 3, stack: [[4, ""], [13, "new"], [5, "new"]], vars: [["b (first pop)", 5], ["a (second pop)", 13]],
+      meta: "Top of stack = right operand. One below = left operand.", hl: []
+    },
+    idea: {
+      caption: "Numbers are pushed; each operator pops b then a, pushes a op b; the last value is the answer.",
+      cur: -1, stack: [], vars: [],
+      meta: "Blue = current token, green = already consumed.", hl: [2, 3, 5, 17, 18]
+    },
+    t1: {
+      caption: "\"4\", \"13\", \"5\" are numbers: push all three. stack = [4, 13, 5].",
+      cur: 2, stack: [[4, ""], [13, ""], [5, "new"]], vars: [["pushed", "4, 13, 5"]],
+      meta: "int(\"5\") = 5 &rarr; <b>stack.append(5)</b>. Nothing computed yet.", hl: [16, 17]
+    },
+    t2: {
+      caption: "\"/\": pop b = 5, pop a = 13, push int(13 / 5) = 2. stack = [4, 2].",
+      cur: 3, stack: [[4, ""], [2, "new"]], vars: [["b", 5], ["a", 13], ["int(a / b)", 2, "new"]],
+      meta: "13 / 5 = 2.6 &rarr; int(2.6) = <b>2</b>. Right operand came off first.", hl: [13, 14, 15]
+    },
+    t3: {
+      caption: "\"+\": pop b = 2, pop a = 4, push 4 + 2 = 6. Last token, so stack[-1] = 6.",
+      cur: 4, stack: [[6, "found"]], vars: [["b", 2], ["a", 4], ["a + b", 6, "found"]],
+      meta: "4 + 2 = <b>6</b> &rarr; return stack[-1] = <b>6</b>", hl: [4, 5, 6, 18],
+      big: "6", bigNote: "one pass, one value left on the stack"
+    },
+    pitfall: {
+      caption: "a, b = pop(), pop() swaps the operands: a = 5, b = 13, and int(5 / 13) = 0.",
+      cur: 4, stack: [[4, "found"]], vars: [["a (wrong: top)", 5], ["b (wrong)", 13], ["int(a / b)", 0, "new"]],
+      meta: "4 + 0 = <b>4</b>. Addition and multiplication would never reveal the swap.", hl: [14, 15],
+      big: "4, not 6", bigNote: "and // instead of int(a / b) gives 12 instead of 22 on the third example"
+    },
+    complexity: {
+      caption: "Every token is pushed at most once and popped at most once.",
+      cur: -1, stack: [[6, ""]], vars: [["pushes", 5], ["pops", 4]],
+      meta: "Stack depth peaks at 3 here; at most (n + 1) / 2 in any valid expression.", hl: [3, 5, 6, 17],
+      big: "O(n) time · O(n) space", bigNote: "versus O(n²) for rescanning the list"
+    },
+    final: {
+      caption: "The whole solution.",
+      cur: -1, stack: [[6, "found"]], vars: [],
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var figSvg = document.getElementById("fig");
+  function clearFig(h) { while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild); figSvg.setAttribute("viewBox", "0 0 400 " + h); }
+
+  function renderStack(s) {
+    var n = s.stack.length, bh = 26, gap = 4, H = Math.max(90, 24 + n * (bh + gap) + 20), base = H - 14;
+    clearFig(H);
+    var cx = 200, w = 120;
+    figSvg.appendChild(el("path", { "class": "wall", d: "M" + (cx - w / 2 - 10) + "," + (base - Math.max(2, n) * (bh + gap) - 12) + " V" + base + " H" + (cx + w / 2 + 10) + " V" + (base - Math.max(2, n) * (bh + gap) - 12) }));
+    if (!n) { figSvg.appendChild(el("text", { "class": "lbl", x: cx, y: base - 22 }, "empty")); return; }
+    for (var k = 0; k < n; k++) {
+      var y = base - (k + 1) * (bh + gap) + gap;
+      figSvg.appendChild(el("rect", { "class": "box " + (s.stack[k][1] || ""), x: cx - w / 2, y: y, width: w, height: bh, rx: 5 }));
+      figSvg.appendChild(el("text", { "class": "val", x: cx, y: y + bh / 2 + 5 }, String(s.stack[k][0])));
+    }
+    var ty = base - n * (bh + gap) + gap + bh / 2 + 4;
+    figSvg.appendChild(el("text", { "class": "lbl", x: cx + w / 2 + 34, y: ty }, "← top"));
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < TOKENS.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.cur !== -1 && i < s.cur) cls += " hit";
+      else if (s.cur !== -1 && i > s.cur) cls += " dim";
+      arr += '<div class="' + cls + '">' + TOKENS[i] + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    renderStack(s);
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">no operator applied yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sum of Two Integers Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  .fig .bit { fill: var(--bg); stroke: var(--line); stroke-width: 1.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .bit.one { fill: var(--panel); stroke: var(--muted); }
+  .fig .bit.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2.5; }
+  .fig .bit.hit { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 2.5; }
+  .fig .bit.dim { opacity: 0.35; }
+  .fig .val.zero { fill: var(--muted); font-weight: 400; }
+  .fig .rlbl { fill: var(--muted); font-size: 11px; text-anchor: start; font-family: ui-monospace, Menlo, monospace; }
+  .fig .rlbl.acc { fill: var(--ink); font-weight: 600; }
+  .fig .rlbl.cur { fill: var(--accent); font-weight: 600; }
+  .fig .rlbl.ok { fill: var(--ok); font-weight: 600; }
+  .fig .hdr { fill: var(--muted); font-size: 9px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .box.dim { opacity: 0.4; }
+  .fig .dig { fill: var(--ink); font-size: 22px; font-weight: 700; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .tag-txt { fill: var(--accent); font-size: 11px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .arrow { stroke: var(--accent); stroke-width: 2; fill: none; }
+  .fig .arrow-head { fill: var(--accent); }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Bit Manipulation · LeetCode #371</div>
+  <h1>Sum of Two Integers, narrated</h1>
+  <p>Scroll through the thinking, from counting up one at a time to the XOR / AND-shift loop that adds without +, with the bit rows of a, b, a ^ b and the carry shown for every round, and the 32-bit mask Python needs.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/bit-manipulation.html">Bit Manipulation</a> <span class="how">a ^ b is the sum without carries, (a &amp; b) &lt;&lt; 1 is the carries; repeat until the carry is 0</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Return <code>a + b</code> for two integers, but the operators <code>+</code> and <code>-</code> are off limits. Everything else is allowed: comparisons, loops, and the bitwise operators <code>^</code>, <code>&amp;</code>, <code>|</code>, <code>~</code>, <code>&lt;&lt;</code>, <code>&gt;&gt;</code>.</p>
+      <div class="callout">Running example: <code>a = 5</code>, <code>b = 3</code>. The answer is <strong>8</strong>. In binary, <code>101 + 011 = 1000</code>.</div>
+      <p>The inputs are small, between −1000 and 1000, so the sum always fits comfortably in 32 bits. The negative range is the part that matters: the bitwise trick is easy for positive numbers and needs one extra idea for negatives, especially in Python.</p>
+      <p>The panel shows the low 8 of 32 bits for each value; the upper 24 bits are zero for the running example.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: increment one at a time</h2>
+      <p>You cannot write <code>a + 1</code> either, but incrementing has a bitwise form: flip the trailing 1s to 0 and the first 0 to 1. Then add <code>b</code> by incrementing <code>a</code> that many times.</p>
+      <pre class="code"><span class="ln">def increment(x):</span><span class="ln">    mask = 1</span><span class="ln">    while x &amp; mask:</span><span class="ln">        x ^= mask</span><span class="ln">        mask &lt;&lt;= 1</span><span class="ln">    return x | mask</span><span class="ln"></span><span class="ln">for _ in range(b):</span><span class="ln">    a = increment(a)</span></pre>
+      <p style="margin-top:14px">For <code>b = 3</code> that is three increments, fine. But it is <strong>O(|b|)</strong> rounds, it needs a separate decrement path when <code>b</code> is negative, and it never uses the fact that all 32 bit positions can be processed at once. Addition on hardware is not a loop over <code>b</code>; it is a loop over carries.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>Key insight: a sum is XOR plus carries</h2>
+      <p>Look at one bit position. Adding two bits gives <code>0 + 0 = 0</code>, <code>0 + 1 = 1</code>, <code>1 + 0 = 1</code>, and <code>1 + 1 = 0 carry 1</code>. The result bit is exactly <code>a ^ b</code>. The carry bit is exactly <code>a &amp; b</code>, and it belongs one position to the left, so the carries as a number are <code>(a &amp; b) &lt;&lt; 1</code>.</p>
+      <div class="callout">So <code>a + b = (a ^ b) + ((a &amp; b) &lt;&lt; 1)</code>. That still has a <code>+</code> in it, but the two terms are themselves just numbers, so apply the same identity to them, and again, until the carry term is 0.</div>
+      <p>On the example: <code>5 ^ 3 = 6</code> (<code>101 ^ 011 = 110</code>) and <code>(5 &amp; 3) &lt;&lt; 1 = 1 &lt;&lt; 1 = 2</code>. Sure enough <code>6 + 2 = 8</code>. Now add 6 and 2 the same way.</p>
+      <p>Why does it terminate? Every round shifts the carry left by at least one bit. In a 32-bit register the carry falls off the top after at most 32 rounds. That last clause is the catch for Python, which is the subject of Step 7.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>MASK = 0xFFFFFFFF</code> — 32 one bits. <code>x &amp; MASK</code> keeps only the low 32 bits, imitating a register.</li>
+        <li><code>MAX_INT = 0x7FFFFFFF</code> — the largest value whose bit 31 is clear; anything above it is a negative number in two's complement.</li>
+        <li><code>while b != 0:</code> — keep going while there are carries to add.</li>
+        <li><code>a, b = (a ^ b) &amp; MASK, ((a &amp; b) &lt;&lt; 1) &amp; MASK</code> — the partial sum and the carries, both trimmed to 32 bits.</li>
+        <li><code>return a if a &lt;= MAX_INT else ~(a ^ MASK)</code> — hand back the register value, converting it to a negative Python int if bit 31 is set.</li>
+      </ul>
+      <p>For the running example, <code>a = 5 = 00000101</code> and <code>b = 3 = 00000011</code> at the start.</p>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: round 1, a = 5, b = 3</h2>
+      <p>Bit by bit: <code>00000101 ^ 00000011 = 00000110</code>, which is <code>6</code>. Only bit 0 is set in both, so <code>00000101 &amp; 00000011 = 00000001</code>, and shifting left gives <code>00000010</code>, which is <code>2</code>.</p>
+      <p>After the assignment <code>a = 6</code>, <code>b = 2</code>. The masks change nothing here because every value is far below 2³².</p>
+      <p>Check the invariant: <code>a + b</code> is still <code>6 + 2 = 8</code>. Each round rewrites the pair without changing its sum; only the carry term gets smaller in the sense that it moves left.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: rounds 2 to 4, the carry marches left</h2>
+      <p><strong>Round 2:</strong> <code>a = 6 = 00000110</code>, <code>b = 2 = 00000010</code>. XOR gives <code>00000100 = 4</code>; both share bit 1, so the carry is <code>00000010 &lt;&lt; 1 = 00000100 = 4</code>. Now <code>a = 4</code>, <code>b = 4</code>.</p>
+      <p><strong>Round 3:</strong> <code>00000100 ^ 00000100 = 0</code> and the carry is <code>(4 &amp; 4) &lt;&lt; 1 = 8</code>. Now <code>a = 0</code>, <code>b = 8</code>. The entire sum lives in the carry term for a moment.</p>
+      <p><strong>Round 4:</strong> <code>0 ^ 8 = 8</code>, and <code>0 &amp; 8 = 0</code>, so the carry is finally <code>0</code>. The loop condition <code>b != 0</code> fails and <code>a = 8 = 00001000</code> is the answer.</p>
+      <div class="callout">Four rounds, because the carry started at bit 1 and had to travel to bit 3. The number of rounds is the distance the longest carry chain has to ripple, at most 32.</div>
+    </section>
+
+    <section class="step" data-state="mask">
+      <div class="n">STEP 7</div>
+      <h2>The Python catch: negatives and the 32-bit mask</h2>
+      <p>In Java or C++ an <code>int</code> is 32 bits, so a carry shifted past bit 31 simply disappears and the loop always ends. Python integers are unbounded: <code>-3</code> is conceptually an infinite string of 1s followed by <code>...11101</code>. Shift a carry left forever and it never falls off, so <code>b</code> never becomes 0.</p>
+      <p><code>&amp; MASK</code> fixes that by chopping every value to its low 32 bits. Trace <code>a = -3</code>, <code>b = 1</code>: masked, <code>a</code> is <code>0xFFFFFFFD</code> (low 8 bits <code>11111101</code>). Round 1: XOR gives <code>11111100</code>, the carry is <code>00000010</code>. Round 2: XOR gives <code>11111110</code>, carry <code>0</code>. Done, with <code>a = 0xFFFFFFFE</code>.</p>
+      <p>But <code>0xFFFFFFFE</code> is <code>4294967294</code> as a Python int, not −2. Bit 31 is set, which in two's complement means negative, so the register value must be translated back. <code>a &gt; MAX_INT</code> detects it, and <code>~(a ^ MASK)</code> does the conversion: <code>a ^ MASK</code> flips the 32 bits to <code>00000001</code>, and <code>~1</code> is <code>-2</code>.</p>
+      <div class="callout">Two jobs for the mask: keep the loop finite on negative inputs, and mark the answer as a 32-bit register value that the last line reads back as signed.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the shift, the mask, the unmask</h2>
+      <p><strong>Forgetting <code>&lt;&lt; 1</code> on the carry.</strong> Write <code>b = (a &amp; b) &amp; MASK</code> and the carry is added back into the same bit it came from. On the example, round 1 gives <code>a = 6, b = 1</code>, round 2 gives <code>a = 7, b = 0</code>, and the function returns <strong>7 instead of 8</strong>.</p>
+      <p><strong>Dropping <code>&amp; MASK</code>.</strong> Every positive test passes, then <code>get_sum(-2, 3)</code> hangs: the carry <code>1 &lt;&lt; 32</code>, <code>1 &lt;&lt; 33</code>, … never reaches 0 in an unbounded integer.</p>
+      <p><strong>Returning <code>a</code> unconditionally.</strong> <code>get_sum(-3, 1)</code> returns <strong>4294967294</strong>, the unsigned reading of <code>0xFFFFFFFE</code>, instead of −2.</p>
+      <div class="callout warn">Carries move left, so the shift is not optional. Mask both terms every round, and read the final register back as signed with <code>~(a ^ MASK)</code>, which uses no <code>-</code>.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Each round moves the lowest carry bit at least one position left, and the mask caps the register at 32 bits, so the loop runs at most 32 times regardless of the inputs. That is <strong>O(1)</strong> time, and there are only two integers of state, <strong>O(1)</strong> space.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Increment <code>|b|</code> times</td><td>O(|b|)</td><td>O(1)</td></tr>
+        <tr><td>XOR / AND-shift loop, fixed-width language</td><td>O(1), ≤ 32 rounds</td><td>O(1)</td></tr>
+        <tr><td>XOR / AND-shift loop with <code>MASK</code> in Python</td><td>O(1), ≤ 32 rounds</td><td>O(1)</td></tr>
+      </table>
+      <p>The worst case is a carry that has to ripple all the way, such as <code>-1 + 1</code>: 32 rounds, each shifting a single 1 bit left until it leaves the register.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <ul>
+        <li><code>MASK = 0xFFFFFFFF</code> and <code>MAX_INT = 0x7FFFFFFF</code> — the register width and the signed/unsigned boundary.</li>
+        <li><code>while b != 0:</code> — loop while a carry remains.</li>
+        <li><code>a, b = (a ^ b) &amp; MASK, ((a &amp; b) &lt;&lt; 1) &amp; MASK</code> — sum without carries, and the carries, both trimmed to 32 bits.</li>
+        <li><code>return a if a &lt;= MAX_INT else ~(a ^ MASK)</code> — positive register values pass through; negative ones are converted back.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>XOR is the sum without carries, AND-shift is the carries; loop until the carries are gone, inside a 32-bit mask.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>a = 5, b = 3 · low 8 of 32 bits</h3>
+        <svg class="fig" id="fig" viewBox="0 0 400 160" aria-label="bit rows"></svg>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>variables</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="sum_of_two_integers.py">sum_of_two_integers.py</a> · <a href="sum_of_two_integers_annotated.py">sum_of_two_integers_annotated.py</a> · <a href="test_sum_of_two_integers.py">test_sum_of_two_integers.py</a> · <a href="../../md.html?f=medium/101-sum-of-two-integers/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def get_sum(self, a: int, b: int) -> int:",
+    "        MASK = 0xFFFFFFFF",
+    "        MAX_INT = 0x7FFFFFFF",
+    "        while b != 0:",
+    "            a, b = (a ^ b) & MASK, ((a & b) << 1) & MASK",
+    "        return a if a <= MAX_INT else ~(a ^ MASK)"
+  ];
+
+  // Each state describes what the sticky panel shows for one step.
+  // rows: bit rows for the figure ({l: label, b: 8-bit string, c: label class, hi: highlighted bit positions, hc: highlight class}).
+  var STATES = {
+    problem: {
+      caption: "Add 5 and 3 without + or −. In binary, 101 + 011 = 1000.",
+      rows: [{ l: "a = 5", b: "00000101", c: "acc", hi: [0, 2], hc: "hit" }, { l: "b = 3", b: "00000011", c: "acc", hi: [0, 1], hc: "hit" }],
+      meta: "The figure shows the low 8 of the 32 register bits. The answer is <b>8 = 00001000</b>.", vars: [], hl: []
+    },
+    brute: {
+      caption: "Naive: increment a three times with a trailing-ones flip. O(|b|) rounds.",
+      rows: [{ l: "a = 5", b: "00000101", c: "acc" }, { l: "increment → 6", b: "00000110", c: "", hi: [0, 1], hc: "cur" }, { l: "increment → 7", b: "00000111", c: "", hi: [0], hc: "cur" }, { l: "increment → 8", b: "00001000", c: "ok", hi: [0, 1, 2, 3], hc: "hit" }],
+      meta: "Three increments for b = 3. A thousand for b = 1000, and a separate decrement path for b &lt; 0.", vars: [], hl: [],
+      big: "O(|b|) rounds", bigNote: "hardware adds all bits at once"
+    },
+    insight: {
+      caption: "a ^ b is the per-bit sum without carries; (a & b) << 1 is the carries. Their sum is a + b.",
+      rows: [{ l: "a = 5", b: "00000101", c: "acc", hi: [0], hc: "cur" }, { l: "b = 3", b: "00000011", c: "acc", hi: [0], hc: "cur" }, { l: "a ^ b = 6", b: "00000110", c: "", hi: [1, 2], hc: "hit" }, { l: "(a & b) << 1 = 2", b: "00000010", c: "ok", hi: [1], hc: "cur" }],
+      meta: "Bit 0 is set in both, so it produces 0 with a carry into bit 1. <b>6 + 2 = 8</b>: the same sum, restated.", vars: [], hl: [5]
+    },
+    approach: {
+      caption: "Loop while b (the carries) is non-zero, masking both terms to 32 bits each round.",
+      rows: [{ l: "a = 5", b: "00000101", c: "acc" }, { l: "b = 3", b: "00000011", c: "acc" }],
+      meta: "MASK keeps 32 bits; MAX_INT marks where the sign bit begins. For 5 and 3 neither matters yet.",
+      vars: [["a", "5", "new"], ["b", "3", "new"], ["MASK", "0xFFFFFFFF"], ["MAX_INT", "0x7FFFFFFF"]], hl: [2, 3, 4, 5, 6]
+    },
+    trace1: {
+      caption: "Round 1: 00000101 ^ 00000011 = 00000110 (6); carry (00000001) << 1 = 00000010 (2).",
+      rows: [{ l: "a = 5", b: "00000101", c: "acc", hi: [0], hc: "cur" }, { l: "b = 3", b: "00000011", c: "acc", hi: [0], hc: "cur" }, { l: "a ^ b = 6", b: "00000110", c: "", hi: [1, 2], hc: "hit" }, { l: "(a & b) << 1 = 2", b: "00000010", c: "ok", hi: [1], hc: "cur" }],
+      meta: "Now a = <b>6</b>, b = <b>2</b>. The pair still sums to 8; the carry has moved from bit 0 to bit 1.",
+      vars: [["a", "6", "new"], ["b", "2", "new"]], hl: [4, 5]
+    },
+    trace2: {
+      caption: "Rounds 2–4: (6, 2) → (4, 4) → (0, 8) → (8, 0). The carry marches left until it is alone.",
+      rows: [{ l: "round 2: a ^ b = 4", b: "00000100", c: "", hi: [2], hc: "hit" }, { l: "carry = 4", b: "00000100", c: "", hi: [2], hc: "cur" }, { l: "round 3: a ^ b = 0", b: "00000000", c: "", hi: [], hc: "hit" }, { l: "carry = 8", b: "00001000", c: "", hi: [3], hc: "cur" }, { l: "round 4: a ^ b = 8", b: "00001000", c: "ok", hi: [3], hc: "hit" }, { l: "carry = 0", b: "00000000", c: "ok" }],
+      meta: "Round 4 leaves b = 0, so the loop stops and a = <b>8</b> is returned. a is below MAX_INT, so no unmask.",
+      vars: [["a", "8", "found"], ["b", "0"]], hl: [4, 5, 6],
+      big: "8", bigNote: "four rounds, one per bit the carry travelled"
+    },
+    mask: {
+      caption: "a = -3, b = 1: masked, a is 0xFFFFFFFD. Two rounds reach 0xFFFFFFFE, which ~(a ^ MASK) turns into -2.",
+      rows: [{ l: "a & MASK", b: "11111101", c: "acc", hi: [0], hc: "cur" }, { l: "b = 1", b: "00000001", c: "acc", hi: [0], hc: "cur" }, { l: "round 1: a ^ b", b: "11111100", c: "", hi: [0], hc: "hit" }, { l: "carry", b: "00000010", c: "", hi: [1], hc: "cur" }, { l: "round 2: a ^ b", b: "11111110", c: "ok", hi: [1], hc: "hit" }, { l: "a ^ MASK = 1, ~1 = -2", b: "00000001", c: "ok", hi: [0], hc: "hit" }],
+      meta: "Without the mask, a's infinite leading 1s would carry forever. With it, the register reads 4294967294 and bit 31 says <b>negative</b>: ~(a ^ MASK) = <b>-2</b>.",
+      vars: [["a after loop", "0xFFFFFFFE"], ["a &gt; MAX_INT", "yes"], ["return", "-2", "found"]], hl: [2, 3, 5, 6]
+    },
+    pitfall: {
+      caption: "Without << 1 the carry is added back into the same bit: (5, 3) → (6, 1) → (7, 0). Returns 7.",
+      rows: [{ l: "a = 5", b: "00000101", c: "acc", hi: [0], hc: "cur" }, { l: "b = 3", b: "00000011", c: "acc", hi: [0], hc: "cur" }, { l: "a ^ b = 6", b: "00000110", c: "" }, { l: "a & b = 1 (not shifted)", b: "00000001", c: "", hi: [0], hc: "cur" }, { l: "round 2: 6 ^ 1 = 7", b: "00000111", c: "", hi: [0], hc: "cur" }],
+      meta: "A carry belongs one position to the left. Dropped into its own column it just re-adds the bit it came from.",
+      vars: [["return", "7"]], hl: [5],
+      big: "7, not 8", bigNote: "the carry never moved"
+    },
+    complexity: {
+      caption: "At most 32 rounds: each round moves the carry at least one bit left, and the mask caps the width.",
+      rows: [{ l: "a = 8", b: "00001000", c: "ok", hi: [3], hc: "hit" }],
+      meta: "Worst case -1 + 1: a single carry bit walks from bit 0 to bit 31 and falls off, 32 rounds.",
+      vars: [["time", "O(1), ≤ 32 rounds"], ["space", "O(1)", "found"]], hl: [4, 5],
+      big: "O(1) time · O(1) space", bigNote: "bounded by the 32-bit register"
+    },
+    final: {
+      caption: "XOR for the sum, AND-shift for the carries, mask to 32 bits, unmask a negative result.",
+      rows: [{ l: "5 + 3 = 8", b: "00001000", c: "ok", hi: [3], hc: "hit" }],
+      meta: "(5, 3) → (6, 2) → (4, 4) → (0, 8) → (8, 0).",
+      vars: [["return", "8", "found"]], hl: [0, 1, 2, 3, 4, 5, 6],
+      big: "8", bigNote: "running example"
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var figSvg = document.getElementById("fig");
+  function clearFig(h) { while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild); figSvg.setAttribute("viewBox", "0 0 400 " + h); }
+
+  // Rows of bit cells. Each row: { l: label, b: "0101", c: label class, hi: [bit positions, 0 = lowest], hc: "cur"|"hit", dim: bool }
+  // Returns the y coordinate just below the last row.
+  function drawRows(rows, y0) {
+    if (!rows.length) return y0;
+    var n = rows[0].b.length, pitch = 33, w = pitch - 3, x0 = 396 - n * pitch;
+    for (var p = 0; p < n; p++) {
+      figSvg.appendChild(el("text", { "class": "hdr", x: x0 + p * pitch + w / 2, y: y0 + 10 }, "bit " + (n - 1 - p)));
+    }
+    var y = y0 + 16;
+    rows.forEach(function (r) {
+      figSvg.appendChild(el("text", { "class": "rlbl" + (r.c ? " " + r.c : ""), x: 8, y: y + 16 }, r.l));
+      for (var p = 0; p < n; p++) {
+        var ch = r.b.charAt(p), cls = "bit" + (ch === "1" ? " one" : "");
+        if (r.hi && r.hi.indexOf(n - 1 - p) !== -1) cls += " " + (r.hc || "cur");
+        if (r.dim) cls += " dim";
+        figSvg.appendChild(el("rect", { "class": cls, x: x0 + p * pitch, y: y, width: w, height: 24, rx: 4 }));
+        figSvg.appendChild(el("text", { "class": "val" + (ch === "1" ? "" : " zero"), x: x0 + p * pitch + w / 2, y: y + 17 }, ch));
+      }
+      y += 32;
+    });
+    return y;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    clearFig(16 + s.rows.length * 32 + 2);
+    drawRows(s.rows, 0);
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">nothing yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

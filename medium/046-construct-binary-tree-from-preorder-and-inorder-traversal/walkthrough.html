@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Construct Binary Tree from Preorder and Inorder Traversal Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  .tree { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .tree .edge { stroke: var(--line); stroke-width: 2.5; fill: none; transition: stroke 0.25s, opacity 0.25s; }
+  .tree .edge.hit { stroke: var(--ok); }
+  .tree .edge.bad { stroke: var(--warn); stroke-dasharray: 5 4; }
+  .tree .edge.dim { opacity: 0.35; }
+  .tree .edge.off { display: none; }
+  .tree .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .tree .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 17px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .tree .node.cur circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3.5; }
+  .tree .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .tree .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .tree .node.dim circle, .tree .node.dim text { opacity: 0.4; }
+  .tree .node.off { display: none; }
+  .tree .badge { fill: var(--accent); font-size: 11px; font-weight: 700; text-anchor: start; font-family: ui-monospace, Menlo, monospace; }
+  .tree .node text.badge { text-anchor: start; font-size: 11px; font-weight: 700; }
+  .tree .node.hit .badge { fill: var(--ok); }
+  .tree .node.bad .badge { fill: var(--warn); }
+  .tree .ghost { fill: none; stroke: var(--warn); stroke-width: 2; stroke-dasharray: 4 3; }
+  .tree .ghost-lbl { fill: var(--warn); font-size: 11px; text-anchor: middle; dominant-baseline: central; font-family: ui-monospace, Menlo, monospace; }
+  .tree .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .tree .title { fill: var(--muted); font-size: 12px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; letter-spacing: 0.05em; }
+  .array.compact { gap: 4px; margin-top: 2px; }
+  .array.compact .cell { min-width: 28px; padding: 3px 0 2px; font-size: 0.9rem; border-width: 1.5px; border-radius: 6px; }
+  .array.compact .cell.cur { transform: none; }
+  .cell.bad { border-color: var(--warn); background: var(--warn-soft); }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Tree · LeetCode #105</div>
+  <h1>Construct Binary Tree from Preorder and Inorder Traversal, narrated</h1>
+  <p>Scroll from slicing both arrays at every call to a single preorder cursor plus an inorder index map, with the tree growing node by node alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/tree-traversal.html">Tree</a> <span class="how">The next preorder value is always the root of the current inorder window; its inorder position splits the window into left and right.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You are given two arrays that describe the same binary tree: <code>preorder</code>, which lists every node before its two subtrees (root, left, right), and <code>inorder</code>, which lists the left subtree, then the node, then the right subtree. All values are distinct. Rebuild the tree.</p>
+      <div class="callout">Running example: <code>preorder = [3,9,20,15,7]</code>, <code>inorder = [9,3,15,20,7]</code>. The answer is the tree <code>[3,9,20,null,null,15,7]</code>: root 3, left child 9, right child 20 with children 15 and 7.</div>
+      <p>Why two traversals? Preorder alone tells you the root but not where the left subtree ends and the right one begins: <code>[1,2,3]</code> could be a left chain, a right chain, or a root with two leaves. Inorder alone tells you what is left and right of each node but not which node is on top. Put together, and with distinct values, they leave exactly one tree.</p>
+      <p>The panel shows the target tree, the preorder list with the cursor that will walk it, and the inorder list with the window that will be split. Nothing has been built yet.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: slice both arrays and recurse</h2>
+      <p>The classic textbook version. The root is <code>preorder[0]</code>. Find it in <code>inorder</code> with <code>index</code>; say it lands at position <code>mid</code>. Then the left subtree has <code>mid</code> nodes, so its preorder is the next <code>mid</code> values and its inorder is everything before <code>mid</code>; the right subtree gets the rest of both arrays:</p>
+      <pre class="code"><span class="ln">def build_tree(preorder, inorder):</span><span class="ln">    if not preorder:</span><span class="ln">        return None</span><span class="ln">    root = TreeNode(preorder[0])</span><span class="ln">    mid = inorder.index(preorder[0])</span><span class="ln">    root.left = build_tree(preorder[1:mid + 1], inorder[:mid])</span><span class="ln">    root.right = build_tree(preorder[mid + 1:], inorder[mid + 1:])</span><span class="ln">    return root</span></pre>
+      <p style="margin-top:14px">It is correct and short, and it is worth knowing. But every call does two O(n) things: <code>inorder.index</code> scans the list, and the four slices copy it. On a chain of 3000 nodes the windows shrink by one each level, so the total is 3000 + 2999 + … = <strong>O(n²)</strong> time and the same again in copied memory.</p>
+      <p>The panel marks the scan: on the running example the root 3 is found at inorder index 1, and both arrays are then cut into a 1-element left part and a 3-element right part. That cut is the right idea; the copying and scanning are the waste.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: one cursor and one map replace all the slicing</h2>
+      <p>Two observations remove both costs. First, the scan: build a dict <code>index_of = {val: i for i, val in enumerate(inorder)}</code> once, and finding <code>mid</code> becomes an O(1) lookup. Values are distinct, so the map is unambiguous.</p>
+      <p>Second, the slicing. Notice which preorder value each recursive call consumes: the first call takes <code>preorder[0]</code>, the left-subtree call takes <code>preorder[1]</code>, its left call takes <code>preorder[2]</code>, and so on. Because preorder lists the whole left subtree before the right, and the recursion builds left before right, <em>the calls happen in preorder order</em>. A single cursor <code>next_pre</code> that advances by one per call always points at the correct root.</p>
+      <div class="callout">So a call never needs its own copy of <code>preorder</code>: it takes <code>preorder[next_pre]</code> and increments. And it never needs a copy of <code>inorder</code>: it just needs the window bounds <code>lo..hi</code>, which it splits at <code>mid = index_of[val]</code> into <code>lo..mid-1</code> and <code>mid+1..hi</code>.</div>
+      <p>The panel shows the cursor sitting on <code>3</code> and the map's answer: <code>index_of[3] = 1</code>.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: build(lo, hi)</h2>
+      <p>The helper <code>build(lo, hi)</code> returns the subtree whose inorder values are <code>inorder[lo..hi]</code> inclusive. Line by line:</p>
+      <ul>
+        <li><code>if lo &gt; hi: return None</code> — an empty window is an empty subtree, and the cursor does not move.</li>
+        <li><code>val = preorder[next_pre]</code> then <code>next_pre += 1</code> — take the next root and advance, before recursing.</li>
+        <li><code>node = TreeNode(val)</code> and <code>mid = index_of[val]</code> — create the node and find where it splits the window.</li>
+        <li><code>node.left = build(lo, mid - 1)</code> — the left window, built <em>first</em> so it consumes its preorder values first.</li>
+        <li><code>node.right = build(mid + 1, hi)</code> — then the right window, starting wherever the cursor now stands.</li>
+        <li><code>return build(0, len(inorder) - 1)</code> — the whole tree is the whole inorder list.</li>
+      </ul>
+      <p>The <code>nonlocal next_pre</code> declaration is what lets the nested function mutate the shared cursor rather than shadowing it with a local.</p>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the root</h2>
+      <p>Call <code>build(0, 4)</code>. The window is all of inorder. The cursor is at 0, so <code>val = preorder[0] = 3</code> and the cursor moves to 1. Look it up: <code>mid = index_of[3] = 1</code>.</p>
+      <p>That splits the window into <code>lo..mid-1 = 0..0</code>, holding just <code>[9]</code>, and <code>mid+1..hi = 2..4</code>, holding <code>[15, 20, 7]</code>. So the root 3 will have a one-node left subtree and a three-node right subtree, which matches the answer we expect.</p>
+      <p>The node 3 is created and the panel draws it at the top. The next thing that happens is <code>node.left = build(0, 0)</code>, and it is important that this comes before the right call: the cursor currently points at <code>9</code>, and 9 belongs on the left.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: the left subtree</h2>
+      <p>Inside <code>build(0, 0)</code>: the window is not empty, so take <code>val = preorder[1] = 9</code> and advance the cursor to 2. The map says <code>mid = index_of[9] = 0</code>.</p>
+      <p>Both sub-windows are empty: the left is <code>build(0, -1)</code> and the right is <code>build(1, 0)</code>, and in each <code>lo &gt; hi</code> so they return <code>None</code> immediately without touching the cursor. Node 9 is a leaf, and it is attached as <code>3.left</code>.</p>
+      <p>Back in the root's call, the cursor stands at 2, pointing at <code>20</code>. Everything preorder listed for the left subtree has been consumed, which is exactly why the next value is the right subtree's root.</p>
+    </section>
+
+    <section class="step" data-state="trace3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the right subtree, and the answer</h2>
+      <p>Now <code>node.right = build(2, 4)</code>. Take <code>val = preorder[2] = 20</code>, cursor to 3, <code>mid = index_of[20] = 3</code>. The window splits into <code>2..2</code> (just <code>[15]</code>) and <code>4..4</code> (just <code>[7]</code>).</p>
+      <p>The left call <code>build(2, 2)</code> takes <code>preorder[3] = 15</code>, cursor to 4, and both of its sub-windows are empty, so 15 is a leaf. Then <code>build(4, 4)</code> takes <code>preorder[4] = 7</code>, cursor to 5, another leaf. Node 20 gets <code>left = 15</code> and <code>right = 7</code> and is attached as <code>3.right</code>.</p>
+      <div class="callout">The cursor ends at 5, the length of preorder, having handed out every value exactly once, in order. The returned tree is <code>[3,9,20,null,null,15,7]</code>.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong</h2>
+      <p><strong>Building the right subtree first.</strong> Swap the two recursive lines so <code>node.right = build(mid + 1, hi)</code> runs before the left. The cursor does not know which window asked for a value, so the right window <code>2..4</code> is handed <code>preorder[1] = 9</code>, a value that is not even inside it. Every level after that is misaligned: 9 becomes the "root" of <code>[15,20,7]</code>, then 20, 15, 7 are consumed as a chain of right children, and when the deferred left calls finally run, <code>preorder[5]</code> does not exist: <strong><code>IndexError: list index out of range</code></strong>. The left-before-right order is not a style choice; it is what makes the cursor correct.</p>
+      <p><strong>Leaving the root in the left window.</strong> Write <code>build(lo, mid)</code> instead of <code>build(lo, mid - 1)</code>. The left window now includes the root's own value, so it is one element too wide at every level and consumes one preorder value too many; the cursor again runs off the end with the same <code>IndexError</code>.</p>
+      <p><strong>Dropping <code>nonlocal</code>.</strong> Without <code>nonlocal next_pre</code>, the <code>next_pre += 1</code> makes the name local to <code>build</code>, and Python raises <code>UnboundLocalError</code> at the first <code>preorder[next_pre]</code>.</p>
+      <div class="callout warn">Left before right, and the left window stops at <code>mid - 1</code>. Both mistakes surface as the cursor overrunning <code>preorder</code>, so an <code>IndexError</code> here almost always means the windows and the cursor have fallen out of step.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Building <code>index_of</code> is one pass over inorder. Then each of the <code>n</code> nodes is created by exactly one <code>build</code> call, and that call does a dict lookup, one increment, and two recursive calls: O(1) of its own work. Total <strong>O(n)</strong>.</p>
+      <p>Space is the map, <strong>O(n)</strong>, plus the recursion stack, <strong>O(h)</strong>, which is up to <code>n</code> on a chain. The slicing version's extra cost was in copied arrays, which this version never makes.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Slice both arrays, <code>inorder.index</code> per call</td><td>O(n²)</td><td>O(n²) copies on a chain</td></tr>
+        <tr><td>Index map, still slicing</td><td>O(n²) from the copies</td><td>O(n²) copies on a chain</td></tr>
+        <tr><td>Cursor + index map + window bounds</td><td>O(n)</td><td>O(n) map + O(h) stack</td></tr>
+      </table>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>One map, one cursor, one recursive helper over window bounds. Line by line:</p>
+      <ul>
+        <li><code>index_of = {val: i for i, val in enumerate(inorder)}</code> — O(1) lookup of where each value sits in inorder.</li>
+        <li><code>next_pre = 0</code> — the cursor into preorder, shared by every call via <code>nonlocal</code>.</li>
+        <li><code>if lo &gt; hi: return None</code> — empty window, empty subtree.</li>
+        <li><code>val = preorder[next_pre]; next_pre += 1</code> — this call's root, then advance.</li>
+        <li><code>mid = index_of[val]</code> — where the root splits the inorder window.</li>
+        <li><code>node.left = build(lo, mid - 1)</code> — left first, so it consumes its preorder values first.</li>
+        <li><code>node.right = build(mid + 1, hi)</code> — then the right, from wherever the cursor now is.</li>
+        <li><code>return build(0, len(inorder) - 1)</code> — the whole tree spans the whole inorder list.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>the next preorder value is the root of the current inorder window; split the window at that value, build left, then right.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>tree built so far · target [3,9,20,null,null,15,7]</h3>
+        <svg class="tree" id="tree" viewBox="0 0 400 210" aria-label="binary tree"></svg>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>preorder · cursor next_pre</h3>
+        <div class="array compact" id="array"></div>
+      </div>
+
+      <div class="block">
+        <h3>inorder · window lo..hi, mid</h3>
+        <div class="array compact" id="array2"></div>
+      </div>
+
+      <div class="block">
+        <h3>current call</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="construct_binary_tree_from_preorder_and_inorder_traversal.py">construct_binary_tree_from_preorder_and_inorder_traversal.py</a> · <a href="construct_binary_tree_from_preorder_and_inorder_traversal_annotated.py">construct_binary_tree_from_preorder_and_inorder_traversal_annotated.py</a> · <a href="test_construct_binary_tree_from_preorder_and_inorder_traversal.py">test_construct_binary_tree_from_preorder_and_inorder_traversal.py</a> · <a href="../../md.html?f=medium/046-construct-binary-tree-from-preorder-and-inorder-traversal/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def build_tree(self, preorder, inorder):",
+    "        index_of = {val: i for i, val in enumerate(inorder)}",
+    "        next_pre = 0",
+    "",
+    "        def build(lo, hi):",
+    "            nonlocal next_pre",
+    "            if lo > hi:",
+    "                return None",
+    "            val = preorder[next_pre]",
+    "            next_pre += 1",
+    "            node = TreeNode(val)",
+    "            mid = index_of[val]",
+    "            node.left = build(lo, mid - 1)",
+    "            node.right = build(mid + 1, hi)",
+    "            return node",
+    "",
+    "        return build(0, len(inorder) - 1)"
+  ];
+
+  var PRE = [3, 9, 20, 15, 7];
+  var INO = [9, 3, 15, 20, 7];
+  var FULL = [3, 9, 20, null, null, 15, 7];
+  // tree: level-order values built so far (null = not built). cur/hits/dim/bad: level-order indices.
+  // pre: {cur: cursor index, done: consumed indices}. ino: {lo, hi, mid} window into inorder (mid = -1 for none).
+  var STATES = {
+    problem: {"caption": "Two traversals of one tree with distinct values pin the tree down exactly.", "tree": FULL, "cur": -1, "hits": [], "dim": [0, 1, 2, 5, 6], "bad": [], "badges": {}, "pre": {"cur": -1, "done": []}, "ino": {"lo": -1, "hi": -1, "mid": -1}, "vars": [], "meta": "Target: 3 on top, 9 left, 20 right with 15 and 7. Nothing built yet.", "hl": []},
+    brute: {"caption": "Slice: root = preorder[0], find it in inorder, recurse on copied halves.", "tree": [3], "cur": 0, "hits": [], "dim": [], "bad": [], "badges": {"0": "index() + 4 slices"}, "pre": {"cur": 0, "done": []}, "ino": {"lo": 0, "hi": 4, "mid": 1}, "vars": [["inorder.index(3)", "1 (scan)"], ["left", "preorder[1:2], inorder[:1]"], ["right", "preorder[2:], inorder[2:]"]], "meta": "Right cut, wrong cost: every call scans and copies. O(n²) on a chain.", "hl": [], "big": "O(n²)", "bigNote": "scans and array copies at every level"},
+    insight: {"caption": "A cursor over preorder hands out roots in call order; a map finds mid in O(1).", "tree": [3], "cur": 0, "hits": [], "dim": [], "bad": [], "badges": {}, "pre": {"cur": 0, "done": []}, "ino": {"lo": 0, "hi": 4, "mid": 1}, "vars": [["index_of", "{9:0, 3:1, 15:2, 20:3, 7:4}", "new"], ["next_pre", "0"], ["index_of[3]", "1", "found"]], "meta": "Calls happen in preorder order because left is built before right.", "hl": [2, 3, 9, 10, 12]},
+    approach: {"caption": "build(lo, hi): take the next preorder value, split the window at its inorder index.", "tree": [], "cur": -1, "hits": [], "dim": [], "bad": [], "badges": {}, "pre": {"cur": 0, "done": []}, "ino": {"lo": 0, "hi": 4, "mid": -1}, "vars": [["call", "build(0, 4)", "new"], ["next_pre", "0"]], "meta": "The whole tree covers the whole inorder list.", "hl": [7, 8, 9, 10, 11, 12, 13, 14, 15, 17]},
+    trace1: {"caption": "build(0, 4): val = preorder[0] = 3, mid = 1 → left window 0..0, right window 2..4.", "tree": [3], "cur": 0, "hits": [], "dim": [], "bad": [], "badges": {"0": "mid 1"}, "pre": {"cur": 1, "done": [0]}, "ino": {"lo": 0, "hi": 4, "mid": 1}, "vars": [["call", "build(0, 4)", "new"], ["val", "3"], ["next_pre", "0 → 1"], ["mid", "1"], ["left", "build(0, 0)"], ["right", "build(2, 4)"]], "meta": "The cursor now points at 9, which belongs on the left, so left must be built first.", "hl": [9, 10, 11, 12, 13]},
+    trace2: {"caption": "build(0, 0): val = preorder[1] = 9, mid = 0 → both sub-windows empty, 9 is a leaf.", "tree": [3, 9], "cur": 1, "hits": [0], "dim": [], "bad": [], "badges": {"1": "mid 0"}, "pre": {"cur": 2, "done": [0, 1]}, "ino": {"lo": 0, "hi": 0, "mid": 0}, "vars": [["call", "build(0, 0)", "new"], ["val", "9"], ["next_pre", "1 → 2"], ["mid", "0"], ["left", "build(0, -1) → None"], ["right", "build(1, 0) → None"]], "meta": "Empty windows return None without moving the cursor. It now points at 20.", "hl": [7, 8, 9, 10, 12, 13, 14]},
+    trace3: {"caption": "build(2, 4): 20 with mid 3; then build(2, 2) → 15 and build(4, 4) → 7. Cursor ends at 5.", "tree": FULL, "cur": 2, "hits": [0, 1, 5, 6], "dim": [], "bad": [], "badges": {"2": "mid 3", "5": "pre[3]", "6": "pre[4]"}, "pre": {"cur": 5, "done": [0, 1, 2, 3, 4]}, "ino": {"lo": 2, "hi": 4, "mid": 3}, "vars": [["call", "build(2, 4)", "new"], ["val", "20"], ["next_pre", "2 → 3 → 4 → 5"], ["mid", "3"], ["left", "build(2, 2) = 15"], ["right", "build(4, 4) = 7"], ["result", "[3,9,20,null,null,15,7]", "found"]], "meta": "Every preorder value consumed exactly once, in order.", "hl": [13, 14, 15, 17], "big": "[3,9,20,null,null,15,7]", "bigNote": "build_tree([3,9,20,15,7], [9,3,15,20,7])"},
+    pitfall: {"caption": "Right before left: window 2..4 is handed preorder[1] = 9, which is not even inside it.", "tree": [3, null, 9], "cur": 2, "hits": [], "dim": [], "bad": [2], "badges": {"2": "≠ window"}, "pre": {"cur": 5, "done": [0, 1, 2, 3, 4]}, "ino": {"lo": 2, "hi": 4, "mid": 0}, "vars": [["bug", "node.right = build(mid + 1, hi) first"], ["build(2, 4) takes", "9, mid = 0", "bad"], ["then", "20, 15, 7 as a right chain"], ["build(0, 0) reads", "preorder[5]", "bad"]], "meta": "The cursor cannot tell which window asked. Only left-before-right keeps it in step.", "hl": [13, 14], "big": "IndexError", "bigNote": "list index out of range, not a tree"},
+    complexity: {"caption": "One build call per node, O(1) each, plus one pass to make the map.", "tree": FULL, "cur": -1, "hits": [0, 1, 2, 5, 6], "dim": [], "bad": [], "badges": {}, "pre": {"cur": 5, "done": [0, 1, 2, 3, 4]}, "ino": {"lo": 0, "hi": 4, "mid": -1}, "vars": [["n", "5"], ["build calls", "5 real + 6 empty"]], "meta": "No array is ever copied; only two integers describe each window.", "hl": [], "big": "O(n) time · O(n) space", "bigNote": "versus O(n²) for the slicing version"},
+    final: {"caption": "Preorder cursor, inorder index map, window bounds.", "tree": FULL, "cur": -1, "hits": [], "dim": [], "bad": [], "badges": {}, "pre": {"cur": 5, "done": [0, 1, 2, 3, 4]}, "ino": {"lo": 0, "hi": 4, "mid": -1}, "vars": [["build_tree(preorder, inorder)", "[3,9,20,null,null,15,7]", "found"]], "meta": "", "hl": [2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17]}
+  };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function makeTree(svg, POS, R, dx, title) {
+    var g0 = el("g", {}); svg.appendChild(g0);
+    if (title) g0.appendChild(el("text", { x: dx + POS[0][0], y: 12, "class": "title" }, title));
+    var edges = [], nodes = [], texts = [], badges = [];
+    for (var i = 1; i < POS.length; i++) {
+      var p = POS[(i - 1) >> 1];
+      var e = el("line", { "class": "edge", x1: dx + p[0], y1: p[1], x2: dx + POS[i][0], y2: POS[i][1] });
+      g0.appendChild(e); edges[i] = e;
+    }
+    var ghostLayer = el("g", {}); g0.appendChild(ghostLayer);
+    for (var j = 0; j < POS.length; j++) {
+      var g = el("g", { "class": "node" });
+      g.appendChild(el("circle", { cx: dx + POS[j][0], cy: POS[j][1], r: R }));
+      var t = el("text", { x: dx + POS[j][0], y: POS[j][1] });
+      g.appendChild(t);
+      var b = el("text", { x: dx + POS[j][0] + R + 3, y: POS[j][1] + 4, "class": "badge" });
+      g.appendChild(b);
+      g0.appendChild(g); nodes[j] = g; texts[j] = t; badges[j] = b;
+    }
+    function has(arr, i) { return arr && arr.indexOf(i) !== -1; }
+    return function draw(s) {
+      var tree = s.tree, badgeMap = s.badges || {};
+      for (var i = 0; i < POS.length; i++) {
+        var v = i < tree.length ? tree[i] : null;
+        var parentOff = i > 0 && (((i - 1) >> 1) >= tree.length || tree[(i - 1) >> 1] === null);
+        var off = v === null || parentOff;
+        var cls = "node";
+        if (off) cls += " off";
+        else if (i === s.cur) cls += " cur";
+        else if (has(s.bad, i)) cls += " bad";
+        else if (has(s.hits, i)) cls += " hit";
+        else if (has(s.dim, i)) cls += " dim";
+        nodes[i].setAttribute("class", cls);
+        texts[i].textContent = off ? "" : v;
+        badges[i].textContent = off ? "" : (badgeMap[i] !== undefined ? badgeMap[i] : "");
+        if (i > 0) {
+          var ec = "edge";
+          if (off) ec += " off";
+          else if (has(s.bad, i)) ec += " bad";
+          else if (has(s.hits, i)) ec += " hit";
+          else if (has(s.dim, i)) ec += " dim";
+          edges[i].setAttribute("class", ec);
+        }
+      }
+      while (ghostLayer.firstChild) ghostLayer.removeChild(ghostLayer.firstChild);
+      if (s.ghost) {
+        var gp = POS[s.ghost[0]];
+        var pp = POS[(s.ghost[0] - 1) >> 1];
+        ghostLayer.appendChild(el("line", { "class": "edge bad", x1: dx + pp[0], y1: pp[1], x2: dx + gp[0], y2: gp[1] }));
+        ghostLayer.appendChild(el("circle", { cx: dx + gp[0], cy: gp[1], r: R, "class": "ghost" }));
+        ghostLayer.appendChild(el("text", { x: dx + gp[0], y: gp[1], "class": "ghost-lbl" }, s.ghost[1]));
+      }
+    };
+  }
+  var POS7 = [[200, 32], [105, 102], [295, 102], [55, 172], [155, 172], [245, 172], [345, 172]];
+  var POS7S = [[100, 46], [55, 112], [145, 112], [30, 178], [80, 178], [120, 178], [170, 178]];
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function renderVars(vars) {
+    if (!vars || vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">no call yet</span>';
+      return;
+    }
+    var d = "";
+    for (var k = 0; k < vars.length; k++) {
+      var e = vars[k];
+      d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+    }
+    $("dict").innerHTML = d;
+  }
+  function renderBig(s) {
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+  }
+  function renderCode(hl) {
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  var drawTree = makeTree(document.getElementById("tree"), POS7, 21, 0, "");
+
+  function cell(v, cls, idx) {
+    return '<div class="' + cls + '">' + v + '<span class="idx">' + idx + '</span></div>';
+  }
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+    drawTree(s);
+
+    var a = "";
+    for (var i = 0; i < PRE.length; i++) {
+      var cls = "cell";
+      if (i === s.pre.cur) cls += " cur";
+      else if (s.pre.done.indexOf(i) !== -1) cls += " dim";
+      a += cell(PRE[i], cls, i === s.pre.cur ? "cursor" : i);
+    }
+    if (s.pre.cur >= PRE.length) a += cell("·", "cell cur", "end");
+    $("array").innerHTML = a;
+
+    var b = "";
+    for (var j = 0; j < INO.length; j++) {
+      var c2 = "cell";
+      var inWin = j >= s.ino.lo && j <= s.ino.hi;
+      if (j === s.ino.mid) c2 += " cur";
+      else if (inWin) c2 += " hit";
+      else if (s.ino.lo >= 0) c2 += " dim";
+      var lbl = j === s.ino.mid ? "mid" : (j === s.ino.lo ? "lo" : (j === s.ino.hi ? "hi" : j));
+      if (j === s.ino.lo && j === s.ino.hi && j !== s.ino.mid) lbl = "lo=hi";
+      b += cell(INO[j], c2, lbl);
+    }
+    $("array2").innerHTML = b;
+
+    renderVars(s.vars);
+    renderBig(s);
+    renderCode(s.hl);
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

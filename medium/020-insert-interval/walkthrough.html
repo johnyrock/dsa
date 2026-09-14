@@ -91,6 +91,8 @@
   .panel {
     background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
     padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
   }
   .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
   .panel .block { margin-bottom: 18px; }

@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hand of Straights Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Greedy · LeetCode #846</div>
+  <h1>Hand of Straights, narrated</h1>
+  <p>Scroll through the thinking, from repeatedly pulling runs out of a sorted list to a count map swept from the smallest value upward, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/greedy.html">Greedy</a> <span class="how">the smallest remaining card can only start a group, so open its groups and consume the run</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You hold a hand of integer cards, <code>hand</code>, and want to deal all of them into groups of exactly <code>groupSize</code> cards where every group is a run of consecutive values, like <code>[2,3,4]</code>. A card belongs to exactly one group; none may be left over.</p>
+      <p>Return whether such a grouping exists. You are not asked to output the groups, only whether the deal is possible.</p>
+      <div class="callout">Running example: <code>hand = [1,2,3,6,2,3,4,7,8]</code>, <code>groupSize = 3</code>. The answer is <strong>true</strong>: <code>[1,2,3]</code>, <code>[2,3,4]</code>, <code>[6,7,8]</code>.</div>
+      <p>Nine cards and groups of three means exactly three groups. If the total were not divisible by <code>groupSize</code> the answer would be false before looking at a single value, and that check is the first line of the solution.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>Brute force: pull runs out of a sorted list</h2>
+      <p>Sort the hand, take the first card, and try to remove <code>card + 1</code>, <code>card + 2</code>, ... from the list one at a time; repeat until the list is empty or a removal fails.</p>
+      <pre class="code"><span class="ln">cards = sorted(hand)</span><span class="ln">while cards:</span><span class="ln">    first = cards.pop(0)</span><span class="ln">    for c in range(first + 1, first + group_size):</span><span class="ln">        if c not in cards:</span><span class="ln">            return False</span><span class="ln">        cards.remove(c)</span><span class="ln">return True</span></pre>
+      <p style="margin-top:14px">On the sorted example <code>[1,2,2,3,3,4,6,7,8]</code> this pulls 1, removes 2 and 3, pulls 2, removes 3 and 4, pulls 6, removes 7 and 8: true. The reasoning is already right; the cost is not. Each <code>in</code> and <code>remove</code> scans the list, so every card costs O(n) to place and the whole thing is <strong>O(n²)</strong>.</p>
+      <p>What the list is doing badly is answering "how many copies of value <code>c</code> do I have left?" A counter answers that in O(1).</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: the smallest card has no choice</h2>
+      <p>Look at the smallest value still unplaced. It cannot be the second or third card of any group, because that would need a smaller card in front of it, and there is none. So it <em>must</em> start a group, and that group must be <code>card, card + 1, ..., card + groupSize - 1</code>. There is nothing to decide.</p>
+      <div class="callout">In the example the smallest value is 1. Its only possible group is <code>[1,2,3]</code>. After removing that, the smallest value is 2, whose only possible group is <code>[2,3,4]</code>. And so on.</div>
+      <p>Two refinements make it fast. Keep a <code>Counter</code> instead of a list, and walk the distinct values in ascending order with <code>sorted(count)</code>. If a value has <code>need</code> copies left, all <code>need</code> of them must start groups, so consume <code>need</code> copies of each of the next <code>groupSize</code> values in one go. If any of those values has fewer than <code>need</code> copies, some group cannot be finished, and no other arrangement could have rescued it: <code>False</code>.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach</h2>
+      <ul>
+        <li><code>if len(hand) % group_size: return False</code>: the cards must divide evenly into groups.</li>
+        <li><code>count = Counter(hand)</code>: copies of each value still to place.</li>
+        <li><code>for card in sorted(count)</code>: visit distinct values smallest first.</li>
+        <li><code>need = count[card]</code>; if it is 0 the value was already consumed as the tail of earlier groups, so skip it.</li>
+        <li><code>for c in range(card, card + group_size)</code>: the run each new group needs.</li>
+        <li><code>if count[c] &lt; need: return False</code>, otherwise <code>count[c] -= need</code>.</li>
+        <li><code>return True</code>: every card was placed.</li>
+      </ul>
+      <p>The panel shows the counter as chips, the groups formed so far as rows, and the current <code>card</code> and <code>need</code>.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: card = 1</h2>
+      <p><code>9 % 3 == 0</code>, so we continue. The counter is <code>{1: 1, 2: 2, 3: 2, 4: 1, 6: 1, 7: 1, 8: 1}</code> and <code>sorted(count)</code> is <code>[1, 2, 3, 4, 6, 7, 8]</code>.</p>
+      <p><code>card = 1</code>, <code>need = 1</code>. The run is <code>range(1, 4)</code> = 1, 2, 3. Each has at least 1 copy, so subtract 1 from each: the counter becomes <code>{1: 0, 2: 1, 3: 1, 4: 1, ...}</code>, and the first group <code>[1,2,3]</code> is formed.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: card = 2</h2>
+      <p><code>card = 2</code>, <code>need = count[2] = 1</code>: one copy of 2 was not used by the first group, so it starts a group of its own. The run is 2, 3, 4. Counts are 1, 1, 1, all at least <code>need</code>, so each drops to 0. Group <code>[2,3,4]</code> is formed.</p>
+      <p>The sweep now reaches <code>card = 3</code> with <code>need = 0</code>, then <code>card = 4</code> with <code>need = 0</code>. Both were consumed as tails of earlier groups, so <code>if need:</code> skips them. This is why the loop over <code>sorted(count)</code> does not need to know which values have already been swallowed.</p>
+    </section>
+
+    <section class="step" data-state="t6">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: card = 6, and the answer</h2>
+      <p><code>card = 6</code>, <code>need = 1</code>. The run 6, 7, 8 has one copy each, so all three go to 0 and group <code>[6,7,8]</code> is formed.</p>
+      <p><code>card = 7</code> and <code>card = 8</code> have <code>need = 0</code> and are skipped. The loop finishes and the function returns <code>True</code>. Every value in the counter is 0, which is what "every card placed" looks like.</p>
+      <div class="callout">The list version did the same three pulls but paid a scan for each removal. The counter did each subtraction in O(1), and each card was decremented exactly once.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: direction and the size of the bite</h2>
+      <p><strong>Sweeping from the largest card but still building upward.</strong> Write <code>sorted(count, reverse=True)</code> and the first card examined is 8, whose "group" would be 8, 9, 10. <code>count[9]</code> is 0, which is less than <code>need = 1</code>, so the function returns <strong>false</strong> for a hand that clearly works. The argument that a card has no choice only holds for the <em>smallest</em> remaining card when groups extend upward.</p>
+      <p><strong>Subtracting 1 instead of <code>need</code>.</strong> Write <code>count[c] -= 1</code> and multiple groups opened from the same value are under-counted. On <code>[1,1,2,2,3,3]</code> with <code>groupSize = 3</code> the two 1s open two groups but only one 2 and one 3 are consumed; a 1, a 2 and a 3 remain unplaced, the sweep reaches <code>card = 2</code> with <code>need = 1</code>, cannot find a 4 and returns false. The answer is true.</p>
+      <p><strong>Testing <code>count[c] == 0</code> instead of <code>count[c] &lt; need</code>.</strong> A value with one copy when two groups need it slips through, its count goes negative, and on <code>[1,1,2,3,4,4]</code> with <code>groupSize = 2</code> the function returns true instead of false.</p>
+      <div class="callout warn">Smallest first, run upward, consume <code>need</code> copies of every value in the run, and compare against <code>need</code>, not zero.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Building the counter is O(n). Sorting the distinct values is O(n log n). The inner loop decrements each card exactly once across the whole run, so the sweep itself is O(n). Total <strong>O(n log n) time</strong>, <strong>O(n) space</strong> for the counter.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Sorted list with pop / remove</td><td>O(n²)</td><td>O(n)</td></tr>
+        <tr><td>Counter, sweep sorted distinct values</td><td>O(n log n)</td><td>O(n)</td></tr>
+        <tr><td>Counter + min-heap of remaining values</td><td>O(n log n)</td><td>O(n)</td></tr>
+      </table>
+      <p>The heap variant pops the smallest value instead of pre-sorting; same bound, more code. Sweeping <code>range(min, max + 1)</code> instead of <code>sorted(count)</code> would be a mistake here, since values go up to 10⁹.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <ul>
+        <li><code>if len(hand) % group_size: return False</code> rejects hands that cannot split evenly.</li>
+        <li><code>count = Counter(hand)</code> turns the hand into "copies left" per value.</li>
+        <li><code>for card in sorted(count)</code> visits values smallest first, each once.</li>
+        <li><code>need = count[card]</code> and <code>if need:</code> open all groups this value must start, or skip a value already used up.</li>
+        <li><code>for c in range(card, card + group_size)</code> with <code>if count[c] &lt; need: return False</code> and <code>count[c] -= need</code> consumes the run or proves it impossible.</li>
+        <li><code>return True</code> when every card has been placed.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>the smallest unplaced card must start a group, so count the cards, sweep values upward, and consume each run in one bite.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>count · hand = [1,2,3,6,2,3,4,7,8] · groupSize = 3</h3>
+        <div class="dict" id="dict"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>card · need</h3>
+        <div class="dict" id="vars"></div>
+      </div>
+
+      <div class="block">
+        <h3>groups formed</h3>
+        <div id="array"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="hand_of_straights.py">hand_of_straights.py</a> · <a href="hand_of_straights_annotated.py">hand_of_straights_annotated.py</a> · <a href="test_hand_of_straights.py">test_hand_of_straights.py</a> · <a href="../../md.html?f=medium/089-hand-of-straights/notes.md">notes.md</a> · <a href="../../patterns/greedy.md">greedy pattern</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def is_n_straight_hand(self, hand: list[int], group_size: int) -> bool:",
+    "        if len(hand) % group_size:",
+    "            return False",
+    "        count = Counter(hand)",
+    "        for card in sorted(count):",
+    "            need = count[card]",
+    "            if need:",
+    "                for c in range(card, card + group_size):",
+    "                    if count[c] < need:",
+    "                        return False",
+    "                    count[c] -= need",
+    "        return True"
+  ];
+
+  // Counter states, verified by running the Python: [value, copies left, chip class].
+  var C0 = [[1, 1], [2, 2], [3, 2], [4, 1], [6, 1], [7, 1], [8, 1]];
+  var C1 = [[1, 0, "found"], [2, 1, "found"], [3, 1, "found"], [4, 1], [6, 1], [7, 1], [8, 1]];
+  var C2 = [[1, 0], [2, 0, "found"], [3, 0, "found"], [4, 0, "found"], [6, 1], [7, 1], [8, 1]];
+  var C3 = [[1, 0], [2, 0], [3, 0], [4, 0], [6, 0, "found"], [7, 0, "found"], [8, 0, "found"]];
+  var G1 = [[1, 2, 3]];
+  var G2 = [[1, 2, 3], [2, 3, 4]];
+  var G3 = [[1, 2, 3], [2, 3, 4], [6, 7, 8]];
+
+  function groupRows(groups, curGroup) {
+    return groups.map(function (g, k) {
+      return { vals: g, noIdx: true, cur: -1, hits: k === curGroup ? [0, 1, 2] : [], dims: [] };
+    });
+  }
+
+  // Each state describes what the sticky panel shows for one step.
+  var STATES = {
+    problem: {
+      caption: "Can these nine cards be dealt into three groups of three consecutive values?",
+      count: C0, groups: [], curGroup: -1, vars: [],
+      meta: "9 % 3 == 0, so three groups are needed; each value's chip shows how many copies are in hand.", hl: []
+    },
+    brute: {
+      caption: "Sort, pop the first card, then search-and-remove the next two values from the list, over and over.",
+      count: C0, groups: G3, curGroup: -1, vars: [["sorted hand", "[1,2,2,3,3,4,6,7,8]"]],
+      meta: "Each <code>in</code> and <code>remove</code> scans the list, so every card costs O(n) to place.", hl: [],
+      big: "O(n²)", bigNote: "a linear scan per card removed"
+    },
+    insight: {
+      caption: "The smallest unplaced card has no smaller neighbour, so it must start a group: 1 → [1,2,3], no choice.",
+      count: [[1, 1, "new"], [2, 2], [3, 2], [4, 1], [6, 1], [7, 1], [8, 1]], groups: [], curGroup: -1,
+      vars: [["smallest", 1, "new"], ["its only group", "[1,2,3]"]],
+      meta: "A counter answers 'how many copies of c are left?' in O(1); sorted(count) gives the ascending order.", hl: [4, 5, 8]
+    },
+    approach: {
+      caption: "Count the cards, sweep distinct values upward, and for each value with copies left consume the run in one bite.",
+      count: C0, groups: [], curGroup: -1, vars: [["card", "—"], ["need", "—"]],
+      meta: "Before the loop: nothing consumed.", hl: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    },
+    t1: {
+      caption: "card = 1, need = 1: run 1, 2, 3 all have ≥ 1 copy, subtract 1 from each.",
+      count: C1, groups: G1, curGroup: 0, vars: [["card", 1, "new"], ["need", 1]],
+      meta: "count becomes {1: 0, 2: 1, 3: 1, 4: 1, 6: 1, 7: 1, 8: 1}", hl: [5, 6, 7, 8, 9, 11]
+    },
+    t2: {
+      caption: "card = 2, need = 1: run 2, 3, 4 each have exactly 1 left, all drop to 0. Then 3 and 4 have need = 0 and are skipped.",
+      count: C2, groups: G2, curGroup: 1, vars: [["card", 2, "new"], ["need", 1]],
+      meta: "count becomes {1: 0, 2: 0, 3: 0, 4: 0, 6: 1, 7: 1, 8: 1}", hl: [5, 6, 7, 8, 9, 11]
+    },
+    t6: {
+      caption: "card = 6, need = 1: run 6, 7, 8 consumed. 7 and 8 are skipped, the loop ends, return True.",
+      count: C3, groups: G3, curGroup: 2, vars: [["card", 6, "new"], ["need", 1]],
+      meta: "Every count is 0: every card was placed.", hl: [5, 6, 7, 8, 11, 12],
+      big: "True", bigNote: "[1,2,3] · [2,3,4] · [6,7,8]"
+    },
+    pitfall: {
+      caption: "sorted(count, reverse=True) starts at 8 and asks for 9: count[9] = 0 < need, so it returns False.",
+      count: [[1, 1], [2, 2], [3, 2], [4, 1], [6, 1], [7, 1], [8, 1, "new"], [9, 0, "new"]], groups: [], curGroup: -1,
+      vars: [["card", 8], ["need", 1], ["count[9]", 0]],
+      meta: "Only the smallest remaining card is forced to start a group when runs extend upward.", hl: [5, 8, 9, 10],
+      big: "False, not True", bigNote: "sweep ascending, or build the run downward"
+    },
+    complexity: {
+      caption: "Counter in O(n), sort the distinct values, then each card is decremented exactly once.",
+      count: C3, groups: G3, curGroup: -1, vars: [["cards", 9], ["distinct values", 7]],
+      meta: "The inner loop runs once per card overall, not once per (value, group) pair.", hl: [4, 5, 8, 11],
+      big: "O(n log n) time · O(n) space", bigNote: "versus O(n²) for the sorted-list version"
+    },
+    final: {
+      caption: "The whole solution.",
+      count: C3, groups: G3, curGroup: -1, vars: [["result", "True", "found"]],
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  function rowHtml(r) {
+    var h = "";
+    if (r.lbl) h += '<div class="meta" style="margin:6px 0 -4px">' + r.lbl + "</div>";
+    h += '<div class="array">';
+    for (var i = 0; i < r.vals.length; i++) {
+      var cls = "cell";
+      if (i === r.cur) cls += " cur";
+      else if ((r.hits || []).indexOf(i) !== -1) cls += " hit";
+      else if ((r.dims || []).indexOf(i) !== -1) cls += " dim";
+      var idx = r.noIdx ? "" : '<span class="idx">' + (r.idx ? r.idx[i] : i) + "</span>";
+      h += '<div class="' + cls + '">' + r.vals[i] + idx + "</div>";
+    }
+    return h + "</div>";
+  }
+
+  function kvHtml(list, empty) {
+    if (!list || list.length === 0) return '<span class="empty">' + empty + "</span>";
+    var d = "";
+    for (var k = 0; k < list.length; k++) {
+      var e = list[k];
+      d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+    }
+    return d;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+    $("dict").innerHTML = kvHtml(s.count, "empty");
+    $("vars").innerHTML = kvHtml(s.vars, "not started");
+    $("array").innerHTML = s.groups.length ? groupRows(s.groups, s.curGroup).map(rowHtml).join("") : '<div class="dict"><span class="empty">none yet</span></div>';
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

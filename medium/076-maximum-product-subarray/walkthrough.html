@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maximum Product Subarray Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Dynamic Programming · LeetCode #152</div>
+  <h1>Maximum Product Subarray, narrated</h1>
+  <p>Scroll through the thinking, from multiplying out every subarray to a single pass that carries both the largest and the smallest product ending at each index, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">Kadane with two running values, because a negative turns the worst product into the best</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get an integer array <code>nums</code>. Among all contiguous, non-empty subarrays, find the one whose elements multiply to the largest value, and return that product. Negatives and zeros are allowed.</p>
+      <div class="callout">Running example: <code>nums = [2, 3, -2, 4]</code>. The answer is <strong>6</strong>, from <code>[2, 3]</code>. Extending to the −2 gives −12, the 4 alone gives 4, and there is no way to reach the 4 without passing through the −2.</div>
+      <p>Products behave differently from sums: a negative flips the sign of everything before it, and a zero wipes it out. A single-element subarray always counts, so with <code>[-2]</code> the answer is −2, not 0.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: multiply out every subarray</h2>
+      <p>Fix a start, extend the end one element at a time, multiply as you go, and keep the largest product seen.</p>
+      <pre class="code"><span class="ln">best = nums[0]</span><span class="ln">for i in range(n):</span><span class="ln">    product = 1</span><span class="ln">    for j in range(i, n):</span><span class="ln">        product *= nums[j]</span><span class="ln">        best = max(best, product)</span></pre>
+      <p style="margin-top:14px">There are <code>n(n + 1) / 2</code> subarrays and each extension costs one multiplication, so this is <strong>O(n²)</strong>. On <code>[2, 3, -2, 4]</code> it evaluates 10 products: 2, 6, −12, −48, 3, −6, −24, −2, −8, 4. At <code>n = 2 · 10⁴</code> that is 2 · 10⁸ multiplications, too slow.</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: why Kadane alone is not enough</h2>
+      <p>For sums, Maximum Subarray keeps one value, "best sum ending here", because extending a bad prefix can never help. For products that is false. Ending at the −2, the best product is −2 on its own; but the <em>worst</em> product ending there, <code>2 · 3 · −2 = −12</code>, would become the best if a negative followed it.</p>
+      <p>So a subarray ending at index <code>i</code> is built from one of three things: <code>nums[i]</code> alone, <code>nums[i]</code> times the largest product ending at <code>i − 1</code>, or <code>nums[i]</code> times the smallest product ending at <code>i − 1</code>.</p>
+      <div class="callout">Two values per index instead of one: <code>cur_max</code> and <code>cur_min</code>, the largest and smallest products of a subarray ending here. A negative <code>nums[i]</code> swaps their roles.</div>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: three candidates, take both extremes</h2>
+      <p>Seed all three values with <code>nums[0]</code>: <code>best = cur_max = cur_min = nums[0]</code>. The only subarray ending at index 0 is the element itself.</p>
+      <ul>
+        <li><code>for x in nums[1:]</code> visits each later element.</li>
+        <li><code>candidates = (x, x * cur_max, x * cur_min)</code> are the three ways a subarray can end at <code>x</code>.</li>
+        <li><code>cur_max, cur_min = max(candidates), min(candidates)</code> keeps both extremes, computed from the same old pair.</li>
+        <li><code>best = max(best, cur_max)</code> records the global answer.</li>
+      </ul>
+      <p>A zero needs no special case: all three candidates become 0 or <code>x</code>, so the running products reset to 0 and the next element starts fresh.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: x = 3</h2>
+      <p>Before the loop, <code>best = cur_max = cur_min = 2</code>.</p>
+      <p>The candidates are <code>(3, 3 · 2, 3 · 2) = (3, 6, 6)</code>. <code>cur_max = max(3, 6, 6) = 6</code>, <code>cur_min = min(3, 6, 6) = 3</code>. <code>best = max(2, 6) = 6</code>.</p>
+      <p>So far it is plain Kadane: everything is positive, so the largest product ending at the 3 is the whole prefix.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: x = −2, the sign flip</h2>
+      <p>The candidates are <code>(−2, −2 · 6, −2 · 3) = (−2, −12, −6)</code>. <code>cur_max = max(−2, −12, −6) = −2</code>: the best subarray ending here is the −2 by itself. <code>cur_min = min(−2, −12, −6) = −12</code>: the worst is the whole prefix <code>[2, 3, −2]</code>.</p>
+      <p><code>best = max(6, −2) = 6</code>, unchanged. But that −12 is not garbage: if the next element were negative, <code>x · cur_min</code> would be a large positive. This is the value plain Kadane would have thrown away.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: x = 4, the answer</h2>
+      <p>The candidates are <code>(4, 4 · −2, 4 · −12) = (4, −8, −48)</code>. <code>cur_max = 4</code>, the 4 on its own, and <code>cur_min = −48</code>, the whole array.</p>
+      <p><code>best = max(6, 4) = 6</code>. The loop ends and <code>return best</code> gives <strong>6</strong>.</p>
+      <div class="callout">The −48 never paid off because the array ended, but the code could not know that in advance. Carrying it costs one extra multiplication per element.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: one running value, or the wrong seed</h2>
+      <p><strong>Tracking only <code>cur_max</code>.</strong> <code>cur = max(x, x * cur)</code> is Kadane with a product. On <code>[2, 3, −2, 4]</code> it happens to return 6, which is why this bug survives a casual test. On <code>[−2, 3, −4]</code> it returns <strong>3</strong>, not 24: at the 3 the running value becomes <code>max(3, −6) = 3</code>, the −6 is discarded, and the final −4 has nothing negative to cancel against. The panel shows that run.</p>
+      <p><strong>Seeding with 0 or 1.</strong> <code>best = 0</code> with <code>cur_max = cur_min = 1</code> and a loop over all of <code>nums</code> returns 0 for <code>[−2]</code>, but the only subarray is <code>[−2]</code> and the answer is −2. Seed with <code>nums[0]</code> and loop from index 1.</p>
+      <p><strong>Updating in two statements.</strong> <code>cur_max = max(...)</code> followed by <code>cur_min = min(x, x * cur_max, x * cur_min)</code> reads the <em>new</em> <code>cur_max</code>. Both extremes must come from the same old pair; the tuple assignment guarantees it.</p>
+      <div class="callout warn">A negative number makes the smallest product the most valuable one. Keep both, and take both from the same three candidates.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>One pass with three multiplications and two comparisons per element: <strong>O(n) time</strong>. Three integers: <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Every subarray, running product</td><td>O(n²)</td><td>O(1)</td></tr>
+        <tr><td>Prefix and suffix product passes</td><td>O(n)</td><td>O(1)</td></tr>
+        <tr><td>Kadane with max and min</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>The two-pass version (max over prefix products left to right, then right to left, resetting at zero) is equally fast and a good thing to be able to explain; the max/min scan is the one that generalises to "best subarray ending here" problems.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Seven lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>best = cur_max = cur_min = nums[0]</code> seeds all three with the only subarray ending at index 0.</li>
+        <li><code>for x in nums[1:]</code> scans the rest once.</li>
+        <li><code>candidates = (x, x * cur_max, x * cur_min)</code>: start fresh, extend the best, or extend the worst.</li>
+        <li><code>cur_max, cur_min = max(candidates), min(candidates)</code> keeps both extremes from the same old pair.</li>
+        <li><code>best = max(best, cur_max)</code> tracks the global answer.</li>
+        <li><code>return best</code>.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>a negative flips best and worst, so carry the max and the min product ending at each index and take the largest max.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>nums = [<span id="target">2, 3, -2, 4</span>] · blue = current, green = subarray behind best</h3>
+        <div class="array" id="array"></div>
+        <h3 style="margin-top:10px">cur_max ending at each index</h3>
+        <div class="array" id="dpmax"></div>
+        <h3 style="margin-top:10px">cur_min ending at each index</h3>
+        <div class="array" id="dpmin"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>rolling variables</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="maximum_product_subarray.py">maximum_product_subarray.py</a> · <a href="maximum_product_subarray_annotated.py">maximum_product_subarray_annotated.py</a> · <a href="test_maximum_product_subarray.py">test_maximum_product_subarray.py</a> · <a href="../../md.html?f=medium/076-maximum-product-subarray/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def max_product(self, nums: list[int]) -> int:",
+    "        best = cur_max = cur_min = nums[0]",
+    "        for x in nums[1:]:",
+    "            candidates = (x, x * cur_max, x * cur_min)",
+    "            cur_max, cur_min = max(candidates), min(candidates)",
+    "            best = max(best, cur_max)",
+    "        return best"
+  ];
+
+  var NUMS = [2, 3, -2, 4];
+  var Q = "?";
+
+  // Each state describes what the sticky panel shows for one step.
+  // nums = the input, cur = index being processed, span = [lo, hi] of the subarray behind best (null = none),
+  // maxes / mins = cur_max / cur_min per index ("?" = not computed yet), rowCur = index just filled in those rows.
+  var STATES = {
+    problem: {
+      caption: "Largest product of a contiguous, non-empty subarray. Negatives flip signs, zeros wipe out.",
+      nums: NUMS, cur: -1, span: [0, 1], maxes: [Q, Q, Q, Q], mins: [Q, Q, Q, Q], rowCur: -1, vars: [],
+      meta: "Answer: <b>6</b> from [2, 3]. Reaching the 4 means passing through the −2.", hl: []
+    },
+    brute: {
+      caption: "Every start, every end, one running product each: 10 subarrays for 4 elements.",
+      nums: NUMS, cur: 3, span: [0, 3], maxes: [Q, Q, Q, Q], mins: [Q, Q, Q, Q], rowCur: -1, vars: [["products", "2, 6, −12, −48, 3, −6, −24, −2, −8, 4"]],
+      meta: "The largest of the ten is 6.", hl: [],
+      big: "O(n²)", bigNote: "n(n + 1) / 2 subarrays, one multiplication each"
+    },
+    reframe: {
+      caption: "Ending at −2, the best product is −2 alone but the worst is 2 · 3 · −2 = −12. A negative next would turn −12 into the best.",
+      nums: NUMS, cur: 2, span: null, maxes: [2, 6, -2, Q], mins: [2, 3, -12, Q], rowCur: 2, vars: [["cur_max", -2], ["cur_min", -12]],
+      meta: "Plain Kadane keeps only the −2 and forgets the −12.", hl: []
+    },
+    idea: {
+      caption: "Seed best, cur_max and cur_min with nums[0]; at each x take the max and min of (x, x · cur_max, x · cur_min).",
+      nums: NUMS, cur: 0, span: null, maxes: [2, Q, Q, Q], mins: [2, Q, Q, Q], rowCur: 0,
+      vars: [["best", 2, "new"], ["cur_max", 2, "new"], ["cur_min", 2, "new"]],
+      meta: "The only subarray ending at index 0 is [2], so all three start at 2.", hl: [2, 3, 4, 5, 6]
+    },
+    t1: {
+      caption: "x = 3: candidates (3, 3 · 2, 3 · 2) = (3, 6, 6). cur_max = 6, cur_min = 3, best = 6.",
+      nums: NUMS, cur: 1, span: [0, 1], maxes: [2, 6, Q, Q], mins: [2, 3, Q, Q], rowCur: 1,
+      vars: [["best", 6, "new"], ["cur_max", 6], ["cur_min", 3]],
+      meta: "max(3, 6, 6) = <b>6</b>, min(3, 6, 6) = <b>3</b>, best = max(2, 6) = <b>6</b>.", hl: [4, 5, 6]
+    },
+    t2: {
+      caption: "x = −2: candidates (−2, −2 · 6, −2 · 3) = (−2, −12, −6). cur_max = −2, cur_min = −12, best stays 6.",
+      nums: NUMS, cur: 2, span: [0, 1], maxes: [2, 6, -2, Q], mins: [2, 3, -12, Q], rowCur: 2,
+      vars: [["best", 6], ["cur_max", -2], ["cur_min", -12, "new"]],
+      meta: "max(−2, −12, −6) = <b>−2</b>, min = <b>−12</b>. The −12 is kept in case a negative follows.", hl: [4, 5, 6]
+    },
+    t3: {
+      caption: "x = 4: candidates (4, 4 · −2, 4 · −12) = (4, −8, −48). cur_max = 4, cur_min = −48, best = 6.",
+      nums: NUMS, cur: 3, span: [0, 1], maxes: [2, 6, -2, 4], mins: [2, 3, -12, -48], rowCur: 3,
+      vars: [["best", 6, "found"], ["cur_max", 4], ["cur_min", -48]],
+      meta: "max(4, −8, −48) = <b>4</b>, min = <b>−48</b>. best = max(6, 4) = <b>6</b>. Return 6.", hl: [4, 5, 6, 7],
+      big: "6", bigNote: "from [2, 3]"
+    },
+    pitfall: {
+      caption: "nums = [−2, 3, −4] with only cur_max: at 3 the −6 is dropped, so the −4 has nothing to cancel. Returns 3, not 24.",
+      nums: [-2, 3, -4], cur: 2, span: [1, 1], maxes: [-2, 3, -4], mins: [Q, Q, Q], rowCur: 2,
+      vars: [["cur (max only)", -4], ["best", 3]],
+      meta: "With cur_min: mins would be −2, −6, −12 and cur_max at the end = −4 · −6 = <b>24</b>.", hl: [4, 5],
+      big: "3, not 24", bigNote: "the smallest product was the one that mattered"
+    },
+    complexity: {
+      caption: "One pass, three multiplications per element, three integers alive.",
+      nums: NUMS, cur: -1, span: [0, 1], maxes: [2, 6, -2, 4], mins: [2, 3, -12, -48], rowCur: -1,
+      vars: [["best", 6], ["cur_max", 4], ["cur_min", -48]],
+      meta: "The rows are drawn for the shape; the code holds only the latest max and min.", hl: [3, 4, 5],
+      big: "O(n) time · O(1) space", bigNote: "versus O(n²) for every subarray"
+    },
+    final: {
+      caption: "The whole solution.",
+      nums: NUMS, cur: -1, span: [0, 1], maxes: [2, 6, -2, 4], mins: [2, 3, -12, -48], rowCur: -1,
+      vars: [["best", 6, "found"]], meta: "", hl: [1, 2, 3, 4, 5, 6, 7]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function row(values, cur, label) {
+    var out = "";
+    for (var i = 0; i < values.length; i++) {
+      var cls = "cell";
+      if (i === cur) cls += " cur";
+      else if (values[i] === Q) cls += " dim";
+      out += '<div class="' + cls + '">' + String(values[i]).replace("-", "−") + '<span class="idx">' + label + i + '</span></div>';
+    }
+    return out;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.nums.join(", ");
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.nums.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.span && i >= s.span[0] && i <= s.span[1]) cls += " hit";
+      arr += '<div class="' + cls + '">' + String(s.nums[i]).replace("-", "−") + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+    $("dpmax").innerHTML = row(s.maxes, s.rowCur, "max ");
+    $("dpmin").innerHTML = row(s.mins, s.rowCur, "min ");
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not seeded yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + String(e[1]).replace(/-(\d)/g, "−$1") + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

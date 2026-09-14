@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Counting Bits Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  .fig .bit { fill: var(--bg); stroke: var(--line); stroke-width: 1.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .bit.one { fill: var(--panel); stroke: var(--muted); }
+  .fig .bit.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2.5; }
+  .fig .bit.hit { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 2.5; }
+  .fig .bit.dim { opacity: 0.35; }
+  .fig .val.zero { fill: var(--muted); font-weight: 400; }
+  .fig .rlbl { fill: var(--muted); font-size: 11px; text-anchor: start; font-family: ui-monospace, Menlo, monospace; }
+  .fig .rlbl.acc { fill: var(--ink); font-weight: 600; }
+  .fig .rlbl.cur { fill: var(--accent); font-weight: 600; }
+  .fig .rlbl.ok { fill: var(--ok); font-weight: 600; }
+  .fig .hdr { fill: var(--muted); font-size: 9px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .box.dim { opacity: 0.4; }
+  .fig .dig { fill: var(--ink); font-size: 22px; font-weight: 700; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .tag-txt { fill: var(--accent); font-size: 11px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .arrow { stroke: var(--accent); stroke-width: 2; fill: none; }
+  .fig .arrow-head { fill: var(--accent); }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#easy">← All walkthroughs</a>
+  <div class="tag">Easy · Bit Manipulation · LeetCode #338</div>
+  <h1>Counting Bits, narrated</h1>
+  <p>Scroll through the popcount-per-number approach, the right-shift recurrence that reuses earlier answers, and a trace that fills the table for n = 5, with the table and bit patterns shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/bit-manipulation.html">Bit Manipulation</a> <span class="how">Right-shifting removes a number's final bit. Its one-bit count is therefore the count of the shifted prefix plus that final bit.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Given an integer <code>n</code>, return an array <code>counts</code> of length <code>n + 1</code> where <code>counts[i]</code> is the number of 1 bits in the binary representation of <code>i</code>, for every <code>i</code> from 0 to <code>n</code>.</p>
+      <div class="callout">Running example: <code>n = 5</code>. Writing out the binary: 0 = <code>000</code>, 1 = <code>001</code>, 2 = <code>010</code>, 3 = <code>011</code>, 4 = <code>100</code>, 5 = <code>101</code>. Counting the 1s gives the answer <strong><code>[0,1,1,2,1,2]</code></strong>.</div>
+      <p>This is the popcount problem asked <code>n + 1</code> times. The follow-up in the original statement is the real question: can you do it in a single O(n) pass rather than counting each number separately?</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: count each number from scratch</h2>
+      <p>You already know how to count the bits of one number: strip the lowest set bit with <code>x &amp;= x - 1</code> until it is zero, or test <code>x &amp; 1</code> and shift. So do that for every number in the range:</p>
+      <pre class="code"><span class="ln">counts = []</span><span class="ln">for value in range(n + 1):</span><span class="ln">    bits, x = 0, value</span><span class="ln">    while x:</span><span class="ln">        x &amp;= x - 1</span><span class="ln">        bits += 1</span><span class="ln">    counts.append(bits)</span></pre>
+      <p style="margin-top:14px">Each inner loop takes up to O(log n) rounds, because a number up to n has about log₂ n bits. Doing that n + 1 times is <strong>O(n log n)</strong>. It is correct, and for n = 5 it is instant, but it is not the O(n) the follow-up asks for.</p>
+      <p>The panel points at the waste. Counting <code>value = 3</code> (<code>0011</code>) examines both of its bits, but its upper bit, the <code>01</code> prefix, is the number 1, whose bit count was already computed two iterations earlier. Every number recounts a prefix that some smaller number already counted.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: drop the last bit and look it up</h2>
+      <p><code>value &gt;&gt; 1</code> shifts the number right by one place, which discards its last bit. The result is a smaller number, and it is smaller in a useful way: it is a number whose count is already in the table if you fill the table in increasing order.</p>
+      <p>The panel shows it for 5. <code>value = 5</code> is <code>0101</code>. Its prefix <code>value &gt;&gt; 1 = 2</code> is <code>0010</code>, and the bit that was dropped is <code>value &amp; 1 = 1</code>. So the count of 5 is the count of 2, plus 1 for the dropped bit.</p>
+      <div class="callout"><code>counts[value] = counts[value &gt;&gt; 1] + (value &amp; 1)</code>. The number of 1 bits in a number is the number of 1 bits in its prefix plus its last bit, and the prefix is always a smaller number.</div>
+      <p>The same idea in words: 5 is "2, followed by a 1". 4 is "2, followed by a 0". Both share the prefix 2 and differ only in their final bit, so both can be answered from <code>counts[2]</code> in one step.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: fill the table left to right</h2>
+      <p>Allocate the output once with <code>counts = [0] * (n + 1)</code>. That also sets the seed, <code>counts[0] = 0</code>, which is correct because 0 has no set bits. The panel shows the table as <code>[0,?,?,?,?,?]</code> at this point.</p>
+      <p>Then <code>for value in range(1, n + 1):</code> compute <code>counts[value] = counts[value &gt;&gt; 1] + (value &amp; 1)</code>. Because <code>value &gt;&gt; 1 &lt; value</code> for every <code>value &gt;= 1</code>, the entry being read is always to the left of the entry being written, so it has already been filled. No number is ever counted from scratch after 0.</p>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: values 1, 2 and 3</h2>
+      <p>The first two iterations are quick. <code>value = 1</code> gives <code>counts[0] + (1 &amp; 1) = 0 + 1 = 1</code>. <code>value = 2</code> gives <code>counts[1] + (2 &amp; 1) = 1 + 0 = 1</code>. The table is <code>[0,1,1,?,?,?]</code>.</p>
+      <p>Now <code>value = 3</code>, which is <code>0011</code>. <code>3 &gt;&gt; 1 = 1</code>, and <code>counts[1] = 1</code> is already there. The dropped bit is <code>3 &amp; 1 = 1</code>. So <code>counts[3] = 1 + 1 = 2</code>, and the table is <code>[0,1,1,2,?,?]</code>.</p>
+      <p>The panel shows the lookup: the current cell is index 3, and the highlighted cell it reads from is index 1. Two set bits in 3, found with one table read and one AND rather than a loop over its bits.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: value 4 drops back to one bit</h2>
+      <p><code>value = 4</code> is <code>0100</code>. <code>4 &gt;&gt; 1 = 2</code>, whose count is <code>counts[2] = 1</code>. The dropped bit is <code>4 &amp; 1 = 0</code>. So <code>counts[4] = 1 + 0 = 1</code>.</p>
+      <p>The table is now <code>[0,1,1,2,1,?]</code>. The count went down from 2 to 1 between 3 and 4, which is right: 3 is <code>011</code> and 4 is <code>100</code>. The recurrence does not care that 4 is bigger than 3; it only cares that 4's prefix, 2, has already been filled in.</p>
+    </section>
+
+    <section class="step" data-state="trace3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: value 5 completes the table</h2>
+      <p><code>value = 5</code> is <code>0101</code>. <code>5 &gt;&gt; 1 = 2</code>, the same prefix 4 had, so again <code>counts[2] = 1</code>. This time the dropped bit is <code>5 &amp; 1 = 1</code>, so <code>counts[5] = 1 + 1 = 2</code>.</p>
+      <p>The loop ends because 5 was the last value in <code>range(1, 6)</code>. <code>return counts</code> gives <strong><code>[0,1,1,2,1,2]</code></strong>, which matches the hand count from step 1.</p>
+      <div class="callout">4 and 5 share the prefix 2 and differ only in their last bit. The recurrence answered both from the same table entry. That sharing is the entire speed-up.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the table, and operator precedence</h2>
+      <p>The panel shows why the table is worth having: <code>counts[5]</code> reused <code>counts[2]</code>, which reused <code>counts[1]</code>, which reused <code>counts[0]</code>. Every prefix is counted exactly once. Calling a standalone bit counter for each number is not a wrong answer, but it recounts those prefixes and turns O(n) into O(n log n), which is the exact thing the follow-up asks you to avoid.</p>
+      <p><strong>Allocating n entries instead of n + 1.</strong> Write <code>counts = [0] * n</code> and the range 0 through n needs one more slot than exists. For <code>n = 5</code> the loop reaches <code>value = 5</code> and <code>counts[5] = ...</code> raises <code>IndexError</code>. The output includes both endpoints, so the table has <code>n + 1</code> entries.</p>
+      <p><strong>Dropping the parentheses around <code>value &amp; 1</code>.</strong> In Python <code>+</code> binds tighter than <code>&amp;</code>, so <code>counts[value &gt;&gt; 1] + value &amp; 1</code> means <code>(counts[value &gt;&gt; 1] + value) &amp; 1</code>. For the running example that produces <code>[0,1,1,0,1,0]</code>: <code>value = 3</code> computes <code>(1 + 3) &amp; 1 = 0</code> instead of 2. The parentheses in <code>+ (value &amp; 1)</code> are not decoration.</p>
+      <div class="callout warn">Check <code>n = 0</code> (answer <code>[0]</code>, the loop must not run) and one small n by hand. The precedence bug gives plausible-looking 0s and 1s, so compare against a hand count, not just against "it ran".</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>The loop runs n times and each iteration does one table read, one shift, one AND and one addition, all O(1). That is <strong>O(n) time</strong>. The table has n + 1 entries, so <strong>O(n) space</strong>, but that space is the required output; nothing beyond it is allocated.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Popcount each number separately</td><td>O(n log n)</td><td>O(n) output</td></tr>
+        <tr><td>Recurrence <code>counts[v &gt;&gt; 1] + (v &amp; 1)</code></td><td>O(n)</td><td>O(n) output, nothing extra</td></tr>
+      </table>
+      <p>This is dynamic programming in the most literal sense: a table indexed by the subproblem, filled in an order that guarantees every dependency is ready before it is needed. The "subproblem" of a number is simply the number with its last bit removed.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Four lines of body.</p>
+      <ul>
+        <li><code>counts = [0] * (n + 1)</code> allocates the output once, one slot per number from 0 to n, and seeds <code>counts[0] = 0</code> for free.</li>
+        <li><code>for value in range(1, n + 1):</code> fills the table in increasing order, so every prefix is ready before it is read.</li>
+        <li><code>counts[value &gt;&gt; 1]</code> looks up the count of the number with its last bit dropped, a strictly smaller index that is already filled.</li>
+        <li><code>+ (value &amp; 1)</code> adds the dropped bit back in: 1 if <code>value</code> is odd, 0 if even. The parentheses are required.</li>
+        <li><code>return counts</code> — the completed table is the answer.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>the bit count of a number is the bit count of the number shifted right by one, plus its lowest bit.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>counts[i] · n = 5</h3>
+        <svg class="fig" id="fig" viewBox="0 0 400 160" aria-label="dp table with prefix arc"></svg>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>variables</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="counting_bits.py">counting_bits.py</a> · <a href="counting_bits_annotated.py">counting_bits_annotated.py</a> · <a href="test_counting_bits.py">test_counting_bits.py</a> · <a href="../../md.html?f=easy/026-counting-bits/notes.md">notes.md</a> · <a href="../../index.html#easy">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def count_bits(self, n: int) -> list[int]:",
+    "        counts = [0] * (n + 1)",
+    "        for value in range(1, n + 1):",
+    "            counts[value] = counts[value >> 1] + (value & 1)",
+    "        return counts"
+  ];
+
+  // Each state describes what the sticky panel shows for one step.
+  var STATES = {
+    problem: {"caption": "For every i from 0 to n, how many 1 bits does i have?", "counts": ["?", "?", "?", "?", "?", "?"], "cur": -1, "hit": -1, "rows": [], "meta": "<b>n = 5</b>. 0=000, 1=001, 2=010, 3=011, 4=100, 5=101, so the answer is [0,1,1,2,1,2].", "vars": [], "hl": []},
+    brute: {"caption": "Brute force: run a separate popcount for each of the n + 1 numbers.", "counts": ["?", "?", "?", "?", "?", "?"], "cur": 3, "hit": -1, "rows": [{"l": "value = 3", "b": "0011", "c": "acc", "hi": [0, 1], "hc": "cur"}], "meta": "Each popcount is O(log n), so O(n log n) total, and 3 recounts the bits that 1 already counted.", "vars": [], "hl": []},
+    insight: {"caption": "value >> 1 drops the last bit. Its count is already in the table.", "counts": ["?", "?", "?", "?", "?", "?"], "cur": 5, "hit": 2, "rows": [{"l": "value = 5", "b": "0101", "c": "acc", "hi": [0], "hc": "cur"}, {"l": "value >> 1 = 2", "b": "0010", "c": "", "hi": [0, 1, 2], "hc": "hit"}, {"l": "value & 1 = 1", "b": "0001", "c": "", "hi": [0], "hc": "cur"}], "meta": "5 = 101. Its prefix 10 is the number 2, whose count we computed earlier; the dropped bit contributes 5 & 1 = 1.", "vars": [], "hl": [4]},
+    approach: {"caption": "Fill counts left to right; counts[0] = 0 is the seed.", "counts": [0, "?", "?", "?", "?", "?"], "cur": 0, "hit": -1, "rows": [], "meta": "For each value, look up counts[value >> 1] (always a smaller index, so already filled) and add the last bit.", "vars": [["counts", "[0,?,?,?,?,?]", "new"]], "hl": [2, 3, 4]},
+    trace1: {"caption": "value = 3: counts[3 >> 1] + (3 & 1) = counts[1] + 1 = 2.", "counts": [0, 1, 1, 2, "?", "?"], "cur": 3, "hit": 1, "rows": [{"l": "value = 3", "b": "0011", "c": "acc", "hi": [0], "hc": "cur"}, {"l": "value >> 1 = 1", "b": "0001", "c": "", "hi": [0, 1, 2], "hc": "hit"}, {"l": "value & 1 = 1", "b": "0001", "c": "", "hi": [0], "hc": "cur"}], "meta": "Values 1 and 2 were filled first (counts[0]+1 = 1 and counts[1]+0 = 1). Now 3 = 011: prefix 01 has one bit, last bit adds one.", "vars": [["value", "3 (0011)"], ["counts[1]", "1"], ["counts[3]", "2", "new"]], "hl": [4]},
+    trace2: {"caption": "value = 4: counts[2] + (4 & 1) = 1 + 0 = 1.", "counts": [0, 1, 1, 2, 1, "?"], "cur": 4, "hit": 2, "rows": [{"l": "value = 4", "b": "0100", "c": "acc", "hi": [0], "hc": "cur"}, {"l": "value >> 1 = 2", "b": "0010", "c": "", "hi": [0, 1, 2], "hc": "hit"}, {"l": "value & 1 = 0", "b": "0000", "c": "", "hi": [0], "hc": "cur"}], "meta": "4 = 100. Its prefix 10 is 2 with one bit; the last bit is 0, so the count drops back to 1.", "vars": [["value", "4 (0100)"], ["counts[2]", "1"], ["counts[4]", "1", "new"]], "hl": [4]},
+    trace3: {"caption": "value = 5: counts[2] + (5 & 1) = 1 + 1 = 2. The table is full.", "counts": [0, 1, 1, 2, 1, 2], "cur": 5, "hit": 2, "rows": [{"l": "value = 5", "b": "0101", "c": "acc", "hi": [0], "hc": "cur"}, {"l": "value >> 1 = 2", "b": "0010", "c": "", "hi": [0, 1, 2], "hc": "hit"}, {"l": "value & 1 = 1", "b": "0001", "c": "", "hi": [0], "hc": "cur"}], "meta": "5 = 101 shares the prefix 10 with 4, but its last bit is 1.", "vars": [["counts[5]", "2", "new"], ["counts", "[0,1,1,2,1,2]", "found"]], "hl": [4, 5], "big": "[0,1,1,2,1,2]", "bigNote": "n = 5"},
+    pitfall: {"caption": "Recounting from scratch works but repeats the prefix work the table already holds.", "counts": [0, 1, 1, 2, 1, 2], "cur": -1, "hit": -1, "rows": [], "meta": "counts[5] reuses counts[2], which reused counts[1], which reused counts[0]. Every prefix is counted exactly once.", "vars": [["lookups per value", "1", "found"]], "hl": [4]},
+    complexity: {"caption": "One O(1) step per value.", "counts": [0, 1, 1, 2, 1, 2], "cur": -1, "hit": -1, "rows": [], "meta": "n + 1 table entries, each computed from one earlier entry and one AND.", "vars": [["time", "O(n)"], ["space", "O(n)", "found"]], "hl": [3, 4], "big": "O(n) time · O(n) space", "bigNote": "the output itself is n + 1 numbers"},
+    final: {"caption": "Each count is the count of its right-shifted prefix plus its last bit.", "counts": [0, 1, 1, 2, 1, 2], "cur": -1, "hit": -1, "rows": [], "meta": "A dp table indexed by the number itself, filled in increasing order.", "vars": [["counts", "[0,1,1,2,1,2]", "found"]], "hl": [0, 1, 2, 3, 4, 5], "big": "[0,1,1,2,1,2]", "bigNote": "running example"}
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var figSvg = document.getElementById("fig");
+  function clearFig(h) { while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild); figSvg.setAttribute("viewBox", "0 0 400 " + h); }
+
+  // Rows of bit cells. Each row: { l: label, b: "0101", c: label class, hi: [bit positions, 0 = lowest], hc: "cur"|"hit", dim: bool }
+  // Returns the y coordinate just below the last row.
+  function drawRows(rows, y0) {
+    if (!rows.length) return y0;
+    var n = rows[0].b.length, pitch = 33, w = pitch - 3, x0 = 396 - n * pitch;
+    for (var p = 0; p < n; p++) {
+      figSvg.appendChild(el("text", { "class": "hdr", x: x0 + p * pitch + w / 2, y: y0 + 10 }, "bit " + (n - 1 - p)));
+    }
+    var y = y0 + 16;
+    rows.forEach(function (r) {
+      figSvg.appendChild(el("text", { "class": "rlbl" + (r.c ? " " + r.c : ""), x: 8, y: y + 16 }, r.l));
+      for (var p = 0; p < n; p++) {
+        var ch = r.b.charAt(p), cls = "bit" + (ch === "1" ? " one" : "");
+        if (r.hi && r.hi.indexOf(n - 1 - p) !== -1) cls += " " + (r.hc || "cur");
+        if (r.dim) cls += " dim";
+        figSvg.appendChild(el("rect", { "class": cls, x: x0 + p * pitch, y: y, width: w, height: 24, rx: 4 }));
+        figSvg.appendChild(el("text", { "class": "val" + (ch === "1" ? "" : " zero"), x: x0 + p * pitch + w / 2, y: y + 17 }, ch));
+      }
+      y += 32;
+    });
+    return y;
+  }
+
+  // dp table counts[0..n] as boxes, with an arc from counts[value >> 1] into counts[value], and the bit view below.
+  function renderCounts(s) {
+    var n = s.counts.length, w = 46, pitch = 56, x0 = (400 - (pitch * n - 10)) / 2, top = 44;
+    var rowsH = s.rows.length ? 16 + s.rows.length * 32 + 2 : 0;
+    var H = 112 + (rowsH ? rowsH + 8 : 0);
+    clearFig(H);
+    for (var i = 0; i < n; i++) {
+      var x = x0 + i * pitch, cls = "box";
+      if (i === s.cur) cls += " new";
+      else if (i === s.hit) cls += " found";
+      else if (s.counts[i] === "?") cls += " dim";
+      figSvg.appendChild(el("rect", { "class": cls, x: x, y: top, width: w, height: 40, rx: 8 }));
+      figSvg.appendChild(el("text", { "class": "val" + (i === s.cur ? " cur-txt" : (i === s.hit ? " hit-txt" : "")), x: x + w / 2, y: top + 26 }, String(s.counts[i])));
+      figSvg.appendChild(el("text", { "class": "lbl", x: x + w / 2, y: top + 56 }, "i = " + i));
+    }
+    if (s.cur >= 0 && s.hit >= 0) {
+      var xa = x0 + s.hit * pitch + w / 2, xb = x0 + s.cur * pitch + w / 2;
+      figSvg.appendChild(el("path", { "class": "span", d: "M" + xa + "," + (top - 4) + " Q" + ((xa + xb) / 2) + "," + (top - 40) + " " + xb + "," + (top - 4) }));
+      figSvg.appendChild(el("text", { "class": "tag-txt", x: (xa + xb) / 2, y: top - 26 }, "+ (" + s.cur + " & 1) = +" + (s.cur & 1)));
+    }
+    if (rowsH) drawRows(s.rows, 112);
+  }
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+    renderCounts(s);
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">nothing yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coin Change II Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Dynamic Programming · LeetCode #518</div>
+  <h1>Coin Change II, narrated</h1>
+  <p>Scroll through the thinking, from listing every multiset of coins to a single dp row filled one coin at a time, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">unbounded knapsack: coins outside, amounts upward, dp[a] += dp[a - coin]</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get a target <code>amount</code> and a list of coin denominations, with as many of each coin as you like. Count the <em>combinations</em> that add up to the amount exactly.</p>
+      <p>A combination is a multiset: <code>2 + 2 + 1</code> and <code>2 + 1 + 2</code> are the same one. That is the difference from Climbing Stairs, where order matters and the count is much larger.</p>
+      <div class="callout">Running example: <code>amount = 5</code>, <code>coins = [1, 2, 5]</code>. The answer is <strong>4</strong>: <code>5</code>, <code>2 + 2 + 1</code>, <code>2 + 1 + 1 + 1</code>, <code>1 + 1 + 1 + 1 + 1</code>.</div>
+      <p>If nothing adds up, the answer is 0. If the amount itself is 0, the answer is 1: the empty combination.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: enumerate every multiset</h2>
+      <p>Decide how many of the first coin to use (0, 1, 2, … while it fits), then recurse on the remaining amount with the remaining coins. Because each coin is decided once and never revisited, every multiset is generated exactly once.</p>
+      <pre class="code"><span class="ln">def count(i, remaining):</span><span class="ln">    if remaining == 0:</span><span class="ln">        return 1</span><span class="ln">    if i == len(coins) or remaining &lt; 0:</span><span class="ln">        return 0</span><span class="ln">    return count(i, remaining - coins[i]) + count(i + 1, remaining)</span></pre>
+      <p style="margin-top:14px">The branch <code>count(i, remaining - coins[i])</code> takes one more of coin <code>i</code>; <code>count(i + 1, remaining)</code> stops using it. Correct, but the number of leaves is the number of multisets of bounded sum, which grows roughly like <strong>O(amount^len(coins))</strong>. The same <code>(i, remaining)</code> pair is re-solved from every path that reaches it.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: one row, one coin at a time</h2>
+      <p>Only <code>amount + 1</code> distinct sub-amounts exist. Keep a row <code>dp[a]</code> meaning "combinations that make <code>a</code> using only the coins processed so far", and process the coins <em>one at a time</em>, updating the whole row before moving on to the next coin.</p>
+      <p>When coin <code>c</code> is introduced, every combination that makes <code>a − c</code> becomes a combination that makes <code>a</code> by adding one more <code>c</code>. So <code>dp[a] += dp[a − c]</code>.</p>
+      <div class="callout">The outer loop over coins is what kills the ordering problem. A combination is only ever built in coin order (all the 1s, then all the 2s, then the 5s), so <code>{1, 2}</code> is counted exactly once, when the 2 is processed, and never again as <code>{2, 1}</code>.</div>
+      <p>The inner loop over amounts runs <em>upward</em>. When <code>dp[a]</code> reads <code>dp[a − c]</code>, that cell has already been updated for this same coin, which is exactly what lets a combination contain several copies of <code>c</code>.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>dp = [0] * (amount + 1)</code> — no combinations known yet for any amount.</li>
+        <li><code>dp[0] = 1</code> — the empty combination makes 0. Every other count grows out of this cell.</li>
+        <li><code>for coin in coins</code> — introduce one denomination at a time.</li>
+        <li><code>for a in range(coin, amount + 1)</code> — only amounts that can hold the coin, and in increasing order.</li>
+        <li><code>dp[a] += dp[a - coin]</code> — reuse every way to make the remainder.</li>
+        <li><code>return dp[amount]</code> — after all coins, the full count.</li>
+      </ul>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: coin 1</h2>
+      <p>Start from <code>dp = [1, 0, 0, 0, 0, 0]</code>. With coin 1, walk <code>a</code> from 1 to 5: <code>dp[1] += dp[0]</code> gives 1, <code>dp[2] += dp[1]</code> gives 1, and so on. Every amount gets exactly one combination, all 1s.</p>
+      <p>After coin 1: <code>dp = [1, 1, 1, 1, 1, 1]</code>. Notice how the upward walk chained the 1 along the row: <code>dp[2]</code> read <code>dp[1]</code> after it had already been set, which is how "two 1s" got counted.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: coin 2</h2>
+      <p>Now introduce coin 2, walking <code>a</code> from 2 to 5. <code>dp[2] += dp[0]</code>: <code>1 + 1 = 2</code> (<code>1+1</code> and <code>2</code>). <code>dp[3] += dp[1]</code>: <code>1 + 1 = 2</code>. <code>dp[4] += dp[2]</code>: <code>1 + 2 = 3</code> (<code>1+1+1+1</code>, <code>2+1+1</code>, <code>2+2</code>). <code>dp[5] += dp[3]</code>: <code>1 + 2 = 3</code>.</p>
+      <p>After coin 2: <code>dp = [1, 1, 2, 2, 3, 3]</code>. The read of <code>dp[2] = 2</code> when filling <code>dp[4]</code> already includes the combination <code>{2}</code>, so <code>dp[4]</code> gets <code>{2, 2}</code>: that is the unlimited-supply rule doing its work through the upward loop.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: coin 5, the answer</h2>
+      <p>Coin 5 only touches <code>a = 5</code>: <code>dp[5] += dp[0]</code>, so <code>3 + 1 = 4</code>. The one new combination is the single coin <code>5</code>.</p>
+      <p>Final row: <code>dp = [1, 1, 2, 2, 3, 4]</code>. Return <code>dp[5] = 4</code>.</p>
+      <div class="callout">Read the row as a history: each cell was bumped once per coin that fits into it, and every bump added a whole family of combinations at once.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: loop order and loop direction</h2>
+      <p><strong>Swapping the loops.</strong> Put amounts outside and coins inside, <code>for a in range(1, amount + 1): for coin in coins: dp[a] += dp[a - coin]</code>, and each cell now sums over "which coin came last". That counts ordered sequences: <code>1+2</code> and <code>2+1</code> both contribute. On the running example the row becomes <code>[1, 1, 2, 3, 5, 9]</code> and the function returns <strong>9, not 4</strong>. That is a real problem (Combination Sum IV), just not this one.</p>
+      <p><strong>Walking the amounts downward.</strong> <code>for a in range(amount, coin - 1, -1)</code> means <code>dp[a − coin]</code> is still the value from before this coin was introduced, so each coin can appear at most once. The running example then returns <strong>1</strong>: only the single 5 survives, because <code>2 + 2 + 1</code> needs two 2s. (Downward is right for the each-item-once version, Target Sum.)</p>
+      <p><strong>Seeding <code>dp[0] = 0</code>.</strong> Nothing ever becomes nonzero and every answer is 0.</p>
+      <div class="callout warn">Coins outside so order does not count; amounts upward so a coin can repeat. Check with <code>amount = 3</code>, <code>coins = [1, 2]</code>: the answer is 2, and a 3 means you are counting sequences.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Each (coin, amount) pair does one addition: <strong>O(len(coins) × amount) time</strong>, at most 1.5 million steps at the constraints. One row of <code>amount + 1</code> integers: <strong>O(amount) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Enumerate every multiset</td><td>exponential</td><td>O(len(coins)) stack</td></tr>
+        <tr><td>Memoized on (coin index, remaining)</td><td>O(coins × amount)</td><td>O(coins × amount)</td></tr>
+        <tr><td>2-D table dp[i][a]</td><td>O(coins × amount)</td><td>O(coins × amount)</td></tr>
+        <tr><td>1-D row, coins outside</td><td>O(coins × amount)</td><td>O(amount)</td></tr>
+      </table>
+      <p>The 2-D table's row <code>i</code> only reads row <code>i − 1</code> and row <code>i</code> itself, which is why a single row updated in place is enough.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Seven lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>dp = [0] * (amount + 1)</code> — one slot per sub-amount.</li>
+        <li><code>dp[0] = 1</code> — the empty combination.</li>
+        <li><code>for coin in coins</code> — outer loop, so order does not count.</li>
+        <li><code>for a in range(coin, amount + 1)</code> — inner loop upward, so a coin can repeat.</li>
+        <li><code>dp[a] += dp[a - coin]</code> — extend every way to make the remainder.</li>
+        <li><code>return dp[amount]</code>.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>coins outside, amounts upward: every way to make a − coin is one more way to make a.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>dp[a] · amount = 5 · blue = slot being updated, green = slot read</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>coins · current coin and the update</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="coin_change_ii.py">coin_change_ii.py</a> · <a href="coin_change_ii_annotated.py">coin_change_ii_annotated.py</a> · <a href="test_coin_change_ii.py">test_coin_change_ii.py</a> · <a href="../../md.html?f=medium/083-coin-change-ii/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def change(self, amount: int, coins: list[int]) -> int:",
+    "        dp = [0] * (amount + 1)",
+    "        dp[0] = 1",
+    "        for coin in coins:",
+    "            for a in range(coin, amount + 1):",
+    "                dp[a] += dp[a - coin]",
+    "        return dp[amount]"
+  ];
+
+  // dp = the row after the described update, cur = slot being written, hits = slots read, vars = coin chips.
+  var STATES = {
+    problem: {
+      caption: "How many multisets of coins from [1, 2, 5] add up to 5?",
+      dp: [0, 0, 0, 0, 0, 0], cur: 5, hits: [], vars: [["coins", "1, 2, 5"], ["amount", "5"]],
+      meta: "Answer: <b>4</b>. 5 · 2+2+1 · 2+1+1+1 · 1+1+1+1+1.", hl: []
+    },
+    brute: {
+      caption: "Pick how many of coin i to use, then recurse on the rest. Correct, exponential.",
+      dp: [0, 0, 0, 0, 0, 0], cur: 5, hits: [4, 3, 0], vars: [["count(0, 5)", "count(0, 4) + count(1, 5)"]],
+      meta: "count(i, remaining) is re-solved from every path that reaches the same pair.", hl: [],
+      big: "exponential", bigNote: "one leaf per multiset, plus all the repeats"
+    },
+    idea: {
+      caption: "dp[a] = combinations making a with the coins seen so far. Introduce coins one at a time.",
+      dp: [1, 0, 0, 0, 0, 0], cur: -1, hits: [0], vars: [["dp[0]", "1 (empty combination)", "new"], ["rule", "dp[a] += dp[a − coin]", "new"]],
+      meta: "Coins outside kills order; amounts upward allows repeats.", hl: [2, 3, 6]
+    },
+    approach: {
+      caption: "Seed dp[0] = 1, then for each coin walk a from coin to amount adding dp[a − coin] into dp[a].",
+      dp: [1, 0, 0, 0, 0, 0], cur: -1, hits: [0], vars: [["coin 1", "next"], ["coin 2", "waiting"], ["coin 5", "waiting"]],
+      meta: "Three passes over the row, one per coin.", hl: [4, 5, 6]
+    },
+    t1: {
+      caption: "Coin 1: dp[5] += dp[4], 0 + 1 = 1. Each amount now has one all-ones combination.",
+      dp: [1, 1, 1, 1, 1, 1], cur: 5, hits: [4], vars: [["coin 1", "a = 1 … 5", "new"], ["dp[5]", "0 + 1 = 1", "found"]],
+      meta: "After coin 1: <b>[1, 1, 1, 1, 1, 1]</b>.", hl: [5, 6]
+    },
+    t2: {
+      caption: "Coin 2: dp[4] += dp[2], 1 + 2 = 3. dp[2] already counts {2}, so dp[4] gains {2, 2}.",
+      dp: [1, 1, 2, 2, 3, 1], cur: 4, hits: [2], vars: [["coin 2", "a = 2 … 5", "new"], ["dp[4]", "1 + 2 = 3", "found"]],
+      meta: "Next: dp[5] += dp[3] gives 1 + 2 = 3. After coin 2: <b>[1, 1, 2, 2, 3, 3]</b>.", hl: [5, 6]
+    },
+    t3: {
+      caption: "Coin 5: dp[5] += dp[0], 3 + 1 = 4. The single coin 5 is the last combination.",
+      dp: [1, 1, 2, 2, 3, 4], cur: 5, hits: [0], vars: [["coin 5", "a = 5 only", "new"], ["dp[5]", "3 + 1 = 4", "found"]],
+      meta: "Final row: <b>[1, 1, 2, 2, 3, 4]</b>.", hl: [5, 6, 7],
+      big: "4", bigNote: "combinations of [1, 2, 5] that make 5"
+    },
+    pitfall: {
+      caption: "Amounts outside, coins inside: each cell sums over which coin came last, so 1+2 and 2+1 both count.",
+      dp: [1, 1, 2, 3, 5, 9], cur: 5, hits: [4, 3, 0], vars: [["dp[5]", "dp[4] + dp[3] + dp[0] = 5 + 3 + 1"]],
+      meta: "This row counts ordered sequences (Combination Sum IV).", hl: [4, 5],
+      big: "9, not 4", bigNote: "swapped loops count sequences, not combinations"
+    },
+    complexity: {
+      caption: "One addition per (coin, amount) pair; a single row of amount + 1 integers.",
+      dp: [1, 1, 2, 2, 3, 4], cur: -1, hits: [], vars: [["passes", "3 coins"], ["cells per pass", "≤ 6"]],
+      meta: "The 2-D table's row i only reads rows i − 1 and i, so one row in place suffices.", hl: [4, 5, 6],
+      big: "O(coins × amount) time · O(amount) space", bigNote: "versus exponential enumeration"
+    },
+    final: {
+      caption: "The whole solution.",
+      dp: [1, 1, 2, 2, 3, 4], cur: -1, hits: [5], vars: [["dp[5]", "4", "found"]],
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.dp.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      arr += '<div class="' + cls + '">' + s.dp[i] + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var code = "";
+    for (var l = 0; l < CODE.length; l++) {
+      code += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = code;
+  }
+
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

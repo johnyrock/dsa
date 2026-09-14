@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Single Number Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  .fig .bit { fill: var(--bg); stroke: var(--line); stroke-width: 1.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .bit.one { fill: var(--panel); stroke: var(--muted); }
+  .fig .bit.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2.5; }
+  .fig .bit.hit { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 2.5; }
+  .fig .bit.dim { opacity: 0.35; }
+  .fig .val.zero { fill: var(--muted); font-weight: 400; }
+  .fig .rlbl { fill: var(--muted); font-size: 11px; text-anchor: start; font-family: ui-monospace, Menlo, monospace; }
+  .fig .rlbl.acc { fill: var(--ink); font-weight: 600; }
+  .fig .rlbl.cur { fill: var(--accent); font-weight: 600; }
+  .fig .rlbl.ok { fill: var(--ok); font-weight: 600; }
+  .fig .hdr { fill: var(--muted); font-size: 9px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .box.dim { opacity: 0.4; }
+  .fig .dig { fill: var(--ink); font-size: 22px; font-weight: 700; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .tag-txt { fill: var(--accent); font-size: 11px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .arrow { stroke: var(--accent); stroke-width: 2; fill: none; }
+  .fig .arrow-head { fill: var(--accent); }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#easy">← All walkthroughs</a>
+  <div class="tag">Easy · Bit Manipulation · LeetCode #136</div>
+  <h1>Single Number, narrated</h1>
+  <p>Scroll through the pairwise scan, the set that costs memory, and the XOR identity that cancels every pair in one pass, with the accumulator's bits shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/bit-manipulation.html">Bit Manipulation</a> <span class="how">XOR is associative, and <code>x ^ x</code> is zero. Every duplicated value cancels regardless of order, leaving the sole unpaired number.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You are given a non-empty array <code>nums</code> in which every value appears exactly twice, except for one value that appears once. Find that value. The problem asks for linear time and, crucially, <strong>constant extra space</strong>.</p>
+      <div class="callout">Running example: <code>nums = [4,1,2,1,2]</code>. The two 1s are a pair, the two 2s are a pair, and 4 is alone. The answer is <strong>4</strong>.</div>
+      <p>The panel shows each value as an 8-bit pattern: 4 is <code>00000100</code>, 1 is <code>00000001</code>, 2 is <code>00000010</code>. Keep the bit view in mind, because the trick that satisfies the space constraint lives at the bit level.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: look for each value's partner</h2>
+      <p>The most literal approach is to take each value in turn and scan the rest of the array for a second copy. If none is found, that value is the answer:</p>
+      <pre class="code"><span class="ln">for i, candidate in enumerate(nums):</span><span class="ln">    if all(nums[j] != candidate for j in range(len(nums)) if j != i):</span><span class="ln">        return candidate</span></pre>
+      <p style="margin-top:14px">The panel highlights 4 as the current candidate with the other four values dimmed: that is one full scan of the remainder. Doing that for every one of n values is <strong>O(n²)</strong> time. At 30,000 elements that is hundreds of millions of comparisons.</p>
+      <p>The next idea is a hash set: walk the array once, adding a value on first sight and removing it on second sight; whatever remains at the end is the single number. That is O(n) time, but the set can hold up to n/2 values at once, so it is O(n) extra space, and the problem said constant. Sorting first and looking for the pair that is not there is O(n log n) and still not constant space in most implementations.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: XOR cancels pairs</h2>
+      <p>Bitwise XOR (<code>^</code>) has three properties that together solve this problem:</p>
+      <ul>
+        <li><code>x ^ x == 0</code> — XORing a value with itself gives zero.</li>
+        <li><code>x ^ 0 == x</code> — zero is the identity.</li>
+        <li>XOR is associative and commutative, so the order of operands does not matter.</li>
+      </ul>
+      <p>Look at the panel. Starting from 4 (<code>00000100</code>), XORing in a 1 turns bit 0 on: <code>4 ^ 1 = 5</code> (<code>00000101</code>). XORing in the second 1 turns bit 0 back off: <code>5 ^ 1 = 4</code>. The pair of 1s has vanished, and it did not matter that 4 was sitting in between.</p>
+      <div class="callout">XOR every element of the array together. Because order does not matter, every pair cancels to 0 no matter how far apart the two copies sit, and the lone value is the only thing that survives.</div>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: one accumulator</h2>
+      <p>Initialise <code>unique = 0</code>, the XOR identity, so the first value folds in unchanged. Then <code>for number in nums:</code> do <code>unique ^= number</code>. That is the whole loop. When it finishes, <code>unique</code> holds whatever failed to cancel.</p>
+      <p>There is no set, no sort, no second pass. The only state is a single integer, shown in the panel as <code>unique = 0 (00000000)</code> before the loop starts.</p>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: 4, then 1</h2>
+      <p>The first value is 4. <code>0 ^ 4 = 4</code>, which sets bit 2 in the accumulator: <code>unique = 4 (00000100)</code>.</p>
+      <p>The second value is <code>number = 1</code>. <code>4 ^ 1 = 5</code>: bit 0 turns on and bit 2 stays. <code>unique = 5 (00000101)</code>.</p>
+      <p>Two values have been folded in and neither has met its partner yet, so both are visible in the accumulator. That is what the state of <code>unique</code> means at any moment: the XOR of every value seen so far, which is the same as the XOR of every value seen an odd number of times so far.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: the first pair cancels</h2>
+      <p>Index 2 folds in the first 2: <code>5 ^ 2 = 7</code>, or <code>00000111</code> — three unpaired values, three bits set.</p>
+      <p>Index 3 brings the second 1. <code>7 ^ 1 = 6</code>, or <code>00000110</code>. Bit 0 flipped back off; the two 1s have cancelled even though a 2 arrived between them. Check: <code>6 == 4 ^ 2</code>, which is exactly the XOR of the values still unpaired, the 4 and the first 2.</p>
+      <p>The panel's current pointer is on index 3 and the accumulator shows <code>unique = 6 (00000110)</code>.</p>
+    </section>
+
+    <section class="step" data-state="trace3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the last pair cancels, 4 remains</h2>
+      <p>Index 4 brings the second 2. <code>6 ^ 2 = 4</code>, or <code>00000100</code>. Bit 1 flips off and only bit 2 is left, which is the 4 from the very first step.</p>
+      <p>The loop is over and <code>return unique</code> gives <strong>4</strong>. Every duplicated value flipped its bits twice, which is the same as not flipping them at all; 4 flipped its bit once and survives.</p>
+      <div class="callout">Whole computation: <code>4 ^ 1 ^ 2 ^ 1 ^ 2 = 4</code>. Five XORs, one integer of state.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the wrong operator or the wrong seed</h2>
+      <p><strong>Using addition instead of XOR.</strong> The panel makes the difference concrete: <code>1 + 1 = 2</code>, but <code>1 ^ 1 = 0</code>. Addition doubles a pair and carries the result into the next bit; it never cancels anything. With <code>unique += number</code> the running example returns <strong>10</strong>, the sum of all five values, not 4. The cancellation identity belongs specifically to XOR.</p>
+      <p><strong>Seeding with the first element and then looping over everything.</strong> Writing <code>unique = nums[0]</code> and then <code>for number in nums:</code> folds <code>nums[0]</code> in twice. For <code>[4,1,2,1,2]</code> that computes <code>4 ^ 4 ^ 1 ^ 2 ^ 1 ^ 2 = 0</code>: the 4 cancels itself and the function returns <strong>0</strong>. Either seed with 0 and loop over all of <code>nums</code>, or seed with <code>nums[0]</code> and loop over <code>nums[1:]</code>. Never both.</p>
+      <div class="callout warn">A one-element array like <code>[7]</code> is the quickest check for both bugs: the correct code returns 7 immediately, the add version returns 7 too (so it is not sufficient), but the double-seed version returns 0.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Each number is XORed into the accumulator exactly once, so <strong>O(n) time</strong>. No structure grows with the input; the only state is one integer, so <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Scan for each value's partner</td><td>O(n²)</td><td>O(1)</td></tr>
+        <tr><td>Sort, then find the unpaired value</td><td>O(n log n)</td><td>O(1) to O(n) depending on the sort</td></tr>
+        <tr><td>Hash set, add on first sight, remove on second</td><td>O(n)</td><td>O(n)</td></tr>
+        <tr><td>XOR accumulator</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>The set already reaches linear time. XOR is the only option that also meets the constant-space requirement, and it does it with less code than any of the others.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Four lines of body.</p>
+      <ul>
+        <li><code>unique = 0</code> seeds the accumulator with the XOR identity, so the first value folds in unchanged.</li>
+        <li><code>for number in nums:</code> visits every value once, in whatever order the array has; order does not matter to XOR.</li>
+        <li><code>unique ^= number</code> flips the bits of <code>number</code> in the accumulator. A value seen twice flips them twice and leaves no trace.</li>
+        <li><code>return unique</code> — after the last iteration, the only bits still set belong to the value that appeared once.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>XOR everything together; pairs cancel to zero regardless of order, and the single number is what is left.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>nums · xor accumulator, low 8 bits</h3>
+        <div class="array" id="array"></div>
+        <svg class="fig" id="fig" viewBox="0 0 400 160" aria-label="bit rows"></svg>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>accumulator</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="single_number.py">single_number.py</a> · <a href="single_number_annotated.py">single_number_annotated.py</a> · <a href="test_single_number.py">test_single_number.py</a> · <a href="../../md.html?f=easy/024-single-number/notes.md">notes.md</a> · <a href="../../index.html#easy">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def single_number(self, nums: list[int]) -> int:",
+    "        unique = 0",
+    "        for number in nums:",
+    "            unique ^= number",
+    "        return unique"
+  ];
+
+  // Each state describes what the sticky panel shows for one step.
+  var STATES = {
+    problem: {"caption": "Five numbers; every value appears twice except one.", "arr": [4, 1, 2, 1, 2], "cur": -1, "hits": [], "dim": [], "rows": [{"l": "4", "b": "00000100", "c": ""}, {"l": "1", "b": "00000001", "c": ""}, {"l": "2", "b": "00000010", "c": ""}, {"l": "1", "b": "00000001", "c": ""}, {"l": "2", "b": "00000010", "c": ""}], "meta": "<b>nums = [4,1,2,1,2]</b>, shown as 8-bit values. The 1s and the 2s are pairs; 4 is alone.", "vars": [], "hl": []},
+    brute: {"caption": "Brute force: for each value, scan the rest looking for its partner.", "arr": [4, 1, 2, 1, 2], "cur": 0, "hits": [], "dim": [], "rows": [{"l": "4", "b": "00000100", "c": "cur"}, {"l": "1", "b": "00000001", "c": "", "dim": true}, {"l": "2", "b": "00000010", "c": "", "dim": true}, {"l": "1", "b": "00000001", "c": "", "dim": true}, {"l": "2", "b": "00000010", "c": "", "dim": true}], "meta": "n scans of n values: O(n²). A hash set of seen values is O(n) time but needs O(n) extra memory.", "vars": [], "hl": []},
+    insight: {"caption": "x ^ x = 0, and XOR does not care about order.", "arr": [4, 1, 2, 1, 2], "cur": -1, "hits": [], "dim": [], "rows": [{"l": "4", "b": "00000100", "c": "acc"}, {"l": "^ 1", "b": "00000001", "c": "", "hi": [0], "hc": "cur"}, {"l": "= 5", "b": "00000101", "c": "acc", "hi": [0], "hc": "hit"}, {"l": "^ 1", "b": "00000001", "c": "", "hi": [0], "hc": "cur"}, {"l": "= 4", "b": "00000100", "c": "ok", "hi": [0], "hc": "hit"}], "meta": "XORing a value in flips its 1 bits; XORing the same value again flips them back. Every pair cancels no matter how far apart it sits.", "vars": [], "hl": [4]},
+    approach: {"caption": "Start the accumulator at 0 and fold every number into it.", "arr": [4, 1, 2, 1, 2], "cur": -1, "hits": [], "dim": [], "rows": [{"l": "unique = 0", "b": "00000000", "c": "acc"}], "meta": "No set, no sort. After the loop the accumulator holds whatever failed to cancel.", "vars": [["unique", "0 (00000000)", "new"]], "hl": [2, 3, 4]},
+    trace1: {"caption": "After 4 the accumulator is 4; after 1 it is 4 ^ 1 = 5.", "arr": [4, 1, 2, 1, 2], "cur": 1, "hits": [0], "dim": [], "rows": [{"l": "unique = 4", "b": "00000100", "c": "acc"}, {"l": "^ number = 1", "b": "00000001", "c": "", "hi": [0], "hc": "cur"}, {"l": "= 5", "b": "00000101", "c": "acc", "hi": [0], "hc": "hit"}], "meta": "0 ^ 4 = 4 set bit 2. Now 4 ^ 1 sets bit 0. Two unpaired values so far.", "vars": [["unique", "5 (00000101)", "new"], ["number", "1"]], "hl": [4]},
+    trace2: {"caption": "The second 1 arrives: bit 0 flips back off, the pair of 1s has cancelled.", "arr": [4, 1, 2, 1, 2], "cur": 3, "hits": [0, 1, 2], "dim": [], "rows": [{"l": "unique = 7", "b": "00000111", "c": "acc"}, {"l": "^ number = 1", "b": "00000001", "c": "", "hi": [0], "hc": "cur"}, {"l": "= 6", "b": "00000110", "c": "acc", "hi": [0], "hc": "hit"}], "meta": "Index 2 first folded in 2, making 5 ^ 2 = 7. Then 7 ^ 1 = 6 = 4 ^ 2: only the 4 and the first 2 remain.", "vars": [["unique", "6 (00000110)", "new"], ["number", "1"]], "hl": [4]},
+    trace3: {"caption": "The second 2 cancels the first, leaving 4.", "arr": [4, 1, 2, 1, 2], "cur": 4, "hits": [0, 1, 2, 3], "dim": [], "rows": [{"l": "unique = 6", "b": "00000110", "c": "acc"}, {"l": "^ number = 2", "b": "00000010", "c": "", "hi": [1], "hc": "cur"}, {"l": "= 4", "b": "00000100", "c": "ok", "hi": [1], "hc": "hit"}], "meta": "6 ^ 2 = 4. Every duplicate has flipped its bits twice; 4 flipped once and survives.", "vars": [["unique", "4 (00000100)", "found"]], "hl": [4, 5], "big": "4", "bigNote": "4 ^ 1 ^ 2 ^ 1 ^ 2"},
+    pitfall: {"caption": "Addition does not cancel: 1 + 1 = 2, but 1 ^ 1 = 0.", "arr": [4, 1, 2, 1, 2], "cur": -1, "hits": [], "dim": [], "rows": [{"l": "1", "b": "00000001", "c": ""}, {"l": "1", "b": "00000001", "c": ""}, {"l": "1 + 1 = 2", "b": "00000010", "c": "", "hi": [1], "hc": "cur"}, {"l": "1 ^ 1 = 0", "b": "00000000", "c": "ok"}], "meta": "Summing doubles equal values and carries into the next bit. Only XOR has the self-cancelling identity the trick relies on.", "vars": [], "hl": [4]},
+    complexity: {"caption": "One pass, one integer of state.", "arr": [4, 1, 2, 1, 2], "cur": -1, "hits": [], "dim": [], "rows": [{"l": "unique = 4", "b": "00000100", "c": "ok"}], "meta": "Each number is XORed in once. No structure grows with the input.", "vars": [["time", "O(n)"], ["space", "O(1)", "found"]], "hl": [3, 4], "big": "O(n) time · O(1) space", "bigNote": "a single accumulator"},
+    final: {"caption": "XOR everything; whatever is left is the single number.", "arr": [4, 1, 2, 1, 2], "cur": -1, "hits": [0, 1, 2, 3, 4], "dim": [], "rows": [{"l": "unique = 4", "b": "00000100", "c": "ok"}], "meta": "Pairs cancel regardless of order; the lone value is the only survivor.", "vars": [["unique", "4", "found"]], "hl": [0, 1, 2, 3, 4, 5], "big": "4", "bigNote": "running example"}
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var figSvg = document.getElementById("fig");
+  function clearFig(h) { while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild); figSvg.setAttribute("viewBox", "0 0 400 " + h); }
+
+  // Rows of bit cells. Each row: { l: label, b: "0101", c: label class, hi: [bit positions, 0 = lowest], hc: "cur"|"hit", dim: bool }
+  // Returns the y coordinate just below the last row.
+  function drawRows(rows, y0) {
+    if (!rows.length) return y0;
+    var n = rows[0].b.length, pitch = 33, w = pitch - 3, x0 = 396 - n * pitch;
+    for (var p = 0; p < n; p++) {
+      figSvg.appendChild(el("text", { "class": "hdr", x: x0 + p * pitch + w / 2, y: y0 + 10 }, "bit " + (n - 1 - p)));
+    }
+    var y = y0 + 16;
+    rows.forEach(function (r) {
+      figSvg.appendChild(el("text", { "class": "rlbl" + (r.c ? " " + r.c : ""), x: 8, y: y + 16 }, r.l));
+      for (var p = 0; p < n; p++) {
+        var ch = r.b.charAt(p), cls = "bit" + (ch === "1" ? " one" : "");
+        if (r.hi && r.hi.indexOf(n - 1 - p) !== -1) cls += " " + (r.hc || "cur");
+        if (r.dim) cls += " dim";
+        figSvg.appendChild(el("rect", { "class": cls, x: x0 + p * pitch, y: y, width: w, height: 24, rx: 4 }));
+        figSvg.appendChild(el("text", { "class": "val" + (ch === "1" ? "" : " zero"), x: x0 + p * pitch + w / 2, y: y + 17 }, ch));
+      }
+      y += 32;
+    });
+    return y;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arrEl = $("array");
+    if (arrEl) {
+      var arr = "";
+      for (var i = 0; i < s.arr.length; i++) {
+        var cls = "cell";
+        if (i === s.cur) cls += " cur";
+        else if (s.hits.indexOf(i) !== -1) cls += " hit";
+        else if (s.dim.indexOf(i) !== -1) cls += " dim";
+        arr += '<div class="' + cls + '">' + s.arr[i] + '<span class="idx">i = ' + i + '</span></div>';
+      }
+      arrEl.innerHTML = arr;
+    }
+
+    clearFig(s.rows.length ? 16 + s.rows.length * 32 + 2 : 30);
+    if (s.rows.length) drawRows(s.rows, 0);
+    else figSvg.appendChild(el("text", { "class": "lbl", x: 200, y: 20 }, s.figNote || ""));
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">nothing yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

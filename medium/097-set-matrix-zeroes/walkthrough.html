@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Set Matrix Zeroes Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+
+  /* matrix additions: a grid of square cells; zero cells are marked, row 0 / column 0 marker cells are dashed */
+  .grid { display: grid; gap: 4px; margin: 8px 0 4px; }
+  .gc {
+    aspect-ratio: 1; border-radius: 6px; border: 2px solid var(--line); background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1rem; color: var(--ink); transition: all 0.25s;
+  }
+  .gc.zero { background: var(--code-bg); color: var(--muted); font-weight: 600; }
+  .gc.mark { outline: 2px dashed var(--warn); outline-offset: -2px; }
+  .gc.cur { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); font-weight: 600; transform: scale(1.06); }
+  .gc.hit { border-color: var(--ok); background: var(--ok-soft); color: var(--ink); font-weight: 600; }
+  .gc.dim { opacity: 0.45; }
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Matrix · LeetCode #73</div>
+  <h1>Set Matrix Zeroes, narrated</h1>
+  <p>Scroll through the thinking, from a full copy to two flag lists to storing the flags inside the first row and column, with the state of the matrix shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/matrix.html">Matrix</a> <span class="how">row 0 and column 0 double as the "zero this line" flags; two booleans remember their own fate</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Given an <code>m × n</code> matrix, wherever there is a <code>0</code>, set that cell's whole row and whole column to <code>0</code>. Do it in place; the function returns nothing.</p>
+      <div class="callout">Running example: <code>matrix = [[1,1,1],[1,0,1],[1,1,1]]</code>. The single zero at <code>(1, 1)</code> clears row 1 and column 1, so the result is <code>[[1,0,1],[0,0,0],[1,0,1]]</code>.</div>
+      <p>The subtlety is that only the <em>original</em> zeros count. The zeros we write while clearing row 1 must not then be treated as new triggers, or the cleared row would go on to clear every column it crosses and the whole matrix would end up zero. The answer keeps the four corner <code>1</code>s.</p>
+      <p>The follow-up on LeetCode is the real question: the easy versions need O(m × n) or O(m + n) extra memory. Can it be done with O(1)?</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: a copy, then two flag lists</h2>
+      <p>The safest version reads from an untouched copy and writes into the original, so written zeros can never be mistaken for original ones:</p>
+      <pre class="code"><span class="ln">snapshot = [row[:] for row in matrix]</span><span class="ln">for r in range(rows):</span><span class="ln">    for c in range(cols):</span><span class="ln">        if snapshot[r][c] == 0:</span><span class="ln">            for cc in range(cols): matrix[r][cc] = 0</span><span class="ln">            for rr in range(rows): matrix[rr][c] = 0</span></pre>
+      <p style="margin-top:14px">That is O(m × n) extra space for the snapshot, and its inner loops make it O(m × n × (m + n)) time in the worst case. The obvious refinement: a zero at <code>(r, c)</code> only says two things, "row r goes" and "column c goes". Record those in <code>zero_rows</code> and <code>zero_cols</code> sets during one scan, then do a second scan that zeroes any cell whose row or column is in a set.</p>
+      <p>That is O(m × n) time and O(m + n) space. For the running example the sets are <code>zero_rows = {1}</code> and <code>zero_cols = {1}</code>. The only remaining question is where to keep those flags without allocating them.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: the flags can live in row 0 and column 0</h2>
+      <p>The flag for row <code>r</code> needs one bit. The cell <code>matrix[r][0]</code> is already there, one per row. The flag for column <code>c</code> needs one bit, and <code>matrix[0][c]</code> is there, one per column. So: when an interior zero is found at <code>(r, c)</code>, write <code>0</code> into <code>matrix[r][0]</code> and <code>matrix[0][c]</code>.</p>
+      <div class="callout">Overwriting a header cell with <code>0</code> loses no information that matters. If the header cell was going to be zeroed anyway, fine. If it was not, its own row or column is being zeroed, so it becomes 0 regardless.</div>
+      <p>There is one catch. Row 0 and column 0 are now storage, so their <em>own</em> flags cannot be stored in themselves. Whether row 0 needs clearing and whether column 0 needs clearing are checked first and saved in two plain booleans, <code>first_row_zero</code> and <code>first_col_zero</code>, before any marking happens.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: save, mark, apply, then finish the headers</h2>
+      <ul>
+        <li><code>first_row_zero = any(matrix[0][c] == 0 for c in range(cols))</code> and <code>first_col_zero = any(matrix[r][0] == 0 for r in range(rows))</code> — remember the headers' fate before touching them.</li>
+        <li>Pass 1, over <code>r in range(1, rows)</code> and <code>c in range(1, cols)</code>: <code>if matrix[r][c] == 0: matrix[r][0] = 0; matrix[0][c] = 0</code> — set the flags.</li>
+        <li>Pass 2, same interior: <code>if matrix[r][0] == 0 or matrix[0][c] == 0: matrix[r][c] = 0</code> — apply the flags.</li>
+        <li><code>if first_row_zero:</code> zero all of row 0; <code>if first_col_zero:</code> zero all of column 0.</li>
+      </ul>
+      <p>Both passes start at index 1, never 0. Pass 1 skipping the headers means only interior zeros set flags (the headers' own zeros are already captured in the booleans). Pass 2 skipping the headers means the flags are still intact while they are being read. The headers are cleared last, from the booleans, once nothing else needs them.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: save the booleans, then pass 1</h2>
+      <p>Row 0 is <code>1, 1, 1</code> and column 0 is <code>1, 1, 1</code>, so <code>first_row_zero = False</code> and <code>first_col_zero = False</code>. Neither header will be cleared at the end.</p>
+      <p>Pass 1 scans <code>(1,1), (1,2), (2,1), (2,2)</code>. Only <code>matrix[1][1]</code> is 0. So <code>matrix[1][0] = 0</code> (flag: row 1 goes) and <code>matrix[0][1] = 0</code> (flag: column 1 goes). The matrix is now <code>[[1,0,1],[0,0,1],[1,1,1]]</code>.</p>
+      <p>Those two written zeros sit in the header line, where pass 1 never looks, so they cannot trigger anything. Compare with the set version: <code>zero_rows = {1}</code> is exactly "<code>matrix[1][0]</code> is 0", and <code>zero_cols = {1}</code> is "<code>matrix[0][1]</code> is 0".</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: pass 2 applies the flags</h2>
+      <p>Same interior scan, now reading flags. <code>(1,1)</code>: row flag <code>matrix[1][0]</code> is 0, so it is set to 0 (it already was). <code>(1,2)</code>: row flag is 0, so <code>matrix[1][2] = 0</code>. <code>(2,1)</code>: row flag <code>matrix[2][0]</code> is 1, but column flag <code>matrix[0][1]</code> is 0, so <code>matrix[2][1] = 0</code>. <code>(2,2)</code>: row flag 1, column flag <code>matrix[0][2]</code> is 1, so it stays 1.</p>
+      <p>The matrix is <code>[[1,0,1],[0,0,0],[1,0,1]]</code>. The interior is finished, and the flags in the headers were read but never overwritten during this pass.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the headers, and the answer</h2>
+      <p><code>first_row_zero</code> is <code>False</code>, so row 0 is left alone. Its <code>0</code> at <code>(0, 1)</code> stays, which is correct: column 1 was supposed to be zeroed, and that cell is in column 1. <code>first_col_zero</code> is <code>False</code>, so column 0 is left alone too, and its <code>0</code> at <code>(1, 0)</code> is right for the same reason.</p>
+      <p>Final matrix: <code>[[1,0,1],[0,0,0],[1,0,1]]</code>, the expected output. The flag cells turned out to be exactly the cells the answer needed zeroed, which is the observation from step 3 in action.</p>
+      <div class="callout">Had the input been <code>[[0,1,2,0],[3,4,5,2],[1,3,1,5]]</code> instead, both booleans would be <code>True</code> (there is a 0 at <code>(0,0)</code>), and the two final loops would wipe row 0 and column 0, giving <code>[[0,0,0,0],[0,4,5,0],[0,3,1,0]]</code>.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong</h2>
+      <p><strong>Zeroing as you go.</strong> Scan the matrix and, on seeing a 0, immediately zero its row and column. The zeros you just wrote are then found later in the same scan. On the running example, <code>(1,1)</code> clears row 1 and column 1; the scan then reaches <code>(1,2)</code>, now 0, and clears column 2; then <code>(2,1)</code>, now 0, and clears row 2. Output: <code>[[1,0,0],[0,0,0],[0,0,0]]</code> instead of <code>[[1,0,1],[0,0,0],[1,0,1]]</code>. On a bigger matrix it cascades to all zeros.</p>
+      <p><strong>One shared boolean for both headers.</strong> Using <code>matrix[0][0]</code> as the flag for row 0 <em>and</em> column 0 conflates two different facts. On <code>[[1,2],[0,4]]</code> the zero at <code>(1,0)</code> is in column 0, so the shared cell becomes 0 and row 0 gets wiped too: <code>[[0,0],[0,0]]</code> instead of <code>[[0,2],[0,0]]</code>. Two separate booleans, read before any marking, are required.</p>
+      <p><strong>Clearing the headers before pass 2.</strong> If <code>first_row_zero</code> is applied between pass 1 and pass 2, every column flag reads 0 and the entire interior is zeroed. The header loops must be the last thing that runs.</p>
+      <div class="callout warn">Separate "find the triggers" from "apply them". Only original zeros are triggers; the flags are read only after all of them are written, and the flag storage is cleared last.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Two full scans of the interior plus one pass each over row 0 and column 0: <strong>O(m × n) time</strong>. The only new storage is two booleans: <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Extra space</th></tr>
+        <tr><td>Snapshot copy, zero on sight</td><td>O(m × n × (m + n))</td><td>O(m × n)</td></tr>
+        <tr><td>Two flag sets, two passes</td><td>O(m × n)</td><td>O(m + n)</td></tr>
+        <tr><td>Flags in row 0 / column 0</td><td>O(m × n)</td><td>O(1)</td></tr>
+      </table>
+      <p>The last two are the same algorithm; the only difference is where the flags live. Reaching for the in-matrix version is worth it when the interviewer asks for constant space, and knowing the flag-set version first makes the header bookkeeping much easier to explain.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Nineteen lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>first_row_zero</code> / <code>first_col_zero</code> — the headers' own verdicts, saved before marking.</li>
+        <li>Pass 1 over the interior: <code>if matrix[r][c] == 0: matrix[r][0] = 0; matrix[0][c] = 0</code> — write the flags.</li>
+        <li>Pass 2 over the interior: <code>if matrix[r][0] == 0 or matrix[0][c] == 0: matrix[r][c] = 0</code> — apply the flags.</li>
+        <li><code>if first_row_zero:</code> clear row 0; <code>if first_col_zero:</code> clear column 0 — last, from the booleans.</li>
+        <li>No <code>return</code>: the mutation is the result.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>save the headers' fate in two booleans, mark flags into row 0 / column 0, apply them to the interior, then clear the headers.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>matrix · [[1,1,1],[1,0,1],[1,1,1]] · dashed = flag cells, green = just written</h3>
+        <div class="grid" id="grid"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>booleans and flags</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="set_matrix_zeroes.py">set_matrix_zeroes.py</a> · <a href="set_matrix_zeroes_annotated.py">set_matrix_zeroes_annotated.py</a> · <a href="test_set_matrix_zeroes.py">test_set_matrix_zeroes.py</a> · <a href="../../md.html?f=medium/097-set-matrix-zeroes/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def set_zeroes(self, matrix: list[list[int]]) -> None:",
+    "        rows, cols = len(matrix), len(matrix[0])",
+    "        first_row_zero = any(matrix[0][c] == 0 for c in range(cols))",
+    "        first_col_zero = any(matrix[r][0] == 0 for r in range(rows))",
+    "        for r in range(1, rows):",
+    "            for c in range(1, cols):",
+    "                if matrix[r][c] == 0:",
+    "                    matrix[r][0] = 0",
+    "                    matrix[0][c] = 0",
+    "        for r in range(1, rows):",
+    "            for c in range(1, cols):",
+    "                if matrix[r][0] == 0 or matrix[0][c] == 0:",
+    "                    matrix[r][c] = 0",
+    "        if first_row_zero:",
+    "            for c in range(cols):",
+    "                matrix[0][c] = 0",
+    "        if first_col_zero:",
+    "            for r in range(rows):",
+    "                matrix[r][0] = 0"
+  ];
+
+  var ORIG = [[1, 1, 1], [1, 0, 1], [1, 1, 1]];
+  var MARKED = [[1, 0, 1], [0, 0, 1], [1, 1, 1]];
+  var DONE = [[1, 0, 1], [0, 0, 0], [1, 0, 1]];
+  var CASCADE = [[1, 0, 0], [0, 0, 0], [0, 0, 0]];
+  var HEADERS = [[0, 0], [0, 1], [0, 2], [1, 0], [2, 0]];
+
+  // Each state describes what the sticky panel shows for one step.
+  // g = grid values, cur/hit/dim = lists of [r, c], mark = dashed flag cells, chips = dict block.
+  var STATES = {
+    problem: {
+      caption: "One zero at (1, 1): clear its whole row and whole column, in place.",
+      g: ORIG, cur: [[1, 1]], hit: [], dim: [], mark: [], chips: [],
+      meta: "Target: <b>[[1,0,1],[0,0,0],[1,0,1]]</b>. The four corner 1s survive.", hl: []
+    },
+    brute: {
+      caption: "Record which rows and columns hold a zero, then clear them in a second pass.",
+      g: ORIG, cur: [[1, 1]], hit: [], dim: [], mark: [], chips: [["zero_rows", "{1}", "new"], ["zero_cols", "{1}", "new"]],
+      meta: "Correct in O(m × n) time, but the two sets cost O(m + n) memory.", hl: [],
+      big: "O(m + n) extra space", bigNote: "one flag per row and per column"
+    },
+    insight: {
+      caption: "Row 0 and column 0 already have one cell per column and per row: store the flags there.",
+      g: ORIG, cur: [], hit: [], dim: [], mark: HEADERS, chips: [["row r flag", "matrix[r][0]"], ["column c flag", "matrix[0][c]"]],
+      meta: "The dashed cells become the flag store. Their own fate is saved in two booleans first.", hl: [3, 4, 8, 9]
+    },
+    approach: {
+      caption: "Save the two booleans; pass 1 writes flags; pass 2 applies them; then clear the headers.",
+      g: ORIG, cur: [[1, 1], [1, 2], [2, 1], [2, 2]], hit: [], dim: [], mark: HEADERS, chips: [["first_row_zero", "?"], ["first_col_zero", "?"]],
+      meta: "Both passes run over the interior only (blue), indices 1 and up.", hl: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 17]
+    },
+    t1: {
+      caption: "Booleans: both False. Pass 1 finds the 0 at (1, 1) and writes flags at (1, 0) and (0, 1).",
+      g: MARKED, cur: [[1, 1]], hit: [[1, 0], [0, 1]], dim: [], mark: HEADERS,
+      chips: [["first_row_zero", "False"], ["first_col_zero", "False"], ["matrix[1][0]", "0", "new"], ["matrix[0][1]", "0", "new"]],
+      meta: "matrix = [[1,0,1],[0,0,1],[1,1,1]]. Written zeros sit in the headers, where pass 1 never looks.", hl: [3, 4, 7, 8, 9]
+    },
+    t2: {
+      caption: "Pass 2: (1,2) has row flag 0, (2,1) has column flag 0. Both become 0. (2,2) stays 1.",
+      g: DONE, cur: [[2, 2]], hit: [[1, 2], [2, 1]], dim: [], mark: HEADERS,
+      chips: [["(1,2)", "row flag 0 → 0", "new"], ["(2,1)", "col flag 0 → 0", "new"], ["(2,2)", "flags 1, 1 → keep"]],
+      meta: "matrix = [[1,0,1],[0,0,0],[1,0,1]]. The flags were read, never overwritten.", hl: [12, 13]
+    },
+    t3: {
+      caption: "Both booleans are False, so the headers stay as they are. Done.",
+      g: DONE, cur: [], hit: [[0, 1], [1, 0], [1, 1], [1, 2], [2, 1]], dim: [], mark: [],
+      chips: [["first_row_zero", "False"], ["first_col_zero", "False"]],
+      meta: "The flag cells (0,1) and (1,0) are in column 1 and row 1 anyway, so their 0s are correct.", hl: [14, 17],
+      big: "[[1,0,1],[0,0,0],[1,0,1]]", bigNote: "two booleans of extra memory"
+    },
+    pitfall: {
+      caption: "Zeroing on sight: the written zeros at (1,2) and (2,1) are found later and clear column 2 and row 2.",
+      g: CASCADE, cur: [[1, 2], [2, 1]], hit: [], dim: [], mark: [], chips: [["triggers seen", "(1,1), (1,2), (2,1), (2,2)"]],
+      meta: "Only (1,1) was an original zero. The other three were written by the algorithm itself.", hl: [7],
+      big: "[[1,0,0],[0,0,0],[0,0,0]]", bigNote: "not [[1,0,1],[0,0,0],[1,0,1]]: written zeros must never trigger"
+    },
+    complexity: {
+      caption: "Two interior scans, one header scan each way, two booleans.",
+      g: DONE, cur: [], hit: [], dim: [], mark: HEADERS, chips: [["scans", "2 × interior"], ["extra space", "2 booleans", "found"]],
+      meta: "Same algorithm as the flag sets; the flags just live inside the matrix.", hl: [5, 10],
+      big: "O(m × n) time · O(1) space", bigNote: "versus O(m + n) for the two sets"
+    },
+    final: {
+      caption: "The whole solution.",
+      g: DONE, cur: [], hit: [], dim: [], mark: [], chips: [["result", "[[1,0,1],[0,0,0],[1,0,1]]", "found"]],
+      meta: "", hl: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function has(list, r, c) {
+    for (var i = 0; i < list.length; i++) if (list[i][0] === r && list[i][1] === c) return true;
+    return false;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var grid = $("grid");
+    grid.style.gridTemplateColumns = "repeat(" + s.g[0].length + ", 1fr)";
+    var html = "";
+    for (var r = 0; r < s.g.length; r++) {
+      for (var c = 0; c < s.g[r].length; c++) {
+        var v = s.g[r][c], cls = "gc" + (v === 0 ? " zero" : "");
+        if (has(s.cur, r, c)) cls += " cur";
+        else if (has(s.hit, r, c)) cls += " hit";
+        else if (has(s.dim, r, c)) cls += " dim";
+        if (has(s.mark, r, c)) cls += " mark";
+        html += '<div class="' + cls + '">' + v + '</div>';
+      }
+    }
+    grid.innerHTML = html;
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.chips.length; k++) {
+        var e = s.chips[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var code = "";
+    for (var l = 0; l < CODE.length; l++) {
+      code += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = code;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

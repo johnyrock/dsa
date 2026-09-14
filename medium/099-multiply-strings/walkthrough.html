@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiply Strings Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  .fig .bit { fill: var(--bg); stroke: var(--line); stroke-width: 1.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .bit.one { fill: var(--panel); stroke: var(--muted); }
+  .fig .bit.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2.5; }
+  .fig .bit.hit { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 2.5; }
+  .fig .bit.dim { opacity: 0.35; }
+  .fig .val.zero { fill: var(--muted); font-weight: 400; }
+  .fig .rlbl { fill: var(--muted); font-size: 11px; text-anchor: start; font-family: ui-monospace, Menlo, monospace; }
+  .fig .rlbl.acc { fill: var(--ink); font-weight: 600; }
+  .fig .rlbl.cur { fill: var(--accent); font-weight: 600; }
+  .fig .rlbl.ok { fill: var(--ok); font-weight: 600; }
+  .fig .hdr { fill: var(--muted); font-size: 9px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .box.dim { opacity: 0.4; }
+  .fig .dig { fill: var(--ink); font-size: 22px; font-weight: 700; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .tag-txt { fill: var(--accent); font-size: 11px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .arrow { stroke: var(--accent); stroke-width: 2; fill: none; }
+  .fig .arrow-head { fill: var(--accent); }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Math · LeetCode #43</div>
+  <h1>Multiply Strings, narrated</h1>
+  <p>Scroll through the thinking, from the one-line <code>int()</code> cheat to the schoolbook grid where every digit pair has a fixed home in the result array, with the digit cells shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/math.html">Math</a> <span class="how">digit i of num1 times digit j of num2 lands at result[i + j + 1], carry into result[i + j]</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Two non-negative integers arrive as strings of digits, <code>num1</code> and <code>num2</code>. Return their product as a string. The catch is the rule attached: no converting the whole string with <code>int()</code>, no big-integer library. You have to multiply the way you were taught in school, one digit at a time.</p>
+      <div class="callout">Running example: <code>num1 = "123"</code>, <code>num2 = "456"</code>. The answer is <strong>"56088"</strong>.</div>
+      <p>The inputs can be 200 digits long, so the product can be 400 digits. That is far beyond a 64-bit integer, which is the practical reason the problem exists: in most languages you genuinely cannot take the shortcut.</p>
+      <p>Note the two input guarantees: no leading zeros except for the number <code>"0"</code> itself, and only digit characters. That means <code>"0"</code> is the only way a factor can be zero.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: cheat, or build partial products as strings</h2>
+      <p>In Python the cheat is one line, and it is worth writing down so you know what you are replacing:</p>
+      <pre class="code"><span class="ln">return str(int(num1) * int(num2))</span></pre>
+      <p style="margin-top:14px">It is disallowed, and in C++ or Java it would overflow anyway. The honest naive version imitates paper: for each digit of <code>num2</code> from the right, multiply all of <code>num1</code> by it to get a partial product string, pad it with the right number of trailing zeros, then add all those strings together with a string-addition helper.</p>
+      <pre class="code"><span class="ln">total = "0"</span><span class="ln">for j in range(len(num2) - 1, -1, -1):</span><span class="ln">    partial = multiply_by_digit(num1, num2[j]) + "0" * (len(num2) - 1 - j)</span><span class="ln">    total = add_strings(total, partial)</span></pre>
+      <p style="margin-top:14px">That is <strong>O(m · n)</strong> arithmetic plus <strong>O(n · (m + n))</strong> for the repeated string additions, and two helper functions to get right. It works, but the partial products are built only to be immediately dissolved into a sum. The better approach skips them entirely.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>Key insight: every digit pair has a fixed address</h2>
+      <p>Index the digits from the left, so <code>num1[i]</code> and <code>num2[j]</code>. Digit <code>i</code> of an m-digit number is worth <code>10^(m - 1 - i)</code>, and digit <code>j</code> of an n-digit number is worth <code>10^(n - 1 - j)</code>. Their product is worth <code>10^(m + n - 2 - i - j)</code>.</p>
+      <p>If the result array has <code>m + n</code> cells with the most significant on the left, then the cell for power <code>10^k</code> is at index <code>m + n - 1 - k</code>. Substitute: the ones digit of <code>num1[i] * num2[j]</code> belongs at index <code>i + j + 1</code>, and its tens digit one cell to the left, at <code>i + j</code>.</p>
+      <div class="callout">On the example: <code>i = 2</code>, <code>j = 2</code> is <code>3 × 6 = 18</code>. It lands at cells 5 and 4 of the six-cell result: the 8 goes to <code>result[5]</code>, the 1 to <code>result[4]</code>.</div>
+      <p>So there is no need for partial-product strings. Allocate <code>[0] * (m + n)</code> once, and add every digit product straight into its two cells. The addition of partial products happens implicitly, because cells accumulate.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>if num1 == "0" or num2 == "0": return "0"</code> — a zero factor is the only case where the whole array stays 0, and we want <code>"0"</code>, not a run of zeros.</li>
+        <li><code>result = [0] * (len(num1) + len(num2))</code> — one cell per possible output digit.</li>
+        <li>Two nested loops, both <code>range(len(...) - 1, -1, -1)</code>, walking right to left so that carries move into cells that have not been finalised yet.</li>
+        <li><code>total = int(num1[i]) * int(num2[j]) + result[i + j + 1]</code> — the digit product plus whatever earlier pairs already left in the ones cell.</li>
+        <li><code>result[i + j + 1] = total % 10</code> keeps the ones digit; <code>result[i + j] += total // 10</code> pushes the carry left.</li>
+        <li>After the loops, skip leading zeros with <code>while start &lt; len(result) - 1 and result[start] == 0</code>, then join.</li>
+      </ul>
+      <p>The panel starts with all six cells at 0 and the two pointers on the rightmost digits, <code>i = 2</code> and <code>j = 2</code>.</p>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: i = 2, j = 2</h2>
+      <p>The first pair is the two rightmost digits: <code>num1[2] = 3</code> and <code>num2[2] = 6</code>. Their product is <code>18</code>, and <code>result[5]</code> is still 0, so <code>total = 18 + 0 = 18</code>.</p>
+      <p>Split it: <code>18 % 10 = 8</code> goes into <code>result[5]</code>, and <code>18 // 10 = 1</code> is added into <code>result[4]</code>. The array is now <code>[0, 0, 0, 0, 1, 8]</code>.</p>
+      <p>Notice this matches paper arithmetic exactly. Multiplying 123 by the 6 of 456, the first thing you write is the 8 in the ones column and carry the 1.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: i = 2, j = 1, the first accumulation</h2>
+      <p>Still on <code>num1[2] = 3</code>, now with <code>num2[1] = 5</code>. The product is <code>15</code>, and the ones cell for this pair is <code>result[2 + 1 + 1] = result[4]</code>, which already holds the carry 1 from the previous pair. So <code>total = 15 + 1 = 16</code>.</p>
+      <p><code>16 % 10 = 6</code> replaces the 1 in <code>result[4]</code>; <code>16 // 10 = 1</code> is added into <code>result[3]</code>. The array becomes <code>[0, 0, 0, 1, 6, 8]</code>.</p>
+      <p>This is the moment the <code>+ result[i + j + 1]</code> term earns its keep: without it, the carry from <code>3 × 6</code> would have been overwritten by the 5 from <code>3 × 5</code>.</p>
+      <p>The loop then does <code>i = 2, j = 0</code> (<code>3 × 4 = 12</code>, giving <code>[0, 0, 1, 3, 6, 8]</code>) and moves <code>i</code> to the middle digit.</p>
+    </section>
+
+    <section class="step" data-state="trace3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: i = 1, j = 1, a carry into an unfinished cell</h2>
+      <p>After <code>i = 1, j = 2</code> (<code>2 × 6 = 12</code>, plus the 6 in <code>result[4]</code>, making 18, so the array is <code>[0, 0, 1, 4, 8, 8]</code>), the pair <code>num1[1] = 2</code>, <code>num2[1] = 5</code> gives <code>10</code>. Its ones cell is <code>result[3] = 4</code>, so <code>total = 10 + 4 = 14</code>.</p>
+      <p><code>result[3]</code> becomes <code>4</code> and <code>result[2]</code> goes from 1 to <code>2</code>. The array reads <code>[0, 0, 2, 4, 8, 8]</code>.</p>
+      <p>The remaining four pairs run the same way and finish at <code>[0, 5, 6, 0, 8, 8]</code>. Only the leftmost cell is a leading zero, so the strip loop stops at <code>start = 1</code> and the join returns <code>"56088"</code>.</p>
+      <div class="callout">Cells to the left of the current pair are never read until a later pair addresses them as <code>i + j + 1</code>. Walking right to left is what guarantees each cell is normalised to a single digit before it is finalised.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: dropping the cell, or the wrong cell</h2>
+      <p><strong>Overwriting instead of accumulating.</strong> Write <code>total = int(num1[i]) * int(num2[j])</code> without the <code>+ result[i + j + 1]</code> and every carry from an earlier pair is stomped on by the next pair's ones digit. On the running example the array finishes as <code>[0, 4, 5, 6, 2, 8]</code> and the function returns <strong>"45628"</strong> instead of "56088".</p>
+      <p><strong>Off-by-one on the address.</strong> Using <code>result[i + j]</code> for the ones digit and <code>result[i + j - 1]</code> for the carry shifts everything one place left, and at <code>i = j = 0</code> the carry index is <code>-1</code>, which Python quietly treats as the last cell. The example comes out as <strong>"560880"</strong>: an extra trailing digit with the leading 5 wrapped around to the end.</p>
+      <p><strong>Forgetting the zero guard.</strong> <code>"0" × "12345"</code> leaves six zero cells. The strip loop is deliberately bounded by <code>len(result) - 1</code> so it keeps one cell and returns <code>"0"</code>; drop the bound and it returns the empty string.</p>
+      <div class="callout warn">The ones cell is <code>i + j + 1</code>, the carry cell is <code>i + j</code>, and the ones cell is read before it is written. Check the pair <code>i = j = 0</code>: its carry must land at index 0, not index −1.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>The nested loops visit every pair of digits once, so with <code>m = len(num1)</code> and <code>n = len(num2)</code> that is <strong>O(m · n)</strong> multiplications. The strip and join are O(m + n) on top. The result array is the only extra storage, <strong>O(m + n)</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Partial-product strings, added one by one</td><td>O(m · n + n · (m + n))</td><td>O(m + n) per string, n strings built</td></tr>
+        <tr><td>Cell array with <code>i + j + 1</code></td><td>O(m · n)</td><td>O(m + n)</td></tr>
+        <tr><td>Karatsuba (out of scope)</td><td>O(n^1.585)</td><td>O(n) recursion</td></tr>
+      </table>
+      <p>For the 200-digit constraint that is 40,000 digit products, trivially fast. The cell approach wins on simplicity as much as on time: no helper functions, one array.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <ul>
+        <li><code>if num1 == "0" or num2 == "0": return "0"</code> — the zero factor, handled before any cells exist.</li>
+        <li><code>result = [0] * (len(num1) + len(num2))</code> — one cell per possible digit of the product.</li>
+        <li>Two <code>range(len(...) - 1, -1, -1)</code> loops — least significant digits first.</li>
+        <li><code>total = int(num1[i]) * int(num2[j]) + result[i + j + 1]</code> — the product plus what is already in the ones cell.</li>
+        <li><code>result[i + j + 1] = total % 10</code> and <code>result[i + j] += total // 10</code> — keep the ones digit, carry the rest.</li>
+        <li>The <code>while</code> strip and <code>"".join(...)</code> — drop leading zeros but keep at least one digit.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>digit i times digit j lives at result[i + j + 1], with its carry at result[i + j]; walk right to left and the cells add themselves up.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>digit cells · num1 = "123", num2 = "456"</h3>
+        <svg class="fig" id="fig" viewBox="0 0 400 230" aria-label="digits of num1, num2 and the result array"></svg>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>variables</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="multiply_strings.py">multiply_strings.py</a> · <a href="multiply_strings_annotated.py">multiply_strings_annotated.py</a> · <a href="test_multiply_strings.py">test_multiply_strings.py</a> · <a href="../../md.html?f=medium/099-multiply-strings/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def multiply(self, num1: str, num2: str) -> str:",
+    "        if num1 == \"0\" or num2 == \"0\":",
+    "            return \"0\"",
+    "        result = [0] * (len(num1) + len(num2))",
+    "        for i in range(len(num1) - 1, -1, -1):",
+    "            for j in range(len(num2) - 1, -1, -1):",
+    "                total = int(num1[i]) * int(num2[j]) + result[i + j + 1]",
+    "                result[i + j + 1] = total % 10",
+    "                result[i + j] += total // 10",
+    "        start = 0",
+    "        while start < len(result) - 1 and result[start] == 0:",
+    "            start += 1",
+    "        return \"\".join(str(d) for d in result[start:])"
+  ];
+
+  var NUM1 = ["1", "2", "3"], NUM2 = ["4", "5", "6"];
+  var EMPTY = ["?", "?", "?", "?", "?", "?"];
+  var ZEROS = [0, 0, 0, 0, 0, 0];
+  var DONE = [0, 5, 6, 0, 8, 8];
+
+  // Each state describes what the sticky panel shows for one step.
+  // i / j: the digit pair in progress (-1 = none); ones / tens: highlighted result cells;
+  // hits: result cells finalised (green); dim: result cells greyed out.
+  var STATES = {
+    problem: {
+      caption: "Multiply \"123\" by \"456\" digit by digit. The product has at most 3 + 3 = 6 digits.",
+      result: EMPTY, i: -1, j: -1, ones: -1, tens: -1, hits: [], dim: [],
+      meta: "num1 = <b>\"123\"</b>, num2 = <b>\"456\"</b>. The answer is <b>\"56088\"</b>, five digits, so one result cell will stay 0.", vars: [], hl: []
+    },
+    brute: {
+      caption: "Naive: build each partial product as a string, then add the strings together.",
+      result: EMPTY, i: -1, j: 2, ones: -1, tens: -1, hits: [], dim: [],
+      meta: "123 × 6 = \"738\", 123 × 5 = \"6150\", 123 × 4 = \"49200\", then add_strings three times.", vars: [],
+      hl: [], big: "O(m · n) + string adds", bigNote: "two helpers, n intermediate strings"
+    },
+    insight: {
+      caption: "Digit i of num1 times digit j of num2 belongs at result[i + j + 1], carry at result[i + j].",
+      result: [0, 0, 0, 0, 1, 8], i: 2, j: 2, ones: 5, tens: 4, hits: [], dim: [0, 1, 2, 3],
+      meta: "i = 2, j = 2: 3 × 6 = 18. Ones cell <b>2 + 2 + 1 = 5</b>, carry cell <b>2 + 2 = 4</b>.",
+      vars: [["i + j + 1", "5", "new"], ["i + j", "4"]], hl: [7, 8, 9]
+    },
+    approach: {
+      caption: "Start with six zero cells and both pointers on the rightmost digits.",
+      result: ZEROS, i: 2, j: 2, ones: 5, tens: 4, hits: [], dim: [],
+      meta: "Both loops run right to left. Every pair adds into result[i + j + 1] and carries into result[i + j].",
+      vars: [["i", "2", "new"], ["j", "2", "new"], ["result", "[0,0,0,0,0,0]"]], hl: [4, 5, 6, 7, 8, 9]
+    },
+    trace1: {
+      caption: "i = 2, j = 2: 3 × 6 = 18. Cell 5 takes the 8, cell 4 takes the carry 1.",
+      result: [0, 0, 0, 0, 1, 8], i: 2, j: 2, ones: 5, tens: 4, hits: [], dim: [0, 1, 2, 3],
+      meta: "total = 3 × 6 + result[5] = 18 + 0 = <b>18</b>. result[5] = 18 % 10 = <b>8</b>, result[4] += 18 // 10 = <b>1</b>.",
+      vars: [["i", "2"], ["j", "2"], ["total", "18", "new"], ["result", "[0,0,0,0,1,8]"]], hl: [7, 8, 9]
+    },
+    trace2: {
+      caption: "i = 2, j = 1: 3 × 5 = 15, plus the 1 already in cell 4, gives 16.",
+      result: [0, 0, 0, 1, 6, 8], i: 2, j: 1, ones: 4, tens: 3, hits: [5], dim: [0, 1, 2],
+      meta: "total = 3 × 5 + result[4] = 15 + 1 = <b>16</b>. result[4] = <b>6</b>, result[3] += <b>1</b>.",
+      vars: [["i", "2"], ["j", "1"], ["total", "16", "new"], ["result", "[0,0,0,1,6,8]"]], hl: [7, 8, 9]
+    },
+    trace3: {
+      caption: "i = 1, j = 1: 2 × 5 = 10, plus the 4 in cell 3, gives 14. Cell 2 goes from 1 to 2.",
+      result: [0, 0, 2, 4, 8, 8], i: 1, j: 1, ones: 3, tens: 2, hits: [4, 5], dim: [0, 1],
+      meta: "total = 2 × 5 + result[3] = 10 + 4 = <b>14</b>. result[3] = <b>4</b>, result[2] += 1 → <b>2</b>. Four pairs later: [0,5,6,0,8,8].",
+      vars: [["i", "1"], ["j", "1"], ["total", "14", "new"], ["result", "[0,0,2,4,8,8]"]], hl: [7, 8, 9]
+    },
+    pitfall: {
+      caption: "Dropping + result[i + j + 1] overwrites every carry. The array ends as [0,4,5,6,2,8].",
+      result: [0, 4, 5, 6, 2, 8], i: -1, j: -1, ones: -1, tens: -1, hits: [], dim: [0],
+      meta: "Each pair's ones digit replaces whatever the previous pair carried into that cell.",
+      vars: [["total", "int(num1[i]) * int(num2[j])"], ["return", "\"45628\""]], hl: [7],
+      big: "\"45628\", not \"56088\"", bigNote: "the carries were stomped on"
+    },
+    complexity: {
+      caption: "Nine digit pairs for a 3 × 3 multiplication, one array of m + n cells.",
+      result: DONE, i: -1, j: -1, ones: -1, tens: -1, hits: [1, 2, 3, 4, 5], dim: [0],
+      meta: "Every (i, j) pair is visited exactly once; the strip pass walks past the single leading 0.",
+      vars: [["time", "O(m · n)"], ["space", "O(m + n)", "found"]], hl: [5, 6, 11],
+      big: "O(m · n) time · O(m + n) space", bigNote: "200-digit inputs: 40,000 digit products"
+    },
+    final: {
+      caption: "The whole solution: cells [0,5,6,0,8,8], leading zero stripped, joined to \"56088\".",
+      result: DONE, i: -1, j: -1, ones: -1, tens: -1, hits: [1, 2, 3, 4, 5], dim: [0],
+      meta: "start stops at 1 because result[0] is the only leading zero.",
+      vars: [["start", "1"], ["return", "\"56088\"", "found"]], hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+      big: "\"56088\"", bigNote: "123 × 456"
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var figSvg = document.getElementById("fig");
+  function clearFig(h) { while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild); figSvg.setAttribute("viewBox", "0 0 400 " + h); }
+
+  // One row of digit boxes, most significant on the left. cls(k) returns the extra class for box k.
+  function drawDigitRow(label, digits, y, w, pitch, idxName, cls) {
+    var n = digits.length, x0 = 396 - (pitch * n - (pitch - w));
+    figSvg.appendChild(el("text", { "class": "rlbl acc", x: 8, y: y + 26 }, label));
+    for (var k = 0; k < n; k++) {
+      var x = x0 + k * pitch;
+      figSvg.appendChild(el("rect", { "class": "box" + cls(k), x: x, y: y, width: w, height: 40, rx: 7 }));
+      figSvg.appendChild(el("text", { "class": "dig", x: x + w / 2, y: y + 28 }, String(digits[k])));
+      figSvg.appendChild(el("text", { "class": "lbl", x: x + w / 2, y: y + 54 }, idxName + " = " + k));
+    }
+    return x0;
+  }
+
+  // Three rows: num1 with pointer i, num2 with pointer j, and the result cells with the i + j and i + j + 1 targets marked.
+  function renderMul(s) {
+    clearFig(230);
+    var w = 38, pitch = 46;
+    drawDigitRow("num1", NUM1, 6, w, pitch, "i", function (k) { return k === s.i ? " new" : (s.i >= 0 && k > s.i ? " dim" : ""); });
+    drawDigitRow("num2", NUM2, 70, w, pitch, "j", function (k) { return k === s.j ? " new" : (s.j >= 0 && k > s.j ? " dim" : ""); });
+    var x0 = drawDigitRow("result", s.result, 152, w, pitch, "", function (k) {
+      if (k === s.ones) return " new";
+      if (k === s.tens) return " new";
+      if (s.hits.indexOf(k) !== -1) return " found";
+      if (s.dim.indexOf(k) !== -1) return " dim";
+      return "";
+    });
+    if (s.ones >= 0) {
+      figSvg.appendChild(el("text", { "class": "tag-txt", x: x0 + s.ones * pitch + w / 2, y: 146 }, "i+j+1"));
+    }
+    if (s.tens >= 0) {
+      figSvg.appendChild(el("text", { "class": "tag-txt", x: x0 + s.tens * pitch + w / 2, y: 146 }, "i+j"));
+    }
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+    renderMul(s);
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">nothing yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

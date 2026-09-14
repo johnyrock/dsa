@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two Sum II - Input Array Is Sorted Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Two Pointers · LeetCode #167</div>
+  <h1>Two Sum II - Input Array Is Sorted, narrated</h1>
+  <p>Scroll through the thinking, from checking every pair to walking two pointers inward from both ends of a sorted array, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/two-pointers.html">Two Pointers</a> <span class="how">one pointer at each end; the sum decides which one moves inward</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You are handed an array <code>numbers</code> that is already sorted in non-decreasing order, plus a <code>target</code>. Exactly one pair of elements adds up to <code>target</code>, and you must return their <em>1-based</em> positions, smaller index first.</p>
+      <p>Two rules matter. You cannot use the same element twice, and the follow-up asks for constant extra space, which rules out the hash map that solves the unsorted version.</p>
+      <div class="callout">Running example: <code>numbers = [2, 7, 11, 15]</code>, <code>target = 9</code>. The answer is <strong>[1, 2]</strong>, because <code>2 + 7 = 9</code> and those values sit at positions 1 and 2 when counting from 1.</div>
+      <p>The word "sorted" is doing all the work in this problem. The unsorted version needs memory to remember what it has seen; the sorted version can reason about where the answer <em>must</em> be.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every pair</h2>
+      <p>Pick every <code>i</code>, then every <code>j &gt; i</code>, and check whether <code>numbers[i] + numbers[j]</code> equals the target. Sortedness is ignored completely.</p>
+      <pre class="code"><span class="ln">for i in range(len(numbers)):</span><span class="ln">    for j in range(i + 1, len(numbers)):</span><span class="ln">        if numbers[i] + numbers[j] == target:</span><span class="ln">            return [i + 1, j + 1]</span></pre>
+      <p style="margin-top:14px">That is <strong>O(n²)</strong> pairs. With <code>n = 30,000</code> it is roughly 450 million additions, which is far past what an interviewer wants to see, and it never uses the one fact the problem went out of its way to give us.</p>
+      <p>The hash-map trick from Two Sum brings it to O(n) time, but at the cost of O(n) space for the map. The problem explicitly asks for O(1) space, so that is not the intended answer either.</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: a sorted pair tells you which way to move</h2>
+      <p>Put one pointer on the smallest value and one on the largest. Look at their sum. Because the array is sorted, that single comparison eliminates a whole element, not just a pair.</p>
+      <p>If <code>numbers[left] + numbers[right]</code> is <strong>too small</strong>, then <code>numbers[left]</code> paired with <em>anything</em> is too small, because <code>numbers[right]</code> is already the largest partner available. So <code>left</code> can never be part of the answer and we move it up.</p>
+      <p>If the sum is <strong>too big</strong>, the mirror argument holds: <code>numbers[right]</code> is too big for every partner, because <code>numbers[left]</code> is the smallest one on offer. Move <code>right</code> down.</p>
+      <div class="callout">Every comparison throws away one element for good. That is why a single pass suffices, and why no memory is needed to record what was tried.</div>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The approach</h2>
+      <ul>
+        <li><code>left, right = 0, len(numbers) - 1</code>: start at the two ends.</li>
+        <li><code>while left &lt; right</code>: keep going while the two pointers still name different elements.</li>
+        <li><code>total = numbers[left] + numbers[right]</code>: the only pair examined this round.</li>
+        <li><code>if total == target</code>: done, return <code>[left + 1, right + 1]</code> to convert to 1-based positions.</li>
+        <li><code>if total &lt; target</code>: <code>left += 1</code>, otherwise <code>right -= 1</code>.</li>
+      </ul>
+      <p>The panel shows <code>left</code> in blue and <code>right</code> in green, with the cells the pointers have already discarded dimmed out. Watch the sum shrink toward 9.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: 2 + 15 is too big</h2>
+      <p>Start with <code>left = 0</code> and <code>right = 3</code>. The sum is <code>numbers[0] + numbers[3] = 2 + 15 = 17</code>, which is larger than 9.</p>
+      <p>Apply the reframe: 15 is the largest number in the array and even with the smallest partner it overshoots. So 15 is out of the running for every pair, and <code>right</code> moves down to 2. Nothing about <code>left</code> changes.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: 2 + 11 is still too big</h2>
+      <p>Now <code>left = 0</code> and <code>right = 2</code>. The sum is <code>2 + 11 = 13</code>. Still larger than 9, so the same reasoning applies to 11: it cannot pair with anything at or above 2, and 2 is the smallest value we have.</p>
+      <p><code>right</code> moves down again, to 1. Two elements have been eliminated with two additions, and no pair was ever revisited.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: 2 + 7 hits the target</h2>
+      <p>With <code>left = 0</code> and <code>right = 1</code>, the sum is <code>2 + 7 = 9</code>, exactly the target. The loop returns <code>[left + 1, right + 1] = [1, 2]</code>.</p>
+      <p>The <code>+ 1</code> on each index is the only concession to the problem's 1-based convention; the algorithm itself thinks in ordinary 0-based indices.</p>
+      <div class="callout">Three additions instead of six pair checks. On a 30,000-element array the gap is 30,000 versus 450 million.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the loop bound and the index base</h2>
+      <p><strong>Letting the pointers meet.</strong> Write <code>while left &lt;= right</code> instead of <code>while left &lt; right</code> and the two pointers can land on the same element. Take the running array with <code>target = 4</code>: the sums go 17, 13, 9, and then with <code>left = right = 0</code> the loop computes <code>2 + 2 = 4</code> and returns <strong>[1, 1]</strong>. That uses element 1 twice, which the problem forbids. With the strict bound the loop simply ends.</p>
+      <p><strong>Forgetting the 1-based shift.</strong> Returning <code>[left, right]</code> gives <strong>[0, 1]</strong> for the running example, which reads as a plausible answer and fails every test. The conversion belongs in the return statement and nowhere else.</p>
+      <p><strong>Moving the wrong pointer.</strong> If <code>total &gt; target</code> moves <code>left</code> up, the sum only grows: 17, then 22, then 26, and the loop walks off the end without ever finding 9.</p>
+      <div class="callout warn">Two different indices, so <code>left &lt; right</code>. Too small moves <code>left</code> up, too big moves <code>right</code> down, and the answer is shifted by one only when returning.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Each iteration moves exactly one pointer one step inward, and they start <code>n - 1</code> apart, so there are at most <code>n - 1</code> iterations: <strong>O(n) time</strong>. The state is two indices and a sum: <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Check every pair</td><td>O(n²)</td><td>O(1)</td></tr>
+        <tr><td>Hash map (Two Sum I)</td><td>O(n)</td><td>O(n)</td></tr>
+        <tr><td>Two pointers on sorted input</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>The hash map wins on unsorted input, where there is no way to know which direction to move. Sorting first and then using two pointers costs O(n log n), which is why the two-pointer walk is only the right answer when the input already arrives sorted.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Ten lines, and each one is a step above.</p>
+      <ul>
+        <li><code>left, right = 0, len(numbers) - 1</code> puts a pointer at each end.</li>
+        <li><code>while left &lt; right</code> stops before the pointers name the same element.</li>
+        <li><code>total = numbers[left] + numbers[right]</code> is the one pair examined per round.</li>
+        <li><code>return [left + 1, right + 1]</code> converts to the 1-based answer the moment the sum matches.</li>
+        <li><code>left += 1</code> when too small, <code>right -= 1</code> when too big: each branch discards an element that can never be in the answer.</li>
+        <li><code>return []</code> is never reached because a solution is guaranteed, but keeps the function total.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>on a sorted array, a too-small sum means the left value is useless and a too-big sum means the right value is useless, so walk inward.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>numbers · target = <span id="target">9</span></h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>pointers and sum</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="two_sum_ii_input_array_is_sorted.py">two_sum_ii_input_array_is_sorted.py</a> · <a href="two_sum_ii_input_array_is_sorted_annotated.py">two_sum_ii_input_array_is_sorted_annotated.py</a> · <a href="test_two_sum_ii_input_array_is_sorted.py">test_two_sum_ii_input_array_is_sorted.py</a> · <a href="../../md.html?f=medium/029-two-sum-ii-input-array-is-sorted/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def two_sum(self, numbers: list[int], target: int) -> list[int]:",
+    "        left, right = 0, len(numbers) - 1",
+    "        while left < right:",
+    "            total = numbers[left] + numbers[right]",
+    "            if total == target:",
+    "                return [left + 1, right + 1]",
+    "            if total < target:",
+    "                left += 1",
+    "            else:",
+    "                right -= 1",
+    "        return []"
+  ];
+
+  var NUMS = [2, 7, 11, 15];
+
+  // Each state describes what the sticky panel shows for one step.
+  // left/right are 0-based pointer positions (-1 = not placed); dim = discarded cells.
+  var STATES = {
+    problem: {
+      caption: "Which two of these sorted numbers add to 9? Return their 1-based positions.",
+      nums: NUMS, target: 9, left: -1, right: -1, dim: [], found: false, vars: [],
+      meta: "Sorted, exactly one answer, constant extra space.", hl: []
+    },
+    brute: {
+      caption: "Every pair: 6 additions here, about 450 million for n = 30,000.",
+      nums: NUMS, target: 9, left: 0, right: 1, dim: [], found: false, vars: [],
+      meta: "(2,7), (2,11), (2,15), (7,11), (7,15), (11,15) — sortedness never used.", hl: [],
+      big: "O(n²)", bigNote: "or O(n) with a hash map, which costs O(n) space"
+    },
+    reframe: {
+      caption: "Compare the smallest and largest. Too big means the largest is useless; too small means the smallest is.",
+      nums: NUMS, target: 9, left: 0, right: 3, dim: [], found: false, vars: [],
+      meta: "2 + 15 = 17 &gt; 9, so 15 cannot pair with anything: its smallest partner already overshoots.", hl: []
+    },
+    idea: {
+      caption: "Start at the two ends and let the sum decide which pointer moves inward.",
+      nums: NUMS, target: 9, left: 0, right: 3, dim: [], found: false,
+      vars: [["left", 0, "new"], ["right", 3, "new"], ["total", "?"]],
+      meta: "Blue = <b>left</b>, green = <b>right</b>. Dimmed cells have been ruled out.", hl: [2, 3, 4]
+    },
+    t1: {
+      caption: "2 + 15 = 17 > 9. Discard 15 and move right down to 2.",
+      nums: NUMS, target: 9, left: 0, right: 3, dim: [], found: false,
+      vars: [["left", 0], ["right", 3], ["total", 17, "new"]],
+      meta: "numbers[0] + numbers[3] = 2 + 15 = <b>17</b> &gt; 9 &rarr; <b>right -= 1</b>", hl: [4, 10]
+    },
+    t2: {
+      caption: "2 + 11 = 13 > 9. Discard 11 and move right down to 1.",
+      nums: NUMS, target: 9, left: 0, right: 2, dim: [3], found: false,
+      vars: [["left", 0], ["right", 2], ["total", 13, "new"]],
+      meta: "numbers[0] + numbers[2] = 2 + 11 = <b>13</b> &gt; 9 &rarr; <b>right -= 1</b>", hl: [4, 10]
+    },
+    t3: {
+      caption: "2 + 7 = 9. Match: return [0 + 1, 1 + 1] = [1, 2].",
+      nums: NUMS, target: 9, left: 0, right: 1, dim: [2, 3], found: true,
+      vars: [["left", 0, "found"], ["right", 1, "found"], ["total", 9, "found"]],
+      meta: "numbers[0] + numbers[1] = 2 + 7 = <b>9</b> == target &rarr; return <b>[1, 2]</b>", hl: [4, 5, 6],
+      big: "[1, 2]", bigNote: "three additions, no extra memory"
+    },
+    pitfall: {
+      caption: "target = 4 with while left <= right: the pointers meet at index 0 and 2 + 2 = 4 'matches'.",
+      nums: NUMS, target: 4, left: 0, right: 0, dim: [1, 2, 3], found: false,
+      vars: [["left", 0], ["right", 0], ["total", 4]],
+      meta: "Same element counted twice. With <b>left &lt; right</b> the loop ends instead.", hl: [3, 6],
+      big: "[1, 1], not a valid pair", bigNote: "and [0, 1] if the + 1 is forgotten"
+    },
+    complexity: {
+      caption: "The pointers start n − 1 apart and one of them moves every round.",
+      nums: NUMS, target: 9, left: 0, right: 1, dim: [2, 3], found: true,
+      vars: [["left", 0], ["right", 1], ["total", 9]],
+      meta: "At most n − 1 additions, two indices of state.", hl: [3, 8, 10],
+      big: "O(n) time · O(1) space", bigNote: "versus O(n²) for every pair"
+    },
+    final: {
+      caption: "The whole solution.",
+      nums: NUMS, target: 9, left: 0, right: 1, dim: [], found: true,
+      vars: [["left", 0, "found"], ["right", 1, "found"], ["total", 9, "found"]],
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.target;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.nums.length; i++) {
+      var cls = "cell";
+      if (s.found && (i === s.left || i === s.right)) cls += " hit";
+      else if (i === s.left) cls += " cur";
+      else if (i === s.right) cls += " hit";
+      else if (s.dim.indexOf(i) !== -1) cls += " dim";
+      var tag = i === s.left ? "left" : (i === s.right ? "right" : String(i));
+      arr += '<div class="' + cls + '">' + s.nums[i] + '<span class="idx">' + tag + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">pointers not placed yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Surrounded Regions Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* surrounded-regions additions: a grid of square cells with O, safe (border-connected), captured and current states */
+  .grid { display: grid; gap: 4px; margin: 8px 0 4px; }
+  .gc {
+    aspect-ratio: 1; border-radius: 6px; border: 2px solid var(--line); background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.9rem; color: var(--muted); transition: all 0.25s;
+  }
+  .gc.o { background: var(--panel); border-color: var(--muted); color: var(--ink); font-weight: 600; }
+  .gc.safe { background: var(--ok-soft); border-color: var(--ok); color: var(--ok); font-weight: 700; }
+  .gc.cap { background: var(--warn-soft); border-color: var(--warn); color: var(--warn); font-weight: 600; text-decoration: line-through; }
+  .gc.cur { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); transform: scale(1.06); }
+  .gc.scan { outline: 2px dashed var(--accent); outline-offset: -2px; }
+  .dict .kv.island { border-color: var(--ok); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Graph · LeetCode #130</div>
+  <h1>Surrounded Regions, narrated</h1>
+  <p>Scroll through the thinking, from asking every region "do you touch the edge?" to flood-filling from the border first so the surrounded regions are simply whatever is left, with the state of the board shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph Traversal</a> <span class="how">flood-fill from every border O, then flip the unreached O's</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get a board of <code>'X'</code> and <code>'O'</code> cells. A region is a group of <code>'O'</code> cells connected up, down, left or right. A region is <em>surrounded</em> when it is fenced in by <code>'X'</code> on every side, which is the same thing as saying that none of its cells sits on the border of the board.</p>
+      <p>Capture every surrounded region: flip all of its cells to <code>'X'</code>, in place. Regions that touch the border stay exactly as they are. Nothing is returned; the board itself is the answer.</p>
+      <div class="callout">Running example: a 4 × 5 board with three <code>'O'</code> regions. The blob at (1,1), (1,2), (2,2) touches no edge, so it is captured. The pair (1,4), (2,4) sits on the right edge and the single (3,1) sits on the bottom edge, so both survive.</div>
+      <p>Notice the definition is about the <em>whole region</em>, not individual cells. (1,1) is not on the border and has an <code>'X'</code> above and to its left, but that alone does not decide anything; what matters is whether any cell it can reach through <code>'O'</code> neighbours is on the border.</p>
+    </section>
+
+    <section class="step" data-state="naive">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: ask each cell whether it can escape</h2>
+      <p>The literal reading of the definition is a question per cell: "starting from this <code>'O'</code>, walking only through <code>'O'</code> cells, can I reach the border?" If not, this cell belongs to a surrounded region and should be flipped.</p>
+      <pre class="code"><span class="ln">for each cell (r, c) with board[r][c] == "O":</span><span class="ln">    if not reaches_border(r, c):   # a fresh BFS from scratch</span><span class="ln">        to_flip.append((r, c))</span><span class="ln">for (r, c) in to_flip:</span><span class="ln">    board[r][c] = "X"</span></pre>
+      <p style="margin-top:14px">This is correct, and it is the kind of thing to say out loud before improving it. It is also slow: each BFS can explore the whole region it starts in, and every cell of that region triggers its own BFS. On a board that is one big region of <code>k</code> cells that is <code>k</code> searches of <code>k</code> cells each, <strong>O((m × n)²)</strong>.</p>
+      <p>The waste is obvious once named. All cells of the same region get the same answer, yet the brute force recomputes it for each of them. Even a smarter version that flood-fills a region once, collects its cells in a list, and only flips them if the fill never touched the border, still needs that extra list per region and a two-phase "explore, then decide, then flip".</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: the border decides everything</h2>
+      <p>Flip the question around. Instead of "which regions are surrounded?", ask "which regions are <em>safe</em>?" A region is safe exactly when it contains at least one border cell. And every safe region is reachable by a flood fill that <em>starts</em> at a border <code>'O'</code>.</p>
+      <div class="callout">Flood-fill from every <code>'O'</code> on the four edges. Everything those fills reach is safe. Everything they do not reach is, by definition, surrounded.</div>
+      <p>That removes the decision from the traversal entirely. There is no "did I touch the border?" flag to track, and no undo, because the fill only ever runs over cells that are already known to be safe. The surrounded regions never get traversed at all; they are identified by omission in a plain scan afterwards.</p>
+      <p>The border of a 4 × 5 board has 14 cells. Only three of them are <code>'O'</code>: (1,4), (2,4) and (3,1). Those three seeds are the whole starting point.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: mark safe with a third symbol, then sweep</h2>
+      <p>The fill needs a way to remember what it has already reached, and the board has only two symbols. Introduce a third one, <code>'T'</code>, meaning "an <code>'O'</code> that is known to be safe". The algorithm becomes:</p>
+      <ul>
+        <li><code>mark_safe(r, c)</code>: push <code>(r, c)</code>, set it to <code>'T'</code>, and while the stack is non-empty pop a cell and, for each in-bounds neighbour that is still <code>'O'</code>, set it to <code>'T'</code> and push it. Mark on push so nothing is pushed twice.</li>
+        <li>Seed it from the left and right columns: <code>for c in (0, cols - 1)</code> across every row.</li>
+        <li>Seed it from the top and bottom rows: <code>for r in (0, rows - 1)</code> across every column. A corner is visited by both loops, but after the first visit it is <code>'T'</code>, not <code>'O'</code>, so the second visit is a no-op.</li>
+        <li>Sweep the whole board once: <code>'O'</code> becomes <code>'X'</code> (surrounded), <code>'T'</code> becomes <code>'O'</code> (safe, restored).</li>
+      </ul>
+      <p>The explicit stack rather than recursion matters at the limits: a 200 × 200 board of all <code>'O'</code> is one region 40,000 cells deep, well past Python's recursion limit.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the right edge</h2>
+      <p>The first seeding loop walks rows 0 to 3 and looks at column 0 and column 4 in each. Column 0 is all <code>'X'</code>. In column 4, row 0 is <code>'X'</code>, and row 1 is <code>'O'</code>: call <code>mark_safe(1, 4)</code>.</p>
+      <p>Inside: set (1,4) to <code>'T'</code>, push it. Pop (1,4). Its neighbours are (2,4) which is <code>'O'</code>, (0,4) which is <code>'X'</code>, (1,5) which is out of bounds, and (1,3) which is <code>'X'</code>. Mark (2,4) as <code>'T'</code> and push it. Pop (2,4): its neighbours are (3,4), (1,4), (2,5), (2,3), which are <code>'X'</code>, <code>'T'</code>, out of bounds and <code>'X'</code>. Nothing to push. The stack is empty.</p>
+      <p>The seeding loop continues to row 2, column 4 and finds <code>'T'</code> there, not <code>'O'</code>, so it does not start a second fill for the same region. Two cells marked safe so far.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: the bottom edge</h2>
+      <p>The second seeding loop walks columns 0 to 4 and looks at row 0 and row 3 in each. Row 0 is all <code>'X'</code>. In row 3, column 1 is <code>'O'</code>: call <code>mark_safe(3, 1)</code>.</p>
+      <p>Set (3,1) to <code>'T'</code>, push, pop. Its neighbours are (4,1) out of bounds, (2,1) which is <code>'X'</code>, (3,2) which is <code>'X'</code>, and (3,0) which is <code>'X'</code>. Nothing to push. Three cells are marked <code>'T'</code> in total, and the interior blob at (1,1), (1,2), (2,2) has never been touched. It is still plain <code>'O'</code>, which is exactly the signal the sweep will use.</p>
+      <div class="callout">The fills only ever visit safe cells. The surrounded blob is identified by never being visited.</div>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the sweep</h2>
+      <p>One final pass over all 20 cells. (1,1) is <code>'O'</code>, so it becomes <code>'X'</code>; likewise (1,2) and (2,2). That is the capture: 3 cells flipped. (1,4), (2,4) and (3,1) are <code>'T'</code>, so they become <code>'O'</code> again. Every other cell is <code>'X'</code> and is left alone.</p>
+      <p>After the sweep no <code>'T'</code> remains, so the caller never sees the temporary symbol. The board now reads: row 1 is <code>X X X X O</code>, row 2 is <code>X X X X O</code>, row 3 is <code>X O X X X</code>. That matches the expected output.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: seeding half the border</h2>
+      <p>Two specific bugs live here, and both pass a casual read.</p>
+      <p><strong>Seeding only the top row and the left column.</strong> Writing <code>for c in range(cols): if board[0][c] == "O"</code> and the matching <code>board[r][0]</code> loop, and forgetting <code>rows - 1</code> and <code>cols - 1</code>, misses every <code>'O'</code> on the bottom and right edges. On the running example (1,4), (2,4) and (3,1) are never marked, the sweep flips them along with the blob, and the whole board comes out <code>'X'</code>: <strong>0</strong> cells kept instead of 3.</p>
+      <p><strong>Marking reached cells as <code>'O'</code> instead of <code>'T'</code>.</strong> Then the fill cannot tell visited from unvisited. Popping (1,4) pushes (2,4); popping (2,4) sees (1,4) still <code>'O'</code> and pushes it back. The two cells ping-pong forever on any safe region with two or more cells.</p>
+      <div class="callout warn">Seed from all four edges, using <code>0</code> and <code>rows - 1</code> for rows, <code>0</code> and <code>cols - 1</code> for columns. And always mark with a symbol that the neighbour check will not match again.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>The seeding loops look at the 2 × (m + n) border cells. Across all fills, each <code>'O'</code> is marked and pushed at most once, popped at most once, and each pop looks at four neighbours. The sweep touches every cell once. Total <strong>O(m × n) time</strong>.</p>
+      <p>The stack can hold a large fraction of one region in the worst case, so <strong>O(m × n) space</strong> worst case. There is no visited set: the board's own <code>'T'</code> symbol records what has been reached.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Extra space</th></tr>
+        <tr><td>Fresh BFS from every O cell</td><td>O((m × n)²)</td><td>O(m × n) per search</td></tr>
+        <tr><td>Fill each region, collect cells, flip if no border hit</td><td>O(m × n)</td><td>O(m × n) list + visited set</td></tr>
+        <tr><td>Fill from border, mark T, sweep</td><td>O(m × n)</td><td>O(m × n) stack, no visited set</td></tr>
+      </table>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Every line maps to a step above.</p>
+      <ul>
+        <li><code>rows, cols = len(board), len(board[0])</code> caches the dimensions for the bounds check.</li>
+        <li><code>mark_safe(r, c)</code> is the flood fill: push, mark <code>'T'</code>, pop, and for each in-bounds neighbour that is still <code>'O'</code>, mark and push.</li>
+        <li><code>for c in (0, cols - 1)</code> inside <code>for r in range(rows)</code> seeds from the left and right columns.</li>
+        <li><code>for r in (0, rows - 1)</code> inside <code>for c in range(cols)</code> seeds from the top and bottom rows.</li>
+        <li>The sweep: <code>if board[r][c] == "O": board[r][c] = "X"</code> captures, <code>elif board[r][c] == "T": board[r][c] = "O"</code> restores.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>flood-fill from the border and mark what you reach; whatever is still an O afterwards is surrounded.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>board · 4 × 5 · green = safe (T), amber struck = captured, blue = exploring, dashed = seed</h3>
+        <div class="grid" id="grid"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>stack and counts</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="surrounded_regions.py">surrounded_regions.py</a> · <a href="surrounded_regions_annotated.py">surrounded_regions_annotated.py</a> · <a href="test_surrounded_regions.py">test_surrounded_regions.py</a> · <a href="../../md.html?f=medium/065-surrounded-regions/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def solve(self, board: list[list[str]]) -> None:",
+    "        rows, cols = len(board), len(board[0])",
+    "        def mark_safe(r: int, c: int) -> None:",
+    "            stack = [(r, c)]",
+    "            board[r][c] = \"T\"",
+    "            while stack:",
+    "                cr, cc = stack.pop()",
+    "                for nr, nc in ((cr + 1, cc), (cr - 1, cc), (cr, cc + 1), (cr, cc - 1)):",
+    "                    if 0 <= nr < rows and 0 <= nc < cols and board[nr][nc] == \"O\":",
+    "                        board[nr][nc] = \"T\"",
+    "                        stack.append((nr, nc))",
+    "        for r in range(rows):",
+    "            for c in (0, cols - 1):",
+    "                if board[r][c] == \"O\":",
+    "                    mark_safe(r, c)",
+    "        for c in range(cols):",
+    "            for r in (0, rows - 1):",
+    "                if board[r][c] == \"O\":",
+    "                    mark_safe(r, c)",
+    "        for r in range(rows):",
+    "            for c in range(cols):",
+    "                if board[r][c] == \"O\":",
+    "                    board[r][c] = \"X\"",
+    "                elif board[r][c] == \"T\":",
+    "                    board[r][c] = \"O\""
+  ];
+
+  // 0 = X, 1 = O (undecided), 2 = T (reached from the border, safe), 3 = captured (was O, now X)
+  var B0 = [
+    [0, 0, 0, 0, 0],
+    [0, 1, 1, 0, 1],
+    [0, 0, 1, 0, 1],
+    [0, 1, 0, 0, 0]
+  ];
+  var B1 = [
+    [0, 0, 0, 0, 0],
+    [0, 1, 1, 0, 2],
+    [0, 0, 1, 0, 2],
+    [0, 1, 0, 0, 0]
+  ];
+  var B2 = [
+    [0, 0, 0, 0, 0],
+    [0, 1, 1, 0, 2],
+    [0, 0, 1, 0, 2],
+    [0, 2, 0, 0, 0]
+  ];
+  var B3 = [
+    [0, 0, 0, 0, 0],
+    [0, 3, 3, 0, 2],
+    [0, 0, 3, 0, 2],
+    [0, 2, 0, 0, 0]
+  ];
+  var BAD = [
+    [0, 0, 0, 0, 0],
+    [0, 3, 3, 0, 3],
+    [0, 0, 3, 0, 3],
+    [0, 3, 0, 0, 0]
+  ];
+  var BORDER = [[0,0],[0,1],[0,2],[0,3],[0,4],[1,0],[1,4],[2,0],[2,4],[3,0],[3,1],[3,2],[3,3],[3,4]];
+
+  // Each state describes what the sticky panel shows for one step.
+  // g = board values, cur = [r, c] being explored (or null), seeds = list of [r, c] outlined as seed / scan cells.
+  var STATES = {
+    problem: {
+      caption: "Capture every O region that does not touch the border.",
+      g: B0, cur: null, seeds: [], chips: [],
+      meta: "Three O regions: the (1,1)-(1,2)-(2,2) blob is enclosed; (1,4)-(2,4) and (3,1) touch an edge.", hl: []
+    },
+    naive: {
+      caption: "From every O, run a fresh search asking whether the border is reachable.",
+      g: B0, cur: [1, 1], seeds: [], chips: [["O cells", "6"], ["searches", "6"], ["cells per search", "up to 6"]],
+      meta: "All three blob cells get the same answer, yet each one recomputes it.", hl: [],
+      big: "O((m × n)²)", bigNote: "one search per cell, each search up to the whole region"
+    },
+    reframe: {
+      caption: "A region is safe iff it contains a border cell, so flood-fill from the border O's only.",
+      g: B0, cur: null, seeds: BORDER, chips: [["border cells", "14"], ["border O's", "3", "found"]],
+      meta: "Seeds: (1,4), (2,4), (3,1). Everything those fills reach is safe; everything else is surrounded.", hl: []
+    },
+    idea: {
+      caption: "mark_safe floods from a seed with a stack, relabelling reached O's as T. Then one sweep flips O to X and T to O.",
+      g: B0, cur: null, seeds: [[1, 4], [2, 4], [3, 1]], chips: [["stack", "[]", "new"], ["marked T", "0", "new"]],
+      meta: "Mark on push so nothing is pushed twice. Seed from all four edges.", hl: [3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 17, 22, 23, 24, 25]
+    },
+    t1: {
+      caption: "Right edge: mark_safe(1, 4) marks (1,4) then reaches (2,4). Stack empties after two pops.",
+      g: B1, cur: [2, 4], seeds: [[1, 4]],
+      chips: [["stack", "[]"], ["marked T", "2", "found"]],
+      meta: "Pop (1,4): (2,4) is O → mark T, push. Pop (2,4): (3,4) X, (1,4) T, (2,3) X → nothing.", hl: [12, 13, 14, 15]
+    },
+    t2: {
+      caption: "Bottom edge: mark_safe(3, 1) marks (3,1); all its neighbours are X. The blob is untouched.",
+      g: B2, cur: [3, 1], seeds: [[3, 1]],
+      chips: [["stack", "[]"], ["marked T", "3", "found"], ["untouched O", "3"]],
+      meta: "Top row and left column are all X, so no more seeds. (1,1), (1,2), (2,2) are still plain O.", hl: [16, 17, 18, 19]
+    },
+    t3: {
+      caption: "Sweep: the three plain O's become X (captured); the three T's become O again.",
+      g: B3, cur: null, seeds: [],
+      chips: [["captured", "3", "found"], ["restored", "3", "found"]],
+      meta: "Row 1: X X X X O · Row 2: X X X X O · Row 3: X O X X X.", hl: [20, 21, 22, 23, 24, 25],
+      big: "3 captured · 3 kept", bigNote: "no T remains after the sweep"
+    },
+    pitfall: {
+      caption: "Seeding only row 0 and column 0 never marks (1,4), (2,4), (3,1): the sweep captures them too.",
+      g: BAD, cur: null, seeds: [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [1, 0], [2, 0], [3, 0]],
+      chips: [["marked T", "0"], ["captured", "6"]],
+      meta: "Every O is flipped. Seeds must come from 0 and rows − 1, 0 and cols − 1.", hl: [13, 17],
+      big: "0 O's left, not 3", bigNote: "half the border was never seeded"
+    },
+    complexity: {
+      caption: "Every O pushed at most once, every cell swept once.",
+      g: B3, cur: null, seeds: [],
+      chips: [["cells", "20"], ["pushes", "3"], ["border checks", "14"]],
+      meta: "The board's own T symbol is the visited set, so no extra memory for that.", hl: [6, 7, 8, 20, 21],
+      big: "O(m × n) time · O(m × n) stack worst case", bigNote: "an explicit stack avoids the recursion limit"
+    },
+    final: {
+      caption: "The whole solution.",
+      g: B3, cur: null, seeds: [], chips: [["captured", "3", "found"]], meta: "",
+      hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var grid = $("grid");
+    grid.style.gridTemplateColumns = "repeat(" + s.g[0].length + ", 1fr)";
+    var html = "";
+    for (var r = 0; r < s.g.length; r++) {
+      for (var c = 0; c < s.g[r].length; c++) {
+        var v = s.g[r][c];
+        var cls = "gc" + (v === 1 ? " o" : v === 2 ? " safe" : v === 3 ? " cap" : "");
+        if (s.cur && s.cur[0] === r && s.cur[1] === c) cls += " cur";
+        for (var k = 0; k < s.seeds.length; k++) {
+          if (s.seeds[k][0] === r && s.seeds[k][1] === c) { cls += " scan"; break; }
+        }
+        html += '<div class="' + cls + '">' + (v === 0 || v === 3 ? "X" : "O") + '</div>';
+      }
+    }
+    grid.innerHTML = html;
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k2 = 0; k2 < s.chips.length; k2++) {
+        var e = s.chips[k2];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var code = "";
+    for (var l = 0; l < CODE.length; l++) {
+      code += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = code;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l.replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

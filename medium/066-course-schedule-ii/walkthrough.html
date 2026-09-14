@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Course Schedule II Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; flex-wrap: wrap; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem; min-width: 44px;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .edge { stroke: var(--muted); stroke-width: 2.5; fill: none; opacity: 0.7; transition: opacity 0.25s, stroke 0.25s; }
+  .fig .edge.dim { opacity: 0.25; }
+  .fig .edge.hit { stroke: var(--ok); opacity: 1; }
+  .fig .edge.cycle { stroke: var(--warn); stroke-dasharray: 6 4; animation: dash 1s linear infinite; opacity: 1; }
+  .fig .head { fill: var(--muted); }
+  .fig .head.cycle { fill: var(--warn); }
+  .fig .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 16px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .fig .node.cur circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3.5; }
+  .fig .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .fig .node.dim circle, .fig .node.dim text { opacity: 0.35; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .array.compact { gap: 4px; margin-top: 2px; }
+  .array[hidden] { display: none; }
+  .array.compact .cell { min-width: 28px; padding: 3px 0 2px; font-size: 0.9rem; border-width: 1.5px; border-radius: 6px; }
+  .array.compact .cell .idx { display: none; }
+  .array.compact .cell.cur { transform: none; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; margin-bottom: 6px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Topological Sort · LeetCode #210</div>
+  <h1>Course Schedule II, narrated</h1>
+  <p>Scroll through the thinking, from trying every permutation of courses to Kahn's algorithm that repeatedly takes a course with nothing left to wait for and writes down the order it took them in, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/topological-sort.html">Topological Sort</a> <span class="how">Kahn's algorithm: BFS from zero-indegree courses, the pop order is the answer</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>There are <code>numCourses</code> courses numbered from 0. Each pair <code>[a, b]</code> says course <code>b</code> must be taken before course <code>a</code>. Return an order in which to take all the courses so that every prerequisite comes before the course that needs it. If no such order exists because the prerequisites loop back on themselves, return <code>[]</code>.</p>
+      <p>This is <a href="../018-course-schedule/walkthrough.html">Course Schedule</a> with one extra demand: not just "is it possible?" but "show me one way". Any valid order is accepted, so there is no single right answer to match, only a constraint to satisfy.</p>
+      <div class="callout">Running example: <code>numCourses = 4</code>, <code>prerequisites = [[1,0],[2,0],[3,1],[3,2]]</code>. Course 0 unlocks 1 and 2; both of those unlock 3. The graph is a diamond. <code>[0, 1, 2, 3]</code> is a valid answer, and so is <code>[0, 2, 1, 3]</code>.</div>
+      <p>Read each pair carefully: <code>[1, 0]</code> means "1 needs 0", so 0 comes first. Getting that direction backwards is the most common bug in this problem, and it produces an answer that looks plausible and is completely wrong.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every order</h2>
+      <p>There are only <code>numCourses!</code> orderings. Generate each one, and for each check that every pair <code>[a, b]</code> has <code>b</code> positioned before <code>a</code>. Return the first order that passes; if none does, return <code>[]</code>.</p>
+      <pre class="code"><span class="ln">for order in permutations(range(num_courses)):</span><span class="ln">    pos = {c: i for i, c in enumerate(order)}</span><span class="ln">    if all(pos[b] &lt; pos[a] for a, b in prerequisites):</span><span class="ln">        return list(order)</span><span class="ln">return []</span></pre>
+      <p style="margin-top:14px">This is correct and it is worth saying out loud, because it states the constraint precisely: <code>pos[b] &lt; pos[a]</code> for every pair. It is also hopeless. Four courses is 24 orders; the constraint allows 2000 courses, and <code>2000!</code> has over 5,700 digits. Each check is another O(E), so the whole thing is <strong>O(n! × E)</strong>.</p>
+      <p>The waste is that a permutation is built blindly and then rejected as a whole. Almost every one fails on the very first pair, and we learn nothing from the failure that stops us generating the next thousand permutations with the same flaw.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: a course is ready when nothing is left to wait for</h2>
+      <p>Instead of guessing an order and checking it, <em>build</em> the order one course at a time, only ever placing a course that is legal to place right now. Which courses are legal? The ones all of whose prerequisites are already in the order. At the very start, that means courses with no prerequisites at all.</p>
+      <p>Count, for each course, how many prerequisites it still has outstanding: its <strong>indegree</strong> in the graph where each pair <code>[a, b]</code> is an edge <code>b → a</code>. When a course is placed, every course it unlocks has one fewer prerequisite outstanding, so decrement their indegree. Whenever a course's indegree hits 0, it becomes legal to place.</p>
+      <div class="callout">Keep a queue of ready courses. Pop one, append it to <code>order</code>, decrement its neighbours, enqueue any that reach 0. The order in which courses are popped <em>is</em> a valid answer. This is Kahn's algorithm.</div>
+      <p>And it detects cycles for free. A course inside a cycle has a prerequisite inside the same cycle, which has a prerequisite inside the cycle, and so on. None of them can ever reach indegree 0, so none is ever popped, and <code>order</code> ends up shorter than <code>num_courses</code>.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>graph = [[] for _ in range(num_courses)]</code> and <code>indegree = [0] * num_courses</code>: an adjacency list and a counter per course.</li>
+        <li><code>for course, pre in prerequisites: graph[pre].append(course); indegree[course] += 1</code>: the edge runs from the prerequisite to the course it unlocks.</li>
+        <li><code>queue = deque(c for c in range(num_courses) if indegree[c] == 0)</code>: everything with no prerequisites is ready immediately. Iterating <code>range(num_courses)</code>, not the pairs, catches courses that appear in no pair at all.</li>
+        <li><code>while queue:</code> pop a course, <code>order.append(course)</code>, then for each <code>nxt in graph[course]</code> do <code>indegree[nxt] -= 1</code> and enqueue <code>nxt</code> only if it is now exactly 0.</li>
+        <li><code>return order if len(order) == num_courses else []</code>: a short order means a cycle swallowed the rest.</li>
+      </ul>
+      <p>For the running example the build step produces <code>graph = [[1, 2], [3], [3], []]</code> and <code>indegree = [0, 1, 1, 2]</code>. Course 3 has indegree 2 because it waits on both 1 and 2.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: seed the queue and take course 0</h2>
+      <p>Scan <code>indegree = [0, 1, 1, 2]</code>. Only course 0 is at 0, so <code>queue = [0]</code> and <code>order = []</code>.</p>
+      <p>Pop 0. <code>order = [0]</code>. Its neighbours are <code>graph[0] = [1, 2]</code>. Decrement course 1: <code>1 - 1 = 0</code>, enqueue it. Decrement course 2: <code>1 - 1 = 0</code>, enqueue it. Now <code>indegree = [0, 0, 0, 2]</code> and <code>queue = [1, 2]</code>.</p>
+      <p>Course 3 has not moved: it is still waiting on two things. That is the whole mechanism in one step — placing 0 made exactly the courses that depended only on 0 ready, and nothing else.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: take 1, then 2</h2>
+      <p>Pop 1 (the queue is FIFO, and 1 was enqueued before 2). <code>order = [0, 1]</code>. Its only neighbour is 3: <code>indegree[3]</code> goes <code>2 - 1 = 1</code>. That is not 0, so 3 is <em>not</em> enqueued yet. <code>queue = [2]</code>.</p>
+      <p>Pop 2. <code>order = [0, 1, 2]</code>. Its only neighbour is 3 again: <code>indegree[3]</code> goes <code>1 - 1 = 0</code>. Now it is enqueued. <code>queue = [3]</code>, <code>indegree = [0, 0, 0, 0]</code>.</p>
+      <div class="callout">Course 3 was decremented twice but enqueued once, on the decrement that took it to exactly 0. That <code>== 0</code> test is what stops a course from appearing in the order twice.</div>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: take 3, then check the length</h2>
+      <p>Pop 3. <code>order = [0, 1, 2, 3]</code>. <code>graph[3]</code> is empty, so nothing changes and the queue is now empty; the loop ends.</p>
+      <p><code>len(order) == 4 == num_courses</code>, so return <code>[0, 1, 2, 3]</code>. Check it against the pairs: 0 before 1, 0 before 2, 1 before 3, 2 before 3. All four hold.</p>
+      <p>Contrast a cycle: <code>numCourses = 3</code>, <code>[[1,0],[2,1],[1,2]]</code>. Here <code>indegree = [0, 2, 1]</code>. Pop 0, decrement 1 to <code>2 - 1 = 1</code>, and the queue is empty. <code>order = [0]</code> has length 1, not 3, so the answer is <code>[]</code>. Courses 1 and 2 each wait for the other and neither ever reaches 0.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: edge direction and the length check</h2>
+      <p>Two specific bugs live here, and both produce output that looks like an answer.</p>
+      <p><strong>Building the edge backwards.</strong> Writing <code>graph[course].append(pre)</code> and <code>indegree[pre] += 1</code> turns every arrow around. On the running example that gives <code>indegree = [2, 1, 1, 0]</code>, so course 3 is popped first, and the algorithm returns <strong><code>[3, 1, 2, 0]</code></strong>: course 3 before either of its prerequisites, and course 0 last. The pair <code>[a, b]</code> means <code>b</code> first, so the edge is <code>b → a</code>.</p>
+      <p><strong>Returning <code>order</code> without the length check.</strong> With a cycle the queue just runs dry early. On <code>[[1,0],[2,1],[1,2]]</code> the wrong version returns <code>[0]</code>, a partial schedule, instead of <code>[]</code>. Kahn's algorithm never raises an error on a cycle; the only symptom is a short order, so you have to look for it.</p>
+      <div class="callout warn">Edge from prerequisite to course, and always compare <code>len(order)</code> to <code>num_courses</code> before returning.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Building the graph is one pass over the E pairs. The loop pops each of the V courses at most once, and across all pops each edge is examined once. That is <strong>O(V + E) time</strong>.</p>
+      <p>The adjacency list holds E entries, and <code>indegree</code>, the queue and <code>order</code> are each at most V long: <strong>O(V + E) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Try every permutation</td><td>O(n! × E)</td><td>O(n)</td></tr>
+        <tr><td>DFS post-order, reversed, with cycle colouring</td><td>O(V + E)</td><td>O(V + E) + recursion depth</td></tr>
+        <tr><td>Kahn's algorithm (this solution)</td><td>O(V + E)</td><td>O(V + E)</td></tr>
+      </table>
+      <p>The DFS version is equally fast but has to detect cycles explicitly with a "currently on the stack" colour and can hit the recursion limit at 2000 courses in a chain. Kahn's is iterative and the cycle check is a single length comparison.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Every line maps to a step above.</p>
+      <ul>
+        <li><code>graph[pre].append(course)</code> and <code>indegree[course] += 1</code> build the dependency graph with edges from prerequisite to course.</li>
+        <li><code>queue = deque(c for c in range(num_courses) if indegree[c] == 0)</code> seeds with every course that is ready immediately.</li>
+        <li><code>course = queue.popleft()</code> then <code>order.append(course)</code>: the pop sequence is the answer.</li>
+        <li><code>indegree[nxt] -= 1</code> and <code>if indegree[nxt] == 0: queue.append(nxt)</code> release a course exactly once, when its last prerequisite is placed.</li>
+        <li><code>return order if len(order) == num_courses else []</code> turns a cycle into an empty answer.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>repeatedly take any course with zero unmet prerequisites and record it; if you run out of courses before you run out of numbers, there was a cycle.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>courses · numCourses = 4, prerequisites = [[1,0],[2,0],[3,1],[3,2]]</h3>
+        <svg class="fig" id="fig" viewBox="0 0 400 200" aria-label="dependency graph"></svg>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>order · one slot per course</h3>
+        <div class="array" id="array"></div>
+      </div>
+
+      <div class="block">
+        <h3>indegree and queue</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="course_schedule_ii.py">course_schedule_ii.py</a> · <a href="course_schedule_ii_annotated.py">course_schedule_ii_annotated.py</a> · <a href="test_course_schedule_ii.py">test_course_schedule_ii.py</a> · <a href="../../md.html?f=medium/066-course-schedule-ii/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def find_order(self, num_courses: int, prerequisites: list[list[int]]) -> list[int]:",
+    "        graph = [[] for _ in range(num_courses)]",
+    "        indegree = [0] * num_courses",
+    "        for course, pre in prerequisites:",
+    "            graph[pre].append(course)",
+    "            indegree[course] += 1",
+    "        queue = deque(c for c in range(num_courses) if indegree[c] == 0)",
+    "        order = []",
+    "        while queue:",
+    "            course = queue.popleft()",
+    "            order.append(course)",
+    "            for nxt in graph[course]:",
+    "                indegree[nxt] -= 1",
+    "                if indegree[nxt] == 0:",
+    "                    queue.append(nxt)",
+    "        return order if len(order) == num_courses else []"
+  ];
+
+  // order slots: [label, value]; "?" = not filled yet
+  var EMPTY = [["pos 0", "?"], ["pos 1", "?"], ["pos 2", "?"], ["pos 3", "?"]];
+  var FULL = [["pos 0", 0], ["pos 1", 1], ["pos 2", 2], ["pos 3", 3]];
+
+  // Each state describes what the sticky panel shows for one step.
+  // cur / hits / dim index the graph nodes; acur / ahits / adim index the order slots.
+  var STATES = {
+    problem: {
+      caption: "Return an order that takes every prerequisite before the course that needs it, or [] if impossible.",
+      dp: EMPTY, acur: -1, ahits: [], adim: [0, 1, 2, 3], cur: -1, hits: [], dim: [], vars: [],
+      meta: "Edges run prerequisite → course: 0→1, 0→2, 1→3, 2→3. A diamond.", hl: []
+    },
+    brute: {
+      caption: "Generate all 4! = 24 permutations and check every pair against each one.",
+      dp: [["pos 0", 3], ["pos 1", 2], ["pos 2", 1], ["pos 3", 0]], acur: -1, ahits: [], adim: [], cur: -1, hits: [], dim: [], vars: [["permutations", "24"], ["pairs to check", "4"]],
+      meta: "[3, 2, 1, 0] fails on the first pair: 0 is after 1. Most permutations die this way.", hl: [],
+      big: "O(n! × E)", bigNote: "2000! has over 5,700 digits"
+    },
+    insight: {
+      caption: "A course is ready when its indegree (unmet prerequisites) reaches 0. Take ready courses; the take order is the answer.",
+      dp: EMPTY, acur: -1, ahits: [], adim: [0, 1, 2, 3], cur: 0, hits: [], dim: [1, 2, 3],
+      vars: [["indegree[0]", "0", "found"], ["indegree[1]", "1"], ["indegree[2]", "1"], ["indegree[3]", "2"]],
+      meta: "Only course 0 has nothing to wait for. Placing it will make 1 and 2 ready, but not 3.", hl: []
+    },
+    approach: {
+      caption: "Build graph and indegree, seed a queue with the zero-indegree courses, pop and decrement.",
+      dp: EMPTY, acur: -1, ahits: [], adim: [0, 1, 2, 3], cur: -1, hits: [], dim: [],
+      vars: [["graph", "[[1,2], [3], [3], []]", "new"], ["indegree", "[0, 1, 1, 2]", "new"], ["order", "[]"]],
+      meta: "graph[pre] lists what pre unlocks; indegree[course] counts what course waits on.", hl: [2, 3, 4, 5, 6, 7, 8]
+    },
+    t1: {
+      caption: "queue = [0]. Pop 0 → order = [0]. Decrement 1 and 2 to 0 and enqueue both.",
+      dp: [["pos 0", 0], ["pos 1", "?"], ["pos 2", "?"], ["pos 3", "?"]], acur: 0, ahits: [], adim: [1, 2, 3], cur: 0, hits: [1, 2], dim: [3],
+      vars: [["order", "[0]", "new"], ["queue", "[1, 2]", "new"], ["indegree", "[0, 0, 0, 2]"]],
+      meta: "indegree[1] = 1 − 1 = <b>0</b>, indegree[2] = 1 − 1 = <b>0</b>. Course 3 still waits on two.", hl: [7, 10, 11, 12, 13, 14, 15]
+    },
+    t2: {
+      caption: "Pop 1: indegree[3] → 1, not enqueued. Pop 2: indegree[3] → 0, enqueued.",
+      dp: [["pos 0", 0], ["pos 1", 1], ["pos 2", 2], ["pos 3", "?"]], acur: 2, ahits: [0, 1], adim: [3], cur: 2, hits: [0, 1, 3], dim: [],
+      vars: [["order", "[0, 1, 2]", "new"], ["queue", "[3]", "new"], ["indegree", "[0, 0, 0, 0]"]],
+      meta: "indegree[3]: 2 − 1 = 1 (from course 1), then 1 − 1 = <b>0</b> (from course 2). Enqueued once.", hl: [10, 11, 12, 13, 14, 15]
+    },
+    t3: {
+      caption: "Pop 3: order = [0, 1, 2, 3], queue empty. len(order) == 4 == num_courses.",
+      dp: FULL, acur: 3, ahits: [0, 1, 2], adim: [], cur: 3, hits: [0, 1, 2], dim: [],
+      vars: [["order", "[0, 1, 2, 3]", "found"], ["queue", "[]"], ["len(order)", "4 == num_courses", "found"]],
+      meta: "0 before 1 ✓ · 0 before 2 ✓ · 1 before 3 ✓ · 2 before 3 ✓", hl: [16],
+      big: "[0, 1, 2, 3]", bigNote: "a cycle would have left order short and returned []"
+    },
+    pitfall: {
+      caption: "graph[course].append(pre) reverses every arrow: course 3 is popped first.",
+      dp: [["pos 0", 3], ["pos 1", 1], ["pos 2", 2], ["pos 3", 0]], acur: 0, ahits: [], adim: [], cur: 3, hits: [], dim: [], bad: [0],
+      vars: [["indegree", "[2, 1, 1, 0]"], ["order", "[3, 1, 2, 0]"]],
+      meta: "[a, b] means b first, so the edge is b → a. And return [] when len(order) &lt; num_courses.", hl: [5, 6, 16],
+      big: "[3, 1, 2, 0], not [0, 1, 2, 3]", bigNote: "course 3 scheduled before either prerequisite"
+    },
+    complexity: {
+      caption: "Every course popped once, every edge examined once.",
+      dp: FULL, acur: -1, ahits: [0, 1, 2, 3], adim: [], cur: -1, hits: [0, 1, 2, 3], dim: [],
+      vars: [["V", "4"], ["E", "4"], ["pops", "4"], ["decrements", "4"]],
+      meta: "The queue, order and indegree are each at most V long; the graph holds E entries.", hl: [9, 10, 12],
+      big: "O(V + E) time · O(V + E) space", bigNote: "versus O(n! × E) for permutations"
+    },
+    final: {
+      caption: "The whole solution.",
+      dp: FULL, acur: -1, ahits: [0, 1, 2, 3], adim: [], cur: -1, hits: [], dim: [],
+      vars: [["order", "[0, 1, 2, 3]", "found"]],
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---- figure renderer: a directed graph from nodes + edges (shared with 018-course-schedule) ----
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var R = 19;
+  function layoutGraph(g) {
+    var nodes = g.nodes.map(function (n) { return { val: n[0], x: n[1], y: n[2] }; });
+    return { nodes: nodes, edges: g.edges, directed: !!g.directed, h: g.h || 200, note: g.note };
+  }
+  var figSvg = document.getElementById("fig");
+  function renderFig(fig, s) {
+    while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild);
+    figSvg.setAttribute("viewBox", "0 0 400 " + fig.h);
+    var defs = el("defs", {});
+    [["arrow", "head"], ["arrow-cycle", "head cycle"], ["arrow-hit", "head hit"]].forEach(function (m) {
+      var mk = el("marker", { id: m[0], viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "6", markerHeight: "6", orient: "auto" });
+      mk.appendChild(el("path", { d: "M0,0 L10,5 L0,10 z", "class": m[1] }));
+      defs.appendChild(mk);
+    });
+    figSvg.appendChild(defs);
+    var bad = s.bad || [];
+    function state(i) {
+      if (i === s.cur) return "cur";
+      if (bad.indexOf(i) !== -1) return "bad";
+      if (s.hits.indexOf(i) !== -1) return "hit";
+      if (s.dim.indexOf(i) !== -1) return "dim";
+      return "";
+    }
+    fig.edges.forEach(function (e) {
+      var a = fig.nodes[e[0]], b = fig.nodes[e[1]];
+      var sa = state(e[0]), sb = state(e[1]);
+      var cls = "edge";
+      if (sa === "dim" || sb === "dim") cls += " dim";
+      else if ((sa === "hit" || sa === "cur") && (sb === "hit" || sb === "cur")) cls += " hit";
+      var dx = b.x - a.x, dy = b.y - a.y, len = Math.sqrt(dx * dx + dy * dy) || 1;
+      var ux = dx / len, uy = dy / len;
+      var x1 = a.x + ux * (R + 2), y1 = a.y + uy * (R + 2), x2 = b.x - ux * (R + 3), y2 = b.y - uy * (R + 3);
+      var attrs = { "class": cls + (fig.cycleEdges ? " cycle" : "") };
+      if (fig.directed) attrs["marker-end"] = fig.cycleEdges ? "url(#arrow-cycle)" : (cls.indexOf("hit") !== -1 ? "url(#arrow-hit)" : "url(#arrow)");
+      attrs.x1 = x1; attrs.y1 = y1; attrs.x2 = x2; attrs.y2 = y2;
+      figSvg.appendChild(el("line", attrs));
+    });
+    fig.nodes.forEach(function (n, i) {
+      var g = el("g", { "class": "node " + state(i) });
+      g.appendChild(el("circle", { cx: n.x, cy: n.y, r: R }));
+      g.appendChild(el("text", { x: n.x, y: n.y }, n.val));
+      figSvg.appendChild(g);
+    });
+    if (fig.note) figSvg.appendChild(el("text", { "class": "lbl", x: 200, y: fig.h - 8 }, fig.note));
+  }
+  var FIG = layoutGraph({ directed: true, h: 200, nodes: [[0, 200, 32], [1, 110, 100], [2, 290, 100], [3, 200, 168]], edges: [[0, 1], [0, 2], [1, 3], [2, 3]] });
+  var FIG_BY_STATE = {
+    pitfall: Object.assign(layoutGraph({ directed: true, h: 200, nodes: [[0, 200, 32], [1, 110, 100], [2, 290, 100], [3, 200, 168]], edges: [[1, 0], [2, 0], [3, 1], [3, 2]] }), { cycleEdges: true, note: "every arrow reversed: 3 looks like it has no prerequisites" })
+  };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.dp.length; i++) {
+      var cls = "cell";
+      if (i === s.acur) cls += " cur";
+      else if (s.ahits.indexOf(i) !== -1) cls += " hit";
+      else if (s.adim.indexOf(i) !== -1) cls += " dim";
+      arr += '<div class="' + cls + '">' + s.dp[i][1] + '<span class="idx">' + s.dp[i][0] + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+    renderFig(FIG_BY_STATE[name] || FIG, s);
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not built yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l.replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

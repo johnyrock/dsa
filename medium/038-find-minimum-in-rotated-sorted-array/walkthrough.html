@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find Minimum in Rotated Sorted Array Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Binary Search · LeetCode #153</div>
+  <h1>Find Minimum in Rotated Sorted Array, narrated</h1>
+  <p>Scroll through the thinking, from a linear scan to a binary search that decides which half holds the rotation point, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/binary-search.html">Binary Search</a> <span class="how">compare nums[mid] with nums[hi] to pick the half that contains the drop</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Someone took a sorted array of distinct integers and rotated it: they cut it at some point and moved the front piece to the back. <code>[0, 1, 2, 4, 5, 6, 7]</code> rotated four times becomes <code>[4, 5, 6, 7, 0, 1, 2]</code>. You get the rotated array and must return its smallest value, in <strong>O(log n)</strong> time.</p>
+      <div class="callout">Running example: <code>nums = [4, 5, 6, 7, 0, 1, 2]</code>. The answer is <strong>0</strong>, at index 4. It is the only place where a value is smaller than the one before it.</div>
+      <p>The shape to hold in mind: a rotated sorted array is <em>two ascending runs</em>, <code>[4, 5, 6, 7]</code> and <code>[0, 1, 2]</code>, with every value in the left run larger than every value in the right run. The minimum is the first element of the right run. If the rotation was a full turn, the "right run" is the whole array and the minimum is <code>nums[0]</code>.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: scan for the drop</h2>
+      <p>Walk the array once and return the first element that is smaller than its predecessor. If there is no such element, the array is not rotated and the answer is <code>nums[0]</code>:</p>
+      <pre class="code"><span class="ln">for i in range(1, len(nums)):</span><span class="ln">    if nums[i] &lt; nums[i - 1]:</span><span class="ln">        return nums[i]</span><span class="ln">return nums[0]</span></pre>
+      <p style="margin-top:14px">Or simply <code>min(nums)</code>. Both are <strong>O(n)</strong>, and both are correct — the problem does not forbid them, it just asks for better. With n up to 5000 a scan is fast in practice, but the whole point of the exercise is to use the fact that the array is <em>almost</em> sorted and pay only <strong>O(log n)</strong>.</p>
+      <p>On the running example the scan checks 5 &gt; 4, 6 &gt; 5, 7 &gt; 6, then finds 0 &lt; 7 and returns 0 after four comparisons. Binary search will do it in three probes and would do a million-element array in twenty.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: compare the middle with the right end</h2>
+      <p>Binary search needs a yes/no question that is <em>no</em> on one side of the answer and <em>yes</em> on the other. Here it is: <strong>"is <code>nums[i] &lt;= nums[hi]</code>?"</strong> Every element of the left run is bigger than <code>nums[hi]</code> (it is bigger than everything in the right run), so the question is <em>no</em> there. Every element of the right run is at most <code>nums[hi]</code>, so the question is <em>yes</em> there. Over the running example that reads <code>[no, no, no, no, yes, yes, yes]</code>, and the minimum is the first <em>yes</em>.</p>
+      <div class="callout">The comparison is <code>if nums[mid] &gt; nums[hi]</code>. When it holds, <code>mid</code> is in the left run and the drop is strictly to its right: <code>lo = mid + 1</code>. Otherwise <code>mid</code> is in the right run, and the drop is at <code>mid</code> or to its left: <code>hi = mid</code>.</div>
+      <p>Why the right end and not the left? Comparing with <code>nums[lo]</code> is ambiguous: <code>nums[mid] &gt; nums[lo]</code> is true when <code>mid</code> is in the left run, but it is <em>also</em> true when the array is not rotated at all, and those two cases need opposite moves. <code>nums[hi]</code> has no such ambiguity — the right end is always the end of the right run.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>lo, hi = 0, len(nums) - 1</code> — the whole array, with <code>hi</code> inclusive because <code>nums[hi]</code> is the anchor.</li>
+        <li><code>while lo &lt; hi</code> — narrow until one index is left. No <code>&lt;=</code>: we are finding a boundary, not matching a target.</li>
+        <li><code>mid = (lo + hi) // 2</code> — rounds down, so <code>mid &lt; hi</code> whenever the loop runs, and <code>lo = mid + 1</code> always makes progress.</li>
+        <li><code>if nums[mid] &gt; nums[hi]: lo = mid + 1</code> — <code>mid</code> is in the big left run, so it and everything left of it are out.</li>
+        <li><code>else: hi = mid</code> — <code>mid</code> through <code>hi</code> is sorted, so its smallest value is <code>nums[mid]</code>; keep <code>mid</code>, drop everything right of it.</li>
+        <li><code>return nums[lo]</code> — <code>lo == hi</code> now, and that index is the minimum.</li>
+      </ul>
+      <p>The invariant: <strong>the minimum's index is always inside <code>[lo, hi]</code></strong>. The first branch removes only elements proven larger than <code>nums[hi]</code>; the second removes only elements to the right of a smaller <code>nums[mid]</code>. Neither can remove the minimum.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: mid = 3, value 7</h2>
+      <p>Start with <code>lo = 0</code>, <code>hi = 6</code>. Then <code>mid = (0 + 6) // 2 = 3</code>, and <code>nums[3] = 7</code>. Compare with the right anchor: <code>7 &gt; nums[6] = 2</code>, so <code>mid</code> is in the left run.</p>
+      <p>That means indices 0 through 3 — the values 4, 5, 6, 7 — are all part of the run that sits <em>above</em> the drop. None of them can be the minimum. <code>lo = mid + 1 = 4</code>.</p>
+      <p>One probe has thrown away four of the seven candidates. The surviving range is <code>[4, 6]</code>, the values <code>[0, 1, 2]</code>.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: mid = 5, value 1</h2>
+      <p>Now <code>lo = 4</code>, <code>hi = 6</code>, so <code>mid = (4 + 6) // 2 = 5</code>, and <code>nums[5] = 1</code>. Compare: <code>1 &gt; nums[6] = 2</code> is false, so we are in the else branch. Indices 5 through 6 form a sorted run <code>[1, 2]</code>, and its smallest value is at <code>mid</code>. The minimum is at index 5 or somewhere to its left.</p>
+      <p><code>hi = mid = 5</code>. Notice that 5 stays inside the range: the value 1 <em>could</em> have been the minimum, so we must not discard it. Only the first branch skips <code>mid</code>.</p>
+      <p>Two candidates remain: indices 4 and 5, values 0 and 1.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: mid = 4, value 0, the answer</h2>
+      <p><code>lo = 4</code>, <code>hi = 5</code>, so <code>mid = (4 + 5) // 2 = 4</code>, and <code>nums[4] = 0</code>. Compare: <code>0 &gt; nums[5] = 1</code> is false, so <code>hi = mid = 4</code>.</p>
+      <p>Now <code>lo == hi == 4</code>. The loop condition <code>lo &lt; hi</code> fails, and we <code>return nums[4]</code>, which is <strong>0</strong>.</p>
+      <div class="callout">Three probes, three comparisons. Each one used the right anchor to decide which run <code>mid</code> was in, and each halved what was left.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the wrong anchor and the wrong shrink</h2>
+      <p><strong>Comparing with the left end.</strong> Write <code>if nums[mid] &gt; nums[lo]: lo = mid + 1</code>. On the running example the first probe still works (7 &gt; 4, so <code>lo = 4</code>). But the second probe compares <code>nums[5] = 1</code> with <code>nums[lo] = nums[4] = 0</code>: 1 &gt; 0, so the code decides <code>mid</code> is "in the left run" and moves <code>lo = 6</code>. The loop ends and returns <code>nums[6]</code>, which is <strong>2</strong>, not 0. The left anchor cannot tell "left run" apart from "already sorted".</p>
+      <p><strong>Discarding <code>mid</code> in the else branch.</strong> Write <code>hi = mid - 1</code> the way an exact-match search would. On <code>[3, 1, 2]</code> the first probe is <code>mid = 1</code>, value 1, which is the minimum; <code>1 &gt; nums[2] = 2</code> is false, so <code>hi = 0</code>, and the function returns <code>nums[0] = 3</code>. The else branch only knows the minimum is at <code>mid</code> <em>or to its left</em>, so <code>mid</code> has to stay.</p>
+      <p><strong>Using <code>while lo &lt;= hi</code>.</strong> Once <code>lo == hi</code>, <code>mid == hi</code> and <code>hi = mid</code> changes nothing, so the loop spins forever.</p>
+      <div class="callout warn">Anchor on <code>nums[hi]</code>, keep <code>mid</code> when it might be the answer (<code>hi = mid</code>), skip it when it cannot be (<code>lo = mid + 1</code>), and stop at <code>lo == hi</code>.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Every iteration does one comparison and removes at least half of the remaining range, so there are at most <code>log₂ n</code> iterations: <strong>O(log n) time</strong>. Three integer indices are the only extra state: <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td><code>min(nums)</code> or scan for the drop</td><td>O(n)</td><td>O(1)</td></tr>
+        <tr><td>Sort and take the first element</td><td>O(n log n)</td><td>O(n)</td></tr>
+        <tr><td>Binary search on the rotation point</td><td>O(log n)</td><td>O(1)</td></tr>
+      </table>
+      <p>Sorting is the one approach that is strictly worse than the scan: it throws away the structure the input already has and pays to rebuild it.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Eight lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>lo, hi = 0, len(nums) - 1</code> brackets the whole array with an inclusive right anchor.</li>
+        <li><code>while lo &lt; hi</code> runs until exactly one index survives.</li>
+        <li><code>mid = (lo + hi) // 2</code> picks the probe, rounding down so the first branch always advances.</li>
+        <li><code>if nums[mid] &gt; nums[hi]: lo = mid + 1</code> — the left run, skip <code>mid</code> and everything before it.</li>
+        <li><code>else: hi = mid</code> — the right run, keep <code>mid</code> and drop everything after it.</li>
+        <li><code>return nums[lo]</code> is the value at the rotation point.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>a rotated sorted array is two ascending runs; compare the middle with the right end to learn which run it is in, and squeeze toward the boundary.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>nums · <span id="target">[4,5,6,7,0,1,2]</span> · blue = mid, green = anchor nums[hi]</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>indices</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="find_minimum_in_rotated_sorted_array.py">find_minimum_in_rotated_sorted_array.py</a> · <a href="find_minimum_in_rotated_sorted_array_annotated.py">find_minimum_in_rotated_sorted_array_annotated.py</a> · <a href="test_find_minimum_in_rotated_sorted_array.py">test_find_minimum_in_rotated_sorted_array.py</a> · <a href="../../md.html?f=medium/038-find-minimum-in-rotated-sorted-array/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def find_min(self, nums: list[int]) -> int:",
+    "        lo, hi = 0, len(nums) - 1",
+    "        while lo < hi:",
+    "            mid = (lo + hi) // 2",
+    "            if nums[mid] > nums[hi]:",
+    "                lo = mid + 1",
+    "            else:",
+    "                hi = mid",
+    "        return nums[lo]"
+  ];
+
+  var NUMS = [4, 5, 6, 7, 0, 1, 2];
+
+  // Each state describes what the sticky panel shows for one step.
+  // lo/hi: the live range (cells outside it are dimmed); mid: the probe (blue); anchor: nums[hi] (green);
+  // found: the settled minimum index. Values verified by running the Python.
+  var STATES = {
+    problem: {
+      caption: "A sorted array was rotated. Where is the smallest value?",
+      nums: NUMS, label: "[4,5,6,7,0,1,2]", lo: 0, hi: 6, mid: -1, anchor: -1, found: -1, vars: [],
+      meta: "Two ascending runs: [4,5,6,7] then [0,1,2]. The drop is at index 4.", hl: []
+    },
+    brute: {
+      caption: "Scan left to right and return the first value smaller than the one before it.",
+      nums: NUMS, label: "[4,5,6,7,0,1,2]", lo: 0, hi: 6, mid: 4, anchor: -1, found: -1,
+      vars: [["i", 4], ["nums[i]", 0], ["nums[i-1]", 7]],
+      meta: "0 &lt; 7 after four comparisons. Correct, but O(n).", hl: [],
+      big: "O(n)", bigNote: "a linear scan ignores the sorted structure"
+    },
+    idea: {
+      caption: "Ask \"is nums[i] <= nums[hi]?\": no across the left run, yes across the right run.",
+      nums: NUMS, label: "[4,5,6,7,0,1,2]", lo: 0, hi: 6, mid: -1, anchor: 6, found: 4, vars: [],
+      meta: "no, no, no, no, <b>yes</b>, yes, yes — the minimum is the first yes.", hl: [5]
+    },
+    approach: {
+      caption: "Bracket the whole array: lo = 0, hi = 6, with nums[hi] = 2 as the anchor.",
+      nums: NUMS, label: "[4,5,6,7,0,1,2]", lo: 0, hi: 6, mid: -1, anchor: 6, found: -1,
+      vars: [["lo", 0, "new"], ["hi", 6, "new"], ["nums[hi]", 2]],
+      meta: "Invariant: the minimum's index is always inside <b>[lo, hi]</b>.", hl: [2, 3]
+    },
+    t1: {
+      caption: "mid = 3, nums[3] = 7 > nums[6] = 2, so mid is in the left run: lo = 4.",
+      nums: NUMS, label: "[4,5,6,7,0,1,2]", lo: 4, hi: 6, mid: 3, anchor: 6, found: -1,
+      vars: [["lo", 4, "new"], ["hi", 6], ["mid", 3], ["nums[mid]", 7], ["nums[hi]", 2]],
+      meta: "7 &gt; 2 — indices 0..3 are all above the drop. Four candidates gone.", hl: [4, 5, 6]
+    },
+    t2: {
+      caption: "mid = 5, nums[5] = 1 <= nums[6] = 2, so the minimum is at mid or left of it: hi = 5.",
+      nums: NUMS, label: "[4,5,6,7,0,1,2]", lo: 4, hi: 5, mid: 5, anchor: 6, found: -1,
+      vars: [["lo", 4], ["hi", 5, "new"], ["mid", 5], ["nums[mid]", 1], ["nums[hi]", 2]],
+      meta: "1 &gt; 2 is false — [1, 2] is sorted, keep mid in the range.", hl: [4, 5, 7, 8]
+    },
+    t3: {
+      caption: "mid = 4, nums[4] = 0 <= nums[5] = 1, so hi = 4. lo == hi — return nums[4] = 0.",
+      nums: NUMS, label: "[4,5,6,7,0,1,2]", lo: 4, hi: 4, mid: 4, anchor: 5, found: 4,
+      vars: [["lo", 4, "found"], ["hi", 4, "found"], ["mid", 4], ["nums[mid]", 0], ["nums[hi]", 1]],
+      meta: "0 &gt; 1 is false — hi = 4, the loop ends, answer <b>0</b>.", hl: [4, 5, 7, 8, 9],
+      big: "0", bigNote: "the minimum, found in three probes"
+    },
+    pitfall: {
+      caption: "Anchoring on nums[lo]: at mid = 5, 1 > nums[4] = 0 looks like the left run, so lo = 6.",
+      nums: NUMS, label: "[4,5,6,7,0,1,2]", lo: 6, hi: 6, mid: 5, anchor: 4, found: 6,
+      vars: [["lo", 6, "new"], ["hi", 6], ["mid", 5], ["nums[mid]", 1], ["nums[lo] (anchor)", 0]],
+      meta: "The left anchor cannot tell \"left run\" from \"already sorted\", so it skips past the minimum.", hl: [5, 6],
+      big: "2, not 0", bigNote: "comparing with nums[lo] returns the last element"
+    },
+    complexity: {
+      caption: "Each probe halves the range: log₂ n comparisons, three indices of state.",
+      nums: NUMS, label: "[4,5,6,7,0,1,2]", lo: 4, hi: 4, mid: -1, anchor: -1, found: 4, vars: [],
+      meta: "Probes 3, 5, 4 — three steps for seven elements; twenty for a million.", hl: [3, 4],
+      big: "O(log n) time · O(1) space", bigNote: "versus O(n) for the scan"
+    },
+    final: {
+      caption: "The whole solution.",
+      nums: NUMS, label: "[4,5,6,7,0,1,2]", lo: 4, hi: 4, mid: -1, anchor: -1, found: 4,
+      vars: [["answer", 0, "found"]],
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.label;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.nums.length; i++) {
+      var cls = "cell";
+      if (i === s.found) cls += " hit";
+      else if (i === s.mid) cls += " cur";
+      else if (i === s.anchor) cls += " hit";
+      else if (i < s.lo || i > s.hi) cls += " dim";
+      var tag = [];
+      if (i === s.lo) tag.push("lo");
+      if (i === s.hi) tag.push("hi");
+      if (i === s.mid) tag.push("mid");
+      arr += '<div class="' + cls + '">' + s.nums[i] + '<span class="idx">' + (tag.length ? tag.join("=") : i) + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

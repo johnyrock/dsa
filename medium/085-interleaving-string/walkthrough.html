@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interleaving String Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* 2-D dp table: a grid of square cells with string headers along the top and left */
+  .grid { display: grid; gap: 4px; margin: 8px 0 4px; }
+  .gc {
+    aspect-ratio: 1; border-radius: 6px; border: 2px solid var(--line); background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.9rem; color: var(--muted); transition: all 0.25s;
+  }
+  .gc.hd { border-color: transparent; background: transparent; color: var(--muted); font-size: 0.8rem; }
+  .gc.on { color: var(--ink); font-weight: 600; }
+  .gc.hit { background: var(--ok-soft); border-color: var(--ok); color: var(--ink); font-weight: 600; }
+  .gc.cur { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); font-weight: 700; transform: scale(1.06); }
+  .gc.dim { opacity: 0.4; }
+  .gc.hd.cur { background: var(--accent-soft); color: var(--accent); transform: none; }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Dynamic Programming · LeetCode #97</div>
+  <h1>Interleaving String, narrated</h1>
+  <p>Scroll through the thinking, from trying every way to split s3 between the two strings to filling a table of yes/no answers for prefixes, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">2-D prefix table: the last character of s3's prefix came from s1 (cell above) or from s2 (cell to the left)</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get three strings. <code>s3</code> is an <em>interleaving</em> of <code>s1</code> and <code>s2</code> if you can colour every character of <code>s3</code> as "from s1" or "from s2" so that the s1-coloured characters read as exactly <code>s1</code>, the s2-coloured ones read as exactly <code>s2</code>, and nothing is left over. Each string keeps its own order, but the two may be cut into pieces of any size and merged in any way.</p>
+      <p>Return <code>True</code> if such a colouring exists, <code>False</code> otherwise.</p>
+      <div class="callout">Running example: <code>s1 = "aabcc"</code>, <code>s2 = "dbbca"</code>, <code>s3 = "aadbbcbcac"</code>. The answer is <strong>True</strong>: split it as <code>aa | d | b | b | c | b | ca | c</code>, taking the pieces from s1, s2, s1, s2, s1, s2, s2, s1.</div>
+      <p>The tricky part is repeated letters. When the next character of <code>s3</code> is a <code>b</code> and both strings are waiting on a <code>b</code>, either choice might be the one that works, and the wrong choice only shows up much later.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every split</h2>
+      <p>Walk <code>s3</code> from the front with two pointers <code>i</code> into <code>s1</code> and <code>j</code> into <code>s2</code>. At each character, if it matches <code>s1[i]</code> try taking it from <code>s1</code>; if it matches <code>s2[j]</code> also try taking it from <code>s2</code>. Recurse on both and succeed if either succeeds.</p>
+      <pre class="code"><span class="ln">def go(i, j):</span><span class="ln">    if i + j == len(s3):</span><span class="ln">        return i == len(s1) and j == len(s2)</span><span class="ln">    ok = False</span><span class="ln">    if i &lt; len(s1) and s1[i] == s3[i + j]:</span><span class="ln">        ok = go(i + 1, j)</span><span class="ln">    if not ok and j &lt; len(s2) and s2[j] == s3[i + j]:</span><span class="ln">        ok = go(i, j + 1)</span><span class="ln">    return ok</span></pre>
+      <p style="margin-top:14px">Whenever both branches match, the recursion forks. On a string like <code>"aaaa"</code> against <code>"aaaa"</code> and <code>"aaaaaaaa"</code> every character forks, so the number of paths is about <code>C(m + n, m)</code>, exponential: <strong>O(2^(m + n))</strong> in the worst case. Yet the recursion only ever sees <code>(m + 1)(n + 1)</code> distinct <code>(i, j)</code> pairs; it is re-solving the same pair over and over. That is the signal for a table.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: yes/no answers for prefixes</h2>
+      <p>Define <code>dp[i][j]</code> as "can the first <code>i</code> characters of <code>s1</code> and the first <code>j</code> characters of <code>s2</code> interleave to form the first <code>i + j</code> characters of <code>s3</code>?" The position in <code>s3</code> is not a third dimension: it is always <code>i + j</code>, because every character used so far went into <code>s3</code>.</p>
+      <p>Look at the last character of that prefix of <code>s3</code>, which is <code>s3[i + j - 1]</code>. It came from exactly one of the two strings:</p>
+      <ul>
+        <li>From <code>s1</code>: then it must equal <code>s1[i - 1]</code>, and the rest must have been reachable without it: <code>dp[i - 1][j]</code>, the cell <strong>above</strong>.</li>
+        <li>From <code>s2</code>: then it must equal <code>s2[j - 1]</code>, and <code>dp[i][j - 1]</code>, the cell to the <strong>left</strong>, must hold.</li>
+      </ul>
+      <div class="callout"><code>dp[0][0] = True</code>: two empty prefixes form the empty prefix. Unlike a counting table, the rest of row 0 and column 0 are <em>not</em> a fixed value; <code>dp[0][j]</code> is true only if <code>s2</code> alone spells the first <code>j</code> characters of <code>s3</code>. The loops must start at 0 and let the recurrence fill the border.</div>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>m, n = len(s1), len(s2)</code> sizes the table.</li>
+        <li><code>if m + n != len(s3): return False</code>: an interleaving uses every character once, so the lengths must add up. This also keeps <code>s3[i + j - 1]</code> in range for every cell.</li>
+        <li><code>dp = [[False] * (n + 1) for _ in range(m + 1)]</code> allocates the table, all <code>False</code>, then <code>dp[0][0] = True</code>.</li>
+        <li><code>for i in range(m + 1)</code> and <code>for j in range(n + 1)</code> visit every cell, including the border, in row-major order, so the cell above and the cell to the left are final before they are read.</li>
+        <li><code>if i &gt; 0 and dp[i - 1][j] and s1[i - 1] == s3[i + j - 1]</code>: the last character came from <code>s1</code>. The <code>i &gt; 0</code> guard keeps row 0 from reading row <code>-1</code>.</li>
+        <li><code>elif j &gt; 0 and dp[i][j - 1] and s2[j - 1] == s3[i + j - 1]</code>: it came from <code>s2</code>. Either case suffices, so <code>elif</code> is enough; if neither fires the cell stays <code>False</code>.</li>
+        <li><code>return dp[m][n]</code>, the cell for the two full strings.</li>
+      </ul>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the border and the first real cell</h2>
+      <p>Row 0 asks whether <code>s2</code> alone spells a prefix of <code>s3</code>. <code>dp[0][1]</code> compares <code>s2[0] = d</code> with <code>s3[0] = a</code>: no match, so it is <code>False</code>, and once a cell in row 0 is <code>False</code> every cell to its right is too, because each only reads its left neighbour.</p>
+      <p>Column 0 asks the same of <code>s1</code>. <code>dp[1][0]</code>: <code>s1[0] = a</code> equals <code>s3[0] = a</code> and <code>dp[0][0]</code> is <code>True</code>, so <code>True</code>. <code>dp[2][0]</code>: <code>s1[1] = a</code> equals <code>s3[1] = a</code>, <code>True</code>. <code>dp[3][0]</code>: <code>s1[2] = b</code> against <code>s3[2] = d</code>, <code>False</code>, and the rest of the column follows.</p>
+      <p>Now <code>dp[2][1]</code>, the prefixes <code>"aa"</code> and <code>"d"</code> against <code>s3[:3] = "aad"</code>. The last character is <code>s3[2] = d</code>. Case 1 needs <code>dp[1][1]</code>, which is <code>False</code>. Case 2: <code>dp[2][0]</code> is <code>True</code> and <code>s2[0] = d</code> matches, so <code>dp[2][1] = True</code>. The <code>d</code> came from <code>s2</code>.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: a repeated letter, and a False cell</h2>
+      <p>Row 2 keeps going: <code>dp[2][2]</code> reads <code>s3[3] = b</code>, and <code>dp[2][1]</code> is <code>True</code> with <code>s2[1] = b</code>, so <code>True</code>. Likewise <code>dp[2][3]</code> (<code>s3[4] = b</code>, <code>s2[2] = b</code>) and <code>dp[2][4]</code> (<code>s3[5] = c</code>, <code>s2[3] = c</code>) are <code>True</code>. <code>dp[2][5]</code> wants <code>s3[6] = b</code> to be <code>s2[4] = a</code>: <code>False</code>.</p>
+      <p>Now <code>dp[3][2]</code>: prefixes <code>"aab"</code> and <code>"db"</code>, last character <code>s3[4] = b</code>. Case 1: the cell above, <code>dp[2][2]</code>, is <code>True</code> and <code>s1[2] = b</code> matches, so <code>dp[3][2] = True</code>. Here the <code>b</code> is credited to <code>s1</code>; in <code>dp[2][3]</code> the same position was credited to <code>s2</code>. The table keeps both possibilities alive instead of committing.</p>
+      <p>Next, <code>dp[3][3]</code>: last character <code>s3[5] = c</code>. Above is <code>dp[2][3] = True</code> but <code>s1[2] = b</code> is not <code>c</code>. Left is <code>dp[3][2] = True</code> but <code>s2[2] = b</code> is not <code>c</code> either. Neither case fires, so <code>dp[3][3] = False</code>: there is no way to spell <code>"aadbbc"</code> from <code>"aab"</code> and <code>"dbb"</code>.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the last cell is the answer</h2>
+      <p>The rows fill in the same way. Row 4 (<code>"aabc"</code>) is <code>True</code> from column 2 onward: each of <code>s3[6..9] = b, c, a, c</code> can be explained either by the cell above with <code>s1[3] = c</code> or by the cell to the left with the next character of <code>s2</code>.</p>
+      <p>The last cell <code>dp[5][5]</code> is the full strings against all of <code>s3</code>. Its last character is <code>s3[9] = c</code>. Case 1: the cell above, <code>dp[4][5]</code>, is <code>True</code>, and <code>s1[4] = c</code> matches, so <code>dp[5][5] = True</code>. The final <code>c</code> came from <code>s1</code>, and everything before it was already accounted for.</p>
+      <div class="callout">Every cell was computed once from at most two neighbours that were already final. The function returns <code>dp[5][5] = True</code>. The green path back through the table (above or left, whichever fired) is one valid split of <code>s3</code>.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the border</h2>
+      <p><strong>Starting the loops at 1.</strong> Copying the LCS shape, <code>for i in range(1, m + 1)</code> and <code>for j in range(1, n + 1)</code>, skips row 0 and column 0. In LCS those are constant zeros, but here they carry real information: <code>dp[1][0]</code> and <code>dp[2][0]</code> must be <code>True</code> for the <code>aa</code> at the front of <code>s3</code>. With the border left <code>False</code>, no cell can ever become <code>True</code> because every cell needs a <code>True</code> above or to its left. The whole table stays <code>False</code> and the function returns <strong>False, not True</strong> on the running example.</p>
+      <p><strong>A greedy scan.</strong> Walking <code>s3</code> once and taking each character from <code>s1</code> whenever it matches, else from <code>s2</code>, never backtracks. On the running example it spends both of <code>s1</code>'s <code>c</code>s on <code>s3[5]</code> and <code>s3[7]</code>, then reaches <code>s3[8] = a</code> with <code>s1</code> exhausted and <code>s2</code> still waiting on its <code>c</code>, and returns <strong>False</strong>. The table avoids this by keeping both owners of each repeated letter alive.</p>
+      <p><strong>Indexing <code>s3[i + j]</code>.</strong> Cell <code>(i, j)</code> covers <code>i + j</code> characters, and the last of them is at index <code>i + j - 1</code>. Without the <code>- 1</code> every comparison is shifted by one and the last cell raises <code>IndexError</code>.</p>
+      <div class="callout warn">Two owners for the last character, cell above or cell to the left; and the border is computed, not assumed. Check with <code>s1 = ""</code>, <code>s2 = "b"</code>, <code>s3 = "b"</code>: only row 0 exists and the answer must be <code>True</code>.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>The table has <code>(m + 1)(n + 1)</code> cells and each does at most two comparisons, so <strong>O(m × n) time</strong>: about ten thousand cells at the constraint limit of 100 characters each. The table is <strong>O(m × n) space</strong>; since a cell only reads the row above and its left neighbour, a single row of <code>n + 1</code> booleans updated in place gives O(n).</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Recursive fork on every match</td><td>O(2^(m + n))</td><td>O(m + n) stack</td></tr>
+        <tr><td>Recursion + memoization</td><td>O(m × n)</td><td>O(m × n) cache + stack</td></tr>
+        <tr><td>Bottom-up table</td><td>O(m × n)</td><td>O(m × n)</td></tr>
+        <tr><td>Bottom-up, one row</td><td>O(m × n)</td><td>O(n)</td></tr>
+      </table>
+      <p>Memoization fixes the exponential blow-up; the bottom-up loop removes the recursion and makes the one-row version possible.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Thirteen lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>m, n = len(s1), len(s2)</code> — the two prefix lengths.</li>
+        <li><code>if m + n != len(s3): return False</code> — lengths must add up.</li>
+        <li><code>dp = [[False] * (n + 1) for _ in range(m + 1)]</code> and <code>dp[0][0] = True</code> — the table and its one known cell.</li>
+        <li>The two <code>for</code> loops fill it in row-major order, starting at 0 so the border is computed.</li>
+        <li><code>if i &gt; 0 and dp[i - 1][j] and s1[i - 1] == s3[i + j - 1]</code> — the last character came from <code>s1</code>.</li>
+        <li><code>elif j &gt; 0 and dp[i][j - 1] and s2[j - 1] == s3[i + j - 1]</code> — or from <code>s2</code>.</li>
+        <li><code>return dp[m][n]</code> — the answer for the full strings.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>the last character of s3's prefix came from s1 (look up) or from s2 (look left); a cell is true if either owner works.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>dp[i][j] · rows = s1 "aabcc", cols = s2 "dbbca" · blue = filling, green = read</h3>
+        <div class="grid" id="grid"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>comparison and result</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="interleaving_string.py">interleaving_string.py</a> · <a href="interleaving_string_annotated.py">interleaving_string_annotated.py</a> · <a href="test_interleaving_string.py">test_interleaving_string.py</a> · <a href="../../md.html?f=medium/085-interleaving-string/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def is_interleave(self, s1: str, s2: str, s3: str) -> bool:",
+    "        m, n = len(s1), len(s2)",
+    "        if m + n != len(s3):",
+    "            return False",
+    "        dp = [[False] * (n + 1) for _ in range(m + 1)]",
+    "        dp[0][0] = True",
+    "        for i in range(m + 1):",
+    "            for j in range(n + 1):",
+    "                if i > 0 and dp[i - 1][j] and s1[i - 1] == s3[i + j - 1]:",
+    "                    dp[i][j] = True",
+    "                elif j > 0 and dp[i][j - 1] and s2[j - 1] == s3[i + j - 1]:",
+    "                    dp[i][j] = True",
+    "        return dp[m][n]"
+  ];
+
+  var ROWS = ["", "a", "a", "b", "c", "c"];
+  var COLS = ["", "d", "b", "b", "c", "a"];
+  var _ = "", T = "T", F = "F";
+  var EMPTY = [[_, _, _, _, _, _], [_, _, _, _, _, _], [_, _, _, _, _, _], [_, _, _, _, _, _], [_, _, _, _, _, _], [_, _, _, _, _, _]];
+  var BASE = [[T, _, _, _, _, _], [_, _, _, _, _, _], [_, _, _, _, _, _], [_, _, _, _, _, _], [_, _, _, _, _, _], [_, _, _, _, _, _]];
+  var FULL = [[T, F, F, F, F, F], [T, F, F, F, F, F], [T, T, T, T, T, F], [F, T, T, F, T, F], [F, F, T, T, T, T], [F, F, F, T, F, T]];
+  var NOBORDER = [[T, F, F, F, F, F], [F, F, F, F, F, F], [F, F, F, F, F, F], [F, F, F, F, F, F], [F, F, F, F, F, F], [F, F, F, F, F, F]];
+
+  // g = table values ("" = not computed yet), cur = [i, j] being filled, hits = cells read, dim = rows to fade.
+  var STATES = {
+    problem: {
+      caption: "Can \"aabcc\" and \"dbbca\" be merged, each in order, to spell \"aadbbcbcac\"?",
+      g: EMPTY, cur: null, hits: [], dim: [], vars: [["s1", "aabcc"], ["s2", "dbbca"], ["s3", "aadbbcbcac"]],
+      meta: "Answer: <b>True</b>, via the split aa | d | b | b | c | b | ca | c.", hl: []
+    },
+    brute: {
+      caption: "Fork on every character that both strings could own; exponential paths, but only 36 distinct (i, j) pairs.",
+      g: EMPTY, cur: null, hits: [], dim: [], vars: [["distinct (i, j)", "6 × 6 = 36"], ["paths, worst case", "C(m + n, m)"]],
+      meta: "The recursion re-solves the same (i, j) pair many times.", hl: [],
+      big: "O(2^(m + n))", bigNote: "every split, tried one by one"
+    },
+    idea: {
+      caption: "dp[i][j] = can s1[:i] and s2[:j] interleave to s3[:i + j]? Only dp[0][0] is known up front.",
+      g: BASE, cur: null, hits: [[0, 0]], dim: [],
+      vars: [["from s1", "dp[i-1][j] and s1[i-1] == s3[i+j-1]", "new"], ["from s2", "dp[i][j-1] and s2[j-1] == s3[i+j-1]", "new"]],
+      meta: "The border is computed by the same rule, not preset.", hl: [5, 6]
+    },
+    approach: {
+      caption: "Fill the table row by row from (0, 0); each cell reads the cell above and the cell to the left.",
+      g: BASE, cur: [0, 1], hits: [[0, 0]], dim: [],
+      vars: [["order", "row-major, i then j, from 0"], ["last char", "s3[i + j - 1]"]],
+      meta: "The first cell after the corner is dp[0][1]: does s2's \"d\" spell s3's \"a\"?", hl: [7, 8, 9, 10, 11, 12]
+    },
+    t1: {
+      caption: "Row 0 is False after the corner (d ≠ a). Column 0: a, a match, then b ≠ d. dp[2][1] is True via s2's d.",
+      g: [[T, F, F, F, F, F], [T, _, _, _, _, _], [T, T, _, _, _, _], [F, _, _, _, _, _], [F, _, _, _, _, _], [F, _, _, _, _, _]], cur: [2, 1], hits: [[2, 0]], dim: [],
+      vars: [["s3[2]", "d"], ["above: dp[1][1]", "F"], ["left: dp[2][0] and s2[0] == d", "T", "found"]],
+      meta: "dp[1][1] is False: s3[1] = a is neither s1[0] with dp[0][1] nor s2[0] = d.", hl: [9, 11, 12]
+    },
+    t2: {
+      caption: "dp[3][2]: s3[4] = b, the cell above is True and s1[2] = b, so True. Then dp[3][3] gets no match from either side.",
+      g: [[T, F, F, F, F, F], [T, F, F, F, F, F], [T, T, T, T, T, F], [F, T, T, _, _, _], [_, _, _, _, _, _], [_, _, _, _, _, _]], cur: [3, 2], hits: [[2, 2]], dim: [],
+      vars: [["s3[4]", "b"], ["above: dp[2][2] and s1[2] == b", "T", "found"], ["dp[3][3]", "F: s3[5] = c, but s1[2] = b and s2[2] = b"]],
+      meta: "Row 2 credited its b's to s2; row 3 credits one to s1. Both stay alive.", hl: [9, 10]
+    },
+    t3: {
+      caption: "dp[5][5]: s3[9] = c, the cell above is True and s1[4] = c. The answer is True.",
+      g: FULL, cur: [5, 5], hits: [[4, 5]], dim: [],
+      vars: [["s3[9]", "c"], ["above: dp[4][5] and s1[4] == c", "T", "found"]],
+      meta: "Row 4 (\"aabc\") is True from column 2 on; the last c is s1's.", hl: [9, 10, 13],
+      big: "True", bigNote: "s3 is an interleaving of s1 and s2"
+    },
+    pitfall: {
+      caption: "Loops from 1 leave the border False; nothing can ever become True.",
+      g: NOBORDER, cur: null, hits: [[1, 0], [2, 0]], dim: [],
+      vars: [["dp[1][0]", "F, should be T"], ["dp[2][0]", "F, should be T"], ["dp[5][5]", "F"]],
+      meta: "Every cell needs a True above or to its left, so the whole table stays False.", hl: [7, 8],
+      big: "False, not True", bigNote: "the border must be computed, not skipped"
+    },
+    complexity: {
+      caption: "(m + 1)(n + 1) cells, at most two comparisons each, every cell computed exactly once.",
+      g: FULL, cur: null, hits: [], dim: [],
+      vars: [["cells", "6 × 6 = 36"], ["reads per cell", "at most 2"]],
+      meta: "Only the row above is read, so one rolling row gives O(n) space.", hl: [7, 8],
+      big: "O(m × n) time · O(m × n) space", bigNote: "versus O(2^(m + n)) for the recursion"
+    },
+    final: {
+      caption: "The whole solution.",
+      g: FULL, cur: null, hits: [[5, 5]], dim: [],
+      vars: [["dp[5][5]", "True", "found"]],
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function has(list, r, c) {
+    for (var k = 0; k < list.length; k++) if (list[k][0] === r && list[k][1] === c) return true;
+    return false;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var grid = $("grid");
+    grid.style.gridTemplateColumns = "repeat(" + (COLS.length + 1) + ", 1fr)";
+    var html = '<div class="gc hd"></div>';
+    for (var c = 0; c < COLS.length; c++) {
+      html += '<div class="gc hd' + (s.cur && s.cur[1] === c ? " cur" : "") + '">' + (COLS[c] === "" ? "&empty;" : COLS[c]) + '</div>';
+    }
+    for (var r = 0; r < s.g.length; r++) {
+      html += '<div class="gc hd' + (s.cur && s.cur[0] === r ? " cur" : "") + '">' + (ROWS[r] === "" ? "&empty;" : ROWS[r]) + '</div>';
+      for (c = 0; c < s.g[r].length; c++) {
+        var v = s.g[r][c];
+        var cls = "gc" + (v === "" ? "" : " on");
+        if (s.cur && s.cur[0] === r && s.cur[1] === c) cls += " cur";
+        else if (has(s.hits, r, c)) cls += " hit";
+        else if (s.dim.indexOf(r) !== -1) cls += " dim";
+        html += '<div class="' + cls + '">' + (v === "" ? "·" : v) + '</div>';
+      }
+    }
+    grid.innerHTML = html;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var code = "";
+    for (var l = 0; l < CODE.length; l++) {
+      code += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = code;
+  }
+
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subtree of Another Tree Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  .tree { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .tree .edge { stroke: var(--line); stroke-width: 2.5; fill: none; transition: stroke 0.25s, opacity 0.25s; }
+  .tree .edge.hit { stroke: var(--ok); }
+  .tree .edge.bad { stroke: var(--warn); stroke-dasharray: 5 4; }
+  .tree .edge.dim { opacity: 0.35; }
+  .tree .edge.off { display: none; }
+  .tree .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .tree .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 17px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .tree .node.cur circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3.5; }
+  .tree .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .tree .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .tree .node.dim circle, .tree .node.dim text { opacity: 0.4; }
+  .tree .node.off { display: none; }
+  .tree .badge { fill: var(--accent); font-size: 11px; font-weight: 700; text-anchor: start; font-family: ui-monospace, Menlo, monospace; }
+  .tree .node text.badge { text-anchor: start; font-size: 11px; font-weight: 700; }
+  .tree .node.hit .badge { fill: var(--ok); }
+  .tree .node.bad .badge { fill: var(--warn); }
+  .tree .ghost { fill: none; stroke: var(--warn); stroke-width: 2; stroke-dasharray: 4 3; }
+  .tree .ghost-lbl { fill: var(--warn); font-size: 11px; text-anchor: middle; dominant-baseline: central; font-family: ui-monospace, Menlo, monospace; }
+  .tree .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .tree .title { fill: var(--muted); font-size: 12px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; letter-spacing: 0.05em; }
+  .array.compact { gap: 4px; margin-top: 2px; }
+  .array.compact .cell { min-width: 28px; padding: 3px 0 2px; font-size: 0.9rem; border-width: 1.5px; border-radius: 6px; }
+  .array.compact .cell.cur { transform: none; }
+  .cell.bad { border-color: var(--warn); background: var(--warn-soft); }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#easy">← All walkthroughs</a>
+  <div class="tag">Easy · Tree · LeetCode #572</div>
+  <h1>Subtree of Another Tree, narrated</h1>
+  <p>Scroll through why a substring search on values is wrong, and the search that tries an exact same-tree comparison at every node of root, with both trees shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/tree-traversal.html">Tree</a> <span class="how">A subtree must match all values and all missing-child positions. Search each root position, then perform an exact same-tree comparison only where a match could begin.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Given the roots of two binary trees <code>root</code> and <code>subRoot</code>, decide whether <code>subRoot</code> appears somewhere inside <code>root</code> as an exact subtree. A subtree of <code>root</code> is some node of <code>root</code> together with <em>all</em> of its descendants; it must match <code>subRoot</code> in every value and in every missing-child position.</p>
+      <div class="callout">Running example: <code>root = [3,4,5,1,2]</code> and <code>subRoot = [4,1,2]</code>. In <code>root</code>, node 3 has children 4 and 5, and node 4 has children 1 and 2. The subtree hanging from node 4 is exactly <code>[4,1,2]</code>, so the answer is <strong>true</strong>.</div>
+      <p>The word "exact" is what makes this more than a value search. A node of <code>root</code> can have the right value and the right children and still fail, if one of those children has an extra descendant that <code>subRoot</code> does not have. Also note the edge cases: an empty <code>subRoot</code> is a subtree of anything, and a non-empty <code>subRoot</code> is never a subtree of an empty <code>root</code>.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: flatten both and look for a substring</h2>
+      <p>Serialize both trees with a traversal and see whether the small list occurs inside the big one. For the running example <code>preorder(root) = [3,4,1,2,5]</code> and <code>preorder(subRoot) = [4,1,2]</code>. The second is a contiguous run inside the first, so this says yes, and here yes is correct.</p>
+      <p>It is fast, but it is wrong, for the same reason a plain traversal cannot tell two trees apart. Take <code>[3,4,5,1,2,null,null,null,null,0]</code>: the same tree as <code>root</code> except that node 2 now has a left child 0. Its preorder is <code>[3,4,1,2,0,5]</code>, which still contains the run <code>4,1,2</code>, so the substring test says <strong>true</strong>. But the subtree at node 4 is now <code>[4,1,2,null,null,0]</code>, not <code>[4,1,2]</code>, and the correct answer is <strong>false</strong>.</p>
+      <p>The traversal recorded the values but lost where the <code>None</code> children were. The missing children are part of the shape, and the shape has to match too.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: every node is a candidate start</h2>
+      <p>If <code>subRoot</code> is a subtree of <code>root</code>, then its root coincides with some node of <code>root</code>. There are only <code>n</code> nodes, so try each one: for every node of <code>root</code>, ask whether the tree hanging from that node is the <em>same tree</em> as <code>subRoot</code>.</p>
+      <div class="callout">That splits the problem into two pieces you already know how to do. A tree walk that visits every candidate <code>3, 4, 5, 1, 2</code>, and at each candidate an exact same-tree comparison, <code>_same_tree(node, sub_root)</code>, which checks values and gaps together.</div>
+      <p>Most candidates die instantly. A node whose value differs from <code>subRoot</code>'s root value fails on the very first comparison inside <code>_same_tree</code>, so the expensive full comparison only happens where a match could actually begin.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: DFS through <code>root</code>, exact match at each node</h2>
+      <p>Two functions. <code>is_subtree</code> is the search; <code>_same_tree</code> is the comparison.</p>
+      <ul>
+        <li><code>if sub_root is None: return True</code> — an empty tree is a subtree of everything.</li>
+        <li><code>if root is None: return False</code> — we ran out of candidates without a match.</li>
+        <li><code>return self._same_tree(root, sub_root) or self.is_subtree(root.left, sub_root) or self.is_subtree(root.right, sub_root)</code> — try an exact match at this node; if it fails, search the left subtree, then the right.</li>
+      </ul>
+      <p>The <code>or</code> chain short-circuits, so the first successful candidate ends the search and nothing to its right is examined. The panel shows the search at the first candidate, <code>root = 3</code>, with <code>_same_tree(3, 4)</code> not yet evaluated and the rest of <code>root</code> dimmed.</p>
+      <p><code>_same_tree</code> is the Same Tree solution: <code>if first is None or second is None: return first is second</code>, and otherwise equal values and matching left and right pairs.</p>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: candidate 3</h2>
+      <p><code>sub_root</code> is not <code>None</code> and neither is <code>root</code>, so the guards pass and the chain starts with <code>_same_tree(3, 4)</code>. Both nodes exist, so the base case does not fire, and the first comparison is <code>first.val == second.val</code>: <code>3 == 4</code>, which is <strong>false</strong>. The <code>and</code> chain inside <code>_same_tree</code> stops right there; the children of 3 and 4 are never compared against each other.</p>
+      <p>The panel marks both roots with <code>≠</code>. Back in <code>is_subtree</code>, the first operand of the <code>or</code> chain is false, so evaluation moves to the second: <code>self.is_subtree(root.left, sub_root)</code>. The next candidate is node 4.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: candidate 4</h2>
+      <p>Now <code>root = 4</code> and the comparison is <code>_same_tree(4, 4)</code>. The values agree, <code>4 == 4</code>, so this candidate survives the first test and the real comparison begins.</p>
+      <p><code>_same_tree</code> continues down the <code>and</code> chain: first the left pair, <code>(1, 1)</code>, which is <code>_same_tree(first.left, second.left)</code>; then, if that passes, the right pair, <code>(2, 2)</code>.</p>
+      <p>Both 1s are leaves and both 2s are leaves, on both sides. So each of those pairs will compare its own children as <code>(None, None)</code>, which is where the shape gets checked.</p>
+    </section>
+
+    <section class="step" data-state="trace3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the leaves match, and the answer</h2>
+      <p>Pair <code>(1, 1)</code>: values equal; the left children are <code>(None, None)</code>, so the base case returns <code>None is None</code>, true; the right children likewise. The pair returns <strong>true</strong>. Pair <code>(2, 2)</code> goes through the same steps and returns <strong>true</strong>.</p>
+      <p>So <code>_same_tree(4, 4)</code> is <code>true and true and true</code>, which is <strong>true</strong>. That was the first operand of the <code>or</code> chain in the <code>is_subtree</code> call for node 4, so that call returns <strong>true</strong> immediately; and it was the second operand of the chain in the call for node 3, so that call returns <strong>true</strong> as well.</p>
+      <div class="callout">The answer is <strong>true</strong>. Because <code>or</code> short-circuited, <code>self.is_subtree(root.right, sub_root)</code> at the root was never evaluated: node 5 was never examined as a candidate.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: a matching root is not a matching subtree</h2>
+      <p>The panel switches to comparing the tree <code>[4,1,2,0]</code> against <code>[4,1,2]</code>. On the left, node 1 has a left child 0; on the right, node 1 has none. The correct answer to "is the second the same tree as the first" is <strong>false</strong>.</p>
+      <p><strong>Checking only the root value.</strong> A shortcut like <code>if root.val == sub_root.val: return True</code> in place of <code>_same_tree</code> accepts <code>[4,1,2,0]</code> as a match for <code>[4,1,2]</code> because the roots are both 4, and returns <strong>true</strong>. The values match at 4 and at 1, which the panel marks with <code>=</code>, and only then does the pair <code>(0, None)</code> appear. That pair is where <code>first is second</code> is false, and only a full same-tree comparison ever gets there.</p>
+      <p><strong>Using <code>is_subtree</code> inside the comparison.</strong> If <code>_same_tree</code> recurses into <code>self.is_subtree(first.left, second.left)</code> instead of <code>self._same_tree(...)</code>, the pair <code>(0, None)</code> hits <code>if sub_root is None: return True</code> and the extra node 0 is quietly accepted. The function returns <strong>true</strong> for a tree that is not the same. The two functions have different base cases on purpose: "empty pattern matches anything" is right for the search and wrong for the exact comparison.</p>
+      <p><strong>Swapping the two guards in <code>is_subtree</code>.</strong> Checking <code>if root is None: return False</code> before <code>if sub_root is None: return True</code> makes an empty <code>subRoot</code> fail against an empty <code>root</code>, when an empty tree is a subtree of everything, including the empty tree. Keep the <code>sub_root</code> check first.</p>
+      <div class="callout warn">Value equality at a node is only permission to start comparing. The match is decided at the <code>None</code> pairs below, and every one of them has to line up.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Let <code>n</code> be the number of nodes in <code>root</code> (5 here) and <code>m</code> the number in <code>subRoot</code> (3 here). The search visits each of the <code>n</code> nodes once, and at each one runs <code>_same_tree</code>, which costs up to <code>m</code> comparisons. So the worst case is <strong>O(m · n)</strong>.</p>
+      <p>In practice most candidates fail on the first value comparison and cost O(1), so the typical cost is far below the bound. The worst case needs a tree full of near-matches, such as every value being the same, where each candidate pays most of <code>m</code> before a gap or a leaf disagrees.</p>
+      <p>The recursion stack holds the search path plus the comparison path, both bounded by the height of <code>root</code>: <strong>O(h)</strong> space.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Substring search on value traversals</td><td>O(m + n), but wrong</td><td>O(m + n) for the lists</td></tr>
+        <tr><td>Same-tree check at every node</td><td>O(m · n) worst case</td><td>O(h) call stack</td></tr>
+        <tr><td>Serialize with <code>None</code> markers + KMP</td><td>O(m + n)</td><td>O(m + n) for the strings</td></tr>
+      </table>
+      <p>The serialization approach can be made correct by writing a marker for every missing child and delimiting values, and then a linear-time string search gets O(m + n). For an interview the O(m · n) recursion is the expected answer, and the linear version is a good follow-up to know about.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>A search and a comparison. Line by line:</p>
+      <ul>
+        <li><code>if sub_root is None: return True</code> — the empty tree is a subtree of anything, so the search succeeds trivially.</li>
+        <li><code>if root is None: return False</code> — no candidates left; a non-empty pattern cannot be found in nothing.</li>
+        <li><code>self._same_tree(root, sub_root)</code> — try an exact match starting at this node.</li>
+        <li><code>or self.is_subtree(root.left, sub_root) or self.is_subtree(root.right, sub_root)</code> — otherwise keep searching below, left first, stopping at the first success.</li>
+        <li><code>if first is None or second is None: return first is second</code> — in the comparison, a gap on one side must be a gap on the other.</li>
+        <li><code>first.val == second.val and self._same_tree(first.left, second.left) and self._same_tree(first.right, second.right)</code> — equal values, then matching left pairs, then matching right pairs, all the way down.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>try an exact same-tree comparison at every node of <code>root</code>; a value match only starts the comparison, the <code>None</code> positions finish it.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>root = [3,4,5,1,2] · subRoot = [4,1,2]</h3>
+        <svg class="tree" id="tree" viewBox="0 0 400 205" aria-label="binary tree"></svg>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>search position · same-tree comparisons</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="subtree_of_another_tree.py">subtree_of_another_tree.py</a> · <a href="subtree_of_another_tree_annotated.py">subtree_of_another_tree_annotated.py</a> · <a href="test_subtree_of_another_tree.py">test_subtree_of_another_tree.py</a> · <a href="../../md.html?f=easy/017-subtree-of-another-tree/notes.md">notes.md</a> · <a href="../../index.html#easy">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = ["class Solution:", "    def is_subtree(self, root, sub_root):", "        if sub_root is None:", "            return True", "        if root is None:", "            return False", "        return self._same_tree(root, sub_root) or self.is_subtree(root.left, sub_root) or self.is_subtree(root.right, sub_root)", "", "    def _same_tree(self, first, second):", "        if first is None or second is None:", "            return first is second", "        return first.val == second.val and self._same_tree(first.left, second.left) and self._same_tree(first.right, second.right)"];
+
+  // p (root) / q (subRoot): each a tree spec { tree: level-order values (null = absent), cur, hits, dim, bad, badges: {idx: text}, ghost: [idx, label] }.
+  var STATES = {
+    problem: {"caption": "Does subRoot appear somewhere inside root as an exact subtree?", "p": {"tree": [3, 4, 5, 1, 2], "cur": -1, "hits": [], "dim": [], "bad": [], "badges": {}}, "q": {"tree": [4, 1, 2], "cur": -1, "hits": [], "dim": [], "bad": [], "badges": {}}, "vars": [], "meta": "root = [3,4,5,1,2], subRoot = [4,1,2]. Expected: true.", "hl": []},
+    brute: {"caption": "Comparing value lists finds 4, 1, 2 inside root's traversal even when the shape below differs.", "p": {"tree": [3, 4, 5, 1, 2], "cur": -1, "hits": [1, 3, 4], "dim": [], "bad": [], "badges": {}}, "q": {"tree": [4, 1, 2], "cur": -1, "hits": [0, 1, 2], "dim": [], "bad": [], "badges": {}}, "vars": [["preorder(root)", "[3,4,1,2,5]"], ["preorder(subRoot)", "[4,1,2]"]], "meta": "A substring match on values says yes even for [3,4,5,1,2,null,null,null,null,0], which is false.", "hl": [], "big": "values ≠ structure", "bigNote": "the missing children must match too"},
+    insight: {"caption": "Every node of root is a candidate start; at each one run an exact same-tree comparison.", "p": {"tree": [3, 4, 5, 1, 2], "cur": 0, "hits": [], "dim": [], "bad": [], "badges": {}}, "q": {"tree": [4, 1, 2], "cur": 0, "hits": [], "dim": [], "bad": [], "badges": {}}, "vars": [["candidates", "3, 4, 5, 1, 2", "new"], ["check", "_same_tree(node, sub_root)"]], "meta": "Only a node whose value equals subRoot's root can start a match; others fail on the first compare.", "hl": [6]},
+    approach: {"caption": "DFS through root; at each node try _same_tree, else recurse into left and right.", "p": {"tree": [3, 4, 5, 1, 2], "cur": 0, "hits": [], "dim": [1, 2, 3, 4], "bad": [], "badges": {}}, "q": {"tree": [4, 1, 2], "cur": 0, "hits": [], "dim": [], "bad": [], "badges": {}}, "vars": [["root", "3", "new"], ["sub_root", "4"], ["_same_tree(3, 4)", "?"]], "meta": "<code>or</code> short-circuits: the first successful candidate ends the search.", "hl": [2, 3, 4, 5, 6]},
+    trace1: {"caption": "Node 3 vs 4: values differ → _same_tree is false → try root.left next.", "p": {"tree": [3, 4, 5, 1, 2], "cur": 0, "hits": [], "dim": [2], "bad": [], "badges": {"0": "≠"}}, "q": {"tree": [4, 1, 2], "cur": 0, "hits": [], "dim": [], "bad": [], "badges": {"0": "≠"}}, "vars": [["root", "3", "new"], ["_same_tree(3, 4)", "3 ≠ 4 → false", "bad"], ["next", "is_subtree(root.left, sub_root)"]], "meta": "The candidate at 3 fails immediately; recursion moves down to node 4.", "hl": [6, 11]},
+    trace2: {"caption": "Node 4 vs 4: values match → compare left pair (1, 1), then right pair (2, 2).", "p": {"tree": [3, 4, 5, 1, 2], "cur": 1, "hits": [], "dim": [0, 2], "bad": [], "badges": {"1": "="}}, "q": {"tree": [4, 1, 2], "cur": 0, "hits": [], "dim": [], "bad": [], "badges": {"0": "="}}, "vars": [["root", "4", "new"], ["4 == 4", "true", "found"], ["left pair", "(1, 1)"], ["right pair", "(2, 2)"]], "meta": "Each child pair is a leaf on both sides, so their own children are (None, None).", "hl": [6, 11]},
+    trace3: {"caption": "Pairs (1, 1) and (2, 2) match, and their empty children match → node 4 starts the subtree.", "p": {"tree": [3, 4, 5, 1, 2], "cur": 1, "hits": [3, 4], "dim": [0, 2], "bad": [], "badges": {"1": "✓", "3": "✓", "4": "✓"}}, "q": {"tree": [4, 1, 2], "cur": 0, "hits": [1, 2], "dim": [], "bad": [], "badges": {"0": "✓", "1": "✓", "2": "✓"}}, "vars": [["(1, 1)", "true", "found"], ["(2, 2)", "true", "found"], ["_same_tree(4, 4)", "true", "found"], ["is_subtree", "true", "found"]], "meta": "The <code>or</code> chain short-circuits on the first true; root.right (5) is never examined.", "hl": [6, 9, 10, 11], "big": "true", "bigNote": "is_subtree([3,4,5,1,2], [4,1,2])"},
+    pitfall: {"caption": "[4,1,2,0] is not the same tree as [4,1,2]: node 1 has a child 0 on one side and None on the other.", "p": {"tree": [4, 1, 2, 0], "cur": 1, "hits": [0], "dim": [], "bad": [3], "badges": {"0": "=", "1": "="}}, "q": {"tree": [4, 1, 2], "cur": 1, "hits": [0], "dim": [], "bad": [], "badges": {"0": "=", "1": "="}, "ghost": [3, "·"]}, "vars": [["pair", "(0, None)", "bad"], ["first is second", "false", "bad"]], "meta": "Matching the root value 4 is only the start; every missing child has to line up as well.", "hl": [9, 10], "big": "false", "bigNote": "extra node 0 breaks the match"},
+    complexity: {"caption": "Worst case: a same-tree check of size m at each of the n nodes of root.", "p": {"tree": [3, 4, 5, 1, 2], "cur": -1, "hits": [0, 1, 2, 3, 4], "dim": [], "bad": [], "badges": {}}, "q": {"tree": [4, 1, 2], "cur": -1, "hits": [0, 1, 2], "dim": [], "bad": [], "badges": {}}, "vars": [["n", "5 nodes in root"], ["m", "3 nodes in subRoot"]], "meta": "Most candidates fail on the first compare, but a tree full of near-matches can pay the full m each time.", "hl": [], "big": "O(m·n) time · O(h) space", "bigNote": "h = height of root"},
+    final: {"caption": "Try an exact match at every node of root.", "p": {"tree": [3, 4, 5, 1, 2], "cur": -1, "hits": [1, 3, 4], "dim": [], "bad": [], "badges": {}}, "q": {"tree": [4, 1, 2], "cur": -1, "hits": [0, 1, 2], "dim": [], "bad": [], "badges": {}}, "vars": [["is_subtree(root, sub_root)", "true", "found"]], "meta": "", "hl": [1, 2, 3, 4, 5, 6, 8, 9, 10, 11]}
+  };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function makeTree(svg, POS, R, dx, title) {
+    var g0 = el("g", {}); svg.appendChild(g0);
+    if (title) g0.appendChild(el("text", { x: dx + POS[0][0], y: 12, "class": "title" }, title));
+    var edges = [], nodes = [], texts = [], badges = [];
+    for (var i = 1; i < POS.length; i++) {
+      var p = POS[(i - 1) >> 1];
+      var e = el("line", { "class": "edge", x1: dx + p[0], y1: p[1], x2: dx + POS[i][0], y2: POS[i][1] });
+      g0.appendChild(e); edges[i] = e;
+    }
+    var ghostLayer = el("g", {}); g0.appendChild(ghostLayer);
+    for (var j = 0; j < POS.length; j++) {
+      var g = el("g", { "class": "node" });
+      g.appendChild(el("circle", { cx: dx + POS[j][0], cy: POS[j][1], r: R }));
+      var t = el("text", { x: dx + POS[j][0], y: POS[j][1] });
+      g.appendChild(t);
+      var b = el("text", { x: dx + POS[j][0] + R + 3, y: POS[j][1] + 4, "class": "badge" });
+      g.appendChild(b);
+      g0.appendChild(g); nodes[j] = g; texts[j] = t; badges[j] = b;
+    }
+    function has(arr, i) { return arr && arr.indexOf(i) !== -1; }
+    return function draw(s) {
+      var tree = s.tree, badgeMap = s.badges || {};
+      for (var i = 0; i < POS.length; i++) {
+        var v = i < tree.length ? tree[i] : null;
+        var parentOff = i > 0 && (((i - 1) >> 1) >= tree.length || tree[(i - 1) >> 1] === null);
+        var off = v === null || parentOff;
+        var cls = "node";
+        if (off) cls += " off";
+        else if (i === s.cur) cls += " cur";
+        else if (has(s.bad, i)) cls += " bad";
+        else if (has(s.hits, i)) cls += " hit";
+        else if (has(s.dim, i)) cls += " dim";
+        nodes[i].setAttribute("class", cls);
+        texts[i].textContent = off ? "" : v;
+        badges[i].textContent = off ? "" : (badgeMap[i] !== undefined ? badgeMap[i] : "");
+        if (i > 0) {
+          var ec = "edge";
+          if (off) ec += " off";
+          else if (has(s.bad, i)) ec += " bad";
+          else if (has(s.hits, i)) ec += " hit";
+          else if (has(s.dim, i)) ec += " dim";
+          edges[i].setAttribute("class", ec);
+        }
+      }
+      while (ghostLayer.firstChild) ghostLayer.removeChild(ghostLayer.firstChild);
+      if (s.ghost) {
+        var gp = POS[s.ghost[0]];
+        var pp = POS[(s.ghost[0] - 1) >> 1];
+        ghostLayer.appendChild(el("line", { "class": "edge bad", x1: dx + pp[0], y1: pp[1], x2: dx + gp[0], y2: gp[1] }));
+        ghostLayer.appendChild(el("circle", { cx: dx + gp[0], cy: gp[1], r: R, "class": "ghost" }));
+        ghostLayer.appendChild(el("text", { x: dx + gp[0], y: gp[1], "class": "ghost-lbl" }, s.ghost[1]));
+      }
+    };
+  }
+  var POS7 = [[200, 32], [105, 102], [295, 102], [55, 172], [155, 172], [245, 172], [345, 172]];
+  var POS7S = [[100, 46], [55, 112], [145, 112], [30, 178], [80, 178], [120, 178], [170, 178]];
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function renderVars(vars) {
+    if (!vars || vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">nothing returned yet</span>';
+      return;
+    }
+    var d = "";
+    for (var k = 0; k < vars.length; k++) {
+      var e = vars[k];
+      d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+    }
+    $("dict").innerHTML = d;
+  }
+  function renderBig(s) {
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+  }
+  function renderCode(hl) {
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  var treeSvg = document.getElementById("tree");
+  var drawP = makeTree(treeSvg, POS7S, 17, 0, "root");
+  var drawQ = makeTree(treeSvg, POS7S, 17, 200, "subRoot");
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+    drawP(s.p);
+    drawQ(s.q);
+    renderVars(s.vars);
+    renderBig(s);
+    renderCode(s.hl);
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

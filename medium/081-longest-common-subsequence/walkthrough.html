@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Longest Common Subsequence Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* 2-D dp table: a grid of square cells with string headers along the top and left */
+  .grid { display: grid; gap: 4px; margin: 8px 0 4px; }
+  .gc {
+    aspect-ratio: 1; border-radius: 6px; border: 2px solid var(--line); background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.9rem; color: var(--muted); transition: all 0.25s;
+  }
+  .gc.hd { border-color: transparent; background: transparent; color: var(--muted); font-size: 0.8rem; }
+  .gc.on { color: var(--ink); font-weight: 600; }
+  .gc.hit { background: var(--ok-soft); border-color: var(--ok); color: var(--ink); font-weight: 600; }
+  .gc.cur { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); font-weight: 700; transform: scale(1.06); }
+  .gc.dim { opacity: 0.4; }
+  .gc.hd.cur { background: var(--accent-soft); color: var(--accent); transform: none; }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Dynamic Programming · LeetCode #1143</div>
+  <h1>Longest Common Subsequence, narrated</h1>
+  <p>Scroll through the thinking, from trying every subsequence to filling a table of prefix answers one cell at a time, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">2-D prefix table: match extends the diagonal, mismatch takes the better neighbour</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get two strings. A <em>subsequence</em> keeps some of a string's characters in their original order and deletes the rest; it does not have to be contiguous. <code>"ace"</code> is a subsequence of <code>"abcde"</code> because you can delete the <code>b</code> and the <code>d</code>.</p>
+      <p>Return the length of the longest subsequence that both strings share. Only the length is asked for, not the characters themselves.</p>
+      <div class="callout">Running example: <code>text1 = "abcde"</code>, <code>text2 = "ace"</code>. The answer is <strong>3</strong>: <code>"ace"</code> appears in both, and nothing longer can, because <code>text2</code> only has three characters.</div>
+      <p>The tricky part is that a common subsequence can skip different characters in each string. The <code>c</code> in <code>text1</code> is at index 2 and the <code>c</code> in <code>text2</code> is at index 1; they still line up.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every subsequence</h2>
+      <p>Every subsequence of <code>text1</code> is a choice of which characters to keep, so there are <code>2^m</code> of them. Generate each one and check whether it is a subsequence of <code>text2</code> with a single two-pointer scan.</p>
+      <pre class="code"><span class="ln">best = 0</span><span class="ln">for mask in range(1 &lt;&lt; m):</span><span class="ln">    sub = [text1[i] for i in range(m) if mask &gt;&gt; i &amp; 1]</span><span class="ln">    j = 0</span><span class="ln">    for ch in text2:</span><span class="ln">        if j &lt; len(sub) and sub[j] == ch:</span><span class="ln">            j += 1</span><span class="ln">    if j == len(sub):</span><span class="ln">        best = max(best, len(sub))</span></pre>
+      <p style="margin-top:14px">That is <strong>O(2^m · n)</strong>. At the constraint limit of 1000 characters, <code>2^1000</code> is not a number a computer will ever count to. The recursion that compares last characters, <code>lcs(i, j)</code> branching into <code>lcs(i-1, j)</code> and <code>lcs(i, j-1)</code>, has the same problem: it re-solves the same <code>(i, j)</code> pair an exponential number of times.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: answers for prefixes, in a table</h2>
+      <p>Only <code>(m + 1) × (n + 1)</code> different subproblems exist: "the LCS of the first <code>i</code> characters of <code>text1</code> and the first <code>j</code> characters of <code>text2</code>". Call that <code>dp[i][j]</code>. Solve each one exactly once, smallest prefixes first.</p>
+      <p>Look at the last character of each prefix, <code>text1[i - 1]</code> and <code>text2[j - 1]</code>:</p>
+      <ul>
+        <li>If they are <strong>equal</strong>, pair them up as the last character of a common subsequence. Everything before them is a common subsequence of the two shorter prefixes, so <code>dp[i][j] = dp[i - 1][j - 1] + 1</code>.</li>
+        <li>If they <strong>differ</strong>, they cannot both be in the answer. Drop one of them: <code>dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])</code>.</li>
+      </ul>
+      <div class="callout">Row 0 and column 0 are the base case: a prefix of length 0 is empty and shares nothing, so those cells are 0. Building the table with an extra row and column means the recurrence never has to look outside the table.</div>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>m, n = len(text1), len(text2)</code> sizes the table.</li>
+        <li><code>dp = [[0] * (n + 1) for _ in range(m + 1)]</code> allocates it with the zero row and column already in place.</li>
+        <li><code>for i in range(1, m + 1)</code> and <code>for j in range(1, n + 1)</code> visit the cells in row-major order, so the cell above, the cell to the left and the diagonal are always filled before they are read.</li>
+        <li><code>if text1[i - 1] == text2[j - 1]</code> compares the last character of each prefix. The <code>- 1</code> is the shift between "prefix of length i" and "index of its last character".</li>
+        <li>Match: <code>dp[i][j] = dp[i - 1][j - 1] + 1</code>. Mismatch: <code>dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])</code>.</li>
+        <li><code>return dp[m][n]</code>, the cell for the two full strings.</li>
+      </ul>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the first row</h2>
+      <p>Row 1 is the prefix <code>"a"</code>. Cell <code>dp[1][1]</code> compares <code>text1[0] = a</code> with <code>text2[0] = a</code>: a match, so <code>dp[1][1] = dp[0][0] + 1 = 0 + 1 = 1</code>.</p>
+      <p>Cell <code>dp[1][2]</code> compares <code>a</code> with <code>c</code>: mismatch, so it takes <code>max(dp[0][2], dp[1][1]) = max(0, 1) = 1</code>. The 1 carries to the right: once you have matched an <code>a</code>, adding more of <code>text2</code> never makes the answer smaller. <code>dp[1][3]</code> (<code>a</code> vs <code>e</code>) is 1 for the same reason.</p>
+      <p>Row 2, the prefix <code>"ab"</code>, has no <code>b</code> to match in <code>"ace"</code>, so every cell is a mismatch and copies the best of above and left: <code>1, 1, 1</code>.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: the second match</h2>
+      <p>Row 3 is the prefix <code>"abc"</code>. <code>dp[3][1]</code> compares <code>c</code> with <code>a</code>: mismatch, <code>max(dp[2][1], dp[3][0]) = max(1, 0) = 1</code>.</p>
+      <p>Now <code>dp[3][2]</code> compares <code>text1[2] = c</code> with <code>text2[1] = c</code>. Match: <code>dp[3][2] = dp[2][1] + 1 = 1 + 1 = 2</code>. The diagonal cell <code>dp[2][1]</code> is the LCS of <code>"ab"</code> and <code>"a"</code>, which is the 1 from the earlier <code>a</code>; the <code>c</code> extends it to <code>"ac"</code>.</p>
+      <p>Notice the two matches sit in different columns of the two strings (<code>c</code> is index 2 in <code>text1</code>, index 1 in <code>text2</code>). The mismatch rule's <code>max</code> is what carried the 1 across the gap so that the diagonal could pick it up.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the last cell is the answer</h2>
+      <p>Row 4, <code>"abcd"</code>, adds nothing: <code>d</code> matches no character of <code>"ace"</code>, so the row copies <code>1, 2, 2</code> from above.</p>
+      <p>Row 5, the full string <code>"abcde"</code>. The last cell <code>dp[5][3]</code> compares <code>text1[4] = e</code> with <code>text2[2] = e</code>: match, so <code>dp[5][3] = dp[4][2] + 1 = 2 + 1 = 3</code>. That diagonal cell is the LCS of <code>"abcd"</code> and <code>"ac"</code>, which is 2, and the <code>e</code> completes <code>"ace"</code>.</p>
+      <div class="callout">Every cell was computed once from three neighbours that were already final. The function returns <code>dp[5][3] = 3</code>.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the mismatch rule</h2>
+      <p><strong>Moving only along the diagonal.</strong> Writing the mismatch branch as <code>dp[i][j] = dp[i - 1][j - 1]</code> looks symmetric and tidy, but it means a cell can only inherit from the cell up-and-left. The 1 earned at <code>dp[1][1]</code> can then never reach <code>dp[2][1]</code>, so the <code>c</code> match at <code>dp[3][2]</code> starts from 0 instead of 1, and the whole table degrades into a diagonal of single matches. The final cell comes out as <strong>1, not 3</strong>. The <code>max(dp[i - 1][j], dp[i][j - 1])</code> is what lets the two strings skip different characters.</p>
+      <p><strong>Indexing the strings with <code>i</code> instead of <code>i - 1</code>.</strong> Row <code>i</code> is the prefix of length <code>i</code>, and its last character is <code>text1[i - 1]</code>. Comparing <code>text1[i] == text2[j]</code> shifts every match by one cell and returns <strong>2</strong> on the running example (after a guard is added to stop the <code>IndexError</code> on the last row).</p>
+      <div class="callout warn">Two transitions, not one: a match extends the diagonal, a mismatch takes the better of the cell above and the cell to the left. Check with <code>"bl"</code>, <code>"yby"</code>: the answer must be 1, from a <code>b</code> in different positions.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>The table has <code>(m + 1)(n + 1)</code> cells and each takes constant work, so <strong>O(m × n) time</strong>. At the limit that is a million cells, which is fine. The table is also <strong>O(m × n) space</strong>; since a row only reads the row above, two rows of length <code>n + 1</code> are enough for O(min(m, n)) space if you swap the strings so the shorter one runs along the columns.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Every subsequence of text1</td><td>O(2^m · n)</td><td>O(m)</td></tr>
+        <tr><td>Recursion + memoization</td><td>O(m × n)</td><td>O(m × n) cache + stack</td></tr>
+        <tr><td>Bottom-up table</td><td>O(m × n)</td><td>O(m × n)</td></tr>
+        <tr><td>Bottom-up, two rows</td><td>O(m × n)</td><td>O(min(m, n))</td></tr>
+      </table>
+      <p>Memoization fixes the exponential blow-up; the bottom-up loop removes the recursion and makes the space reduction possible.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Ten lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>m, n = len(text1), len(text2)</code> — the two prefix lengths.</li>
+        <li><code>dp = [[0] * (n + 1) for _ in range(m + 1)]</code> — the table with its zero row and column.</li>
+        <li>The two <code>for</code> loops fill it in row-major order, starting at 1.</li>
+        <li><code>if text1[i - 1] == text2[j - 1]</code> — compare the last character of each prefix.</li>
+        <li><code>dp[i][j] = dp[i - 1][j - 1] + 1</code> — a match extends the diagonal.</li>
+        <li><code>dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])</code> — a mismatch drops one character.</li>
+        <li><code>return dp[m][n]</code> — the answer for the full strings.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>if the last characters match, extend the diagonal by one; otherwise take the better of dropping either one.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>dp[i][j] · rows = text1 "abcde", cols = text2 "ace" · blue = filling, green = read</h3>
+        <div class="grid" id="grid"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>comparison and result</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="longest_common_subsequence.py">longest_common_subsequence.py</a> · <a href="longest_common_subsequence_annotated.py">longest_common_subsequence_annotated.py</a> · <a href="test_longest_common_subsequence.py">test_longest_common_subsequence.py</a> · <a href="../../md.html?f=medium/081-longest-common-subsequence/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def longest_common_subsequence(self, text1: str, text2: str) -> int:",
+    "        m, n = len(text1), len(text2)",
+    "        dp = [[0] * (n + 1) for _ in range(m + 1)]",
+    "        for i in range(1, m + 1):",
+    "            for j in range(1, n + 1):",
+    "                if text1[i - 1] == text2[j - 1]:",
+    "                    dp[i][j] = dp[i - 1][j - 1] + 1",
+    "                else:",
+    "                    dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])",
+    "        return dp[m][n]"
+  ];
+
+  var ROWS = ["", "a", "b", "c", "d", "e"];
+  var COLS = ["", "a", "c", "e"];
+  var _ = "";
+  var EMPTY = [[_, _, _, _], [_, _, _, _], [_, _, _, _], [_, _, _, _], [_, _, _, _], [_, _, _, _]];
+  var BASE = [[0, 0, 0, 0], [0, _, _, _], [0, _, _, _], [0, _, _, _], [0, _, _, _], [0, _, _, _]];
+  var FULL = [[0, 0, 0, 0], [0, 1, 1, 1], [0, 1, 1, 1], [0, 1, 2, 2], [0, 1, 2, 2], [0, 1, 2, 3]];
+  var DIAG = [[0, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 1, 1], [0, 0, 0, 1], [0, 0, 0, 1]];
+
+  // g = table values ("" = not computed yet), cur = [i, j] being filled, hits = cells read, dim = rows to fade.
+  var STATES = {
+    problem: {
+      caption: "Longest subsequence shared by \"abcde\" and \"ace\".",
+      g: EMPTY, cur: null, hits: [], dim: [], vars: [["text1", "abcde"], ["text2", "ace"]],
+      meta: "Answer: <b>3</b>, the subsequence a c e.", hl: []
+    },
+    brute: {
+      caption: "2^m subsequences of text1, each checked against text2 with a scan.",
+      g: EMPTY, cur: null, hits: [], dim: [], vars: [["subsequences of text1", "2^5 = 32"], ["at m = 1000", "2^1000"]],
+      meta: "The recursion on last characters re-solves the same (i, j) pair exponentially many times.", hl: [],
+      big: "O(2^m · n)", bigNote: "every subsequence, checked one by one"
+    },
+    idea: {
+      caption: "dp[i][j] = LCS of the first i chars of text1 and the first j chars of text2. Row 0 and column 0 are 0.",
+      g: BASE, cur: null, hits: [[0, 0], [0, 1], [0, 2], [0, 3], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0]], dim: [],
+      vars: [["match", "dp[i-1][j-1] + 1", "new"], ["mismatch", "max(dp[i-1][j], dp[i][j-1])", "new"]],
+      meta: "An empty prefix shares nothing, so the border is all zeros.", hl: [2, 3]
+    },
+    approach: {
+      caption: "Fill the table row by row; each cell reads the three cells above, left and up-left, all already final.",
+      g: BASE, cur: [1, 1], hits: [[0, 0], [0, 1], [1, 0]], dim: [],
+      vars: [["order", "row-major, i then j"], ["compare", "text1[i-1] vs text2[j-1]"]],
+      meta: "The first cell to fill is dp[1][1]: prefix \"a\" against prefix \"a\".", hl: [4, 5, 6, 7, 8, 9]
+    },
+    t1: {
+      caption: "dp[1][1]: a == a, so dp[0][0] + 1 = 1. The rest of row 1 is a mismatch and carries the 1 to the right.",
+      g: [[0, 0, 0, 0], [0, 1, 1, 1], [0, _, _, _], [0, _, _, _], [0, _, _, _], [0, _, _, _]], cur: [1, 1], hits: [[0, 0]], dim: [],
+      vars: [["text1[0]", "a"], ["text2[0]", "a"], ["dp[1][1]", "0 + 1 = 1", "found"]],
+      meta: "dp[1][2] = max(dp[0][2], dp[1][1]) = max(0, 1) = <b>1</b>; same for dp[1][3].", hl: [6, 7]
+    },
+    t2: {
+      caption: "dp[3][2]: c == c, so dp[2][1] + 1 = 1 + 1 = 2. The a was matched earlier, the c extends it.",
+      g: [[0, 0, 0, 0], [0, 1, 1, 1], [0, 1, 1, 1], [0, 1, 2, _], [0, _, _, _], [0, _, _, _]], cur: [3, 2], hits: [[2, 1]], dim: [],
+      vars: [["text1[2]", "c"], ["text2[1]", "c"], ["dp[3][2]", "1 + 1 = 2", "found"]],
+      meta: "Row 2 (\"ab\") had no match: every cell copied max(above, left) = <b>1</b>.", hl: [6, 7]
+    },
+    t3: {
+      caption: "dp[5][3]: e == e, so dp[4][2] + 1 = 2 + 1 = 3. That is the answer.",
+      g: FULL, cur: [5, 3], hits: [[4, 2]], dim: [],
+      vars: [["text1[4]", "e"], ["text2[2]", "e"], ["dp[5][3]", "2 + 1 = 3", "found"]],
+      meta: "Row 4 (\"abcd\") copied 1, 2, 2 from above because d matches nothing.", hl: [6, 7, 10],
+      big: "3", bigNote: "length of the LCS \"ace\""
+    },
+    pitfall: {
+      caption: "Mismatch as dp[i-1][j-1] only: the 1 never moves sideways, so the c match starts from 0.",
+      g: DIAG, cur: [5, 3], hits: [[3, 2], [1, 1]], dim: [],
+      vars: [["mismatch rule", "dp[i-1][j-1]"], ["dp[3][2]", "dp[2][1] + 1 = 0 + 1 = 1"]],
+      meta: "Without max(above, left), matches at different offsets cannot be combined.", hl: [8, 9],
+      big: "1, not 3", bigNote: "a diagonal-only table finds one match at a time"
+    },
+    complexity: {
+      caption: "(m + 1)(n + 1) cells, constant work each, every cell computed exactly once.",
+      g: FULL, cur: null, hits: [], dim: [],
+      vars: [["cells", "6 × 4 = 24"], ["reads per cell", "at most 3"]],
+      meta: "Only the previous row is ever read, so two rows suffice for O(min(m, n)) space.", hl: [4, 5],
+      big: "O(m × n) time · O(m × n) space", bigNote: "versus O(2^m · n) for enumeration"
+    },
+    final: {
+      caption: "The whole solution.",
+      g: FULL, cur: null, hits: [[5, 3]], dim: [],
+      vars: [["dp[5][3]", "3", "found"]],
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function has(list, r, c) {
+    for (var k = 0; k < list.length; k++) if (list[k][0] === r && list[k][1] === c) return true;
+    return false;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var grid = $("grid");
+    grid.style.gridTemplateColumns = "repeat(" + (COLS.length + 1) + ", 1fr)";
+    var html = '<div class="gc hd"></div>';
+    for (var c = 0; c < COLS.length; c++) {
+      html += '<div class="gc hd' + (s.cur && s.cur[1] === c ? " cur" : "") + '">' + (COLS[c] === "" ? "&empty;" : COLS[c]) + '</div>';
+    }
+    for (var r = 0; r < s.g.length; r++) {
+      html += '<div class="gc hd' + (s.cur && s.cur[0] === r ? " cur" : "") + '">' + (ROWS[r] === "" ? "&empty;" : ROWS[r]) + '</div>';
+      for (c = 0; c < s.g[r].length; c++) {
+        var v = s.g[r][c];
+        var cls = "gc" + (v === "" ? "" : " on");
+        if (s.cur && s.cur[0] === r && s.cur[1] === c) cls += " cur";
+        else if (has(s.hits, r, c)) cls += " hit";
+        else if (s.dim.indexOf(r) !== -1) cls += " dim";
+        html += '<div class="' + cls + '">' + (v === "" ? "·" : v) + '</div>';
+      }
+    }
+    grid.innerHTML = html;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var code = "";
+    for (var l = 0; l < CODE.length; l++) {
+      code += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = code;
+  }
+
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

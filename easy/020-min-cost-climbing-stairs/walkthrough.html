@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Min Cost Climbing Stairs Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* min-cost additions: a wrong-answer stair and the "top" platform */
+  .fig .stair.bad { fill: var(--warn-soft); stroke: var(--warn); stroke-width: 3; }
+  .fig .stair.top { stroke-dasharray: 5 4; }
+  .fig .bad-txt { fill: var(--warn); }
+  .fig .cost { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .cell.bad { border-color: var(--warn); background: var(--warn-soft); }
+  .meta b { color: var(--ink); }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#easy">← All walkthroughs</a>
+  <div class="tag">Easy · Dynamic Programming · LeetCode #746</div>
+  <h1>Min Cost Climbing Stairs, narrated</h1>
+  <p>Scroll through the thinking, from the exponential recursion to two rolling totals, with the cost of each stair shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">To reach a paid stair, arrive from one of the prior two positions and take the cheaper route. Only those two prior costs are needed.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You are given an array <code>cost</code> where <code>cost[i]</code> is the price of standing on stair <code>i</code>. Once you have paid for a stair you may climb 1 or 2 stairs from it. You may begin on stair 0 or stair 1 for free. The top of the staircase is the position <em>just past</em> the last stair, index <code>len(cost)</code>, and standing there costs nothing. Return the minimum total you must pay to reach the top.</p>
+      <div class="callout">Running example: <code>cost = [10, 15, 20]</code>. The top is position 3. Cheapest route: start on stair 1, pay 15, jump two to the top. Answer <strong>15</strong>.</div>
+      <p>Compare the alternatives: start on stair 0, pay 10, jump to stair 2, pay 20, step to the top: 30. Start on 0, pay 10, step to 1, pay 15, jump to the top: 25. Nothing beats 15. Note that the answer is a <em>cost</em>, not a path; you never need to reconstruct which stairs were used.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every path</h2>
+      <p>Define <code>best(i)</code> as the cheapest way to <em>stand on</em> position <code>i</code>. You got there from <code>i - 1</code> or <code>i - 2</code>, so:</p>
+      <pre class="code"><span class="ln">def best(i):</span><span class="ln">    if i &lt;= 1:</span><span class="ln">        return 0</span><span class="ln">    return min(best(i - 1) + cost[i - 1],</span><span class="ln">               best(i - 2) + cost[i - 2])</span></pre>
+      <p style="margin-top:14px">Call <code>best(3)</code> for the top. It is correct, but each call spawns two more. The panel shows the shape: the top asks stair 2 and stair 1; stair 2 asks stair 1 and stair 0 again. Stair 1 is solved once directly and once inside stair 2's subtree, and on a longer staircase the duplication compounds at every level. That is <strong>O(2ⁿ)</strong> calls, with the same small subproblems re-solved on every path.</p>
+      <p>With <code>cost.length</code> up to 1000, this never finishes.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: a stair only depends on the two below it</h2>
+      <p>The recurrence is right; the recursion is a wasteful way to evaluate it. Ask the narrower question: to know the cheapest total for standing on stair 2, what do I need?</p>
+      <div class="callout">Exactly two numbers: the cheapest total for stair 0 and for stair 1. Stair 2 costs <code>20 + min(10, 15)</code>, its own price plus the cheaper of the two positions you could have jumped from. Nothing further back can matter, because you cannot jump more than 2.</div>
+      <p>So walk <em>up</em> the staircase instead of recursing down. Compute stair 0's total, then stair 1's, then stair 2's, each from the previous two. That is line 5 of the solution: <code>min(previous, current) + step_cost</code>. And since only the last two totals are ever read, you do not need a full table, just two variables that slide upward.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: two rolling totals</h2>
+      <p>Hold two integers:</p>
+      <ul>
+        <li><code>previous</code>: the cheapest total for the stair two positions back.</li>
+        <li><code>current</code>: the cheapest total for the stair one position back.</li>
+      </ul>
+      <p>Both start at 0, because you may stand on stair 0 or stair 1 without having paid anything yet; the price of a stair is paid when you step <em>off</em> it, which is why the loop adds <code>step_cost</code> as it leaves.</p>
+      <p>Each turn of <code>for step_cost in cost</code> computes the next stair's total, <code>min(previous, current) + step_cost</code>, and slides the pair: the old <code>current</code> becomes the new <code>previous</code>. Python's tuple assignment on line 5 does both in one statement, evaluating the whole right side before rebinding either name.</p>
+      <p>When the loop ends, <code>current</code> is the total for the last stair and <code>previous</code> is the total for the one before it. The top is reachable from either, so the answer is <code>min(previous, current)</code>.</p>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: before the first stair</h2>
+      <p>Line 3 sets <code>previous = 0</code> and <code>current = 0</code>. Read them as "the cost of having arrived at stair 0" and "the cost of having arrived at stair 1": both are free starting positions.</p>
+      <p>Nothing has been paid and no stair total is known yet; the panel shows all three stairs as <code>?</code>. The only thing that exists is the pair of zeros. That is the entire state the algorithm will ever hold, so it is worth pausing on: two integers, not an array of size <code>n</code>.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: stairs 0 and 1</h2>
+      <p>First turn, <code>step_cost = 10</code>. The new total is <code>min(0, 0) + 10 = 10</code>: to stand on stair 0 and leave it, you pay 10. Slide: <code>previous = 0</code>, <code>current = 10</code>.</p>
+      <p>Second turn, <code>step_cost = 15</code>. The new total is <code>min(0, 10) + 15 = 15</code>. The <code>min</code> picked 0, meaning "start directly on stair 1" beats "come from stair 0 for 10". Slide: <code>previous = 10</code>, <code>current = 15</code>.</p>
+      <div class="callout">After two turns the pair is <code>previous = 10</code> (stair 0) and <code>current = 15</code> (stair 1). The panel shows those two totals filled in and stair 2 still unknown.</div>
+    </section>
+
+    <section class="step" data-state="trace3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: stair 2 and the top</h2>
+      <p>Third turn, <code>step_cost = 20</code>. The new total is <code>min(10, 15) + 20 = 30</code>: the cheapest way to stand on stair 2 and leave it is via stair 0. Slide: <code>previous = 15</code>, <code>current = 30</code>. The loop is finished.</p>
+      <p>Now the top. It is one past stair 2, so you reach it either by stepping from stair 2 (total 30) or jumping from stair 1 (total 15). Line 6 returns <code>min(previous, current) = min(15, 30) = 15</code>.</p>
+      <div class="callout">The exponential recursion explored every path to arrive at 15. The loop did three <code>min</code>s and three additions.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: returning the last stair</h2>
+      <p><strong>Returning <code>current</code> alone.</strong> After the loop <code>current = 30</code> is the total for stair 2, and it is tempting to write <code>return current</code>. That forces the route through the last stair and reports <strong>30</strong> instead of 15. The top sits <em>after</em> the array, so the final stair can be skipped entirely with a 2-jump from the one before it. The answer needs <code>min(previous, current)</code>. The panel marks stair 2's 30 amber and stair 1's 15 green for exactly this reason.</p>
+      <p><strong>Seeding with the first two costs.</strong> Some people start with <code>previous, current = cost[0], cost[1]</code> and loop from index 2. That can be made to work, but it is easy to then add <code>cost[i]</code> one time too many or forget that <code>cost.length</code> may be exactly 2. With the two-zeros seed the loop is uniform: every stair, including 0 and 1, is handled by the same line, and <code>[0, 0]</code> correctly returns 0.</p>
+      <div class="callout warn">The price of a stair is paid when you leave it, and the top is free. So the loop adds each stair's cost, and the return must consider both of the last two stairs.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>One pass over <code>cost</code>, doing one <code>min</code>, one addition and one tuple rebinding per stair: <strong>O(n) time</strong>. Two integers of state regardless of <code>n</code>: <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Plain recursion</td><td>O(2ⁿ)</td><td>O(n) call stack</td></tr>
+        <tr><td>Recursion + memoization</td><td>O(n)</td><td>O(n) cache + stack</td></tr>
+        <tr><td>Bottom-up dp array</td><td>O(n)</td><td>O(n)</td></tr>
+        <tr><td>Bottom-up, two variables</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>Memoization removes the repeated subproblems, which is the disastrous part. Rolling two variables instead of a dp array is the final saving, possible because each stair reads only the two totals before it.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Four lines of logic, each one a step above.</p>
+      <ul>
+        <li><code>previous, current = 0, 0</code> seeds the two free starting positions, stair 0 and stair 1.</li>
+        <li><code>for step_cost in cost</code> visits every stair in order, including the first two.</li>
+        <li><code>previous, current = current, min(previous, current) + step_cost</code> is the recurrence and the slide in one statement: the new total is this stair's price plus the cheaper of the two positions you could have come from, and the window moves up one.</li>
+        <li><code>return min(previous, current)</code> because the top is one past the last stair and can be reached from either of the last two.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>each stair costs its price plus the cheaper of the two totals below it, and the top is the cheaper of the last two.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>cheapest way to stand on each stair · <span id="target">cost = [10,15,20]</span></h3>
+        <svg class="fig" id="fig" viewBox="0 0 400 190" aria-label="staircase"></svg>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>rolling variables</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="min_cost_climbing_stairs.py">min_cost_climbing_stairs.py</a> · <a href="min_cost_climbing_stairs_annotated.py">min_cost_climbing_stairs_annotated.py</a> · <a href="test_min_cost_climbing_stairs.py">test_min_cost_climbing_stairs.py</a> · <a href="../../md.html?f=easy/020-min-cost-climbing-stairs/notes.md">notes.md</a> · <a href="../../index.html#easy">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def min_cost_climbing_stairs(self, cost: list[int]) -> int:",
+    "        previous, current = 0, 0",
+    "        for step_cost in cost:",
+    "            previous, current = current, min(previous, current) + step_cost",
+    "        return min(previous, current)"
+  ];
+
+  var COST = [10, 15, 20];
+  // stairs: one entry per stair plus a final "top" entry: [label, cost or null, min total to stand there or "?"].
+  // cur = the stair being computed (blue), hits = the stairs it can be reached from (green, arrows drawn),
+  // bad = a wrong answer (amber), dim = not yet relevant.
+  function stairs(vals, top) {
+    return [["stair 0", 10, vals[0]], ["stair 1", 15, vals[1]], ["stair 2", 20, vals[2]], ["top", null, top]];
+  }
+  var STATES = {
+    problem: {
+      caption: "Pay a stair's cost to stand on it, then climb 1 or 2. Start on stair 0 or 1. Reach the top as cheaply as possible.",
+      phase: "cost = [10,15,20]", stairs: stairs(["?", "?", "?"], "?"), cur: 3, hits: [], bad: [], dim: [0, 1, 2],
+      vars: [], meta: "The top is one position past the last stair. Cheapest route here: start on 1, pay 15, jump to the top. Answer <b>15</b>.", hl: []
+    },
+    brute: {
+      caption: "Recursion tries every path: cost(top) asks stair 2 and stair 1, each of which asks two more.",
+      phase: "cost = [10,15,20]", stairs: stairs(["?", "?", "?"], "?"), cur: 3, hits: [1, 2], bad: [], dim: [0],
+      vars: [["calls", "1 + 2 + 4 + …", ""]], meta: "Stair 1 is reached both directly from the top and again through stair 2, so its subtree is solved twice.", hl: [],
+      big: "O(2ⁿ)", bigNote: "the same stairs re-solved on every path"
+    },
+    insight: {
+      caption: "To stand on a stair you arrived from one of the two below it, so its cheapest total is its cost + the cheaper of those two.",
+      phase: "cost = [10,15,20]", stairs: stairs(["10", "15", "?"], "?"), cur: 2, hits: [0, 1], bad: [], dim: [3],
+      vars: [["stair 2", "20 + min(10, 15)", "new"]], meta: "Only the two previous totals matter, never anything further back.", hl: [4]
+    },
+    approach: {
+      caption: "Carry two rolling totals: previous (two stairs back) and current (one stair back).",
+      phase: "cost = [10,15,20]", stairs: stairs(["?", "?", "?"], "?"), cur: -1, hits: [], bad: [], dim: [],
+      vars: [["previous", "0", "new"], ["current", "0", "new"]], meta: "Each loop turn computes the next stair's total from the pair, then slides the pair one stair to the right.", hl: [2, 3, 4]
+    },
+    trace1: {
+      caption: "Before any stair: standing at either starting position is free, so both totals are 0.",
+      phase: "cost = [10,15,20]", stairs: stairs(["?", "?", "?"], "?"), cur: -1, hits: [], bad: [], dim: [2, 3],
+      vars: [["previous", "0", "new"], ["current", "0", "new"]], meta: "You can begin on stair 0 or stair 1 without having paid anything yet; the cost is paid when you step off.", hl: [2]
+    },
+    trace2: {
+      caption: "Stair 0: 10 + min(0, 0) = 10. Stair 1: 15 + min(0, 10) = 15.",
+      phase: "cost = [10,15,20]", stairs: stairs(["10", "15", "?"], "?"), cur: 1, hits: [0], bad: [], dim: [2, 3],
+      vars: [["previous", "10", ""], ["current", "15", "new"]], meta: "After two turns of the loop: previous = <b>10</b> (stair 0), current = <b>15</b> (stair 1).", hl: [3, 4]
+    },
+    trace3: {
+      caption: "Stair 2: 20 + min(10, 15) = 30. The top is reached from stair 1 or stair 2: min(15, 30) = 15.",
+      phase: "cost = [10,15,20]", stairs: stairs(["10", "15", "30"], "15"), cur: 3, hits: [1, 2], bad: [], dim: [],
+      vars: [["previous", "15", ""], ["current", "30", ""], ["min(previous, current)", "15", "found"]], meta: "Start on stair 1, pay 15, jump two to the top.", hl: [4, 5],
+      big: "15", bigNote: "min(15, 30)"
+    },
+    pitfall: {
+      caption: "Returning current alone reports 30: it forces the route through stair 2.",
+      phase: "cost = [10,15,20]", stairs: stairs(["10", "15", "30"], "15"), cur: -1, hits: [1], bad: [2], dim: [0],
+      vars: [["current", "30", ""], ["previous", "15", "found"]], meta: "The top sits <em>after</em> the array, so the last stair can be skipped entirely. The answer needs min of the last two.", hl: [5],
+      big: "30 ≠ 15", bigNote: "forgot the jump from stair 1"
+    },
+    complexity: {
+      caption: "One pass over the costs, two integers of state.",
+      phase: "cost = [10,15,20]", stairs: stairs(["10", "15", "30"], "15"), cur: -1, hits: [], bad: [], dim: [],
+      vars: [["previous", "15", ""], ["current", "30", ""]], meta: "Each stair does one min and one add; the two rolling totals replace a whole dp array.", hl: [3, 4],
+      big: "O(n) time · O(1) space", bigNote: "versus O(2ⁿ) for plain recursion"
+    },
+    final: {
+      caption: "The whole solution.",
+      phase: "cost = [10,15,20]", stairs: stairs(["10", "15", "30"], "15"), cur: -1, hits: [3], bad: [], dim: [],
+      vars: [["answer", "15", "found"]], meta: "", hl: [0, 1, 2, 3, 4, 5]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var figSvg = document.getElementById("fig");
+  function clearFig(h) { while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild); figSvg.setAttribute("viewBox", "0 0 400 " + h); }
+
+  function stairClass(s, i) {
+    if (i === s.cur) return "cur";
+    if (s.bad.indexOf(i) !== -1) return "bad";
+    if (s.hits.indexOf(i) !== -1) return "hit";
+    if (s.dim.indexOf(i) !== -1) return "dim";
+    return "";
+  }
+
+  function renderStairs(s) {
+    var n = s.stairs.length, H = 190, base = 158, riser = Math.min(26, 120 / n), tread = Math.min(72, 360 / n);
+    clearFig(H);
+    var x0 = (400 - tread * n) / 2;
+    figSvg.appendChild(el("line", { "class": "ground", x1: 8, y1: base, x2: 392, y2: base }));
+    for (var i = 0; i < n; i++) {
+      var st = s.stairs[i], x = x0 + i * tread, h = riser * (i + 1), y = base - h, cx = x + (tread - 3) / 2;
+      var cls = stairClass(s, i);
+      figSvg.appendChild(el("rect", { "class": "stair" + (cls ? " " + cls : "") + (st[1] === null ? " top" : ""), x: x, y: y, width: tread - 3, height: h, rx: 3 }));
+      figSvg.appendChild(el("text", { "class": "val" + (cls === "cur" ? " cur-txt" : cls === "hit" ? " hit-txt" : cls === "bad" ? " bad-txt" : ""), x: cx, y: y - 8 }, String(st[2])));
+      figSvg.appendChild(el("text", { "class": "lbl", x: cx, y: base + 15 }, st[0]));
+      figSvg.appendChild(el("text", { "class": "cost", x: cx, y: base + 28 }, st[1] === null ? "free" : "cost " + st[1]));
+    }
+    // arrows from the stairs the current one can be reached from
+    if (s.cur >= 0 && s.hits.length) {
+      var xc = x0 + s.cur * tread + (tread - 3) / 2, yc = base - riser * (s.cur + 1) - 22;
+      s.hits.forEach(function (j) {
+        if (j === s.cur || j < 0) return;
+        var xj = x0 + j * tread + (tread - 3) / 2, yj = base - riser * (j + 1) - 22;
+        figSvg.appendChild(el("path", { "class": "span", d: "M" + xj + "," + yj + " Q" + ((xj + xc) / 2) + "," + (Math.min(yj, yc) - 18) + " " + xc + "," + yc }));
+      });
+    }
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.phase;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.stairs.length; i++) {
+      var st = s.stairs[i], cls = stairClass(s, i);
+      arr += '<div class="cell' + (cls ? " " + cls : "") + '">' + st[2] + '<span class="idx">' + (st[1] === null ? "top" : st[0] + " · " + st[1]) + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+    renderStairs(s);
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

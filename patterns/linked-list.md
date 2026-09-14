@@ -37,6 +37,7 @@ return dummy.next
 | [easy/008 Merge Two Sorted Lists](../easy/008-merge-two-sorted-lists/) | Easy | dummy head, pick the smaller head, attach the remainder |
 | [medium/006 Add Two Numbers](../medium/006-add-two-numbers/) | Medium | dummy head, walk both lists with a carry, loop while anything is left |
 | [medium/011 LRU Cache](../medium/011-lru-cache/) | Medium | dict of key -> node into a doubly linked list with head/tail sentinels; move to front on use, evict tail.prev |
+| [medium/040 Reorder List](../medium/040-reorder-list/) | Medium | The target order `L0, Ln, L1, Ln-1, ...` is the first half of the list interleaved… |
 
 ## Common mistakes
 

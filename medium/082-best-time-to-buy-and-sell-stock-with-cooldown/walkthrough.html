@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Best Time to Buy and Sell Stock with Cooldown Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Dynamic Programming · LeetCode #309</div>
+  <h1>Best Time to Buy and Sell Stock with Cooldown, narrated</h1>
+  <p>Scroll through the thinking, from trying every sequence of trades to a three-state machine rolled forward one day at a time, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">state machine: hold / sold / rest as three rolling variables</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get the price of one stock for each day. You can buy and sell as many times as you like, but you may hold at most one share at a time, and the day after you sell is a mandatory <em>cooldown</em>: you cannot buy on it.</p>
+      <p>Return the largest profit you can end with. Buying costs the day's price, selling earns it, and you start with no shares.</p>
+      <div class="callout">Running example: <code>prices = [1, 2, 3, 0, 2]</code>. The answer is <strong>3</strong>: buy at 1, sell at 2, rest on the day of the 3, buy at 0, sell at 2. That is <code>(2 − 1) + (2 − 0) = 3</code>.</div>
+      <p>Without the cooldown you would sell at 3 instead of 2 and make 4. The cooldown is what makes the greedy "sell at every local peak" answer wrong: selling at 3 on day 2 forbids buying the 0 on day 3.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every plan</h2>
+      <p>On each day you either do nothing, buy (if you hold nothing and yesterday was not a sale), or sell (if you hold a share). Recurse over the days and take the best.</p>
+      <pre class="code"><span class="ln">def best(i, holding):</span><span class="ln">    if i &gt;= len(prices):</span><span class="ln">        return 0</span><span class="ln">    skip = best(i + 1, holding)</span><span class="ln">    if holding:</span><span class="ln">        return max(skip, prices[i] + best(i + 2, False))  # sell, then cooldown</span><span class="ln">    return max(skip, -prices[i] + best(i + 1, True))      # buy</span></pre>
+      <p style="margin-top:14px">Correct, and it even expresses the cooldown neatly as <code>i + 2</code>. But every day branches two ways, so it is <strong>O(2ⁿ)</strong>: the same <code>(i, holding)</code> pair is recomputed from every path that reaches it. At 5000 days this never finishes. Memoizing on <code>(i, holding)</code> fixes the time, but the shape of the fix is what points at the real solution.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: three states, rolled forward</h2>
+      <p>At the end of any day you are in exactly one of three situations, and for each one only the best cash balance matters:</p>
+      <ul>
+        <li><code>hold</code> — you own a share. The cash is negative if you have not sold yet.</li>
+        <li><code>sold</code> — you sold <em>today</em>. Tomorrow is the cooldown.</li>
+        <li><code>rest</code> — you own nothing and are free to buy tomorrow.</li>
+      </ul>
+      <p>Each day, every state is rebuilt from yesterday's three values:</p>
+      <ul>
+        <li><code>hold = max(hold, rest - price)</code> — keep holding, or buy today. Buying is only allowed from <code>rest</code>. That one detail <em>is</em> the cooldown rule.</li>
+        <li><code>sold = hold + price</code> — the only way to have just sold is to have been holding.</li>
+        <li><code>rest = max(rest, sold)</code> — keep resting, or you sold yesterday and today is the cooldown.</li>
+      </ul>
+      <div class="callout">The exponential tree collapses to three numbers per day because a plan's past does not matter, only which state it left you in and how much cash it left you with.</div>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>hold, sold, rest = float("-inf"), 0, 0</code> seeds the states before day 0. You cannot be holding a share you never bought, so <code>hold</code> starts impossible; doing nothing leaves 0 cash in the other two.</li>
+        <li><code>for price in prices</code> walks the days in order.</li>
+        <li><code>hold, sold, rest = max(hold, rest - price), hold + price, max(rest, sold)</code> is the whole recurrence in one tuple assignment. The right-hand side is evaluated with yesterday's values before any name is rebound.</li>
+        <li><code>return max(sold, rest)</code> — ending while holding a share is never better than not having bought it, so only the two cash-only states compete.</li>
+      </ul>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: days 0 and 1</h2>
+      <p>Day 0, <code>price = 1</code>. <code>hold = max(-inf, 0 − 1) = −1</code>: buying today is the only way to hold. <code>sold = −inf + 1 = −inf</code>: you cannot sell what you never had. <code>rest = max(0, 0) = 0</code>.</p>
+      <p>Day 1, <code>price = 2</code>. <code>hold = max(−1, 0 − 2) = −1</code>: keep the share bought at 1 rather than buy at 2. <code>sold = −1 + 2 = 1</code>: sell the share for a profit of 1. <code>rest = max(0, −inf) = 0</code>.</p>
+      <p>After two days the best "just sold" plan is worth 1 and the best "holding" plan is still the share bought at 1.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: days 2 and 3, the cooldown bites</h2>
+      <p>Day 2, <code>price = 3</code>. <code>hold = max(−1, 0 − 3) = −1</code>. <code>sold = −1 + 3 = 2</code>: selling the share bought at 1 for 3. <code>rest = max(0, 1) = 1</code>: yesterday's sale at 2 is now a completed trade sitting in cash.</p>
+      <p>Day 3, <code>price = 0</code>. <code>hold = max(−1, 1 − 0) = 1</code>: buy the 0 <em>from rest</em>, which holds the 1 from selling at 2. The plan that sold at 3 is in <code>sold = 2</code>, and <code>hold</code> is not allowed to read from it; that is the cooldown. <code>sold = −1 + 0 = −1</code>. <code>rest = max(1, 2) = 2</code>: the sale at 3 finishes its cooldown and becomes available cash.</p>
+      <div class="callout">Both plans survive side by side: <code>hold = 1</code> carries "sold at 2, bought at 0" and <code>rest = 2</code> carries "sold at 3, still resting". Neither is discarded yet.</div>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: day 4, the answer</h2>
+      <p>Day 4, <code>price = 2</code>. <code>hold = max(1, 2 − 2) = 1</code>. <code>sold = 1 + 2 = 3</code>: sell the share bought at 0 for 2, on top of the 1 already banked. <code>rest = max(2, −1) = 2</code>.</p>
+      <p>The loop is over. <code>max(sold, rest) = max(3, 2) = 3</code>. The plan that sold at the peak of 3 ends with 2; the plan that sold early at 2, rested, and bought the dip at 0 ends with 3 and wins.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: reading today's values</h2>
+      <p><strong>Updating the states one line at a time.</strong> Write the three updates as separate statements, <code>hold = max(hold, rest - price)</code>, then <code>sold = hold + price</code>, then <code>rest = max(rest, sold)</code>, and <code>sold</code> reads the <em>new</em> <code>hold</code>. That lets a plan buy and sell on the same day for zero profit, and worse, <code>rest</code> then reads the new <code>sold</code> so the cooldown disappears entirely. On the running example this returns <strong>4, not 3</strong>: buy 1, sell 3, buy 0, sell 2 with no rest day. The tuple assignment exists precisely so all three right-hand sides see yesterday's values.</p>
+      <p><strong>Letting <code>hold</code> read from <code>sold</code>.</strong> <code>hold = max(hold, max(rest, sold) - price)</code> is the recurrence for the no-cooldown problem and also gives 4 here. The cooldown lives in that one missing read.</p>
+      <p><strong>Seeding <code>hold = 0</code>.</strong> That pretends you start the first day holding a free share. <code>[2, 1]</code> then returns 2 instead of 0, because "selling" the phantom share on day 0 earns 2.</p>
+      <div class="callout warn">All three states are computed from yesterday's numbers in one tuple assignment, and only <code>rest</code> may buy. Check with <code>[1, 2, 3, 0, 2]</code>: the answer is 3, and any 4 means the cooldown leaked.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>One pass over the prices with three <code>max</code> and add operations per day: <strong>O(n) time</strong>. Three integers, no table: <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Plain recursion over days</td><td>O(2ⁿ)</td><td>O(n) call stack</td></tr>
+        <tr><td>Memoized on (day, holding)</td><td>O(n)</td><td>O(n) cache + stack</td></tr>
+        <tr><td>Three-state table, one row per day</td><td>O(n)</td><td>O(n)</td></tr>
+        <tr><td>Three rolling variables</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>Each state only reads the previous day, so the per-day table collapses to three variables, exactly the way Climbing Stairs collapses to two.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Five lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>hold, sold, rest = float("-inf"), 0, 0</code> — no share yet, no cash moved.</li>
+        <li><code>for price in prices</code> — one day at a time.</li>
+        <li><code>max(hold, rest - price)</code> — keep holding, or buy from a rest day.</li>
+        <li><code>hold + price</code> — the only way to have just sold.</li>
+        <li><code>max(rest, sold)</code> — keep resting, or finish yesterday's cooldown.</li>
+        <li><code>return max(sold, rest)</code> — never end holding a share.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>three states per day, hold / sold / rest, and buying is only allowed from rest.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>prices · [1, 2, 3, 0, 2] · blue = today, green = processed</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>rolling states · hold / sold / rest</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="best_time_to_buy_and_sell_stock_with_cooldown.py">best_time_to_buy_and_sell_stock_with_cooldown.py</a> · <a href="best_time_to_buy_and_sell_stock_with_cooldown_annotated.py">best_time_to_buy_and_sell_stock_with_cooldown_annotated.py</a> · <a href="test_best_time_to_buy_and_sell_stock_with_cooldown.py">test_best_time_to_buy_and_sell_stock_with_cooldown.py</a> · <a href="../../md.html?f=medium/082-best-time-to-buy-and-sell-stock-with-cooldown/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def max_profit(self, prices: list[int]) -> int:",
+    "        hold, sold, rest = float(\"-inf\"), 0, 0",
+    "        for price in prices:",
+    "            hold, sold, rest = max(hold, rest - price), hold + price, max(rest, sold)",
+    "        return max(sold, rest)"
+  ];
+
+  var PRICES = [1, 2, 3, 0, 2];
+
+  // cur = today's index (-1 = before the loop), done = days already processed, vars = the three states after today.
+  var STATES = {
+    problem: {
+      caption: "Buy and sell [1, 2, 3, 0, 2] as often as you like, but the day after a sale is a forced rest.",
+      cur: -1, done: [], vars: [],
+      meta: "Answer: <b>3</b>. Buy 1, sell 2, rest, buy 0, sell 2.", hl: []
+    },
+    brute: {
+      caption: "Every day branches into skip / buy / sell, and the same (day, holding) pair is re-solved on every path.",
+      cur: 0, done: [], vars: [["branches per day", "2"], ["plans at n = 5000", "2^5000"]],
+      meta: "best(i, holding) with sell jumping to i + 2 for the cooldown.", hl: [],
+      big: "O(2ⁿ)", bigNote: "without a cache"
+    },
+    idea: {
+      caption: "Three states per day: hold, sold (today), rest. Each is rebuilt from yesterday's three.",
+      cur: -1, done: [], vars: [["hold", "max(hold, rest − price)", "new"], ["sold", "hold + price", "new"], ["rest", "max(rest, sold)", "new"]],
+      meta: "Buying reads only from <b>rest</b>: that is the cooldown.", hl: [4]
+    },
+    approach: {
+      caption: "Before day 0: holding is impossible, the other two states have 0 cash.",
+      cur: -1, done: [], vars: [["hold", "−inf", "new"], ["sold", "0", "new"], ["rest", "0", "new"]],
+      meta: "One tuple assignment per day, then max(sold, rest).", hl: [2, 3, 4, 5]
+    },
+    t1: {
+      caption: "Day 1, price 2: hold = max(−1, 0 − 2) = −1, sold = −1 + 2 = 1, rest = max(0, −inf) = 0.",
+      cur: 1, done: [0], vars: [["hold", "−1"], ["sold", "1", "new"], ["rest", "0"]],
+      meta: "After day 0 (price 1): hold = −1, sold = −inf, rest = 0.", hl: [4]
+    },
+    t2: {
+      caption: "Day 3, price 0: hold = max(−1, 1 − 0) = 1 buys the dip from rest; rest = max(1, 2) = 2 banks the sale at 3.",
+      cur: 3, done: [0, 1, 2], vars: [["hold", "1", "new"], ["sold", "−1"], ["rest", "2", "new"]],
+      meta: "After day 2 (price 3): hold = −1, sold = 2, rest = 1. hold may not read sold = 2.", hl: [4]
+    },
+    t3: {
+      caption: "Day 4, price 2: sold = 1 + 2 = 3. max(sold, rest) = max(3, 2) = 3.",
+      cur: 4, done: [0, 1, 2, 3], vars: [["hold", "1"], ["sold", "3", "found"], ["rest", "2"]],
+      meta: "The early-sell-then-buy-the-dip plan beats selling at the peak.", hl: [4, 5],
+      big: "3", bigNote: "buy 1, sell 2, rest, buy 0, sell 2"
+    },
+    pitfall: {
+      caption: "Three separate statements: sold reads the new hold and rest reads the new sold, so the cooldown vanishes.",
+      cur: 4, done: [0, 1, 2, 3], vars: [["hold", "2"], ["sold", "4"], ["rest", "4"]],
+      meta: "Buy 1, sell 3, buy 0 on the very next day, sell 2.", hl: [4],
+      big: "4, not 3", bigNote: "same-day reads let a plan buy during its own cooldown"
+    },
+    complexity: {
+      caption: "One pass, three numbers alive at a time.",
+      cur: -1, done: [0, 1, 2, 3, 4], vars: [["hold", "1"], ["sold", "3"], ["rest", "2"]],
+      meta: "Each state reads only yesterday's values, so no per-day table is needed.", hl: [3, 4],
+      big: "O(n) time · O(1) space", bigNote: "versus O(2ⁿ) for the plain recursion"
+    },
+    final: {
+      caption: "The whole solution.",
+      cur: -1, done: [0, 1, 2, 3, 4], vars: [["hold", "1"], ["sold", "3", "found"], ["rest", "2"]],
+      meta: "", hl: [1, 2, 3, 4, 5]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < PRICES.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.done.indexOf(i) !== -1) cls += " hit";
+      else cls += " dim";
+      arr += '<div class="' + cls + '">' + PRICES[i] + '<span class="idx">day ' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not seeded yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var code = "";
+    for (var l = 0; l < CODE.length; l++) {
+      code += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = code;
+  }
+
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

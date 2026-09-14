@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Max Area of Island Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* number-of-islands additions: a grid of square cells with land, water, sunk and current states */
+  .grid { display: grid; gap: 4px; margin: 8px 0 4px; }
+  .gc {
+    aspect-ratio: 1; border-radius: 6px; border: 2px solid var(--line); background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.9rem; color: var(--muted); transition: all 0.25s;
+  }
+  .gc.land { background: var(--ok-soft); border-color: var(--ok); color: var(--ink); font-weight: 600; }
+  .gc.sunk { background: var(--code-bg); border-color: var(--line); color: var(--muted); text-decoration: line-through; }
+  .gc.cur { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); transform: scale(1.06); }
+  .gc.scan { outline: 2px dashed var(--accent); outline-offset: -2px; }
+  .dict .kv.island { border-color: var(--ok); }
+  .gc.done { background: var(--code-bg); border-color: var(--line); color: var(--muted); }
+  .gc.best { border-color: var(--ok); background: var(--ok-soft); color: var(--ink); font-weight: 600; }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Graph · LeetCode #695</div>
+  <h1>Max Area of Island, narrated</h1>
+  <p>Scroll through the thinking, from counting land cells to a flood fill that measures each island the first time it is touched, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph Traversal</a> <span class="how">scan cells, on unvisited land flood-fill it, count the pops, keep the max</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get a grid of <code>1</code> (land) and <code>0</code> (water). An island is a group of land cells connected up, down, left or right. The area of an island is how many cells it has. Return the largest area, or <code>0</code> if there is no land.</p>
+      <p>Diagonals do not connect. Two blocks that touch only at a corner are two islands, and each is measured on its own.</p>
+      <div class="callout">Running example: a 4 × 5 grid with an L of three cells top-left, an L of four cells bottom-right, and a lone cell at <code>(3, 0)</code>. The answer is <strong>4</strong>.</div>
+      <p>Unlike Number of Islands, the count of islands is irrelevant. What matters is the size of each one, and only the biggest survives to the return.</p>
+    </section>
+
+    <section class="step" data-state="naive">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: count the land, or grow from every cell</h2>
+      <p>Counting <code>1</code> cells gives 8 for the example, which is the total land, not the biggest island. The question is about pieces, not the sum.</p>
+      <p>The next idea is honest but wasteful: from <em>every</em> land cell, run a flood fill on a fresh copy of the grid and measure what it reaches:</p>
+      <pre class="code"><span class="ln">best = 0</span><span class="ln">for r in range(rows):</span><span class="ln">    for c in range(cols):</span><span class="ln">        if grid[r][c] == 1:</span><span class="ln">            best = max(best, fill(copy.deepcopy(grid), r, c))</span></pre>
+      <p style="margin-top:14px">Every cell of a 4-cell island starts its own fill and rediscovers the same 4 cells, so the island is measured four times. With a 50 × 50 grid of all land that is 2,500 fills of 2,500 cells each: <strong>O((m × n)²)</strong>, plus a grid copy per fill.</p>
+      <div class="callout warn">The waste is that a fill from any cell of an island visits exactly the same cells as a fill from any other cell of it. One measurement per island is enough.</div>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: components, and their sizes</h2>
+      <p>Every land cell is a node and every orthogonally adjacent pair of land cells is an edge. An island is a <strong>connected component</strong>. The area of an island is the number of nodes in its component.</p>
+      <p>Measuring components has the same recipe as counting them: visit cells in scan order; when the scan lands on a cell no traversal has touched yet, that cell starts a new component, so traverse everything reachable from it, marking each cell visited so no later scan step starts a second traversal into the same island.</p>
+      <div class="callout">The only new thing is a counter that goes up by one for every cell the traversal pops. When the traversal ends, the counter is the area, and <code>max</code> keeps the record.</div>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: sink the island as you measure it</h2>
+      <p>Scan the grid row by row. When the scan lands on a <code>1</code>:</p>
+      <ul>
+        <li>Set <code>grid[r][c] = 0</code> right away, push the cell, and reset <code>area = 0</code> for this island.</li>
+        <li>Loop <code>while stack</code>: pop a cell, do <code>area += 1</code>, and for each of its four neighbours that is in bounds and still <code>1</code>, sink it with <code>grid[nr][nc] = 0</code> and push it.</li>
+        <li>When the stack empties, <code>best = max(best, area)</code>.</li>
+      </ul>
+      <p>Overwriting to <code>0</code> is the visited set. It costs no extra memory, and it guarantees the outer scan passes over the rest of this island without starting a second fill. Sink on <em>push</em>, not on pop, so no cell is pushed twice and no cell is counted twice.</p>
+      <p>Counting on <em>pop</em> is what makes the seed cell count: it is pushed before the loop, popped first, and counted like every other cell.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the first island, area 3</h2>
+      <p>The scan crosses <code>(0, 0)</code> and <code>(0, 1)</code>, both water, and lands on <code>(0, 2)</code>, which is land. Sink it, push it, <code>area = 0</code>.</p>
+      <p>Pop <code>(0, 2)</code>: <code>area = 1</code>. Its neighbours are <code>(1, 2)</code> below (land: sink and push), nothing above, <code>(0, 3)</code> water, <code>(0, 1)</code> water. Pop <code>(1, 2)</code>: <code>area = 2</code>. Below is <code>(2, 2)</code>, water; above is already sunk; right is <code>(1, 3)</code>, water; left is <code>(1, 1)</code>, land, so sink and push. Pop <code>(1, 1)</code>: <code>area = 3</code>, and all four of its neighbours are water or sunk.</p>
+      <p>The stack is empty, so <code>best = max(0, 3) = 3</code>. When the scan later reaches <code>(1, 1)</code> and <code>(1, 2)</code> it sees <code>0</code> and skips them; this island is never measured a second time.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: the second island, area 4</h2>
+      <p>More water, then <code>(2, 3)</code>. Sink it, push it, reset <code>area = 0</code>. Pop <code>(2, 3)</code>: <code>area = 1</code>; only <code>(3, 3)</code> below is land, so sink and push it.</p>
+      <p>Pop <code>(3, 3)</code>: <code>area = 2</code>. Below is out of bounds, above is sunk, right is <code>(3, 4)</code> (land: sink, push), left is <code>(3, 2)</code> (land: sink, push). The stack is now <code>[(3, 4), (3, 2)]</code>; the panel shows both pushed cells sunk and <code>(3, 3)</code> as the cell being explored.</p>
+      <p>Pop <code>(3, 2)</code>: <code>area = 3</code>, no live neighbours. Pop <code>(3, 4)</code>: <code>area = 4</code>, no live neighbours. Stack empty, so <code>best = max(3, 4) = 4</code>.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the lone cell, and the answer</h2>
+      <p>The scan reaches row 3. <code>(3, 0)</code> is land: sink, push, <code>area = 0</code>. Pop it: <code>area = 1</code>. Every neighbour is water, out of bounds, or already sunk, so the fill ends immediately.</p>
+      <p><code>best = max(4, 1) = 4</code>. The record does not move. The scan finishes the row over cells that are all <code>0</code> now, and <code>return best</code> gives <strong>4</strong>.</p>
+      <div class="callout">Three islands, three fills, eight pops in total. Each land cell was pushed once and popped once, which is the whole cost of the algorithm.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: where the counting happens</h2>
+      <p><strong>Counting on push.</strong> Move <code>area += 1</code> into the neighbour loop, next to <code>stack.append</code>. Now the seed cell, which is pushed before the loop, is never counted, and every island is one short: the running example returns <strong>3</strong> instead of 4. The panel shows the second island with three cells counted and its seed <code>(2, 3)</code> left out.</p>
+      <p><strong>Not resetting the counter.</strong> Put <code>area = 0</code> once before the scan instead of once per island. The fills then share one counter: after the three fills it holds <code>3 + 4 + 1 = 8</code>, and <code>best</code> ends as <strong>8</strong>, the total land, not the largest island.</p>
+      <p><strong>Sinking on pop instead of push.</strong> A cell with two live neighbours is pushed twice before either pop reaches it, so it is popped and counted twice. A 2 × 2 block comes out as 5 or 6.</p>
+      <div class="callout warn">Mark on push, count on pop, reset per island. Each of the three rules fixes exactly one of the bugs above.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>The scan visits each of the <code>m × n</code> cells once. A land cell is sunk the moment it is pushed, so it is pushed at most once and popped at most once. Total: <strong>O(m × n) time</strong>. The stack holds at most every land cell at once, so <strong>O(m × n) space</strong> in the worst case, and the grid itself is the visited set.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Fill from every land cell on a copy</td><td>O((m × n)²)</td><td>O(m × n) per copy</td></tr>
+        <tr><td>Fill once per island, separate visited set</td><td>O(m × n)</td><td>O(m × n) set + stack</td></tr>
+        <tr><td>Fill once per island, sink in place</td><td>O(m × n)</td><td>O(m × n) stack, nothing else</td></tr>
+      </table>
+      <p>Sinking in place trades the caller's grid for the visited set. If the grid must survive, keep a <code>set</code> of <code>(r, c)</code> instead; the time is unchanged.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Number of Islands with a counter and a max. Every line maps to a step above.</p>
+      <ul>
+        <li><code>if grid[r][c] != 1: continue</code> skips water and anything already sunk.</li>
+        <li><code>grid[r][c] = 0</code> then <code>stack = [(r, c)]</code> marks the seed before it is pushed.</li>
+        <li><code>area = 0</code> starts a fresh count for this island.</li>
+        <li><code>cr, cc = stack.pop()</code> and <code>area += 1</code> count each cell exactly once, on its pop.</li>
+        <li>The four-tuple loop with <code>0 &lt;= nr &lt; rows and 0 &lt;= nc &lt; cols and grid[nr][nc] == 1</code> finds live neighbours.</li>
+        <li><code>grid[nr][nc] = 0</code> before <code>stack.append((nr, nc))</code> is the mark-on-push rule.</li>
+        <li><code>best = max(best, area)</code> after the loop keeps the record; <code>return best</code> hands it back.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>flood-fill each island once, sinking cells as you push them, count the pops, keep the max.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>grid · green = land, struck = sunk, blue = exploring, dashed = scan</h3>
+        <div class="grid" id="grid"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>area, best and stack</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="max_area_of_island.py">max_area_of_island.py</a> · <a href="max_area_of_island_annotated.py">max_area_of_island_annotated.py</a> · <a href="test_max_area_of_island.py">test_max_area_of_island.py</a> · <a href="../../md.html?f=medium/061-max-area-of-island/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+
+  var CODE = [
+    "class Solution:",
+    "    def max_area_of_island(self, grid: list[list[int]]) -> int:",
+    "        rows, cols = len(grid), len(grid[0])",
+    "        best = 0",
+    "        for r in range(rows):",
+    "            for c in range(cols):",
+    "                if grid[r][c] != 1:",
+    "                    continue",
+    "                grid[r][c] = 0",
+    "                stack = [(r, c)]",
+    "                area = 0",
+    "                while stack:",
+    "                    cr, cc = stack.pop()",
+    "                    area += 1",
+    "                    for nr, nc in ((cr + 1, cc), (cr - 1, cc), (cr, cc + 1), (cr, cc - 1)):",
+    "                        if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == 1:",
+    "                            grid[nr][nc] = 0",
+    "                            stack.append((nr, nc))",
+    "                best = max(best, area)",
+    "        return best"
+  ];
+
+  // 1 = land, 0 = water, 2 = sunk (already flood-filled)
+  var G0 = [
+    [0, 0, 1, 0, 0],
+    [0, 1, 1, 0, 0],
+    [0, 0, 0, 1, 0],
+    [1, 0, 1, 1, 1]
+  ];
+  var G1 = [
+    [0, 0, 2, 0, 0],
+    [0, 2, 2, 0, 0],
+    [0, 0, 0, 1, 0],
+    [1, 0, 1, 1, 1]
+  ];
+  var G2 = [
+    [0, 0, 2, 0, 0],
+    [0, 2, 2, 0, 0],
+    [0, 0, 0, 2, 0],
+    [1, 0, 2, 2, 2]
+  ];
+  var G3 = [
+    [0, 0, 2, 0, 0],
+    [0, 2, 2, 0, 0],
+    [0, 0, 0, 2, 0],
+    [2, 0, 2, 2, 2]
+  ];
+
+  // Each state describes what the sticky panel shows for one step.
+  // g = grid values, cur = [r, c] being explored (or null), scan = [r, c] of the outer scan (or null),
+  // best = list of [r, c] cells drawn as the record island (green, un-struck).
+  var STATES = {
+    problem: {
+      caption: "Find the largest group of orthogonally connected land cells.",
+      g: G0, cur: null, scan: null, best: [], chips: [], meta: "Answer: <b>4</b>. Eight land cells, three islands of area 3, 4 and 1.", hl: []
+    },
+    naive: {
+      caption: "Counting land gives 8. Filling from every land cell measures each island once per cell.",
+      g: G0, cur: null, scan: null, best: [], chips: [["land cells", "8"], ["largest island", "4", "found"]],
+      meta: "The 4-cell island would be flood-filled four separate times.", hl: [],
+      big: "O((m × n)²)", bigNote: "one full fill per land cell"
+    },
+    reframe: {
+      caption: "Land cells are nodes, orthogonal adjacency is an edge, islands are connected components with a size.",
+      g: G0, cur: [0, 2], scan: null, best: [], chips: [["component size", "?"]],
+      meta: "Traverse each component once and count the cells it pops.", hl: []
+    },
+    idea: {
+      caption: "Scan every cell; on a 1, sink it, push it, flood-fill counting each pop, then max.",
+      g: G0, cur: null, scan: [0, 0], best: [], chips: [["best", "0", "new"], ["area", "–"], ["stack", "[]", "new"]],
+      meta: "Sink on push so no cell is pushed twice; count on pop so the seed is counted.", hl: [6, 7, 8, 9, 10, 12, 13, 16, 17, 18]
+    },
+    t1: {
+      caption: "(0, 2) is land. The fill pops (0, 2), (1, 2), (1, 1): area = 3, best = 3.",
+      g: [[0, 0, 2, 0, 0], [0, 2, 2, 0, 0], [0, 0, 0, 1, 0], [1, 0, 1, 1, 1]], cur: [1, 1], scan: [0, 2], best: [],
+      chips: [["best", "3", "found"], ["area", "3", "new"], ["stack", "[]"]],
+      meta: "Pop (1, 1): every neighbour is water or already sunk, so the stack empties. max(0, 3) = <b>3</b>.", hl: [12, 13, 18]
+    },
+    t2: {
+      caption: "(2, 3) is land. Pop (2, 3), then (3, 3) pushes (3, 4) and (3, 2). Four pops: area = 4.",
+      g: G2, cur: [3, 3], scan: [2, 3], best: [],
+      chips: [["best", "3"], ["area", "2", "new"], ["stack", "[(3,4), (3,2)]", "new"]],
+      meta: "Pop (3, 3): area = 2; right (3, 4) and left (3, 2) are land → sink, push. Two more pops make 4, so best = max(3, 4) = <b>4</b>.", hl: [12, 13, 14, 15, 16, 17]
+    },
+    t3: {
+      caption: "(3, 0) alone: area = 1, best stays 4. The scan ends; return 4.",
+      g: G3, cur: [3, 0], scan: [3, 0], best: [[2, 3], [3, 2], [3, 3], [3, 4]],
+      chips: [["best", "4", "found"], ["area", "1"], ["stack", "[]"]],
+      meta: "max(4, 1) = 4. Every land cell pushed once, popped once, counted once.", hl: [18, 19],
+      big: "4", bigNote: "the L-shaped island bottom-right"
+    },
+    pitfall: {
+      caption: "Counting on push skips the seed cell: the 4-cell island measures 3.",
+      g: G2, cur: [2, 3], scan: [2, 3], best: [[3, 2], [3, 3], [3, 4]],
+      chips: [["area (buggy)", "3"], ["area (correct)", "4", "found"]],
+      meta: "The seed (2, 3) is pushed before the loop and never counted. Also: <b>area = 0</b> outside the scan accumulates to 8.", hl: [10, 13, 17],
+      big: "3, not 4", bigNote: "count on pop so the seed is included"
+    },
+    complexity: {
+      caption: "Every cell scanned once; every land cell pushed and popped at most once.",
+      g: G3, cur: null, scan: null, best: [[2, 3], [3, 2], [3, 3], [3, 4]], chips: [["cells", "20"], ["pushes", "8"]],
+      meta: "The grid doubles as the visited set, so no extra memory for that.", hl: [4, 5, 11],
+      big: "O(m × n) time · O(m × n) stack worst case", bigNote: "one fill per island, not per cell"
+    },
+    final: {
+      caption: "The whole solution.",
+      g: G3, cur: null, scan: null, best: [[2, 3], [3, 2], [3, 3], [3, 4]], chips: [["best", "4", "found"]], meta: "",
+      hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function isBest(s, r, c) {
+    for (var i = 0; i < s.best.length; i++) if (s.best[i][0] === r && s.best[i][1] === c) return true;
+    return false;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var grid = $("grid");
+    grid.style.gridTemplateColumns = "repeat(" + s.g[0].length + ", 1fr)";
+    var html = "";
+    for (var r = 0; r < s.g.length; r++) {
+      for (var c = 0; c < s.g[r].length; c++) {
+        var v = s.g[r][c];
+        var cls = "gc" + (v === 1 ? " land" : v === 2 ? " sunk" : "");
+        if (isBest(s, r, c)) cls = "gc best";
+        if (s.cur && s.cur[0] === r && s.cur[1] === c) cls += " cur";
+        if (s.scan && s.scan[0] === r && s.scan[1] === c) cls += " scan";
+        html += '<div class="' + cls + '">' + (v === 0 ? "0" : "1") + '</div>';
+      }
+    }
+    grid.innerHTML = html;
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.chips.length; k++) {
+        var e = s.chips[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var code = "";
+    for (var l = 0; l < CODE.length; l++) {
+      code += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = code;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

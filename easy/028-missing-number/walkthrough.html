@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Missing Number Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  .fig .bit { fill: var(--bg); stroke: var(--line); stroke-width: 1.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .bit.one { fill: var(--panel); stroke: var(--muted); }
+  .fig .bit.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2.5; }
+  .fig .bit.hit { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 2.5; }
+  .fig .bit.dim { opacity: 0.35; }
+  .fig .val.zero { fill: var(--muted); font-weight: 400; }
+  .fig .rlbl { fill: var(--muted); font-size: 11px; text-anchor: start; font-family: ui-monospace, Menlo, monospace; }
+  .fig .rlbl.acc { fill: var(--ink); font-weight: 600; }
+  .fig .rlbl.cur { fill: var(--accent); font-weight: 600; }
+  .fig .rlbl.ok { fill: var(--ok); font-weight: 600; }
+  .fig .hdr { fill: var(--muted); font-size: 9px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .box.dim { opacity: 0.4; }
+  .fig .dig { fill: var(--ink); font-size: 22px; font-weight: 700; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .tag-txt { fill: var(--accent); font-size: 11px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .arrow { stroke: var(--accent); stroke-width: 2; fill: none; }
+  .fig .arrow-head { fill: var(--accent); }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#easy">← All walkthroughs</a>
+  <div class="tag">Easy · Bit Manipulation · LeetCode #268</div>
+  <h1>Missing Number, narrated</h1>
+  <p>Scroll through sorting and sets, the XOR trick that cancels every present value against the full range, and a three-step trace over [3,0,1], with the accumulator's bits shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/bit-manipulation.html">Bit Manipulation</a> <span class="how">XOR cancels equal values. XOR every index and every supplied number against the full range 0 through n, leaving only the absent value.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You are given an array <code>nums</code> of <code>n</code> distinct integers drawn from the range <code>0</code> to <code>n</code> inclusive. That range has <code>n + 1</code> values and the array holds only <code>n</code> of them, so exactly one is absent. Return it.</p>
+      <div class="callout">Running example: <code>nums = [3,0,1]</code>, so <code>n = 3</code> and the full range is 0, 1, 2, 3. The value 2 never appears, so the answer is <strong>2</strong>.</div>
+      <p>The follow-up asks for O(n) time and O(1) extra space. The panel lists the four range values as 8-bit patterns and highlights <code>2 = 00000010</code>, the one with no match in the array.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: sort, or use a set</h2>
+      <p>Sort the array and walk it looking for the first index whose value is not equal to the index:</p>
+      <pre class="code"><span class="ln">nums.sort()</span><span class="ln">for i, v in enumerate(nums):</span><span class="ln">    if v != i:</span><span class="ln">        return i</span><span class="ln">return len(nums)</span></pre>
+      <p style="margin-top:14px">For <code>[3,0,1]</code> that sorts to <code>[0,1,3]</code>, finds <code>nums[2] = 3 != 2</code>, and returns 2. Correct, but the sort is <strong>O(n log n)</strong>, and the trailing <code>return len(nums)</code> is needed for the case where n itself is the missing value.</p>
+      <p>A hash set is faster: put every value in a set, then check each of 0 through n for membership. That is O(n) time but allocates a set of n entries, so <strong>O(n) space</strong>. The panel dims the three present values to make the point: both approaches do more than one integer's worth of work to find one integer.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: XOR the range against the input</h2>
+      <p>XOR has the property <code>x ^ x = 0</code>, and it is associative and commutative, so the order of operands is irrelevant. The panel shows the simplest case: <code>3 ^ 3 = 0</code>.</p>
+      <p>Now XOR together every value in the full range 0 through n <em>and</em> every value in <code>nums</code>. A value that is present in <code>nums</code> appears twice in that combined expression, once from the range and once from the array, so it cancels to 0. The missing value appears only once, from the range, and survives.</p>
+      <div class="callout">For the example: <code>(0 ^ 1 ^ 2 ^ 3) ^ (3 ^ 0 ^ 1)</code>. The 0s, 1s and 3s pair off and vanish. What is left is <code>2</code>.</div>
+      <p>No sorting, no set, and unlike the sum-based alternative, the running value never grows larger than the largest input.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: the indices are the range</h2>
+      <p>You do not need to build a second list holding 0 through n. The indices of <code>nums</code> already supply 0 through n − 1, and the one value they do not supply, n itself, is <code>len(nums)</code>. So seed the accumulator with it: <code>missing = len(nums)</code>, which for the example is <code>missing = 3 (00000011)</code>.</p>
+      <p>Then a single pass, <code>for index, number in enumerate(nums):</code>, folds in both the range value and the array value at once: <code>missing ^= index ^ number</code>. After the loop every present value has been XORed in twice and the missing one exactly once.</p>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: index 0, number 3</h2>
+      <p>The accumulator starts at <code>missing = 3</code>. The first element gives <code>index = 0</code> and <code>number = 3</code>, so the update is <code>3 ^ 0 ^ 3</code>.</p>
+      <p>XORing in the index 0 changes nothing (<code>x ^ 0 = x</code>). XORing in the number 3 meets the seed 3 and cancels it: <code>3 ^ 3 = 0</code>. The panel shows the two <code>00000011</code> patterns lining up and the result <code>missing = 0 (00000000)</code>.</p>
+      <p>Two range values have now been accounted for, 3 from the seed and 0 from the index, and one array value, 3. The range value 0 is waiting for its partner.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: index 1, number 0</h2>
+      <p>Next, <code>index = 1</code> and <code>number = 0</code>. The update is <code>0 ^ 1 ^ 0</code>.</p>
+      <p>The index 1 has no partner yet, so it turns bit 0 on. The number 0 is a no-op. The result is <code>missing = 1 (00000001)</code>.</p>
+      <p>Bookkeeping: the range values seen so far are 3, 0, 1 and the array values are 3, 0. The 3s cancelled in the previous step, and the range 0 and the array 0 have both been XORed in, so they cancel too. Only the range value 1 is unmatched, and that is exactly what the accumulator holds.</p>
+    </section>
+
+    <section class="step" data-state="trace3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: index 2, number 1, the answer</h2>
+      <p>The last element gives <code>index = 2</code> and <code>number = 1</code>. The update is <code>1 ^ 2 ^ 1</code>.</p>
+      <p>The number 1 meets the index 1 that was left over from the previous step and cancels it. The index 2 has no partner anywhere in <code>nums</code>, so it turns bit 1 on and stays. The result is <code>missing = 2 (00000010)</code>.</p>
+      <p>The loop is finished and <code>return missing</code> gives <strong>2</strong>. Every present value paired off; the value that was never in the array is the only survivor.</p>
+      <div class="callout">The whole computation, in the order it ran: <code>3 ^ (0 ^ 3) ^ (1 ^ 0) ^ (2 ^ 1) = 2</code>. Three iterations, two XORs each, one integer of state.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the sum, the seed, and the index</h2>
+      <p>The panel shows the arithmetic alternative: the range 0 through 3 sums to <code>0+1+2+3 = 6</code>, the array sums to <code>3+0+1 = 4</code>, and <code>6 - 4 = 2</code>. It is also O(n) time and O(1) space, and in Python it is fine. In a fixed-width language, though, <code>n * (n + 1) / 2</code> grows quadratically and overflows a 32-bit integer for n around 65,000. The XOR accumulator never produces a value wider than its inputs, so it has no such limit.</p>
+      <p><strong>Forgetting to seed with n.</strong> Write <code>missing = 0</code> instead of <code>missing = len(nums)</code> and the range value n is never XORed in. For <code>[3,0,1]</code> that computes <code>0 ^ (0 ^ 3) ^ (1 ^ 0) ^ (2 ^ 1) = 1</code>: the array's 3 now has no partner and pollutes the result. The function returns <strong>1</strong> instead of 2.</p>
+      <p><strong>Folding in only the numbers.</strong> Write <code>missing ^= number</code> without the <code>index ^</code> and half of the range is missing. For the example that is <code>3 ^ 3 ^ 0 ^ 1 = 1</code>, again returning <strong>1</strong>. Both halves of <code>index ^ number</code> are required: the indices and the seed together are the full range, and the numbers are what gets cancelled against it.</p>
+      <div class="callout warn">Test the two edge placements: <code>[0,1]</code> (answer 2, the missing value is n) and <code>[1,2]</code> (answer 0, the missing value is the smallest). The seed bug returns 0 and 2 for them; the index bug returns 3 and 1. Neither bug survives both.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>One pass over the array with two XORs per element: <strong>O(n) time</strong>. The only state is the single integer <code>missing</code>, so <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Sort, then scan for the gap</td><td>O(n log n)</td><td>O(1) to O(n) depending on the sort</td></tr>
+        <tr><td>Hash set, then check 0..n</td><td>O(n)</td><td>O(n)</td></tr>
+        <tr><td>Sum formula <code>n(n+1)/2 - sum(nums)</code></td><td>O(n)</td><td>O(1), but the total can overflow</td></tr>
+        <tr><td>XOR accumulator</td><td>O(n)</td><td>O(1), no overflow</td></tr>
+      </table>
+      <p>The set already meets the time bound; the sum meets both bounds in Python. XOR is the answer that meets both bounds in every language, which is why it is the one to reach for.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Four lines of body.</p>
+      <ul>
+        <li><code>missing = len(nums)</code> seeds the accumulator with n, the one range value the indices cannot supply.</li>
+        <li><code>for index, number in enumerate(nums):</code> walks the array once, yielding a range value (the index) and an array value (the number) together.</li>
+        <li><code>missing ^= index ^ number</code> folds both in. Every value present in the array is XORed twice across the run and cancels; the absent one is XORed once.</li>
+        <li><code>return missing</code> — the lone survivor is the number that was never in <code>nums</code>.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>XOR the full range 0..n with every array value; everything present cancels and the missing number is what remains.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>nums · xor accumulator, low 8 bits</h3>
+        <div class="array" id="array"></div>
+        <svg class="fig" id="fig" viewBox="0 0 400 160" aria-label="bit rows"></svg>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>accumulator</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="missing_number.py">missing_number.py</a> · <a href="missing_number_annotated.py">missing_number_annotated.py</a> · <a href="test_missing_number.py">test_missing_number.py</a> · <a href="../../md.html?f=easy/028-missing-number/notes.md">notes.md</a> · <a href="../../index.html#easy">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def missing_number(self, nums: list[int]) -> int:",
+    "        missing = len(nums)",
+    "        for index, number in enumerate(nums):",
+    "            missing ^= index ^ number",
+    "        return missing"
+  ];
+
+  // Each state describes what the sticky panel shows for one step.
+  var STATES = {
+    problem: {"caption": "Three numbers drawn from 0..3; one of the four is missing.", "arr": [3, 0, 1], "cur": -1, "hits": [], "dim": [], "rows": [{"l": "0", "b": "00000000", "c": ""}, {"l": "1", "b": "00000001", "c": ""}, {"l": "2", "b": "00000010", "c": "cur", "hi": [1], "hc": "cur"}, {"l": "3", "b": "00000011", "c": ""}], "meta": "<b>nums = [3,0,1]</b>, n = 3. The full range is 0, 1, 2, 3; the value 2 never appears.", "vars": [], "hl": []},
+    brute: {"caption": "Brute force: sort and look for the gap, or put everything in a set.", "arr": [3, 0, 1], "cur": -1, "hits": [], "dim": [], "rows": [{"l": "0", "b": "00000000", "c": "", "dim": true}, {"l": "1", "b": "00000001", "c": "", "dim": true}, {"l": "3", "b": "00000011", "c": "", "dim": true}], "meta": "Sorting is O(n log n); a set is O(n) but allocates n entries. Both do more than one integer of work.", "vars": [], "hl": []},
+    insight: {"caption": "XOR the whole range against the whole input: present values cancel, the absent one does not.", "arr": [3, 0, 1], "cur": -1, "hits": [], "dim": [], "rows": [{"l": "3", "b": "00000011", "c": "", "hi": [0, 1], "hc": "cur"}, {"l": "^ 3", "b": "00000011", "c": "", "hi": [0, 1], "hc": "cur"}, {"l": "= 0", "b": "00000000", "c": "ok"}], "meta": "Every number in 0..n that is also in nums appears twice in the combined XOR and vanishes. The missing number appears once.", "vars": [], "hl": [4]},
+    approach: {"caption": "Seed with n, then XOR each index and each number in one scan.", "arr": [3, 0, 1], "cur": -1, "hits": [], "dim": [], "rows": [{"l": "missing = 3", "b": "00000011", "c": "acc", "hi": [0, 1], "hc": "cur"}], "meta": "The indices 0..n-1 plus the seed n supply the full range without building a second list.", "vars": [["missing", "3 (00000011)", "new"]], "hl": [2, 3, 4]},
+    trace1: {"caption": "index 0, number 3: 3 ^ 0 ^ 3 = 0.", "arr": [3, 0, 1], "cur": 0, "hits": [], "dim": [], "rows": [{"l": "missing = 3", "b": "00000011", "c": "acc"}, {"l": "^ index = 0", "b": "00000000", "c": ""}, {"l": "^ number = 3", "b": "00000011", "c": "", "hi": [0, 1], "hc": "cur"}, {"l": "= 0", "b": "00000000", "c": "acc", "hi": [0, 1], "hc": "hit"}], "meta": "The seed 3 meets the number 3 and cancels. Index 0 changes nothing.", "vars": [["index", "0"], ["number", "3"], ["missing", "0 (00000000)", "new"]], "hl": [4]},
+    trace2: {"caption": "index 1, number 0: 0 ^ 1 ^ 0 = 1.", "arr": [3, 0, 1], "cur": 1, "hits": [0], "dim": [], "rows": [{"l": "missing = 0", "b": "00000000", "c": "acc"}, {"l": "^ index = 1", "b": "00000001", "c": "", "hi": [0], "hc": "cur"}, {"l": "^ number = 0", "b": "00000000", "c": ""}, {"l": "= 1", "b": "00000001", "c": "acc", "hi": [0], "hc": "hit"}], "meta": "Index 1 has no partner yet, so bit 0 turns on. The number 0 is a no-op.", "vars": [["index", "1"], ["number", "0"], ["missing", "1 (00000001)", "new"]], "hl": [4]},
+    trace3: {"caption": "index 2, number 1: 1 ^ 2 ^ 1 = 2. Every present value has paired off.", "arr": [3, 0, 1], "cur": 2, "hits": [0, 1], "dim": [], "rows": [{"l": "missing = 1", "b": "00000001", "c": "acc"}, {"l": "^ index = 2", "b": "00000010", "c": "", "hi": [1], "hc": "cur"}, {"l": "^ number = 1", "b": "00000001", "c": "", "hi": [0], "hc": "cur"}, {"l": "= 2", "b": "00000010", "c": "ok", "hi": [1], "hc": "hit"}], "meta": "The number 1 cancels the index 1 from before; index 2 never finds a partner and is the answer.", "vars": [["missing", "2 (00000010)", "found"]], "hl": [4, 5], "big": "2", "bigNote": "3 ^ (0 ^ 3) ^ (1 ^ 0) ^ (2 ^ 1)"},
+    pitfall: {"caption": "The sum formula n(n+1)/2 - sum(nums) also works, but totals grow with n.", "arr": [3, 0, 1], "cur": -1, "hits": [], "dim": [], "rows": [{"l": "0+1+2+3 = 6", "b": "00000110", "c": "", "hi": [1, 2], "hc": "cur"}, {"l": "3+0+1 = 4", "b": "00000100", "c": "", "hi": [2], "hc": "cur"}, {"l": "6 - 4 = 2", "b": "00000010", "c": "ok", "hi": [1], "hc": "hit"}], "meta": "In fixed-width languages the range total can overflow. XOR never produces a value wider than its inputs.", "vars": [["sum approach", "2"], ["xor approach", "2", "found"]], "hl": [4]},
+    complexity: {"caption": "One pass, one integer.", "arr": [3, 0, 1], "cur": -1, "hits": [], "dim": [], "rows": [{"l": "missing = 2", "b": "00000010", "c": "ok", "hi": [1], "hc": "hit"}], "meta": "Each element contributes two XORs. No extra memory beyond the accumulator.", "vars": [["time", "O(n)"], ["space", "O(1)", "found"]], "hl": [3, 4], "big": "O(n) time · O(1) space", "bigNote": "one accumulator"},
+    final: {"caption": "XOR the range and the input together; the survivor is the missing number.", "arr": [3, 0, 1], "cur": -1, "hits": [0, 1, 2], "dim": [], "rows": [{"l": "missing = 2", "b": "00000010", "c": "ok", "hi": [1], "hc": "hit"}], "meta": "Seed n, fold in every index and value, return what is left.", "vars": [["missing", "2", "found"]], "hl": [0, 1, 2, 3, 4, 5], "big": "2", "bigNote": "running example"}
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var figSvg = document.getElementById("fig");
+  function clearFig(h) { while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild); figSvg.setAttribute("viewBox", "0 0 400 " + h); }
+
+  // Rows of bit cells. Each row: { l: label, b: "0101", c: label class, hi: [bit positions, 0 = lowest], hc: "cur"|"hit", dim: bool }
+  // Returns the y coordinate just below the last row.
+  function drawRows(rows, y0) {
+    if (!rows.length) return y0;
+    var n = rows[0].b.length, pitch = 33, w = pitch - 3, x0 = 396 - n * pitch;
+    for (var p = 0; p < n; p++) {
+      figSvg.appendChild(el("text", { "class": "hdr", x: x0 + p * pitch + w / 2, y: y0 + 10 }, "bit " + (n - 1 - p)));
+    }
+    var y = y0 + 16;
+    rows.forEach(function (r) {
+      figSvg.appendChild(el("text", { "class": "rlbl" + (r.c ? " " + r.c : ""), x: 8, y: y + 16 }, r.l));
+      for (var p = 0; p < n; p++) {
+        var ch = r.b.charAt(p), cls = "bit" + (ch === "1" ? " one" : "");
+        if (r.hi && r.hi.indexOf(n - 1 - p) !== -1) cls += " " + (r.hc || "cur");
+        if (r.dim) cls += " dim";
+        figSvg.appendChild(el("rect", { "class": cls, x: x0 + p * pitch, y: y, width: w, height: 24, rx: 4 }));
+        figSvg.appendChild(el("text", { "class": "val" + (ch === "1" ? "" : " zero"), x: x0 + p * pitch + w / 2, y: y + 17 }, ch));
+      }
+      y += 32;
+    });
+    return y;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arrEl = $("array");
+    if (arrEl) {
+      var arr = "";
+      for (var i = 0; i < s.arr.length; i++) {
+        var cls = "cell";
+        if (i === s.cur) cls += " cur";
+        else if (s.hits.indexOf(i) !== -1) cls += " hit";
+        else if (s.dim.indexOf(i) !== -1) cls += " dim";
+        arr += '<div class="' + cls + '">' + s.arr[i] + '<span class="idx">i = ' + i + '</span></div>';
+      }
+      arrEl.innerHTML = arr;
+    }
+
+    clearFig(s.rows.length ? 16 + s.rows.length * 32 + 2 : 30);
+    if (s.rows.length) drawRows(s.rows, 0);
+    else figSvg.appendChild(el("text", { "class": "lbl", x: 200, y: 20 }, s.figNote || ""));
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">nothing yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

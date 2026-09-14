@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reverse Integer Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+  .dict .kv.bad { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.bad { border-color: var(--warn); background: var(--warn-soft); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* 2-D dp table: a grid of square cells with string headers along the top and left */
+  .grid { display: grid; gap: 4px; margin: 8px 0 4px; }
+  .gc {
+    aspect-ratio: 1; border-radius: 6px; border: 2px solid var(--line); background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.9rem; color: var(--muted); transition: all 0.25s;
+  }
+  .gc.hd { border-color: transparent; background: transparent; color: var(--muted); font-size: 0.8rem; }
+  .gc.on { color: var(--ink); font-weight: 600; }
+  .gc.hit { background: var(--ok-soft); border-color: var(--ok); color: var(--ink); font-weight: 600; }
+  .gc.cur { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); font-weight: 700; transform: scale(1.06); }
+  .gc.dim { opacity: 0.4; }
+  .gc.hd.cur { background: var(--accent-soft); color: var(--accent); transform: none; }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Math · LeetCode #7</div>
+  <h1>Reverse Integer, narrated</h1>
+  <p>Scroll through the thinking, from flipping a string to peeling digits off one end and stacking them on the other while watching for 32-bit overflow, with the digits shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/math.html">Math</a> <span class="how"><code>x % 10</code> reads the lowest digit, <code>x // 10</code> drops it, <code>result * 10 + digit</code> appends it; check the limit before the append, not after.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get a signed 32-bit integer <code>x</code>. Return the number whose decimal digits are those of <code>x</code> in reverse order, with the sign kept in front. If that reversed number does not fit in the signed 32-bit range <code>[-2^31, 2^31 - 1]</code>, return <code>0</code> instead.</p>
+      <div class="callout">Running example: <code>x = -123</code>. The digits <code>1, 2, 3</code> become <code>3, 2, 1</code> and the sign stays, so the answer is <strong>-321</strong>.</div>
+      <p>The catch is in the second sentence. <code>1534236469</code> fits in 32 bits, but its reversal <code>9646324351</code> does not, and the problem says to assume you cannot store 64-bit integers. So the overflow has to be spotted <em>before</em> the last digit is appended, using only numbers that fit.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: reverse the string</h2>
+      <p>Turn the number into text, flip it, and parse it back. The sign needs stripping first so it does not end up at the wrong end, and the range check still has to be done by hand:</p>
+      <pre class="code"><span class="ln">sign = -1 if x &lt; 0 else 1</span><span class="ln">r = sign * int(str(abs(x))[::-1])</span><span class="ln">if r &lt; -2**31 or r &gt; 2**31 - 1:</span><span class="ln">    return 0</span><span class="ln">return r</span></pre>
+      <p style="margin-top:14px">It is <strong>O(d)</strong> for <code>d</code> digits and gives the right answers in Python. But it only works because Python's <code>int</code> is unbounded: <code>int("9646324351")</code> is built in full and then compared. In a language with 32-bit integers that parse overflows before the <code>if</code> runs, which is exactly what the problem tells you not to rely on. It also allocates two strings to do arithmetic.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: peel and append, and look one step ahead</h2>
+      <p>Two operations move digits without strings. <code>x % 10</code> is the lowest digit of <code>x</code>, and <code>x // 10</code> is <code>x</code> with that digit removed. Going the other way, <code>result * 10 + digit</code> shifts every digit of <code>result</code> one place left and drops <code>digit</code> into the ones column. Peel from <code>x</code>, append to <code>result</code>, and the digits come out reversed.</p>
+      <p>The overflow test goes <em>before</em> the append. <code>result * 10 + digit</code> exceeds <code>INT_MAX = 2147483647</code> exactly when <code>result &gt; 214748364</code>, or when <code>result == 214748364</code> and <code>digit &gt; 7</code>. Both comparisons use numbers that already fit, so nothing overflows while checking.</p>
+      <div class="callout">Work on the magnitude. Python's <code>%</code> and <code>//</code> round toward negative infinity, so <code>-123 % 10</code> is <code>7</code>, not <code>3</code>. Taking <code>abs(x)</code> first and putting the sign back at the end keeps the digit arithmetic honest and lets one overflow threshold serve both signs.</div>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>INT_MAX = 2**31 - 1</code>, so <code>INT_MAX // 10</code> is <code>214748364</code> and its last digit is <code>7</code>.</li>
+        <li><code>sign = -1 if x &lt; 0 else 1</code> and <code>x = abs(x)</code> — remember the sign, keep the magnitude.</li>
+        <li><code>result = 0</code> — nothing appended yet.</li>
+        <li><code>while x:</code> — one round per remaining digit.</li>
+        <li><code>digit = x % 10</code> and <code>x //= 10</code> — peel the lowest digit.</li>
+        <li><code>if result &gt; INT_MAX // 10 or (result == INT_MAX // 10 and digit &gt; 7): return 0</code> — would the append overflow?</li>
+        <li><code>result = result * 10 + digit</code> — append it.</li>
+        <li><code>return sign * result</code> — restore the sign.</li>
+      </ul>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the first two digits</h2>
+      <p><code>x = -123</code> is negative, so <code>sign = -1</code> and <code>x</code> becomes <code>123</code>. <code>result = 0</code>.</p>
+      <p><strong>Round 1.</strong> <code>digit = 123 % 10 = 3</code>, and <code>x = 123 // 10 = 12</code>. Overflow check: <code>result = 0</code> is not greater than <code>214748364</code> and not equal to it, so the append is safe. <code>result = 0 * 10 + 3 = 3</code>. The lowest digit of the input is now the highest digit of the output, which is the whole idea: each round moves one digit from the tail of <code>x</code> to the head of the digits already in <code>result</code>.</p>
+      <p><strong>Round 2.</strong> <code>x = 12</code>, so <code>digit = 12 % 10 = 2</code> and <code>x = 12 // 10 = 1</code>. Overflow check: <code>3 &gt; 214748364</code> is false, so append. <code>result = 3 * 10 + 2 = 32</code>. The multiply by 10 is what shifts the earlier <code>3</code> into the tens column so the new <code>2</code> can sit in the ones column.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: the last digit and the sign</h2>
+      <p><strong>Round 3.</strong> <code>x = 1</code>, so <code>digit = 1</code> and <code>x = 1 // 10 = 0</code>. Check: <code>32 &gt; 214748364</code> is false. <code>result = 32 * 10 + 1 = 321</code>. Now <code>while x</code> sees <code>0</code> and stops.</p>
+      <p><code>return sign * result = -1 * 321 = -321</code>. Three rounds for three digits, and the sign that was set aside at the start goes back on at the end.</p>
+      <div class="callout">A trailing zero in the input, as in <code>x = 120</code>, is peeled first and appended as <code>result = 0 * 10 + 0 = 0</code>, which changes nothing; the answer <code>21</code> has no leading zero because the number never had one.</div>
+    </section>
+
+    <section class="step" data-state="overflow">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: an overflow caught one step early</h2>
+      <p>Take <code>x = 1534236469</code>. Nine rounds peel <code>9, 6, 4, 6, 3, 2, 4, 3, 5</code> and build <code>result = 964632435</code>, with <code>x = 1</code> left.</p>
+      <p><strong>Round 10.</strong> <code>digit = 1</code>, <code>x = 0</code>. Overflow check: <code>result = 964632435</code> is greater than <code>INT_MAX // 10 = 214748364</code>, so <code>result * 10 + 1 = 9646324351</code> would not fit. Return <code>0</code> without computing it.</p>
+      <p>The boundary case works the same way: for <code>x = 1463847412</code>, nine rounds give <code>result = 214748364</code>, exactly <code>INT_MAX // 10</code>, and the last <code>digit = 1</code> is not greater than <code>7</code>, so <code>2147483641</code> is appended and returned. Had the last digit been <code>8</code>, the check would have returned <code>0</code>.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: negatives and the threshold</h2>
+      <p><strong>Skipping <code>abs(x)</code>.</strong> Feed <code>-123</code> straight into the loop. Python computes <code>-123 % 10 = 7</code> and <code>-123 // 10 = -13</code>, then <code>-13 % 10 = 7</code>, <code>-13 // 10 = -2</code>, then <code>-2 // 10 = -1</code>, and from there <code>-1 // 10</code> is <code>-1</code> forever. <code>while x:</code> never sees <code>0</code>: the function <strong>hangs instead of returning -321</strong>. Even a version that terminates would have collected the digits <code>7, 7, 8</code>, which are nothing like <code>3, 2, 1</code>.</p>
+      <p><strong>Testing <code>result &gt;= INT_MAX // 10</code>.</strong> The equal case is not automatically an overflow; it depends on the digit. With <code>&gt;=</code>, <code>x = 1463847412</code> returns <strong>0</strong> instead of the valid <code>2147483641</code>.</p>
+      <p><strong>Checking after the append.</strong> <code>result = result * 10 + digit</code> followed by <code>if result &gt; INT_MAX: return 0</code> passes every test in Python, but only because Python integers cannot overflow. In a fixed-width <code>int</code> the product has already wrapped to garbage by the time it is compared, which is the situation the problem describes.</p>
+      <div class="callout warn">Strip the sign first, compare before you multiply, and treat <code>result == 214748364</code> as "look at the digit", not as overflow.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>One round per decimal digit of <code>|x|</code>, so <strong>O(log₁₀ x) time</strong>: at most 10 rounds for any 32-bit input. Three integers of state, <strong>O(1) space</strong>. The string version is also linear in the digit count but allocates two strings and relies on unbounded integers for its range check.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>str, reverse, int, then range check</td><td>O(d)</td><td>O(d) strings, needs big ints</td></tr>
+        <tr><td>Peel with % and //, check before append</td><td>O(d)</td><td>O(1)</td></tr>
+      </table>
+      <p>Same asymptotic cost; the difference is that the digit loop never holds a value outside the 32-bit range.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Twelve lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>INT_MAX = 2**31 - 1</code> — the limit, 2147483647.</li>
+        <li><code>sign = -1 if x &lt; 0 else 1</code> and <code>x = abs(x)</code> — separate sign from magnitude.</li>
+        <li><code>result = 0</code> — the reversed number so far.</li>
+        <li><code>while x:</code> — until every digit has been peeled.</li>
+        <li><code>digit = x % 10</code>, <code>x //= 10</code> — take the lowest digit.</li>
+        <li><code>if result &gt; INT_MAX // 10 or (result == INT_MAX // 10 and digit &gt; 7): return 0</code> — would appending overflow?</li>
+        <li><code>result = result * 10 + digit</code> — append.</li>
+        <li><code>return sign * result</code> — sign back on.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>peel the last digit with % 10 and // 10, append with × 10 + digit, and check the limit before the append.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>x · digits still to peel · <span id="xlab">x = -123</span></h3>
+        <div class="array" id="xarr"></div>
+        <h3 style="margin-top:10px">result · digits appended so far</h3>
+        <div class="array" id="rarr"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>variables</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="reverse_integer.py">reverse_integer.py</a> · <a href="reverse_integer_annotated.py">reverse_integer_annotated.py</a> · <a href="test_reverse_integer.py">test_reverse_integer.py</a> · <a href="../../md.html?f=medium/102-reverse-integer/notes.md">notes.md</a> · <a href="../../patterns/math.md">patterns/math.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def reverse(self, x: int) -> int:",
+    "        INT_MAX = 2**31 - 1",
+    "        sign = -1 if x < 0 else 1",
+    "        x = abs(x)",
+    "        result = 0",
+    "        while x:",
+    "            digit = x % 10",
+    "            x //= 10",
+    "            if result > INT_MAX // 10 or (result == INT_MAX // 10 and digit > 7):",
+    "                return 0",
+    "            result = result * 10 + digit",
+    "        return sign * result"
+  ];
+
+  var X = ["1", "2", "3"];
+  var BIG = ["1", "5", "3", "4", "2", "3", "6", "4", "6", "9"];
+
+  // xd = digits of |x| as given; xcur = the one being peeled (blue); xdim = already peeled;
+  // rd = digits of result; rhit = the one just appended (green); rbad = digits in an overflowing result (amber).
+  var STATES = {
+    problem: {
+      caption: "x = -123. Reverse the digits, keep the sign: -321.",
+      xlab: "x = -123", xd: X, xcur: -1, xdim: [], rd: [], rhit: -1, rbad: false,
+      vars: [["x", "-123"]], meta: "Return 0 instead if the reversed value would not fit in 32 bits.", hl: []
+    },
+    brute: {
+      caption: "Reverse the string and parse it back; the range check happens after the full number exists.",
+      xlab: "x = -123", xd: X, xcur: -1, xdim: [], rd: ["3", "2", "1"], rhit: -1, rbad: false,
+      vars: [["str(123)[::-1]", "\"321\""], ["int(...)", "321"]],
+      meta: "Fine in Python; in a 32-bit int the parse overflows before the check runs.", hl: [],
+      big: "O(d)", bigNote: "d digits, two strings, needs unbounded ints"
+    },
+    idea: {
+      caption: "x % 10 reads the lowest digit, x // 10 drops it, result * 10 + digit appends it. Check the limit first.",
+      xlab: "x = 123 after abs", xd: X, xcur: 2, xdim: [], rd: [], rhit: -1, rbad: false,
+      vars: [["INT_MAX // 10", "214748364", "new"], ["last digit of INT_MAX", "7", "new"]],
+      meta: "Overflow if result > 214748364, or result == 214748364 and digit > 7.", hl: [7, 8, 9, 11]
+    },
+    approach: {
+      caption: "Strip the sign, then loop: peel, check, append. Put the sign back at the end.",
+      xlab: "x = 123, sign = -1", xd: X, xcur: -1, xdim: [], rd: [], rhit: -1, rbad: false,
+      vars: [["sign", "-1", "new"], ["x", "123", "new"], ["result", "0", "new"]],
+      meta: "while x runs once per digit, three times here.", hl: [3, 4, 5, 6]
+    },
+    t1: {
+      caption: "Round 1: digit = 3, x = 12, result = 3. Round 2: digit = 2, x = 1, result = 3 * 10 + 2 = 32.",
+      xlab: "x = 1 after round 2", xd: X, xcur: 1, xdim: [2], rd: ["3", "2"], rhit: 1, rbad: false,
+      vars: [["digit", "2", "new"], ["x", "1"], ["check", "3 > 214748364? no"], ["result", "32", "found"]],
+      meta: "Each round moves the tail digit of x to the head of result; the × 10 shifts what is already there.", hl: [7, 8, 9, 11]
+    },
+    t3: {
+      caption: "Round 3: digit = 1, x = 0. result = 32 * 10 + 1 = 321. The loop ends; return -1 * 321.",
+      xlab: "x = 0, loop ends", xd: X, xcur: 0, xdim: [1, 2], rd: ["3", "2", "1"], rhit: 2, rbad: false,
+      vars: [["digit", "1", "new"], ["x", "0"], ["result", "321", "found"], ["sign * result", "-321", "found"]],
+      meta: "Three rounds for three digits.", hl: [7, 8, 11, 12],
+      big: "-321", bigNote: "digits reversed, sign restored"
+    },
+    overflow: {
+      caption: "x = 1534236469: after nine rounds result = 964632435 > 214748364, so the tenth append would overflow. Return 0.",
+      xlab: "x = 1534236469, round 10", xd: BIG, xcur: 0, xdim: [1, 2, 3, 4, 5, 6, 7, 8, 9], rd: ["9", "6", "4", "6", "3", "2", "4", "3", "5"], rhit: -1, rbad: true,
+      vars: [["result", "964632435", "bad"], ["INT_MAX // 10", "214748364"], ["digit", "1"], ["result > INT_MAX // 10", "True", "bad"]],
+      meta: "9646324351 is never computed; the check uses only values that fit.", hl: [9, 10],
+      big: "0", bigNote: "caught before the multiply"
+    },
+    pitfall: {
+      caption: "No abs: -123 % 10 = 7 and -123 // 10 = -13; x reaches -1 and -1 // 10 is -1 forever. The loop never ends.",
+      xlab: "x = -123 fed in directly (bug)", xd: X, xcur: -1, xdim: [], rd: ["7", "7", "8"], rhit: -1, rbad: true,
+      vars: [["-123 % 10", "7", "bad"], ["-123 // 10", "-13", "bad"], ["-1 // 10", "-1", "bad"]],
+      meta: "Floor division rounds toward negative infinity, so x never hits 0.", hl: [4, 6, 7, 8],
+      big: "hangs, not -321", bigNote: "digits 7, 7, 8 and then -1 forever"
+    },
+    complexity: {
+      caption: "One round per digit, constant work each, three integers of state.",
+      xlab: "x = -123", xd: X, xcur: -1, xdim: [], rd: ["3", "2", "1"], rhit: -1, rbad: false,
+      vars: [["rounds", "digits of |x|, at most 10"], ["state", "sign, x, result"]],
+      meta: "No value larger than INT_MAX is ever built.", hl: [6, 7, 8],
+      big: "O(log₁₀ x) time · O(1) space", bigNote: "at most 10 rounds for a 32-bit input"
+    },
+    final: {
+      caption: "The whole solution.",
+      xlab: "x = -123", xd: X, xcur: -1, xdim: [], rd: ["3", "2", "1"], rhit: -1, rbad: false,
+      vars: [["answer", "-321", "found"]],
+      meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function cells(digits, cur, dim, hit, bad, tag) {
+    if (digits.length === 0) return '<div class="cell dim">&empty;<span class="idx">' + tag + ' empty</span></div>';
+    var html = "";
+    for (var i = 0; i < digits.length; i++) {
+      var cls = "cell";
+      if (i === cur) cls += " cur";
+      else if (i === hit) cls += " hit";
+      else if (bad) cls += " bad";
+      else if (dim.indexOf(i) !== -1) cls += " dim";
+      html += '<div class="' + cls + '">' + digits[i] + '<span class="idx">' + tag + '</span></div>';
+    }
+    return html;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("xlab").textContent = s.xlab;
+    $("meta").innerHTML = s.meta;
+
+    $("xarr").innerHTML = cells(s.xd, s.xcur, s.xdim, -1, false, "x");
+    $("rarr").innerHTML = cells(s.rd, -1, [], s.rhit, s.rbad, "result");
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var code = "";
+    for (var l = 0; l < CODE.length; l++) {
+      code += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>";
+    }
+    $("code").innerHTML = code;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

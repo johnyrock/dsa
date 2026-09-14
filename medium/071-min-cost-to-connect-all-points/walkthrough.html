@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Min Cost to Connect All Points Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; flex-wrap: wrap; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem; min-width: 44px;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .edge { stroke: var(--muted); stroke-width: 2.5; fill: none; opacity: 0.7; transition: opacity 0.25s, stroke 0.25s; }
+  .fig .edge.dim { opacity: 0.25; }
+  .fig .edge.hit { stroke: var(--ok); opacity: 1; }
+  .fig .edge.cycle { stroke: var(--warn); stroke-dasharray: 6 4; animation: dash 1s linear infinite; opacity: 1; }
+  .fig .edge.cand { stroke: var(--accent); stroke-dasharray: 6 4; opacity: 1; }
+  .fig .edge.faint { opacity: 0.18; }
+  .fig .head { fill: var(--muted); }
+  .fig .head.cycle { fill: var(--warn); }
+  .fig .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 16px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .fig .node.cur circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3.5; }
+  .fig .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .fig .node.dim circle, .fig .node.dim text { opacity: 0.35; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .array.compact { gap: 4px; margin-top: 2px; }
+  .array[hidden] { display: none; }
+  .array.compact .cell { min-width: 28px; padding: 3px 0 2px; font-size: 0.9rem; border-width: 1.5px; border-radius: 6px; }
+  .array.compact .cell .idx { display: none; }
+  .array.compact .cell.cur { transform: none; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; margin-bottom: 6px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Graph · Prim's Algorithm · LeetCode #1584</div>
+  <h1>Min Cost to Connect All Points, narrated</h1>
+  <p>Scroll through the thinking, from sorting every pair of points to growing a minimum spanning tree one cheapest edge at a time, with the tree and the heap shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph</a> <span class="how">Prim's algorithm: pop the cheapest edge leaving the tree, absorb its endpoint, push its edges</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You are given points on a grid. Connecting any two costs their <strong>Manhattan distance</strong>, <code>|x1 - x2| + |y1 - y2|</code>. Pick a set of connections so that every point can reach every other point, and make the total cost as small as possible.</p>
+      <p>"Every point reaches every other point with exactly one simple path" is the definition of a spanning tree. So we want the cheapest spanning tree of the complete graph whose vertices are the points, the <em>minimum spanning tree</em>.</p>
+      <div class="callout">Running example: <code>points = [[0,0],[2,2],[3,10],[5,2],[7,0]]</code>. The cheapest tree uses edges 0-1 (cost 4), 1-3 (3), 3-4 (4) and 1-2 (9), for a total of <strong>20</strong>.</div>
+      <p>Note that point 2 at <code>(3, 10)</code> is far from everything. It will be the last point absorbed, and its cheapest link, 9 to point 1, is unavoidable.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: sort every pair, take edges that don't form a cycle</h2>
+      <p>Enumerate all <code>n(n-1)/2</code> pairs with their distances, sort them ascending, then walk the list adding any edge whose endpoints are not yet connected. Stop after <code>n - 1</code> edges. That is Kruskal's algorithm, and "not yet connected" needs a union-find:</p>
+      <pre class="code"><span class="ln">edges = sorted((dist(i, j), i, j) for i in range(n) for j in range(i + 1, n))</span><span class="ln">total = 0</span><span class="ln">for d, i, j in edges:</span><span class="ln">    if find(i) != find(j):</span><span class="ln">        union(i, j)</span><span class="ln">        total += d</span></pre>
+      <p style="margin-top:14px">It is correct and it is the right tool for sparse graphs. Here the graph is complete: for <code>n = 1000</code> that is 499,500 edges to build, sort, and mostly discard. The sort alone is <strong>O(n² log n)</strong>, and it materialises every edge up front even though the tree only needs <code>n - 1</code> of them.</p>
+      <p>The alternative is to grow the tree outward from one point and only ever look at edges that leave the tree. That is Prim's algorithm, and a heap gives us the cheapest of those edges on demand.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: the cheapest edge leaving the tree is always safe</h2>
+      <p>Suppose some points are already in the tree. Among all edges with one endpoint inside and one outside, the cheapest one belongs to some minimum spanning tree. This is the cut property, and it means we never need to reconsider a choice: absorb that edge's outside endpoint, pay its cost, and repeat.</p>
+      <p>To find "the cheapest edge leaving the tree" fast, keep a min-heap of candidate edges as <code>(cost, point)</code>. Whenever a point joins the tree, push an edge from it to every point still outside.</p>
+      <div class="callout">Seed with <code>heap = [(0, 0)]</code>: point 0 joins for free. The heap then contains one entry per (tree point, outside point) pair that has been offered, and the smallest is always on top.</div>
+      <p>An outside point can be offered several times, once by each tree point that saw it. Only the first pop matters. That is what <code>visited</code> is for: a popped point that is already in the tree is a stale entry, and <code>if visited[i]: continue</code> discards it.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: pop, absorb, offer</h2>
+      <p>The loop is the insight written out:</p>
+      <ul>
+        <li><code>while connected &lt; n</code> — stop as soon as every point is in the tree, whatever is left in the heap.</li>
+        <li><code>cost, i = heapq.heappop(heap)</code> — the cheapest offered edge.</li>
+        <li><code>if visited[i]: continue</code> — its endpoint is already in the tree, so the edge would close a cycle; skip.</li>
+        <li><code>visited[i] = True; total += cost; connected += 1</code> — absorb the point and pay for the edge that reached it.</li>
+        <li><code>for j in range(n): if not visited[j]: heappush(heap, (d, j))</code> — offer an edge from the new point to every point still outside, with <code>d</code> the Manhattan distance.</li>
+      </ul>
+      <p>The panel's array is the heap in its actual <code>heapq</code> layout, smallest at index 0. The rest is only partially ordered, which is why the cells after index 0 are not sorted.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: absorb point 0, then point 1</h2>
+      <p>Pop <code>(0, 0)</code>. Point 0 is new: <code>total = 0</code>, <code>connected = 1</code>. Offer its edges to points 1 to 4: distances <code>|0-2| + |0-2| = 4</code>, <code>3 + 10 = 13</code>, <code>5 + 2 = 7</code>, <code>7 + 0 = 7</code>. After the pushes the heap is <code>[(4, 1), (7, 4), (7, 3), (13, 2)]</code>.</p>
+      <p>Pop <code>(4, 1)</code>. Point 1 is new: <code>total = 4</code>, <code>connected = 2</code>. Offer edges from <code>(2, 2)</code> to the three outside points: to point 2 <code>1 + 8 = 9</code>, to point 3 <code>3 + 0 = 3</code>, to point 4 <code>5 + 2 = 7</code>. The heap becomes <code>[(3, 3), (7, 3), (7, 4), (9, 2), (7, 4), (13, 2)]</code>. Points 3 and 4 now each have two entries, and the cheaper one for point 3, cost 3, has sifted to the top.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: absorb points 3 and 4</h2>
+      <p>Pop <code>(3, 3)</code>. Point 3 is new: <code>total = 4 + 3 = 7</code>, <code>connected = 3</code>. From <code>(5, 2)</code>, offer point 2 at <code>2 + 8 = 10</code> and point 4 at <code>2 + 2 = 4</code>. Heap: <code>[(4, 4), (7, 4), (7, 3), (9, 2), (13, 2), (10, 2), (7, 4)]</code>.</p>
+      <p>Pop <code>(4, 4)</code>. Point 4 is new: <code>total = 7 + 4 = 11</code>, <code>connected = 4</code>. Its only outside neighbour is point 2, at <code>4 + 10 = 14</code>. Heap: <code>[(7, 3), (7, 4), (7, 4), (9, 2), (13, 2), (10, 2), (14, 2)]</code>.</p>
+      <p>Look at what sits on top now: three entries for points that are already in the tree. They were offered by point 0 and point 1 before cheaper routes to 3 and 4 were found.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: skip the stale entries, absorb point 2</h2>
+      <p>Pop <code>(7, 3)</code>: <code>visited[3]</code> is true, <code>continue</code>. Pop <code>(7, 4)</code>: stale, skip. Pop <code>(7, 4)</code> again: stale, skip. None of these touched <code>total</code> or <code>connected</code>.</p>
+      <p>Pop <code>(9, 2)</code>. Point 2 is new: <code>total = 11 + 9 = 20</code>, <code>connected = 5</code>. No points remain outside, so nothing is offered. <code>connected &lt; n</code> is now false and the loop ends with <code>(13, 2)</code>, <code>(10, 2)</code> and <code>(14, 2)</code> still sitting in the heap, never examined.</p>
+      <div class="callout">The four edges taken were 0-1 (4), 1-3 (3), 3-4 (4), 1-2 (9). <code>4 + 3 + 4 + 9 = 20</code>.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: stale entries and the wrong distance</h2>
+      <p><strong>Dropping the visited check on pop.</strong> Without <code>if visited[i]: continue</code>, the fifth pop <code>(7, 3)</code> is treated as a new point: <code>total = 11 + 7 = 18</code> and <code>connected</code> becomes 5, so the loop stops. Point 2 never joins the tree and the function returns <strong>18</strong> instead of 20, a number that is <em>smaller</em> than the true answer, which is the tell that something was skipped rather than overpaid. The panel shows that moment: point 3 counted twice, point 2 stranded.</p>
+      <p><strong>Using Euclidean distance.</strong> <code>math.hypot(dx, dy)</code> reads naturally for "distance between points", but the problem defines cost as Manhattan. On the example it returns about <strong>16.72</strong>, a float, instead of 20. The <code>abs(...) + abs(...)</code> form is the whole definition.</p>
+      <p><strong>Pushing only the single nearest outside point.</strong> Offering just the minimum edge from each absorbed point misses edges that become cheapest only after other points join. Prim's needs every (tree point, outside point) edge on offer, which is why the inner loop pushes all of them.</p>
+      <div class="callout warn">A point is absorbed on its <em>first</em> pop only. Every later pop of the same point is a stale offer and must be skipped without counting.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Each of the <code>n</code> absorbed points pushes up to <code>n - 1</code> entries, so the heap sees O(n²) pushes and at most O(n²) pops, each <code>O(log n)</code> since the heap holds at most n² entries. That is <strong>O(n² log n) time</strong> and <strong>O(n²) space</strong> for the heap in the worst case. The Manhattan distance is an O(1) computation, so the graph is never materialised as an edge list.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Kruskal: sort all pairs + union-find</td><td>O(n² log n)</td><td>O(n²) edge list</td></tr>
+        <tr><td>Prim's, min-heap of offered edges</td><td>O(n² log n)</td><td>O(n²) heap</td></tr>
+        <tr><td>Prim's, O(n) array scan per step</td><td>O(n²)</td><td>O(n)</td></tr>
+      </table>
+      <p>On a complete graph the array-scan variant of Prim's is asymptotically best, because finding the minimum of n values is cheaper than maintaining a heap of n² entries. The heap version is shorter to write and comfortably fast for <code>n ≤ 1000</code>.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Every line maps to a step above.</p>
+      <ul>
+        <li><code>heap = [(0, 0)]</code> — point 0 seeds the tree at no cost.</li>
+        <li><code>while connected &lt; n</code> — stop once every point is in, ignoring leftover heap entries.</li>
+        <li><code>cost, i = heapq.heappop(heap)</code> — the cheapest edge currently leaving the tree.</li>
+        <li><code>if visited[i]: continue</code> — a stale offer for a point already absorbed.</li>
+        <li><code>visited[i] = True; total += cost; connected += 1</code> — absorb and pay.</li>
+        <li><code>d = abs(points[i][0] - points[j][0]) + abs(points[i][1] - points[j][1])</code> — Manhattan cost to each outside point.</li>
+        <li><code>heapq.heappush(heap, (d, j))</code> — offer the edge.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>grow the tree by always taking the cheapest edge that leaves it, and ignore any pop whose point is already inside.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>points · [[0,0],[2,2],[3,10],[5,2],[7,0]] · labels are indices</h3>
+        <svg class="fig" id="fig" viewBox="0 0 400 215" aria-label="points and tree edges"></svg>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>min-heap · cost → point, heapq layout</h3>
+        <div class="array" id="array"></div>
+      </div>
+
+      <div class="block">
+        <h3>running totals</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="min_cost_to_connect_all_points.py">min_cost_to_connect_all_points.py</a> · <a href="min_cost_to_connect_all_points_annotated.py">min_cost_to_connect_all_points_annotated.py</a> · <a href="test_min_cost_to_connect_all_points.py">test_min_cost_to_connect_all_points.py</a> · <a href="../../md.html?f=medium/071-min-cost-to-connect-all-points/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def min_cost_connect_points(self, points: list[list[int]]) -> int:",
+    "        n = len(points)",
+    "        visited = [False] * n",
+    "        heap = [(0, 0)]",
+    "        total = 0",
+    "        connected = 0",
+    "        while connected < n:",
+    "            cost, i = heapq.heappop(heap)",
+    "            if visited[i]:",
+    "                continue",
+    "            visited[i] = True",
+    "            total += cost",
+    "            connected += 1",
+    "            for j in range(n):",
+    "                if not visited[j]:",
+    "                    d = abs(points[i][0] - points[j][0]) + abs(points[i][1] - points[j][1])",
+    "                    heapq.heappush(heap, (d, j))",
+    "        return total"
+  ];
+
+  // point i drawn at x = 60 + 40 * px, y = 180 - 14 * py
+  var NODES = [[0, 60, 180], [1, 140, 152], [2, 180, 40], [3, 260, 152], [4, 340, 180]];
+  var ALL_PAIRS = [[0, 1, "faint"], [0, 2, "faint"], [0, 3, "faint"], [0, 4, "faint"], [1, 2, "faint"], [1, 3, "faint"], [1, 4, "faint"], [2, 3, "faint"], [2, 4, "faint"], [3, 4, "faint"]];
+  var T01 = [0, 1, "hit"], T13 = [1, 3, "hit"], T34 = [3, 4, "hit"], T12 = [1, 2, "hit"];
+  var MST = [T01, T13, T34, T12];
+  // heap entries as [point, cost] so the cell shows the cost and the label the point
+  function H(list) { return list.map(function (e) { return ["→ " + e[1], e[0]]; }); }
+
+  var STATES = {
+    problem: {
+      caption: "Connect all five points with minimum total Manhattan distance.",
+      edges: ALL_PAIRS.concat(MST), dp: [], cur: -1, hits: [], dim: [], vars: [],
+      meta: "Any pair may be joined (faint). The cheapest spanning tree (green) costs 4 + 3 + 4 + 9 = 20.", hl: []
+    },
+    brute: {
+      caption: "Kruskal: build and sort all 10 pairs, then take edges that do not close a cycle.",
+      edges: ALL_PAIRS, dp: [], cur: -1, hits: [], dim: [], vars: [],
+      meta: "For n = 1000 that is 499,500 edges built and sorted, to keep 999.", hl: [],
+      big: "O(n² log n)", bigNote: "and every edge materialised up front"
+    },
+    insight: {
+      caption: "Grow the tree from point 0. The cheapest edge leaving the tree is always safe to take.",
+      edges: [], dp: H([[0, 0]]), cur: 0, hits: [], dim: [1, 2, 3, 4], vars: [["total", 0], ["connected", 0]],
+      meta: "heap = [(0, 0)]: point 0 joins for free. visited = [F, F, F, F, F].", hl: [3, 4, 5, 6]
+    },
+    approach: {
+      caption: "Pop the cheapest offer; skip it if the point is already in; otherwise absorb it and offer its edges.",
+      edges: [], dp: H([[0, 0]]), cur: 0, hits: [], dim: [1, 2, 3, 4], vars: [["total", 0], ["connected", 0]],
+      meta: "The array below is the heapq list itself: index 0 is the minimum, the rest is only partially ordered.", hl: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+    },
+    t1: {
+      caption: "Absorb 0 (cost 0), offer 4, 13, 7, 7. Absorb 1 (cost 4), offer 9, 3, 7.",
+      edges: [T01, [1, 3, "cand"], [1, 2, "cand"], [1, 4, "cand"], [0, 3, "cand"], [0, 4, "cand"], [0, 2, "cand"]], dp: H([[3, 3], [7, 3], [7, 4], [9, 2], [7, 4], [13, 2]]), cur: 0, hits: [0, 1], dim: [2, 3, 4], vars: [["total", 4, "new"], ["connected", 2, "new"]],
+      meta: "visited = [T, T, F, F, F]. Points 3 and 4 are each offered twice; the cheaper (3, 3) is on top.", hl: [8, 11, 12, 13, 16, 17]
+    },
+    t2: {
+      caption: "Absorb 3 (cost 3), offer 10 and 4. Absorb 4 (cost 4), offer 14.",
+      edges: [T01, T13, T34, [1, 2, "cand"], [0, 2, "cand"], [3, 2, "cand"], [4, 2, "cand"], [0, 3, "cand"], [0, 4, "cand"], [1, 4, "cand"]], dp: H([[7, 3], [7, 4], [7, 4], [9, 2], [13, 2], [10, 2], [14, 2]]), cur: 0, hits: [0, 1, 3, 4], dim: [2], vars: [["total", 11, "new"], ["connected", 4, "new"]],
+      meta: "visited = [T, T, F, T, T]. The three entries on top are stale: points 3 and 4 already joined.", hl: [8, 11, 12, 13, 16, 17]
+    },
+    t3: {
+      caption: "Skip (7, 3), (7, 4), (7, 4). Absorb 2 (cost 9): total 20, all 5 connected.",
+      edges: MST, dp: H([[13, 2], [10, 2], [14, 2]]), cur: -1, hits: [0, 1, 2, 3, 4], dim: [], heapDim: [0, 1, 2], vars: [["total", 20, "found"], ["connected", 5, "found"]],
+      meta: "visited = [T, T, T, T, T]. Three leftover offers for point 2 are never popped.", hl: [7, 9, 10, 18],
+      big: "20", bigNote: "4 + 3 + 4 + 9"
+    },
+    pitfall: {
+      caption: "No visited check: the stale (7, 3) is counted as a fifth point and point 2 is never connected.",
+      edges: [T01, T13, T34, [0, 3, "cycle"]], dp: H([[7, 4], [7, 4], [9, 2], [13, 2], [10, 2], [14, 2]]), cur: 3, hits: [0, 1, 4], dim: [2], bad: [3], vars: [["total", 18], ["connected", 5]],
+      meta: "Edge 0-3 (cost 7) closes a cycle and connected reaches 5 without point 2.", hl: [9, 10, 13],
+      big: "18, not 20", bigNote: "a point counted twice, another never joined"
+    },
+    complexity: {
+      caption: "Up to n − 1 pushes per absorbed point, each O(log n).",
+      edges: MST, dp: H([[13, 2], [10, 2], [14, 2]]), cur: -1, hits: [0, 1, 2, 3, 4], dim: [], heapDim: [0, 1, 2], vars: [],
+      meta: "10 pushes and 8 pops here; the heap never exceeded 7 entries.", hl: [14, 15, 16, 17],
+      big: "O(n² log n) time · O(n²) space", bigNote: "versus O(n²) for an array-scan Prim's"
+    },
+    final: {
+      caption: "The whole solution.",
+      edges: MST, dp: [], cur: -1, hits: [], dim: [], vars: [["answer", 20, "found"]],
+      meta: "", hl: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---- figure renderer: nodes + edges, reused from medium/018-course-schedule; an edge is [a, b, extraClass] ----
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var R = 19;
+  function layoutGraph(g) {
+    var nodes = g.nodes.map(function (n) { return { val: n[0], x: n[1], y: n[2] }; });
+    return { nodes: nodes, edges: g.edges, directed: !!g.directed, h: g.h || 200 };
+  }
+  var figSvg = document.getElementById("fig");
+  function renderFig(fig, s) {
+    while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild);
+    figSvg.setAttribute("viewBox", "0 0 400 " + fig.h);
+    var bad = s.bad || [];
+    function state(i) {
+      if (i === s.cur) return "cur";
+      if (bad.indexOf(i) !== -1) return "bad";
+      if (s.hits.indexOf(i) !== -1) return "hit";
+      if (s.dim.indexOf(i) !== -1) return "dim";
+      return "";
+    }
+    fig.edges.forEach(function (e) {
+      var a = fig.nodes[e[0]], b = fig.nodes[e[1]];
+      var cls = "edge" + (e[2] ? " " + e[2] : "");
+      var dx = b.x - a.x, dy = b.y - a.y, len = Math.sqrt(dx * dx + dy * dy) || 1;
+      var ux = dx / len, uy = dy / len;
+      figSvg.appendChild(el("line", { "class": cls, x1: a.x + ux * (R + 2), y1: a.y + uy * (R + 2), x2: b.x - ux * (R + 2), y2: b.y - uy * (R + 2) }));
+    });
+    fig.nodes.forEach(function (n, i) {
+      var g = el("g", { "class": "node " + state(i) });
+      g.appendChild(el("circle", { cx: n.x, cy: n.y, r: R }));
+      g.appendChild(el("text", { x: n.x, y: n.y }, n.val));
+      figSvg.appendChild(g);
+    });
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    if (s.dp.length === 0) {
+      arr = '<div class="cell dim">–<span class="idx">heap not built</span></div>';
+    }
+    var hd = s.heapDim || [];
+    for (var i = 0; i < s.dp.length; i++) {
+      var cls = "cell";
+      if (i === 0 && !hd.length) cls += " cur";
+      else if (hd.indexOf(i) !== -1) cls += " dim";
+      arr += '<div class="' + cls + '">' + s.dp[i][1] + '<span class="idx">' + s.dp[i][0] + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+    renderFig(layoutGraph({ h: 215, nodes: NODES, edges: s.edges }), s);
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

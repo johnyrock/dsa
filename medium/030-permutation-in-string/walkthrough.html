@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Permutation in String Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+</head>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Sliding Window · LeetCode #567</div>
+  <h1>Permutation in String, narrated</h1>
+  <p>Scroll through the thinking, from sorting every substring to sliding a fixed-width window of letter counts across the text, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/sliding-window.html">Sliding Window</a> <span class="how">fixed width len(s1); add the entering letter, drop the leaving one, compare 26 counts</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get two strings. Return <code>True</code> if some <em>contiguous</em> substring of <code>s2</code> is a permutation of <code>s1</code>, meaning it uses exactly the same letters the same number of times, in any order.</p>
+      <p>Two facts fall out of the definition immediately. Any permutation of <code>s1</code> has exactly <code>len(s1)</code> characters, and order inside it does not matter, only the multiset of letters.</p>
+      <div class="callout">Running example: <code>s1 = "ab"</code>, <code>s2 = "eidbaooo"</code>. The answer is <strong>True</strong>, because the substring <code>"ba"</code> at positions 3–4 is a rearrangement of <code>"ab"</code>.</div>
+      <p>The second example, <code>s2 = "eidboaoo"</code>, contains both an <code>a</code> and a <code>b</code> but they are never adjacent, so it is <code>False</code>. Presence is not enough; the letters have to fit inside one window.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: sort every substring</h2>
+      <p>Two strings are permutations of each other exactly when their sorted forms are equal. So sort <code>s1</code> once, then for every start index sort the <code>k</code>-character slice of <code>s2</code> and compare.</p>
+      <pre class="code"><span class="ln">key = sorted(s1)</span><span class="ln">for i in range(len(s2) - len(s1) + 1):</span><span class="ln">    if sorted(s2[i:i + len(s1)]) == key:</span><span class="ln">        return True</span><span class="ln">return False</span></pre>
+      <p style="margin-top:14px">There are about <code>n</code> windows and each sort costs <code>O(k log k)</code>, so the total is <strong>O(n · k log k)</strong>. With both strings at 10,000 characters that is on the order of 10⁹ operations, and every sort throws away the work of the previous one even though the two windows overlap in all but two characters.</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: count letters, and slide instead of restarting</h2>
+      <p>Sorting is an expensive way to ask "do these have the same letters?" A 26-slot array of counts answers the same question, and unlike a sorted string it can be <em>updated</em> cheaply.</p>
+      <p>When the window moves one step right, one character enters on the right and one leaves on the left. Increment one counter, decrement another, and the array is correct again. No re-scan of the middle.</p>
+      <div class="callout">The window's width never changes: it is always <code>len(s1)</code>. That is what makes this a <strong>fixed-width</strong> sliding window, simpler than the grow-and-shrink kind.</div>
+      <p>Comparing two 26-slot lists is 26 comparisons, a constant, so checking for a match after every slide is essentially free.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The approach</h2>
+      <ul>
+        <li><code>k = len(s1)</code>, and if <code>k &gt; len(s2)</code> no window can exist, so <code>return False</code>.</li>
+        <li><code>need</code>: 26 counts filled from <code>s1</code>. For <code>"ab"</code> that is <code>a:1, b:1</code>.</li>
+        <li><code>window</code>: 26 counts of whatever is currently inside the window, all zero to start.</li>
+        <li>For each index <code>i</code> in <code>s2</code>: <code>window[ord(ch) - ord("a")] += 1</code> adds the entering character.</li>
+        <li><code>if i &gt;= k</code>: the character at <code>i - k</code> just fell off the left edge, so decrement its count.</li>
+        <li><code>if window == need: return True</code>. After the loop, <code>return False</code>.</li>
+      </ul>
+      <p>The panel marks the window in green with the newest character in blue, and shows the two count arrays as chips, non-zero entries only.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: i = 0 and i = 1, the window fills up</h2>
+      <p>At <code>i = 0</code> the character is <code>e</code>. It enters: <code>window = {e:1}</code>. Since <code>0 &gt;= 2</code> is false, nothing leaves yet. Compare with <code>need = {a:1, b:1}</code>: no match.</p>
+      <p>At <code>i = 1</code> the character is <code>i</code>: <code>window = {e:1, i:1}</code>. Still <code>1 &gt;= 2</code> is false, so the window has grown to its full width of 2 for the first time. Compare: no match.</p>
+      <p>From here on, every step will both add and remove one character, so the window stays exactly 2 wide.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: i = 2 and i = 3, the window slides</h2>
+      <p>At <code>i = 2</code> the character <code>d</code> enters. Now <code>2 &gt;= 2</code> is true, so <code>s2[i - k] = s2[0] = 'e'</code> leaves: <code>window = {i:1, d:1}</code>. No match.</p>
+      <p>At <code>i = 3</code>, <code>b</code> enters and <code>s2[1] = 'i'</code> leaves: <code>window = {d:1, b:1}</code>. We now have one of the two letters we need, but <code>d</code> is in the way. No match.</p>
+      <p>Each step was two array updates and one 26-slot comparison, regardless of how long the strings are.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: i = 4, the counts line up</h2>
+      <p>At <code>i = 4</code>, <code>a</code> enters and <code>s2[2] = 'd'</code> leaves: <code>window = {b:1, a:1}</code>. That is exactly <code>need = {a:1, b:1}</code>, and since both are 26-slot lists indexed by letter, the order the letters arrived in is invisible. <code>window == need</code> is <code>True</code>, so we return <code>True</code>.</p>
+      <div class="callout">The window covering <code>"ba"</code> matched <code>"ab"</code> without any sorting. Five characters examined, five constant-time checks.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the off-by-one on the leaving character</h2>
+      <p><strong>Removing one step late.</strong> Write <code>if i &gt; k</code> instead of <code>if i &gt;= k</code>. At <code>i = 2</code> the <code>e</code> is not removed, so the window holds three characters from then on: at <code>i = 4</code> it is <code>{a:1, b:1, e:1}</code>, which never equals a two-letter signature. The running example returns <strong>False</strong> instead of True, and so does every other input where <code>k &lt; len(s2)</code>.</p>
+      <p><strong>Removing the wrong index.</strong> <code>s2[i - k + 1]</code> instead of <code>s2[i - k]</code> evicts the character that should stay. The window shrinks to <code>k - 1</code> letters and can never match either.</p>
+      <p><strong>Comparing sets instead of counts.</strong> <code>set(window) == set(s1)</code> says <code>"abb"</code> is a permutation of <code>"aab"</code>. Multiplicity is part of the definition, which is why the panel shows counts rather than letters.</p>
+      <div class="callout warn">The window at index <code>i</code> covers <code>s2[i - k + 1 .. i]</code>, so the character that just left is <code>s2[i - k]</code>, and it exists as soon as <code>i &gt;= k</code>.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>One pass over <code>s2</code>, and each step does one increment, at most one decrement, and a 26-slot comparison: <strong>O(26 · n) = O(n) time</strong>. Two count arrays of fixed size 26: <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Sort every window</td><td>O(n · k log k)</td><td>O(k)</td></tr>
+        <tr><td>Recount every window</td><td>O(n · k)</td><td>O(1)</td></tr>
+        <tr><td>Sliding counts, compare 26 slots</td><td>O(26 · n)</td><td>O(1)</td></tr>
+        <tr><td>Sliding counts + <code>matches</code> counter</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>The last row keeps a single integer counting how many of the 26 slots currently agree and adjusts it as letters enter and leave, so the per-step comparison becomes O(1). It is a worthwhile refinement to mention, but the 26-slot compare is already linear and much easier to get right.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Every line maps to a step above.</p>
+      <ul>
+        <li><code>if k &gt; len(s2): return False</code> rules out an impossible window before doing any work.</li>
+        <li><code>need[ord(ch) - ord("a")] += 1</code> over <code>s1</code> builds the signature to match.</li>
+        <li><code>window[ord(ch) - ord("a")] += 1</code> adds the character entering on the right.</li>
+        <li><code>if i &gt;= k: window[ord(s2[i - k]) - ord("a")] -= 1</code> drops the one that fell off the left.</li>
+        <li><code>if window == need: return True</code> is the constant-time permutation test.</li>
+        <li><code>return False</code> after the loop: no window ever matched.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>a permutation is a multiset of letters, so slide a window of width len(s1) and compare counts, not order.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>s2 · window width k = <span id="target">2</span></h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>need · counts of s1 = "ab"</h3>
+        <div class="dict" id="need"></div>
+      </div>
+
+      <div class="block">
+        <h3>window · counts inside the window</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="permutation_in_string.py">permutation_in_string.py</a> · <a href="permutation_in_string_annotated.py">permutation_in_string_annotated.py</a> · <a href="test_permutation_in_string.py">test_permutation_in_string.py</a> · <a href="../../md.html?f=medium/030-permutation-in-string/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def check_inclusion(self, s1: str, s2: str) -> bool:",
+    "        k = len(s1)",
+    "        if k > len(s2):",
+    "            return False",
+    "        need = [0] * 26",
+    "        window = [0] * 26",
+    "        for ch in s1:",
+    "            need[ord(ch) - ord(\"a\")] += 1",
+    "        for i, ch in enumerate(s2):",
+    "            window[ord(ch) - ord(\"a\")] += 1",
+    "            if i >= k:",
+    "                window[ord(s2[i - k]) - ord(\"a\")] -= 1",
+    "            if window == need:",
+    "                return True",
+    "        return False"
+  ];
+
+  var S2 = ["e", "i", "d", "b", "a", "o", "o", "o"];
+  var NEED = [["a", 1], ["b", 1]];
+
+  // Each state describes what the sticky panel shows for one step.
+  // left..right (inclusive, 0-based) is the window; right = -1 means no window yet.
+  // win = non-zero window counts as [letter, count, cls]; match = the two arrays are equal.
+  var STATES = {
+    problem: {
+      caption: "Does some 2-character window of s2 use exactly the letters of \"ab\"?",
+      k: 2, s: S2, left: 0, right: -1, win: [], match: false,
+      meta: "\"ba\" at indices 3–4 is a permutation of \"ab\", so the answer is True.", hl: []
+    },
+    brute: {
+      caption: "Sort each of the 7 two-character slices and compare with sorted(\"ab\").",
+      k: 2, s: S2, left: 0, right: 1, win: [], match: false,
+      meta: "Every slice is re-sorted from scratch even though neighbours share all but two letters.", hl: [],
+      big: "O(n · k log k)", bigNote: "about 10⁹ operations at the constraint limit"
+    },
+    reframe: {
+      caption: "Keep 26 letter counts. One enters on the right, one leaves on the left, compare.",
+      k: 2, s: S2, left: 1, right: 2, win: [["i", 1], ["d", 1, "new"]], match: false,
+      meta: "Window {i:1, d:1} vs need {a:1, b:1}: 26 comparisons, no sorting.", hl: []
+    },
+    idea: {
+      caption: "need is fixed from s1; window is updated in place as the right edge advances.",
+      k: 2, s: S2, left: 0, right: -1, win: [], match: false,
+      meta: "Green = inside the window, blue = the character that just entered.", hl: [2, 5, 6, 7, 8]
+    },
+    t1: {
+      caption: "i = 0, 1: e then i enter. Nothing leaves yet because i < k.",
+      k: 2, s: S2, left: 0, right: 1, win: [["e", 1], ["i", 1, "new"]], match: false,
+      meta: "window = {e:1, i:1} &ne; need &rarr; keep going", hl: [10, 11, 13]
+    },
+    t2: {
+      caption: "i = 2, 3: d enters and e leaves, then b enters and i leaves.",
+      k: 2, s: S2, left: 2, right: 3, win: [["d", 1], ["b", 1, "new"]], match: false,
+      meta: "i = 3: s2[3 − 2] = s2[1] = 'i' leaves &rarr; window = {d:1, b:1} &ne; need", hl: [10, 11, 12, 13]
+    },
+    t3: {
+      caption: "i = 4: a enters and d leaves. window = {b:1, a:1} == need. Return True.",
+      k: 2, s: S2, left: 3, right: 4, win: [["b", 1, "found"], ["a", 1, "found"]], match: true,
+      meta: "s2[4 − 2] = s2[2] = 'd' leaves &rarr; window = {a:1, b:1} = need &rarr; <b>True</b>", hl: [10, 12, 13, 14],
+      big: "True", bigNote: "\"ba\" is a permutation of \"ab\""
+    },
+    pitfall: {
+      caption: "if i > k removes one step late: at i = 4 the window still holds e and is 3 wide.",
+      k: 2, s: S2, left: 2, right: 4, win: [["e", 1, "new"], ["b", 1], ["a", 1]], match: false,
+      meta: "{a:1, b:1, e:1} never equals a two-letter signature, so the loop runs off the end.", hl: [11, 12],
+      big: "False, not True", bigNote: "the leaving character exists as soon as i >= k"
+    },
+    complexity: {
+      caption: "One pass; each step is two counter updates and a 26-slot compare.",
+      k: 2, s: S2, left: 3, right: 4, win: [["b", 1], ["a", 1]], match: true,
+      meta: "Two arrays of 26 integers, whatever the input length.", hl: [9, 10, 12, 13],
+      big: "O(26 · n) time · O(1) space", bigNote: "versus O(n · k log k) for sorting every window"
+    },
+    final: {
+      caption: "The whole solution.",
+      k: 2, s: S2, left: 3, right: 4, win: [["b", 1, "found"], ["a", 1, "found"]], match: true,
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function chips(list, emptyText) {
+    if (list.length === 0) return '<span class="empty">' + emptyText + '</span>';
+    var d = "";
+    for (var k = 0; k < list.length; k++) {
+      var e = list[k];
+      d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + ":" + e[1] + "</span>";
+    }
+    return d;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.k;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.s.length; i++) {
+      var cls = "cell";
+      if (s.right !== -1 && i === s.right && !s.match) cls += " cur";
+      else if (s.right !== -1 && i >= s.left && i <= s.right) cls += " hit";
+      else if (s.right !== -1 && i < s.left) cls += " dim";
+      arr += '<div class="' + cls + '">' + s.s[i] + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    $("need").innerHTML = chips(NEED.map(function (e) { return [e[0], e[1], s.match ? "found" : ""]; }), "");
+    $("dict").innerHTML = chips(s.win, "empty · nothing has entered yet");
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

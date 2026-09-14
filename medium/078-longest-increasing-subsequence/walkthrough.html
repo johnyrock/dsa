@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Longest Increasing Subsequence Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+
+  /* longest-increasing-subsequence additions: eight narrow cells for nums and dp, unknown slots muted */
+  .array { gap: 4px; }
+  .cell { font-size: 0.95rem; padding: 7px 0 4px; min-width: 0; }
+  .cell.unk { color: var(--muted); }</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Dynamic Programming · LeetCode #300</div>
+  <h1>Longest Increasing Subsequence, narrated</h1>
+  <p>Scroll through the thinking, from enumerating every subsequence to a table of "longest run ending here", with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">dp[i] = 1 + max(dp[j]) over j &lt; i with nums[j] &lt; nums[i]</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>A subsequence keeps some elements of <code>nums</code> in their original order and skips the rest. Find the longest one whose values go strictly up, and return its <em>length</em>.</p>
+      <div class="callout">Running example: <code>nums = [10, 9, 2, 5, 3, 7, 101, 18]</code>. The answer is <strong>4</strong>: for instance <code>2, 3, 7, 101</code> or <code>2, 5, 7, 18</code>. There is no increasing pick of five.</div>
+      <p>Two things to fix in your head. "Strictly" means equal values cannot follow each other, so <code>[7, 7, 7]</code> has answer 1. And "subsequence" means gaps are fine: <code>2, 3, 7</code> skips the 5 in between.</p>
+      <p>We are asked for a count, not the elements. That lets us record a single number per position rather than a list.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every subsequence</h2>
+      <p>Each element is either in or out, so walk the array once per index deciding to take it (if it is bigger than the last taken value) or skip it, and keep the longest length seen.</p>
+      <pre class="code"><span class="ln">def longest(i, last):</span><span class="ln">    if i == len(nums):</span><span class="ln">        return 0</span><span class="ln">    skip = longest(i + 1, last)</span><span class="ln">    take = 0</span><span class="ln">    if nums[i] &gt; last:</span><span class="ln">        take = 1 + longest(i + 1, nums[i])</span><span class="ln">    return max(skip, take)</span></pre>
+      <p style="margin-top:14px">Correct, and it doubles at every index: <strong>O(2ⁿ)</strong>. At <code>n = 2500</code> that is hopeless. The repeated work is easy to spot — <code>longest(5, 3)</code> ("from index 5 with last value 3") gets asked once for every different way of reaching the 3, even though the answer never changes.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: anchor on where the run ends</h2>
+      <p>Define <code>dp[i]</code> as the length of the longest increasing subsequence <em>that ends at index i</em> — it must use <code>nums[i]</code> as its last element. That anchor is what makes the subproblem small enough to reuse.</p>
+      <p>Whatever came right before <code>nums[i]</code> in such a run is some earlier <code>nums[j]</code> with <code>j &lt; i</code> and <code>nums[j] &lt; nums[i]</code>; and the run up to that point is a best run ending at <code>j</code>, which is exactly <code>dp[j]</code>.</p>
+      <div class="callout"><code>dp[i] = 1 + max(dp[j])</code> over every <code>j &lt; i</code> with <code>nums[j] &lt; nums[i]</code>, or just 1 if no such <code>j</code> exists. The answer is <code>max(dp)</code>, because the best run can end anywhere.</div>
+      <p>Filling <code>i</code> left to right makes every <code>dp[j]</code> final before it is read. Seeding every slot with 1 encodes "an element on its own is a run of length 1".</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>dp = [1] * len(nums)</code> — every element is at least a run of one.</li>
+        <li><code>for i in range(len(nums))</code> — the slot being filled.</li>
+        <li><code>for j in range(i)</code> — every candidate predecessor.</li>
+        <li><code>if nums[j] &lt; nums[i]</code> — strict, so equal values do not chain.</li>
+        <li><code>dp[i] = max(dp[i], dp[j] + 1)</code> — extend the best run ending at <code>j</code>.</li>
+        <li><code>return max(dp)</code> — the longest run wherever it ends.</li>
+      </ul>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the first four slots</h2>
+      <p><code>i = 0</code> (value 10): no earlier index, <code>dp[0]</code> stays 1. <code>i = 1</code> (value 9): the only earlier value is 10, not smaller, so <code>dp[1] = 1</code>. <code>i = 2</code> (value 2): 10 and 9 are both bigger, <code>dp[2] = 1</code>.</p>
+      <p><code>i = 3</code> (value 5): look back at 10, 9, 2. Only <code>2 &lt; 5</code>, at <code>j = 2</code> with <code>dp[2] = 1</code>, so <code>dp[3] = max(1, 1 + 1) = 2</code>. The run is <code>2, 5</code>.</p>
+      <p>The table so far: <code>[1, 1, 1, 2]</code>.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: i = 5, value 7</h2>
+      <p>First <code>i = 4</code> (value 3): only <code>2 &lt; 3</code>, so <code>dp[4] = dp[2] + 1 = 2</code>. Note it does not chain off the 5, because <code>5 &lt; 3</code> is false.</p>
+      <p>Now <code>i = 5</code> (value 7). Earlier values smaller than 7: 2 at <code>j = 2</code> (<code>dp = 1</code>), 5 at <code>j = 3</code> (<code>dp = 2</code>), 3 at <code>j = 4</code> (<code>dp = 2</code>). The best is <code>2 + 1 = 3</code>, reached through either the 5 or the 3. So <code>dp[5] = 3</code>: <code>2, 5, 7</code> or <code>2, 3, 7</code>.</p>
+      <p>The table so far: <code>[1, 1, 1, 2, 2, 3]</code>.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: 101 and 18, then the answer</h2>
+      <p><code>i = 6</code> (value 101): everything before it is smaller, and the biggest <code>dp[j]</code> among them is <code>dp[5] = 3</code>. So <code>dp[6] = 3 + 1 = 4</code>.</p>
+      <p><code>i = 7</code> (value 18): 101 is excluded (<code>101 &lt; 18</code> is false), but 7 at <code>j = 5</code> still gives <code>3 + 1 = 4</code>. So <code>dp[7] = 4</code> as well.</p>
+      <p>Final table: <code>[1, 1, 1, 2, 2, 3, 4, 4]</code>, and <code>max(dp) = 4</code>. Here the maximum happens to sit at the last index too, but that is luck — see the pitfalls.</p>
+      <div class="callout">The backtracking explored up to 2⁸ subsequences. The table did 28 comparisons.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the seed, the strictness, the return</h2>
+      <p><strong>Seeding with zeros.</strong> Write <code>dp = [0] * len(nums)</code> and no run can ever start: <code>dp[j] + 1</code> only builds on earlier zeros, and any slot with no smaller predecessor stays 0. On the running example the 2 at index 2 has no predecessor, so its slot is 0, the 5 becomes <code>0 + 1 = 1</code>, and the chain reaches only <strong>3</strong> instead of 4.</p>
+      <p><strong>Using <code>&lt;=</code>.</strong> Then equal values chain, and <code>[7, 7, 7]</code> returns <strong>3</strong> instead of 1. The running example has no duplicates, which is exactly why this bug hides in it.</p>
+      <p><strong>Returning <code>dp[-1]</code>.</strong> The best run need not end at the last element. <code>[4, 5, 1]</code> has <code>dp = [1, 2, 1]</code>, so <code>dp[-1]</code> is <strong>1</strong> when the answer is 2.</p>
+      <div class="callout warn"><code>dp[i]</code> is the longest run <em>ending at</em> i. Seed it with 1, compare strictly, and take the max over the whole table.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Slot <code>i</code> looks back at <code>i</code> earlier slots, so the total is <code>0 + 1 + … + (n − 1)</code>: <strong>O(n²) time</strong>. The table is <strong>O(n) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Enumerate subsequences</td><td>O(2ⁿ)</td><td>O(n) stack</td></tr>
+        <tr><td>Table, dp[i] = best run ending at i</td><td>O(n²)</td><td>O(n)</td></tr>
+        <tr><td>Patience sorting with binary search</td><td>O(n log n)</td><td>O(n)</td></tr>
+      </table>
+      <p>At <code>n = 2500</code>, O(n²) is about three million comparisons — comfortably fast. The O(n log n) version keeps an array of the smallest tail of each run length and binary-searches where each new value lands; it is the follow-up, not the interview baseline.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Seven lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>dp = [1] * len(nums)</code> — each element alone is a run of length 1.</li>
+        <li><code>for i in range(len(nums))</code> — fill left to right so earlier slots are final.</li>
+        <li><code>for j in range(i)</code> — every earlier index is a candidate predecessor.</li>
+        <li><code>if nums[j] &lt; nums[i]</code> — strictly smaller, so the run really increases.</li>
+        <li><code>dp[i] = max(dp[i], dp[j] + 1)</code> — keep the longest extension.</li>
+        <li><code>return max(dp)</code> — the run can end anywhere.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>the longest run ending at i is one more than the longest run ending at any smaller earlier value; the answer is the biggest slot.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>nums · blue = nums[i], green = smaller earlier values</h3>
+        <div class="array" id="nums"></div>
+      </div>
+
+      <div class="block">
+        <h3>dp[i] = longest increasing run ending at i</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>candidates for dp[i]</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="longest_increasing_subsequence.py">longest_increasing_subsequence.py</a> · <a href="longest_increasing_subsequence_annotated.py">longest_increasing_subsequence_annotated.py</a> · <a href="test_longest_increasing_subsequence.py">test_longest_increasing_subsequence.py</a> · <a href="../../md.html?f=medium/078-longest-increasing-subsequence/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def length_of_lis(self, nums: list[int]) -> int:",
+    "        dp = [1] * len(nums)",
+    "        for i in range(len(nums)):",
+    "            for j in range(i):",
+    "                if nums[j] < nums[i]:",
+    "                    dp[i] = max(dp[i], dp[j] + 1)",
+    "        return max(dp)"
+  ];
+
+  var NUMS = [10, 9, 2, 5, 3, 7, 101, 18];
+  var Q = "?";
+  var EMPTY = [Q, Q, Q, Q, Q, Q, Q, Q];
+  var SEED = [1, 1, 1, 1, 1, 1, 1, 1];
+  var FULL = [1, 1, 1, 2, 2, 3, 4, 4];
+
+  // Each state describes what the sticky panel shows for one step.
+  // dp = table values, cur = slot being filled, hits = earlier indices with nums[j] < nums[i], dim = indices ruled out.
+  var STATES = {
+    problem: {
+      caption: "Longest strictly increasing subsequence of [10, 9, 2, 5, 3, 7, 101, 18].",
+      dp: EMPTY, cur: -1, hits: [2, 4, 5, 6], dim: [], chips: [["one answer", "2, 3, 7, 101"]],
+      meta: "Answer: <b>4</b>. Gaps are allowed; equal values are not.", hl: []
+    },
+    brute: {
+      caption: "Take-or-skip recursion: every element in or out, 2ⁿ subsequences.",
+      dp: EMPTY, cur: -1, hits: [], dim: [], chips: [["longest(5, 3)", "asked once per way of reaching 3"]],
+      meta: "The same (index, last value) question is re-solved over and over.", hl: [],
+      big: "O(2ⁿ)", bigNote: "hopeless at n = 2500"
+    },
+    idea: {
+      caption: "dp[i] = longest increasing run that ENDS at i. Seed every slot with 1.",
+      dp: SEED, cur: -1, hits: [], dim: [], chips: [["dp[i]", "1 + max(dp[j]) for j < i, nums[j] < nums[i]", "new"], ["answer", "max(dp)"]],
+      meta: "Anchoring on the end index is what makes the subproblem reusable.", hl: [2, 6, 7]
+    },
+    approach: {
+      caption: "Double loop: i is the slot, j is each candidate predecessor; strict comparison.",
+      dp: SEED, cur: -1, hits: [], dim: [], chips: [["dp", "[1] * 8", "new"]],
+      meta: "Fill i left to right so every dp[j] is final when read.", hl: [2, 3, 4, 5, 6, 7]
+    },
+    t1: {
+      caption: "i = 3, value 5: only 2 is smaller, at j = 2 with dp[2] = 1. dp[3] = 1 + 1 = 2.",
+      dp: [1, 1, 1, 2, Q, Q, Q, Q], cur: 3, hits: [2], dim: [0, 1], chips: [["j = 0, 1", "10, 9 not smaller"], ["j = 2", "dp[2] + 1 = 2", "found"]],
+      meta: "dp[0] = dp[1] = dp[2] = <b>1</b> (nothing smaller before them). dp[3] = <b>2</b>: run 2, 5.", hl: [4, 5, 6]
+    },
+    t2: {
+      caption: "i = 5, value 7: smaller earlier values are 2, 5, 3 with dp 1, 2, 2. dp[5] = 2 + 1 = 3.",
+      dp: [1, 1, 1, 2, 2, 3, Q, Q], cur: 5, hits: [2, 3, 4], dim: [0, 1], chips: [["j = 2", "1 + 1 = 2"], ["j = 3", "2 + 1 = 3", "found"], ["j = 4", "2 + 1 = 3", "found"]],
+      meta: "dp[4] = <b>2</b> (3 follows only the 2). dp[5] = <b>3</b>: run 2, 5, 7 or 2, 3, 7.", hl: [5, 6]
+    },
+    t3: {
+      caption: "i = 6, value 101: everything is smaller, best dp[j] is dp[5] = 3, so dp[6] = 4. Then 18 also reaches 4 via the 7.",
+      dp: FULL, cur: 7, hits: [2, 3, 4, 5], dim: [6], chips: [["j = 5", "3 + 1 = 4", "found"], ["j = 6", "101 not smaller than 18"]],
+      meta: "max(dp) = max([1, 1, 1, 2, 2, 3, 4, 4]) = <b>4</b>.", hl: [6, 7],
+      big: "4", bigNote: "2, 3, 7, 101 — or 2, 5, 7, 18"
+    },
+    pitfall: {
+      caption: "dp = [0] * n: the 2 has no predecessor so its slot stays 0, and every chain built on it is one short.",
+      dp: [0, 0, 0, 1, 1, 2, 3, 3], cur: 6, hits: [5], dim: [], chips: [["dp[2]", "0, not 1"], ["dp[6]", "dp[5] + 1 = 3"]],
+      meta: "A lone element is a run of length 1 — the seed must say so.", hl: [2],
+      big: "3, not 4", bigNote: "a zero seed loses the first element of every run"
+    },
+    complexity: {
+      caption: "Slot i looks back at i earlier slots: 0 + 1 + … + 7 = 28 comparisons here.",
+      dp: FULL, cur: -1, hits: [], dim: [], chips: [["n", "8"], ["comparisons", "28"]],
+      meta: "About three million comparisons at the 2500-element limit.", hl: [3, 4],
+      big: "O(n²) time · O(n) space", bigNote: "versus O(2ⁿ) for enumeration; O(n log n) is possible"
+    },
+    final: {
+      caption: "The whole solution.",
+      dp: FULL, cur: -1, hits: [6, 7], dim: [], chips: [["max(dp)", "4", "found"]], meta: "", hl: [1, 2, 3, 4, 5, 6, 7]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var nh = "";
+    for (var k = 0; k < NUMS.length; k++) {
+      var ncls = "cell";
+      if (k === s.cur) ncls += " cur";
+      else if (s.hits.indexOf(k) !== -1) ncls += " hit";
+      else if (s.dim.indexOf(k) !== -1) ncls += " dim";
+      nh += '<div class="' + ncls + '">' + NUMS[k] + '<span class="idx">' + k + '</span></div>';
+    }
+    $("nums").innerHTML = nh;
+
+    var arr = "";
+    for (var i = 0; i < s.dp.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      if (s.dp[i] === Q) cls += " unk";
+      arr += '<div class="' + cls + '">' + s.dp[i] + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var c = 0; c < s.chips.length; c++) {
+        var e = s.chips[c];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var code = "";
+    for (var l = 0; l < CODE.length; l++) {
+      code += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = code;
+  }
+
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

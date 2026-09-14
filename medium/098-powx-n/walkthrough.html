@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pow(x, n) Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  .fig .bit { fill: var(--bg); stroke: var(--line); stroke-width: 1.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .bit.one { fill: var(--panel); stroke: var(--muted); }
+  .fig .bit.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2.5; }
+  .fig .bit.hit { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 2.5; }
+  .fig .bit.dim { opacity: 0.35; }
+  .fig .val.zero { fill: var(--muted); font-weight: 400; }
+  .fig .rlbl { fill: var(--muted); font-size: 11px; text-anchor: start; font-family: ui-monospace, Menlo, monospace; }
+  .fig .rlbl.acc { fill: var(--ink); font-weight: 600; }
+  .fig .rlbl.cur { fill: var(--accent); font-weight: 600; }
+  .fig .rlbl.ok { fill: var(--ok); font-weight: 600; }
+  .fig .hdr { fill: var(--muted); font-size: 9px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .box.dim { opacity: 0.4; }
+  .fig .dig { fill: var(--ink); font-size: 22px; font-weight: 700; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .tag-txt { fill: var(--accent); font-size: 11px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .arrow { stroke: var(--accent); stroke-width: 2; fill: none; }
+  .fig .arrow-head { fill: var(--accent); }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Math · LeetCode #50</div>
+  <h1>Pow(x, n), narrated</h1>
+  <p>Scroll through the thinking, from multiplying x by itself n times to reading n one bit at a time while squaring a running base, with the bits of n and the two running values shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/math.html">Math</a> <span class="how">Binary exponentiation: <code>x^n</code> is the product of <code>x^(2^k)</code> over the set bits <code>k</code> of <code>n</code>, and repeated squaring produces those factors in order.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Implement <code>pow(x, n)</code>: given a float <code>x</code> and an integer <code>n</code>, return <code>x</code> raised to the power <code>n</code>. The exponent can be negative, in which case the answer is <code>1 / x^|n|</code>, and it can be as large as <code>2^31 - 1</code>, about two billion.</p>
+      <div class="callout">Running example: <code>x = 2.0</code>, <code>n = 10</code>. The answer is <strong>1024.0</strong>. In binary <code>10</code> is <code>1010</code>, that is <code>8 + 2</code>, so <code>2^10 = 2^8 · 2^2 = 256 · 4</code>.</div>
+      <p>The size of <code>n</code> is the whole difficulty. Two billion multiplications is too slow, so the question is really: how do you raise something to a huge power in far fewer steps than the power itself?</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: multiply n times</h2>
+      <p>Start from <code>1.0</code> and multiply by <code>x</code> once per unit of the exponent, after flipping a negative <code>n</code> into a positive one on <code>1 / x</code>:</p>
+      <pre class="code"><span class="ln">if n &lt; 0:</span><span class="ln">    x, n = 1 / x, -n</span><span class="ln">result = 1.0</span><span class="ln">for _ in range(n):</span><span class="ln">    result *= x</span></pre>
+      <p style="margin-top:14px">For the example that is ten multiplications, and it gives the right answer. But it is <strong>O(n)</strong>, and <code>n</code> may be <code>2^31 - 1</code>: over two billion float multiplications, which takes minutes in Python. The exponent is a number, not a collection, and a loop that runs once per unit of a number is almost always the wrong shape.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: read n in binary</h2>
+      <p>Write <code>n</code> in binary: <code>10 = 1010</code>, meaning <code>8 + 2</code>. Then <code>x^10 = x^8 · x^2</code>. In general, <code>x^n</code> is the product of <code>x^(2^k)</code> for every bit <code>k</code> that is set in <code>n</code>.</p>
+      <p>Those factors are cheap to produce in order: <code>x</code>, then <code>x^2 = x · x</code>, then <code>x^4 = x^2 · x^2</code>, then <code>x^8 = x^4 · x^4</code>. Each is the square of the previous one. So keep a running <code>base</code> that squares once per bit, and multiply it into <code>result</code> only when the current lowest bit of <code>n</code> is <code>1</code>.</p>
+      <p>The panel shows the four bits of <code>10</code> lined up with the four bases <code>2, 4, 16, 256</code>. The set bits are bit 1 and bit 3, so the answer is <code>4 · 256 = 1024</code>.</p>
+      <div class="callout">One iteration per bit of <code>n</code>: <code>n &amp; 1</code> reads the lowest bit, <code>n &gt;&gt;= 1</code> drops it. That is about <code>log₂ n</code> rounds, at most 31 for the constraint range, instead of <code>n</code> rounds.</div>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>if n &lt; 0: x = 1 / x; n = -n</code> — a negative power of <code>x</code> is a positive power of <code>1 / x</code>. After this <code>n</code> is non-negative and the loop can shift it toward zero.</li>
+        <li><code>result = 1.0</code> — the empty product. If <code>n</code> is <code>0</code> the loop never runs and this is the answer.</li>
+        <li><code>base = x</code> — the factor for bit 0, <code>x^(2^0) = x</code>.</li>
+        <li><code>while n:</code> — keep going while any bit is left.</li>
+        <li><code>if n &amp; 1: result *= base</code> — if the current lowest bit is set, its factor belongs in the answer.</li>
+        <li><code>base *= base</code> — square, so <code>base</code> becomes the factor for the next bit up.</li>
+        <li><code>n &gt;&gt;= 1</code> — drop the bit just handled.</li>
+        <li><code>return result</code>.</li>
+      </ul>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: rounds 1 and 2</h2>
+      <p>Start: <code>result = 1.0</code>, <code>base = 2.0</code>, <code>n = 10</code> which is <code>1010</code>.</p>
+      <p><strong>Round 1.</strong> <code>n &amp; 1</code> is <code>0</code>, so <code>result</code> stays <code>1.0</code>. Square the base: <code>base = 2.0 · 2.0 = 4.0</code>. Shift: <code>n = 10 &gt;&gt; 1 = 5</code>, which is <code>101</code>.</p>
+      <p><strong>Round 2.</strong> <code>n &amp; 1</code> is <code>1</code>, so <code>result = 1.0 · 4.0 = 4.0</code>: the <code>x^2</code> factor for bit 1 of the original <code>n</code> is in. Square: <code>base = 4.0 · 4.0 = 16.0</code>. Shift: <code>n = 5 &gt;&gt; 1 = 2</code>, which is <code>10</code>.</p>
+      <p>Notice the base was squared in round 1 even though nothing was multiplied in. Squaring happens every round regardless; it is the multiplication into <code>result</code> that is conditional.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: rounds 3 and 4</h2>
+      <p><strong>Round 3.</strong> <code>n = 2</code>, <code>n &amp; 1</code> is <code>0</code>, <code>result</code> stays <code>4.0</code>. Square: <code>base = 16.0 · 16.0 = 256.0</code>. Shift: <code>n = 2 &gt;&gt; 1 = 1</code>.</p>
+      <p><strong>Round 4.</strong> <code>n = 1</code>, <code>n &amp; 1</code> is <code>1</code>, so <code>result = 4.0 · 256.0 = 1024.0</code>: the <code>x^8</code> factor for bit 3 is in. Square: <code>base = 65536.0</code>, which will never be used. Shift: <code>n = 1 &gt;&gt; 1 = 0</code>.</p>
+      <p>The loop condition <code>while n</code> now sees <code>0</code> and stops. Four rounds for a four-bit exponent, and <code>result = 1024.0</code> is exactly <code>x^2 · x^8</code>.</p>
+    </section>
+
+    <section class="step" data-state="negative">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: a negative exponent</h2>
+      <p>Take <code>x = 2.0</code>, <code>n = -2</code>. The guard fires: <code>x = 1 / 2.0 = 0.5</code> and <code>n = 2</code>, which is <code>10</code> in binary. From here the loop is identical to the positive case.</p>
+      <p><strong>Round 1.</strong> <code>n &amp; 1</code> is <code>0</code>; <code>base = 0.5 · 0.5 = 0.25</code>; <code>n = 1</code>.</p>
+      <p><strong>Round 2.</strong> <code>n &amp; 1</code> is <code>1</code>; <code>result = 1.0 · 0.25 = 0.25</code>; <code>base = 0.0625</code>; <code>n = 0</code>. The answer is <code>0.25</code>, which is <code>2^-2 = 1/4</code>.</p>
+      <div class="callout">Python's integers are unbounded, so <code>-n</code> is safe even for <code>n = -2^31</code>. In a language with 32-bit ints that negation overflows; use a wider type or process <code>n</code> as a negative number.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: order and sign</h2>
+      <p><strong>Squaring before checking the bit.</strong> Writing <code>base *= base</code> above <code>if n &amp; 1: result *= base</code> means every factor that gets multiplied in is one squaring too far along: bit <code>k</code> contributes <code>x^(2^(k + 1))</code> instead of <code>x^(2^k)</code>. On the example the two set bits pull in <code>16</code> and <code>65536</code> instead of <code>4</code> and <code>256</code>, and the function returns <strong>1048576, not 1024</strong>, which is <code>2^20</code>, twice the intended exponent.</p>
+      <p><strong>Forgetting the negative branch.</strong> With <code>n = -2</code> and no guard, <code>while n:</code> never ends: <code>-2 &gt;&gt; 1</code> is <code>-1</code> and <code>-1 &gt;&gt; 1</code> is still <code>-1</code>, so <code>n</code> never reaches <code>0</code>. Changing the condition to <code>while n &gt; 0:</code> stops the hang but returns <strong>1.0</strong> instead of <code>0.25</code>.</p>
+      <p><strong>Starting <code>result</code> at <code>x</code>.</strong> Then <code>n = 0</code> returns <code>x</code> rather than <code>1.0</code>, and every other answer carries an extra factor of <code>x</code>: <code>2048.0</code> on the example.</p>
+      <div class="callout warn">Check the bit, then square, then shift. The base is the factor for the bit you are looking at <em>now</em>; squaring prepares it for the next bit.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>The loop runs once per bit of <code>|n|</code>, so <strong>O(log n) time</strong>: at most 31 rounds for any exponent in the constraint range, each doing at most two float multiplications. The state is <code>result</code>, <code>base</code> and the shrinking <code>n</code>, so <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Multiply n times</td><td>O(n)</td><td>O(1)</td></tr>
+        <tr><td>Recursive halving, pow(x·x, n // 2)</td><td>O(log n)</td><td>O(log n) stack</td></tr>
+        <tr><td>Bit loop with squaring base</td><td>O(log n)</td><td>O(1)</td></tr>
+      </table>
+      <p>The recursive version is the same idea top-down; the loop reads the bits bottom-up and needs no stack.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Twelve lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>if n &lt; 0: x = 1 / x; n = -n</code> — fold the sign into the base.</li>
+        <li><code>result = 1.0</code> and <code>base = x</code> — the empty product and the factor for bit 0.</li>
+        <li><code>while n:</code> — one round per remaining bit.</li>
+        <li><code>if n &amp; 1: result *= base</code> — a set bit contributes its factor.</li>
+        <li><code>base *= base</code> — prepare the factor for the next bit.</li>
+        <li><code>n &gt;&gt;= 1</code> — move on to that bit.</li>
+        <li><code>return result</code>.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>read n's bits from the bottom; square the base every round, multiply it in on a 1.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>n · low 4 bits · x = 2.0, n = 10</h3>
+        <svg class="fig" id="fig" viewBox="0 0 400 160" aria-label="bit rows"></svg>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>result and base</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="powx_n.py">powx_n.py</a> · <a href="powx_n_annotated.py">powx_n_annotated.py</a> · <a href="test_powx_n.py">test_powx_n.py</a> · <a href="../../md.html?f=medium/098-powx-n/notes.md">notes.md</a> · <a href="../../patterns/math.md">patterns/math.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def my_pow(self, x: float, n: int) -> float:",
+    "        if n < 0:",
+    "            x = 1 / x",
+    "            n = -n",
+    "        result = 1.0",
+    "        base = x",
+    "        while n:",
+    "            if n & 1:",
+    "                result *= base",
+    "            base *= base",
+    "            n >>= 1",
+    "        return result"
+  ];
+
+  // Each state: rows of bit cells (b = bits, hi = highlighted positions, 0 = lowest), vars = dict entries, hl = code lines.
+  var STATES = {
+    problem: {"caption": "x = 2.0, n = 10. 10 is 1010 in binary: bits 3 and 1 are set.", "rows": [{"l": "n = 10", "b": "1010", "c": "acc", "hi": [1, 3], "hc": "hit"}], "meta": "2^10 = 2^8 · 2^2 = 256 · 4 = <b>1024</b>.", "vars": [["x", "2.0"], ["n", "10"]], "hl": []},
+    brute: {"caption": "Brute force: multiply by x once per unit of n, ten times here.", "rows": [{"l": "n = 10", "b": "1010", "c": "acc"}], "meta": "Correct, but O(n): over two billion multiplications at n = 2^31 - 1.", "vars": [["multiplications", "10"], ["at n = 2^31 - 1", "2147483647"]], "hl": [], "big": "O(n)", "bigNote": "one multiply per unit of the exponent"},
+    insight: {"caption": "Each set bit k contributes x^(2^k); squaring produces x, x^2, x^4, x^8 in order.", "rows": [{"l": "n = 10", "b": "1010", "c": "acc", "hi": [1, 3], "hc": "hit"}], "meta": "Bases: bit 0 → 2, bit 1 → 4, bit 2 → 16, bit 3 → 256. Set bits 1 and 3 give 4 · 256 = <b>1024</b>.", "vars": [["x^2", "4"], ["x^8", "256"], ["x^2 · x^8", "1024", "found"]], "hl": [8, 9, 10]},
+    approach: {"caption": "Check the lowest bit, square the base, shift n. One round per bit.", "rows": [{"l": "n = 10", "b": "1010", "c": "acc", "hi": [0], "hc": "cur"}], "meta": "Start with result = 1.0 (the empty product) and base = x.", "vars": [["result", "1.0", "new"], ["base", "2.0", "new"], ["n", "10 (1010)"]], "hl": [5, 6, 7, 8, 9, 10, 11]},
+    trace1: {"caption": "Round 1: bit 0 is 0, skip. base = 4.0, n = 5. Round 2: bit is 1, result = 4.0. base = 16.0, n = 2.", "rows": [{"l": "n = 10", "b": "1010", "c": "acc", "hi": [0], "hc": "cur"}, {"l": "n = 5", "b": "0101", "c": "cur", "hi": [0], "hc": "hit"}, {"l": "n = 2", "b": "0010", "c": ""}], "meta": "The base squared both rounds; result only took the 4.0 on the 1 bit.", "vars": [["result", "4.0", "new"], ["base", "16.0", "new"], ["n", "2 (10)"]], "hl": [8, 9, 10, 11]},
+    trace2: {"caption": "Round 3: bit 0 is 0, skip. base = 256.0, n = 1. Round 4: bit is 1, result = 4.0 · 256.0 = 1024.0. n = 0, done.", "rows": [{"l": "n = 2", "b": "0010", "c": "acc", "hi": [0], "hc": "cur"}, {"l": "n = 1", "b": "0001", "c": "cur", "hi": [0], "hc": "hit"}, {"l": "n = 0", "b": "0000", "c": "ok"}], "meta": "while n sees 0 and stops after four rounds.", "vars": [["result", "1024.0", "found"], ["base", "65536.0"], ["n", "0"]], "hl": [7, 8, 9, 12], "big": "1024.0", "bigNote": "x^2 · x^8, two set bits"},
+    negative: {"caption": "x = 2.0, n = -2: flip to x = 0.5, n = 2, then the same loop.", "rows": [{"l": "n = 2", "b": "0010", "c": "acc", "hi": [0], "hc": "cur"}, {"l": "n = 1", "b": "0001", "c": "cur", "hi": [0], "hc": "hit"}, {"l": "n = 0", "b": "0000", "c": "ok"}], "meta": "Round 1 squares 0.5 to 0.25; round 2 multiplies it in.", "vars": [["x", "0.5", "new"], ["result", "0.25", "found"], ["base", "0.0625"]], "hl": [2, 3, 4], "big": "0.25", "bigNote": "2^-2 = (1/2)^2"},
+    pitfall: {"caption": "Squaring before the bit check multiplies in 16 and 65536 instead of 4 and 256.", "rows": [{"l": "n = 10", "b": "1010", "c": "acc", "hi": [1, 3], "hc": "cur"}], "meta": "Every factor is one squaring too far along, so the exponent doubles.", "vars": [["result (buggy)", "16 · 65536 = 1048576"], ["result (correct)", "4 · 256 = 1024"]], "hl": [8, 9, 10], "big": "1048576, not 1024", "bigNote": "2^20: each set bit contributed x^(2^(k+1))"},
+    complexity: {"caption": "One round per bit of n, two multiplications per round.", "rows": [{"l": "n = 10", "b": "1010", "c": "ok", "hi": [1, 3], "hc": "hit"}], "meta": "4 rounds for n = 10; at most 31 for any n in range. Three variables of state.", "vars": [["time", "O(log n)"], ["space", "O(1)", "found"]], "hl": [7, 10, 11], "big": "O(log n) time · O(1) space", "bigNote": "versus O(n) for the multiply loop"},
+    final: {"caption": "Read n's bits from the bottom; square the base every round, multiply it in on a 1.", "rows": [{"l": "n = 10", "b": "1010", "c": "ok", "hi": [1, 3], "hc": "hit"}], "meta": "10 → 5 → 2 → 1 → 0 in four rounds.", "vars": [["result", "1024.0", "found"]], "hl": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], "big": "1024.0", "bigNote": "running example"}
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var figSvg = document.getElementById("fig");
+  function clearFig(h) { while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild); figSvg.setAttribute("viewBox", "0 0 400 " + h); }
+
+  // Rows of bit cells. Each row: { l: label, b: "0101", c: label class, hi: [bit positions, 0 = lowest], hc: "cur"|"hit", dim: bool }
+  // Returns the y coordinate just below the last row.
+  function drawRows(rows, y0) {
+    if (!rows.length) return y0;
+    var n = rows[0].b.length, pitch = 33, w = pitch - 3, x0 = 396 - n * pitch;
+    for (var p = 0; p < n; p++) {
+      figSvg.appendChild(el("text", { "class": "hdr", x: x0 + p * pitch + w / 2, y: y0 + 10 }, "bit " + (n - 1 - p)));
+    }
+    var y = y0 + 16;
+    rows.forEach(function (r) {
+      figSvg.appendChild(el("text", { "class": "rlbl" + (r.c ? " " + r.c : ""), x: 8, y: y + 16 }, r.l));
+      for (var p = 0; p < n; p++) {
+        var ch = r.b.charAt(p), cls = "bit" + (ch === "1" ? " one" : "");
+        if (r.hi && r.hi.indexOf(n - 1 - p) !== -1) cls += " " + (r.hc || "cur");
+        if (r.dim) cls += " dim";
+        figSvg.appendChild(el("rect", { "class": cls, x: x0 + p * pitch, y: y, width: w, height: 24, rx: 4 }));
+        figSvg.appendChild(el("text", { "class": "val" + (ch === "1" ? "" : " zero"), x: x0 + p * pitch + w / 2, y: y + 17 }, ch));
+      }
+      y += 32;
+    });
+    return y;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arrEl = $("array");
+    if (arrEl) {
+      var arr = "";
+      for (var i = 0; i < s.arr.length; i++) {
+        var cls = "cell";
+        if (i === s.cur) cls += " cur";
+        else if (s.hits.indexOf(i) !== -1) cls += " hit";
+        else if (s.dim.indexOf(i) !== -1) cls += " dim";
+        arr += '<div class="' + cls + '">' + s.arr[i] + '<span class="idx">i = ' + i + '</span></div>';
+      }
+      arrEl.innerHTML = arr;
+    }
+
+    clearFig(s.rows.length ? 16 + s.rows.length * 32 + 2 : 30);
+    if (s.rows.length) drawRows(s.rows, 0);
+    else figSvg.appendChild(el("text", { "class": "lbl", x: 200, y: 20 }, s.figNote || ""));
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">nothing yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

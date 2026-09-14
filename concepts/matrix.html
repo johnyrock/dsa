@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matrix Manipulation, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Matrix Manipulation, Explained</h1>
+  <p class="lede">Rotating, spiralling, and zeroing a grid in place: describe the state with a few bounds and flags instead of copying cells.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      A matrix is just a list of lists, but the interesting problems ask you to change it <em>in place</em>:
+      turn it a quarter turn, walk it in a spiral, wipe out rows and columns, all without allocating a second
+      grid. The trick every time is the same. Find a small number of coordinates, bounds, or flags that describe
+      the state, and update those instead of copying cells around.
+    </p>
+    <p>
+      Three ideas cover most of it. A rotation is a <strong>transpose followed by a reverse</strong>. A spiral
+      is <strong>four bounds that shrink inward</strong>. And when you need to remember something about every
+      row and column but have no spare memory, <strong>row 0 and column 0 are your notebook</strong>.
+    </p>
+    <div class="callout why">
+      <strong>Why it's fast:</strong> every cell is touched a constant number of times and nothing is copied.
+      Time is O(rows × cols), which you cannot beat since you have to look at every cell, and extra space is O(1).
+    </div>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <p>Reach for these tricks when a problem says, or quietly implies, one of these:</p>
+    <ul>
+      <li><strong>"In place"</strong> or <strong>"O(1) extra space"</strong> on a 2-D input. That is the signal to store state in the grid itself.</li>
+      <li><strong>The output order is geometric</strong>: rotated, spiral, layer by layer, diagonal. You are not searching the grid, you are walking it in a fixed shape.</li>
+      <li><strong>Whole rows or columns change together</strong>. The answer depends on "does this row contain X" rather than on the neighbours of each cell.</li>
+      <li><strong>No visited set, no neighbours.</strong> If the question is about reachability or connectivity, that is <a href="graph-traversal.html">graph traversal</a>, not this page.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>
+      Take this problem: <em>rotate an n × n image 90 degrees clockwise, in place.</em> The instinctive answer
+      is to build the rotated grid and copy it back:
+    </p>
+    <pre>def rotate_slow(matrix):
+    n = len(matrix)
+    rotated = [[0] * n for _ in range(n)]
+    for r in range(n):
+        for c in range(n):
+            rotated[c][n - 1 - r] = matrix[r][c]   # (r, c) lands at (c, n-1-r)
+    for r in range(n):
+        matrix[r] = rotated[r]</pre>
+    <p>
+      This works, and the index formula is even correct, but it uses a second n × n grid, which is exactly what
+      "in place" forbids. The next thought is usually to move cells around in cycles of four, which is right but
+      fiddly. There is a cleaner way to get the same result with two simple passes.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>A clockwise rotation is a transpose (flip across the main diagonal) followed by reversing each row.</p>
+    <pre>def rotate(matrix):
+    n = len(matrix)
+    # 1. transpose: swap (r, c) with (c, r), but only above the diagonal
+    for r in range(n):
+        for c in range(r + 1, n):
+            matrix[r][c], matrix[c][r] = matrix[c][r], matrix[r][c]
+    # 2. reverse every row
+    for row in matrix:
+        row.reverse()</pre>
+    <p>
+      The line that matters is <code>range(r + 1, n)</code>. Transposing means swapping every pair across the
+      diagonal exactly once. If you loop over the whole square you swap each pair twice and end up where you
+      started.
+    </p>
+    <p>
+      The same "describe, don't copy" mindset gives you the spiral walk. Keep four bounds, <code>top</code>,
+      <code>bottom</code>, <code>left</code>, <code>right</code>, walk the top row, then the right column, then
+      the bottom row backwards, then the left column upwards, and pull each bound in by one after its side is done.
+    </p>
+    <pre>def spiral(matrix):
+    out = []
+    top, bottom = 0, len(matrix) - 1
+    left, right = 0, len(matrix[0]) - 1
+    while top &lt;= bottom and left &lt;= right:
+        for c in range(left, right + 1):
+            out.append(matrix[top][c])
+        top += 1
+        for r in range(top, bottom + 1):
+            out.append(matrix[r][right])
+        right -= 1
+        if top &lt;= bottom:                      # a single row may be all that is left
+            for c in range(right, left - 1, -1):
+                out.append(matrix[bottom][c])
+            bottom -= 1
+        if left &lt;= right:                      # a single column may be all that is left
+            for r in range(bottom, top - 1, -1):
+                out.append(matrix[r][left])
+            left += 1
+    return out</pre>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>Rotate this 3 × 3 grid clockwise.</p>
+
+    <pre class="art">start          after transpose   after row reverse
+1 2 3          1 4 7             7 4 1
+4 5 6    -&gt;    2 5 8      -&gt;     8 5 2
+7 8 9          3 6 9             9 6 3</pre>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>Step</th><th>Action</th><th>Swap</th><th>Grid after</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>transpose, r=0 c=1</td><td><code>(0,1)</code> ↔ <code>(1,0)</code></td><td><code>[1,4,3] [2,5,6] [7,8,9]</code></td></tr>
+          <tr><td>2</td><td>transpose, r=0 c=2</td><td><code>(0,2)</code> ↔ <code>(2,0)</code></td><td><code>[1,4,7] [2,5,6] [3,8,9]</code></td></tr>
+          <tr><td>3</td><td>transpose, r=1 c=2</td><td><code>(1,2)</code> ↔ <code>(2,1)</code></td><td><code>[1,4,7] [2,5,8] [3,6,9]</code></td></tr>
+          <tr class="hi"><td>4</td><td>reverse row 0</td><td></td><td><code>[7,4,1] [2,5,8] [3,6,9]</code></td></tr>
+          <tr class="hi"><td>5</td><td>reverse row 1</td><td></td><td><code>[7,4,1] [8,5,2] [3,6,9]</code></td></tr>
+          <tr class="hi"><td>6</td><td>reverse row 2</td><td></td><td><code>[7,4,1] [8,5,2] [9,6,3]</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption">Three swaps and three reversals. The diagonal 1, 5, 9 never moves during the transpose; only the three cells above it swap with the three below.</p>
+
+    <p>
+      Check one cell against the formula from the naive version. The top-left <code>1</code> at (0, 0) should
+      land at (0, n−1) = (0, 2), and it did. The <code>7</code> at (2, 0) should land at (0, 0), and it did.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>Counter-clockwise, and the other flips</h3>
+    <p>
+      Transpose then reverse each <em>column</em> (or reverse each row first, then transpose) rotates
+      counter-clockwise. Reversing rows alone is a horizontal mirror; reversing the row order alone is a
+      vertical mirror. Any rotation or reflection of a square is one or two of these primitives.
+    </p>
+
+    <h3>Spiral bounds for a non-square grid</h3>
+    <p>
+      The two <code>if</code> guards in the spiral are the whole difficulty. Picture a 3 × 1 column: after the
+      top row (one cell) and the right column (two cells) you have consumed everything, but without the guards
+      the bottom-row loop would walk that same cell again. Check <code>top &lt;= bottom</code> before the
+      bottom row and <code>left &lt;= right</code> before the left column.
+    </p>
+
+    <h3>Borders as flags (Set Matrix Zeroes)</h3>
+    <p>
+      "If a cell is 0, set its whole row and column to 0." The obvious plan keeps a set of rows and a set of
+      columns, which is O(rows + cols) space. To get to O(1), use the first row as the column flags and the
+      first column as the row flags. The only wrinkle is that those two lines share the corner cell, so you
+      save whether row 0 and column 0 originally contained a zero in two plain booleans before you start writing.
+    </p>
+    <pre>def set_zeroes(matrix):
+    rows, cols = len(matrix), len(matrix[0])
+    row0 = any(matrix[0][c] == 0 for c in range(cols))
+    col0 = any(matrix[r][0] == 0 for r in range(rows))
+
+    for r in range(1, rows):                 # pass 1: record
+        for c in range(1, cols):
+            if matrix[r][c] == 0:
+                matrix[r][0] = matrix[0][c] = 0
+
+    for r in range(1, rows):                 # pass 2: apply
+        for c in range(1, cols):
+            if matrix[r][0] == 0 or matrix[0][c] == 0:
+                matrix[r][c] = 0
+
+    if row0:                                 # pass 3: the borders themselves
+        for c in range(cols): matrix[0][c] = 0
+    if col0:
+        for r in range(rows): matrix[r][0] = 0</pre>
+    <p>
+      Record first, apply second. If you zero cells while you are still scanning, the zeroes you just wrote
+      look like original zeroes and cascade until the whole grid is blank.
+    </p>
+
+    <h3>Diagonals and layers</h3>
+    <p>
+      Cells on the same anti-diagonal share <code>r + c</code>; cells on the same main diagonal share
+      <code>r − c</code>. Walking "layer by layer" is the spiral with the four sides collected together
+      instead of appended in order.
+    </p>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong>Transposing the whole square.</strong> <code>for c in range(n)</code> swaps each pair twice and
+      leaves the matrix unchanged. The inner loop starts at <code>r + 1</code>.
+    </div>
+    <div class="callout gotcha">
+      <strong>Reversing the wrong axis.</strong> Transpose + reverse rows is clockwise. Transpose + reverse
+      columns is counter-clockwise. Try it on the 3 × 3 above if you are unsure.
+    </div>
+    <div class="callout gotcha">
+      <strong>Dropping the spiral guards.</strong> On a single leftover row or column the third and fourth
+      loops revisit cells. The guards are not optional.
+    </div>
+    <div class="callout gotcha">
+      <strong>Zeroing as you scan.</strong> Freshly written zeroes are indistinguishable from originals, so
+      they cascade. Two passes: mark, then apply.
+    </div>
+    <div class="callout gotcha">
+      <strong>Assuming square.</strong> Use <code>len(matrix)</code> and <code>len(matrix[0])</code>
+      separately, and check for an empty matrix before touching <code>matrix[0]</code>.
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Time:</strong> O(rows × cols) for all three techniques. Every cell is read or written a constant number of times.</li>
+      <li><strong>Space:</strong> O(1) beyond the output. Rotation and zeroing are in place; the spiral only allocates the list it returns.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <ul class="problems">
+      <li><span class="id">medium/095</span><a href="../medium/095-rotate-image/walkthrough.html">Rotate Image</a><span class="note">transpose above the diagonal, then reverse rows</span></li>
+      <li><span class="id">medium/096</span><a href="../medium/096-spiral-matrix/walkthrough.html">Spiral Matrix</a><span class="note">four bounds, two guards</span></li>
+      <li><span class="id">medium/097</span><a href="../medium/097-set-matrix-zeroes/walkthrough.html">Set Matrix Zeroes</a><span class="note">row 0 and column 0 as the flag store</span></li>
+    </ul>
+    <p class="muted" style="margin-top:14px">Classic LeetCode problems not yet in the repo: Spiral Matrix II (#59), Diagonal Traverse (#498), Game of Life (#289).</p>
+  </section>
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>

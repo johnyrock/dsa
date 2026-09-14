@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Happy Number Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* happy-number additions: the digit-square chain as cells with slow / fast markers (easy/012 colours) */
+  .cell.slow { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.fast { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.meet { border-color: var(--ok); background: var(--ok-soft); box-shadow: 0 0 0 2px var(--ok); }
+  .cell.bad { border-color: var(--warn); background: var(--warn-soft); }
+  .cell .idx.slow { color: var(--accent); font-weight: 700; }
+  .cell .idx.fast { color: var(--ok); font-weight: 700; }
+  .cell .idx.meet { color: var(--ok); font-weight: 700; }
+  .cell .idx.bad { color: var(--warn); font-weight: 700; }
+  .array.chain { gap: 6px; }
+  .array.chain .cell { min-width: 52px; flex: 0 0 auto; padding: 8px 6px 4px; }
+  .array.chain .cell.cur { transform: none; }
+  .meta b { color: var(--ink); }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#easy">← All walkthroughs</a>
+  <div class="tag">Easy · Fast & Slow Pointers · LeetCode #202</div>
+  <h1>Happy Number, narrated</h1>
+  <p>Scroll through the digit-square chain as a linked list, with the slow and fast pointers shown alongside until one reaches 1 or they meet.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/fast-slow-pointers.html">Fast & Slow Pointers</a> <span class="how">The repeated digit-square transformation is a linked sequence of numbers. It either reaches 1 or loops forever, which makes Floyd's two-speed cycle detection applicable.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Take a positive integer <code>n</code> and replace it with the sum of the squares of its digits. Repeat. If the process ever reaches 1 it stays there forever, and <code>n</code> is called <em>happy</em>. If it never reaches 1, it must eventually fall into a loop that excludes 1, and <code>n</code> is not happy. Return <code>True</code> or <code>False</code>.</p>
+      <div class="callout">Running example: <code>n = 19</code>. <code>1² + 9² = 82</code>. Then <code>8² + 2² = 68</code>, <code>6² + 8² = 100</code>, <code>1² + 0² + 0² = 1</code>. It reached 1, so 19 is <strong>happy</strong>: answer <code>true</code>.</div>
+      <p>The hard part is not computing the next value, it is knowing when to give up. A happy number announces itself by hitting 1, but an unhappy one just keeps producing new values. You need a way to detect "this is going in circles" without knowing in advance how big the circle is.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: remember every value</h2>
+      <p>Keep a set of every number seen so far. Transform, check the set, stop on 1 or on a repeat:</p>
+      <pre class="code"><span class="ln">seen = set()</span><span class="ln">while n != 1 and n not in seen:</span><span class="ln">    seen.add(n)</span><span class="ln">    n = self._next(n)</span><span class="ln">return n == 1</span></pre>
+      <p style="margin-top:14px">For 19 the set grows to <code>{19, 82, 68, 100}</code> and then <code>n</code> becomes 1, so it returns <code>True</code>. This is correct, and it is a perfectly good first answer. Its cost is the set: it holds one entry per value in the chain, so the space is <strong>O(length of the chain)</strong> before it terminates or repeats.</p>
+      <p>In practice the chain is short, so the set is small. The interview follow-up is still "can you do it in O(1) space?", and the answer is yes, by noticing what kind of structure the chain is.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: the chain is a linked list</h2>
+      <p>Look at <code>_next</code> on lines 10 to 15. It is a pure function: <code>_next(19)</code> is always 82, <code>_next(82)</code> is always 68. So every number has exactly one successor, which is precisely the shape of a singly linked list where <code>_next(value)</code> plays the role of <code>node.next</code>.</p>
+      <div class="callout">A linked list built this way has only two possible shapes. Either it reaches 1, and since <code>_next(1) = 1</code> that is a dead end you can treat as the tail. Or it never reaches 1, in which case, because the values are bounded, it must revisit a value and loop forever.</div>
+      <p>"Does this linked list terminate or does it have a cycle?" is exactly the question Floyd's slow and fast pointers answer with no memory at all. A pointer here is just an integer, and "follow the pointer" is just "call <code>_next</code>".</p>
+      <p>Why bounded: each digit contributes at most <code>9² = 81</code>. A 10-digit number maps to at most 810, and anything below 1000 maps to at most 243. The chain plunges into a small range within a step or two and can only wander among a few hundred values after that, so it <em>must</em> repeat if it does not hit 1.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: two speeds, no set</h2>
+      <p>Lines 3 and 4 set up the pointers: <code>slow = n</code>, which is 19, and <code>fast = self._next(n)</code>, which is 82. Starting <code>fast</code> one hop ahead means the loop condition <code>slow != fast</code> is meaningful on the very first check instead of trivially true.</p>
+      <p>The loop on line 5 runs <code>while fast != 1 and slow != fast</code>. Each turn, <code>slow</code> moves one hop with <code>self._next(slow)</code> and <code>fast</code> moves two with <code>self._next(self._next(fast))</code>.</p>
+      <ul>
+        <li>If the chain reaches 1, <code>fast</code> gets there first and the loop exits with <code>fast == 1</code>: happy.</li>
+        <li>If the chain loops, both pointers end up circling inside the loop, <code>fast</code> gains one position per turn, and it lands on <code>slow</code>. The loop exits with <code>slow == fast</code> and <code>fast != 1</code>: not happy.</li>
+      </ul>
+      <p>Line 8, <code>return fast == 1</code>, distinguishes the two exits. Only two integers are ever held.</p>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: turn 1</h2>
+      <p>Check the condition: <code>fast</code> is 82, not 1, and <code>slow</code> is 19, not equal to 82. Enter the loop.</p>
+      <p><code>slow = self._next(19) = 82</code>. Then <code>fast</code> takes two hops from 82: <code>_next(82) = 64 + 4 = 68</code>, and <code>_next(68) = 36 + 64 = 100</code>. So after turn 1, <code>slow = 82</code> and <code>fast = 100</code>. The panel has now discovered the chain up to 100 and shows the fifth value still unknown.</p>
+      <p>Check again: <code>fast</code> is 100, not 1; <code>slow</code> is 82, not 100. Loop once more.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: turn 2, <code>fast</code> reaches 1</h2>
+      <p><code>slow = self._next(82) = 68</code>. Then <code>fast</code> hops twice from 100: <code>_next(100) = 1 + 0 + 0 = 1</code>, and <code>_next(1) = 1</code> again. So <code>slow = 68</code> and <code>fast = 1</code>.</p>
+      <p>Notice that <code>_next(1) = 1</code> did not hurt: once the chain hits 1 it stays at 1, so a double hop cannot overshoot the target. That is why the loop condition can check <code>fast</code> alone for the happy case.</p>
+      <div class="callout">The panel highlights 1 in green. The full chain is <code>19 → 82 → 68 → 100 → 1</code>, and the fast pointer covered it in two turns while the slow pointer is still back at 68.</div>
+    </section>
+
+    <section class="step" data-state="trace3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the loop stops, answer <code>true</code></h2>
+      <p>Back to line 5. <code>fast != 1</code> is now <code>False</code>, so the <code>and</code> short-circuits and the loop ends without evaluating <code>slow != fast</code>. Line 8 returns <code>fast == 1</code>, which is <code>True</code>.</p>
+      <p><code>slow</code> never caught up with <code>fast</code>, and it never needed to: the chain terminated before any cycle could form. The set-based version stored four values to reach this conclusion; this version stored two integers and did the same number of <code>_next</code> calls plus a couple more for the double hops.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the unhappy case</h2>
+      <p>The panel switches to <code>n = 2</code>, which is not happy. Its chain is <code>2 → 4 → 16 → 37 → 58 → 89 → 145 → 42 → 20 → 4 → …</code>: after the first hop it enters a loop of eight values that never includes 1. Run the real algorithm: <code>slow</code> starts at 2, <code>fast</code> at 4, and after 7 turns both sit on <strong>42</strong>. <code>slow == fast</code> ends the loop, and since <code>fast</code> is 42 and not 1, line 8 returns <code>False</code>. Correct.</p>
+      <p><strong>Bug 1: a fixed step budget.</strong> It is tempting to skip cycle detection and write <code>for _ in range(100): n = self._next(n)</code> then <code>return n == 1</code>. It happens to work for small inputs, but it is a guess: you are betting the chain always settles within your budget, and you are doing 100 transformations even for 19, which needs four. Worse, shrink the budget to 4 and <code>n = 7</code> (<code>7 → 49 → 97 → 130 → 10 → 1</code>) returns <strong>False</strong> for a happy number.</p>
+      <p><strong>Bug 2: starting both pointers at <code>n</code>.</strong> Write <code>slow = fast = n</code> and keep the loop as is: <code>slow != fast</code> is <code>False</code> on the first check, the loop never runs, and <code>return fast == 1</code> yields <strong>False</strong> for 19. If you want both to start at <code>n</code>, you need a <code>do-while</code> shape that advances before comparing, which Python does not have; starting <code>fast</code> one hop ahead is the cleaner fix.</p>
+      <div class="callout warn">Detect the cycle, do not guess its length. The meeting of <code>slow</code> and <code>fast</code> is the only stopping condition that works for every unhappy input.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>One call to <code>_next</code> costs one <code>divmod</code> per digit, so <strong>O(log n)</strong> for the starting value and O(1) once the chain has fallen below 1000. The number of turns is bounded by the length of the chain plus the size of the loop it enters, and since every value below 1000 maps to at most <code>3 × 81 = 243</code>, that length is a small constant in practice. Space is two integers: <strong>O(1)</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Set of seen values</td><td>O(log n) per step, chain-length steps</td><td>O(chain length)</td></tr>
+        <tr><td>Slow and fast pointers</td><td>O(log n) per step, chain-length steps</td><td>O(1)</td></tr>
+      </table>
+      <p>The two approaches do essentially the same number of transformations. The pointer version wins only on memory, which is the point of the follow-up.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Two methods, each line a step above.</p>
+      <ul>
+        <li><code>slow = n</code> and <code>fast = self._next(n)</code> start the two pointers, with <code>fast</code> one hop ahead so the first comparison is meaningful.</li>
+        <li><code>while fast != 1 and slow != fast</code> stops on either exit: reached 1, or the pointers met inside a loop.</li>
+        <li><code>slow = self._next(slow)</code> moves one hop; <code>fast = self._next(self._next(fast))</code> moves two.</li>
+        <li><code>return fast == 1</code> tells the two exits apart: <code>True</code> for happy, <code>False</code> when the loop ended by a meeting on some other value.</li>
+        <li><code>_next</code>: <code>total = 0</code>, then <code>while value:</code> peel digits with <code>value, digit = divmod(value, 10)</code> and add <code>digit * digit</code>. The loop ends when <code>value</code> reaches 0, and it returns the sum of squared digits.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>the digit-square chain is a linked list that either ends at 1 or cycles, so run slow and fast pointers and check whether fast hit 1.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>digit-square chain · <span id="target">n = 19</span></h3>
+        <div class="array chain" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>pointers</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="happy_number.py">happy_number.py</a> · <a href="happy_number_annotated.py">happy_number_annotated.py</a> · <a href="test_happy_number.py">test_happy_number.py</a> · <a href="../../md.html?f=easy/022-happy-number/notes.md">notes.md</a> · <a href="../../index.html#easy">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def is_happy(self, n: int) -> bool:",
+    "        slow = n",
+    "        fast = self._next(n)",
+    "        while fast != 1 and slow != fast:",
+    "            slow = self._next(slow)",
+    "            fast = self._next(self._next(fast))",
+    "        return fast == 1",
+    "",
+    "    def _next(self, value: int) -> int:",
+    "        total = 0",
+    "        while value:",
+    "            value, digit = divmod(value, 10)",
+    "            total += digit * digit",
+    "        return total"
+  ];
+
+  var HAPPY = [19, 82, 68, 100, 1];
+  var SAD = [2, 4, 16, 37, 58, 89, 145, 42, 20, "4 …"];
+  // seq: the chain n, next(n), next(next(n)), … as cells. slow / fast: index each pointer sits on (-1 = not shown).
+  // hits = values worth highlighting green, bad = amber, dim = faded (not yet computed / after the loop stopped).
+  var STATES = {
+    problem: {
+      caption: "Replace n by the sum of the squares of its digits, again and again. Does it reach 1?",
+      phase: "n = 19", seq: [19, "?", "?", "?", "?"], slow: -1, fast: -1, hits: [], bad: [], dim: [1, 2, 3, 4],
+      vars: [], meta: "1² + 9² = 82. Keep going: 82 → 68 → 100 → 1. Reaching 1 makes 19 <b>happy</b>.", hl: []
+    },
+    brute: {
+      caption: "Remember every value seen; stop when you reach 1 or see a repeat.",
+      phase: "n = 19", seq: HAPPY, slow: -1, fast: -1, hits: [4], bad: [], dim: [],
+      vars: [["seen", "{19, 82, 68, 100}", ""]], meta: "Correct, but the set grows with the length of the chain before it loops or reaches 1.", hl: [],
+      big: "O(chain) space", bigNote: "a set of every value visited"
+    },
+    insight: {
+      caption: "The chain is a linked list where next(value) is the pointer. It ends at 1 or loops forever.",
+      phase: "n = 19", seq: HAPPY, slow: -1, fast: -1, hits: [4], bad: [], dim: [],
+      vars: [["next(19)", "1² + 9² = 82", "new"], ["next(82)", "8² + 2² = 68", "new"]], meta: "Loop or terminate: exactly the question Floyd's slow / fast pointers answer without storing the list.", hl: [9, 10, 11, 12, 13, 14]
+    },
+    approach: {
+      caption: "slow starts on n and moves one hop per turn; fast starts one hop ahead and moves two.",
+      phase: "n = 19", seq: [19, 82, "?", "?", "?"], slow: 0, fast: 1, hits: [], bad: [], dim: [2, 3, 4],
+      vars: [["slow", "19", "new"], ["fast", "82", "new"]], meta: "Stop when fast reaches 1 (happy) or slow catches fast (a cycle, not happy).", hl: [2, 3, 4]
+    },
+    trace1: {
+      caption: "Turn 1: slow → 82. fast → next(next(82)) = next(68) = 100.",
+      phase: "n = 19", seq: [19, 82, 68, 100, "?"], slow: 1, fast: 3, hits: [], bad: [], dim: [4],
+      vars: [["slow", "82", "new"], ["fast", "100", "new"]], meta: "next(82) = 64 + 4 = <b>68</b>; next(68) = 36 + 64 = <b>100</b>. fast ≠ 1 and slow ≠ fast, so loop again.", hl: [5, 6]
+    },
+    trace2: {
+      caption: "Turn 2: slow → 68. fast → next(next(100)) = next(1) = 1.",
+      phase: "n = 19", seq: HAPPY, slow: 2, fast: 4, hits: [4], bad: [], dim: [],
+      vars: [["slow", "68", "new"], ["fast", "1", "found"]], meta: "next(100) = 1 + 0 + 0 = <b>1</b>, and next(1) = 1 again. fast has reached 1.", hl: [5, 6]
+    },
+    trace3: {
+      caption: "fast == 1, so the loop stops and the answer is True.",
+      phase: "n = 19", seq: HAPPY, slow: 2, fast: 4, hits: [4], bad: [], dim: [0, 1],
+      vars: [["fast != 1", "False", ""], ["return", "True", "found"]], meta: "slow never had to catch up: the chain terminated before any cycle could form.", hl: [4, 7],
+      big: "true", bigNote: "19 is a happy number"
+    },
+    pitfall: {
+      caption: "n = 2 is not happy: its chain falls into the loop 4 → 16 → 37 → 58 → 89 → 145 → 42 → 20 → 4.",
+      phase: "n = 2", seq: SAD, slow: 7, fast: 7, hits: [], bad: [1, 9], dim: [0],
+      vars: [["slow", "42", "found"], ["fast", "42", "found"], ["return", "False", ""]], meta: "After 7 turns slow and fast both sit on <b>42</b>: a cycle. Checking a fixed number of steps instead would miss loops of unknown length.", hl: [4, 7],
+      big: "false", bigNote: "slow == fast, and it is not 1"
+    },
+    complexity: {
+      caption: "Each next() touches only the digits of a value; the chain is short because values shrink fast.",
+      phase: "n = 19", seq: HAPPY, slow: -1, fast: -1, hits: [], bad: [], dim: [],
+      vars: [["digits of n", "O(log n)", ""], ["extra space", "two integers", ""]], meta: "Any value below 1000 maps to at most 3 × 81 = 243, so the chain enters a small range within a few steps.", hl: [9, 10, 11, 12, 13, 14],
+      big: "O(log n) per step · O(1) space", bigNote: "versus a set that grows with the chain"
+    },
+    final: {
+      caption: "The whole solution.",
+      phase: "n = 19", seq: HAPPY, slow: -1, fast: -1, hits: [4], bad: [], dim: [],
+      vars: [["answer", "True", "found"]], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.phase;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.seq.length; i++) {
+      var cls = "", tag = "";
+      if (s.slow === i && s.fast === i) { cls = "meet"; tag = "slow · fast"; }
+      else if (s.slow === i) { cls = "slow"; tag = "slow"; }
+      else if (s.fast === i) { cls = "fast"; tag = "fast"; }
+      else if (s.bad.indexOf(i) !== -1) { cls = "bad"; }
+      else if (s.hits.indexOf(i) !== -1) { cls = "hit"; }
+      else if (s.dim.indexOf(i) !== -1) { cls = "dim"; }
+      var idx = tag ? '<span class="idx ' + cls + '">' + tag + ' ▲</span>' : '<span class="idx">' + (i === 0 ? "n" : "next×" + i) + '</span>';
+      arr += '<div class="cell' + (cls ? " " + cls : "") + '">' + s.seq[i] + idx + '</div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

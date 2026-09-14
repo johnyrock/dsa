@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Count Good Nodes in Binary Tree Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  .tree { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .tree .edge { stroke: var(--line); stroke-width: 2.5; fill: none; transition: stroke 0.25s, opacity 0.25s; }
+  .tree .edge.hit { stroke: var(--ok); }
+  .tree .edge.bad { stroke: var(--warn); stroke-dasharray: 5 4; }
+  .tree .edge.dim { opacity: 0.35; }
+  .tree .edge.off { display: none; }
+  .tree .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .tree .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 17px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .tree .node.cur circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3.5; }
+  .tree .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .tree .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .tree .node.dim circle, .tree .node.dim text { opacity: 0.4; }
+  .tree .node.off { display: none; }
+  .tree .badge { fill: var(--accent); font-size: 11px; font-weight: 700; text-anchor: start; font-family: ui-monospace, Menlo, monospace; }
+  .tree .node text.badge { text-anchor: start; font-size: 11px; font-weight: 700; }
+  .tree .node.hit .badge { fill: var(--ok); }
+  .tree .node.bad .badge { fill: var(--warn); }
+  .tree .ghost { fill: none; stroke: var(--warn); stroke-width: 2; stroke-dasharray: 4 3; }
+  .tree .ghost-lbl { fill: var(--warn); font-size: 11px; text-anchor: middle; dominant-baseline: central; font-family: ui-monospace, Menlo, monospace; }
+  .tree .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .tree .title { fill: var(--muted); font-size: 12px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; letter-spacing: 0.05em; }
+  .array.compact { gap: 4px; margin-top: 2px; }
+  .array.compact .cell { min-width: 28px; padding: 3px 0 2px; font-size: 0.9rem; border-width: 1.5px; border-radius: 6px; }
+  .array.compact .cell.cur { transform: none; }
+  .cell.bad { border-color: var(--warn); background: var(--warn-soft); }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Tree · LeetCode #1448</div>
+  <h1>Count Good Nodes in Binary Tree, narrated</h1>
+  <p>Scroll from re-walking every root-to-node path to a single depth-first pass that carries the path maximum downward, with the running maximum and each node's verdict shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/tree-traversal.html">Tree</a> <span class="how">Pass the largest ancestor value down as a parameter; a node is good when it is at least that large.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Given the root of a binary tree, a node <code>X</code> is called <em>good</em> if no node on the path from the root down to <code>X</code> has a value greater than <code>X.val</code>. Equal values are allowed: a node that ties the largest ancestor is still good. Return how many good nodes the tree has.</p>
+      <div class="callout">Running example: <code>root = [3,1,4,3,null,1,5]</code> in level order. Node 3 has children 1 and 4; node 1 has a single left child 3; node 4 has children 1 and 5. The answer is <strong>4</strong>.</div>
+      <p>Check it by hand. The root 3 has nothing above it, so it is good. The 4 has only 3 above it, and <code>4 &gt;= 3</code>, so it is good. The deeper 3 sits under the path <code>3, 1</code>, whose largest value is 3, and <code>3 &gt;= 3</code> holds, so it is good too. The 5 sits under <code>3, 4</code> and clears both. The two 1s are the only nodes that fail: each has a 3 (and one of them a 4) above it.</p>
+      <p>The question is about <em>paths</em>, not siblings or subtrees. A huge value in the left subtree says nothing about whether a node in the right subtree is good, because the two are never on the same root-to-node path.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: re-walk the path for every node</h2>
+      <p>Take the definition literally. For every node, find the path from the root to it, take the maximum value along that path, and compare. Since a tree has no parent pointers, the easy way to get each path is a DFS that keeps the current path in a list:</p>
+      <pre class="code"><span class="ln">def brute(root):</span><span class="ln">    count = 0</span><span class="ln">    def walk(node, path):</span><span class="ln">        nonlocal count</span><span class="ln">        if node is None:</span><span class="ln">            return</span><span class="ln">        if node.val &gt;= max(path + [node.val]):</span><span class="ln">            count += 1</span><span class="ln">        walk(node.left, path + [node.val])</span><span class="ln">        walk(node.right, path + [node.val])</span><span class="ln">    walk(root, [])</span><span class="ln">    return count</span></pre>
+      <p style="margin-top:14px">This gives the right answer, but look at what each call does: it copies the path list (<code>path + [node.val]</code>) and then re-scans the whole list with <code>max</code>. For a node at depth <code>d</code> that is O(d) work, and on a chain-shaped tree the depths run 1, 2, 3, … n, so the total is 1 + 2 + … + n = <strong>O(n²)</strong>. With 10⁵ nodes that is around five billion list operations for a question that needs one comparison per node.</p>
+      <p>The panel's <code>[3,1]</code> badge on the deeper 3 is the list this version would rebuild and re-scan just to answer "is anything above me bigger than 3?".</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: the path collapses to one number</h2>
+      <p>The brute force keeps the entire path only to call <code>max</code> on it. But the maximum of a path is easy to maintain incrementally: when you step from a parent to a child, the new maximum is <code>max(old_max, child.val)</code>. You never need the list, only its running maximum.</p>
+      <div class="callout">Carry one integer, <code>max_so_far</code>, down the recursion as a parameter. A node is good when <code>node.val &gt;= max_so_far</code>. Before recursing into the children, raise it: <code>max_so_far = max(max_so_far, node.val)</code>.</div>
+      <p>Because it is a <em>parameter</em>, not a shared variable, each branch of the recursion gets its own copy. Raising it on the way into the left subtree does nothing to what the right subtree sees, which is exactly the "paths, not subtrees" rule from step 1. The panel shows the value each child will receive: both children of the root get <code>3</code>.</p>
+      <p>The root itself has no ancestors. Seeding the parameter with <code>float("-inf")</code> makes the root's comparison <code>3 &gt;= -inf</code> succeed automatically, and it keeps working if every value in the tree is negative.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: pre-order DFS with a passed-down maximum</h2>
+      <p>The helper <code>dfs(node, max_so_far)</code> returns the number of good nodes in the subtree rooted at <code>node</code>, given that the largest value above it is <code>max_so_far</code>. Line by line:</p>
+      <ul>
+        <li><code>if node is None: return 0</code> — an empty subtree contributes nothing; this also stops the recursion under the leaves.</li>
+        <li><code>count = 1 if node.val &gt;= max_so_far else 0</code> — decide this node <em>before</em> touching the maximum, using only what the ancestors passed down.</li>
+        <li><code>max_so_far = max(max_so_far, node.val)</code> — raise the bar for everything below.</li>
+        <li><code>return count + dfs(node.left, max_so_far) + dfs(node.right, max_so_far)</code> — this node's verdict plus the two subtrees' totals.</li>
+        <li><code>return dfs(root, float("-inf"))</code> — start with a bar nothing can fail.</li>
+      </ul>
+      <p>The decision at each node is pre-order (made on the way down), but the counting is post-order (summed on the way up). Either way, every node is entered exactly once.</p>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the root and its left subtree</h2>
+      <p>Call <code>dfs(3, -inf)</code>. The root compares <code>3 &gt;= -inf</code>, which is true, so <code>count = 1</code>. Then <code>max_so_far = max(-inf, 3) = 3</code>, and both children will be called with <code>3</code>.</p>
+      <p>Go left: <code>dfs(1, 3)</code>. The check <code>1 &gt;= 3</code> fails, so <code>count = 0</code>. The bar stays at <code>max(3, 1) = 3</code>; a small node cannot lower it. Its left child is the deeper 3: <code>dfs(3, 3)</code> checks <code>3 &gt;= 3</code>, which is true because equality counts, so <code>count = 1</code>. Both of its children are <code>None</code> and return 0, so the deeper 3 returns <code>1 + 0 + 0 = 1</code>.</p>
+      <p>Back at the 1, its right child is <code>None</code> (the <code>null</code> in the level-order list), so it returns <code>0 + 1 + 0 = 1</code>. The root now holds <code>1</code> from its left side and turns to the right.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: the right subtree</h2>
+      <p>Go right from the root: <code>dfs(4, 3)</code>. The check <code>4 &gt;= 3</code> passes, so <code>count = 1</code>, and the bar rises to <code>max(3, 4) = 4</code>. Note that the deeper 3 on the left side never influenced this call: it received the root's <code>3</code>, not anything from the sibling branch.</p>
+      <p>The 4's left child is a 1: <code>dfs(1, 4)</code>, and <code>1 &gt;= 4</code> fails, so it contributes 0 (its own children are <code>None</code>). The 4's right child is 5: <code>dfs(5, 4)</code>, and <code>5 &gt;= 4</code> passes, so it contributes 1.</p>
+      <p>The 4 returns <code>1 + 0 + 1 = 2</code>. The panel marks the good nodes in green with a check badge and the two failed 1s in amber with a cross.</p>
+    </section>
+
+    <section class="step" data-state="trace3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: summing up</h2>
+      <p>The root has everything it needs: its own <code>count = 1</code>, <code>1</code> from the left subtree (the deeper 3), and <code>2</code> from the right subtree (the 4 and the 5). It returns <code>1 + 1 + 2 = 4</code>, and <code>good_nodes</code> returns that as the answer.</p>
+      <div class="callout">Seven nodes, seven calls to <code>dfs</code> (plus the trivial <code>None</code> base cases), one comparison and one <code>max</code> each. The brute force from step 2 would have built and scanned a path list at every one of those seven nodes.</div>
+      <p>Compare against the hand check from step 1: good nodes 3, 3, 4, 5 and bad nodes 1, 1. The recursion agreed at every node, which is what you would expect since it evaluates the same definition, only without rebuilding the path.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong</h2>
+      <p><strong>Using a strict comparison.</strong> Write <code>node.val &gt; max_so_far</code> instead of <code>&gt;=</code> and the deeper 3 fails its check: <code>3 &gt; 3</code> is false. The root still counts because <code>3 &gt; -inf</code>, but the answer drops to <strong>3</strong> instead of 4. The problem statement says "no node with a value <em>greater than</em>", and ties are not greater.</p>
+      <p><strong>Seeding with 0.</strong> <code>dfs(root, 0)</code> looks harmless on this example, since every value is positive. On a tree like <code>[-1,-2,-3]</code> the root compares <code>-1 &gt;= 0</code>, fails, and the function returns <strong>0</strong>. The root is always good, so 0 is never a valid answer for a non-empty tree. Seed with <code>float("-inf")</code>, or with <code>root.val</code>.</p>
+      <p><strong>Sharing the maximum instead of passing it.</strong> Keeping <code>max_so_far</code> as a single <code>nonlocal</code> variable that is raised but never lowered means the bar set in the left subtree leaks into the right one. On <code>[1,10,2]</code> the 10 raises the bar, and then the 2 is compared against 10 and fails, giving <strong>2</strong> instead of 3. Passing the value as a parameter makes each path independent for free.</p>
+      <div class="callout warn">The bar a node is measured against must come only from its own ancestors. Decide the node with the inherited value, <em>then</em> raise it for the children, and let the parameter scoping handle the rest.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Every node is entered once and does a comparison, a <code>max</code>, and two additions, so the time is <strong>O(n)</strong>. There is no way to do better: a node's verdict depends on its value, so every node must be looked at.</p>
+      <p>The recursion stack is as deep as the tree is tall, <strong>O(h)</strong>. For a balanced tree that is about <code>log n</code>; for a chain it is <code>n</code>, and with the 10⁵-node constraint Python's default recursion limit of 1000 matters. An explicit stack of <code>(node, max_so_far)</code> pairs gives the same O(n) time without the limit.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Rebuild and scan the path at every node</td><td>O(n²) on a chain, O(n log n) balanced</td><td>O(h) path list + stack</td></tr>
+        <tr><td>Pass the path maximum down</td><td>O(n)</td><td>O(h) call stack</td></tr>
+      </table>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>One nested helper with a single extra parameter. Line by line:</p>
+      <ul>
+        <li><code>def dfs(node, max_so_far):</code> — returns the good-node count of this subtree given the largest ancestor value.</li>
+        <li><code>if node is None: return 0</code> — nothing to count below a missing child.</li>
+        <li><code>count = 1 if node.val &gt;= max_so_far else 0</code> — the verdict, with <code>&gt;=</code> so ties count.</li>
+        <li><code>max_so_far = max(max_so_far, node.val)</code> — raise the bar for the children only; the sibling call keeps its own copy.</li>
+        <li><code>return count + dfs(node.left, max_so_far) + dfs(node.right, max_so_far)</code> — sum the verdicts on the way back up.</li>
+        <li><code>return dfs(root, float("-inf"))</code> — the root has no ancestors, so nothing can beat it.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>carry the largest ancestor value down the recursion; a node is good when it is at least that large.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>tree · root = [3,1,4,3,null,1,5]</h3>
+        <svg class="tree" id="tree" viewBox="0 0 400 210" aria-label="binary tree"></svg>
+        <div class="array compact" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>current call · max_so_far · verdict</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="count_good_nodes_in_binary_tree.py">count_good_nodes_in_binary_tree.py</a> · <a href="count_good_nodes_in_binary_tree_annotated.py">count_good_nodes_in_binary_tree_annotated.py</a> · <a href="test_count_good_nodes_in_binary_tree.py">test_count_good_nodes_in_binary_tree.py</a> · <a href="../../md.html?f=medium/045-count-good-nodes-in-binary-tree/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def good_nodes(self, root):",
+    "        def dfs(node, max_so_far):",
+    "            if node is None:",
+    "                return 0",
+    "            count = 1 if node.val >= max_so_far else 0",
+    "            max_so_far = max(max_so_far, node.val)",
+    "            return count + dfs(node.left, max_so_far) + dfs(node.right, max_so_far)",
+    "",
+    "        return dfs(root, float(\"-inf\"))"
+  ];
+
+  var T = [3, 1, 4, 3, null, 1, 5];
+  // tree: level-order values (null = absent). cur/hits/dim/bad: level-order indices. badges: text drawn beside a node.
+  var STATES = {
+    problem: {"caption": "A node is good when nothing on the path from the root to it is larger.", "tree": T, "cur": -1, "hits": [], "dim": [], "bad": [], "badges": {}, "vars": [], "meta": "Level order: 3, 1, 4, 3, ·, 1, 5. Expected: 4 (the two 1s are not good).", "hl": []},
+    brute: {"caption": "Rebuild the root-to-node path at every node and call max on it.", "tree": T, "cur": 3, "hits": [], "dim": [2, 5, 6], "bad": [], "badges": {"3": "[3,1]"}, "vars": [["path", "[3, 1]"], ["max(path)", "3"], ["3 >= 3", "good"]], "meta": "The path list is copied and re-scanned once per node: O(n²) on a chain.", "hl": [], "big": "O(n²)", "bigNote": "the path is rebuilt for every node"},
+    insight: {"caption": "The path only matters through its maximum, so pass that one number down.", "tree": T, "cur": 0, "hits": [], "dim": [3, 4, 5, 6], "bad": [], "badges": {"1": "max 3", "2": "max 3"}, "vars": [["max_so_far", "-inf → 3", "new"], ["children receive", "3"]], "meta": "Each branch gets its own copy of the parameter; the left subtree cannot raise the bar for the right one.", "hl": [5, 6, 7]},
+    approach: {"caption": "Pre-order: decide the node with the inherited max, raise it, recurse into both children.", "tree": T, "cur": 0, "hits": [], "dim": [], "bad": [], "badges": {}, "vars": [["node", "3", "new"], ["max_so_far", "-inf"], ["count", "?"]], "meta": "dfs(root, -inf): nothing can beat the root.", "hl": [3, 4, 5, 6, 7, 9]},
+    trace1: {"caption": "Root 3 ≥ -inf: good. Left 1 ≥ 3? no. Deeper 3 ≥ 3: good (ties count).", "tree": T, "cur": 3, "hits": [0], "dim": [2, 5, 6], "bad": [1], "badges": {"0": "✓ 1", "1": "✗ 0", "3": "✓ 1"}, "vars": [["node", "3 (deeper)", "new"], ["max_so_far", "3"], ["3 >= 3", "true", "found"], ["left subtree total", "0 + 1 + 0 = 1"]], "meta": "The bar stayed at 3 through the 1, because max(3, 1) = 3.", "hl": [5, 6, 7]},
+    trace2: {"caption": "Right 4 ≥ 3: good, bar rises to 4. Its 1 fails; its 5 ≥ 4: good.", "tree": T, "cur": 2, "hits": [0, 3, 6], "dim": [], "bad": [1, 5], "badges": {"0": "✓ 1", "1": "✗ 0", "3": "✓ 1", "2": "✓ 1", "5": "✗ 0", "6": "✓ 1"}, "vars": [["node", "4", "new"], ["max_so_far", "3 → 4"], ["4 >= 3", "true", "found"], ["right subtree total", "1 + 0 + 1 = 2"]], "meta": "The 4 received the root's 3, not the deeper 3 from the other branch.", "hl": [5, 6, 7]},
+    trace3: {"caption": "Root: 1 + 1 (left) + 2 (right) = 4.", "tree": T, "cur": 0, "hits": [2, 3, 6], "dim": [], "bad": [1, 5], "badges": {"0": "1+1+2", "1": "✗", "2": "✓", "3": "✓", "5": "✗", "6": "✓"}, "vars": [["count", "1"], ["dfs(left, 3)", "1"], ["dfs(right, 3)", "2"], ["return", "4", "found"]], "meta": "Good nodes: 3, 3, 4, 5. Not good: 1, 1.", "hl": [7, 9], "big": "4", "bigNote": "good_nodes([3,1,4,3,null,1,5])"},
+    pitfall: {"caption": "node.val > max_so_far rejects the deeper 3: 3 > 3 is false, so the count drops to 3.", "tree": T, "cur": 3, "hits": [0, 2, 6], "dim": [], "bad": [1, 3, 5], "badges": {"0": "✓", "1": "✗", "2": "✓", "3": "3 > 3 ✗", "5": "✗", "6": "✓"}, "vars": [["bug", "> instead of >="], ["deeper 3", "3 > 3 → false", "bad"]], "meta": "\"No node greater than X\" allows ties. Seeding with 0 instead of -inf is the other classic: [-1,-2,-3] returns 0.", "hl": [5], "big": "3, not 4", "bigNote": "a strict comparison drops every tie"},
+    complexity: {"caption": "Every node visited once with one comparison and one max.", "tree": T, "cur": -1, "hits": [0, 2, 3, 6], "dim": [], "bad": [1, 5], "badges": {}, "vars": [["n", "7"], ["h", "3"]], "meta": "The verdict and the raised bar are computed in the same visit.", "hl": [], "big": "O(n) time · O(h) space", "bigNote": "h = log n balanced, n for a chain"},
+    final: {"caption": "DFS with the path maximum as a parameter.", "tree": T, "cur": -1, "hits": [0, 2, 3, 6], "dim": [], "bad": [], "badges": {"0": "✓", "2": "✓", "3": "✓", "6": "✓"}, "vars": [["good_nodes(root)", "4", "found"]], "meta": "", "hl": [2, 3, 4, 5, 6, 7, 9]}
+  };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function makeTree(svg, POS, R, dx, title) {
+    var g0 = el("g", {}); svg.appendChild(g0);
+    if (title) g0.appendChild(el("text", { x: dx + POS[0][0], y: 12, "class": "title" }, title));
+    var edges = [], nodes = [], texts = [], badges = [];
+    for (var i = 1; i < POS.length; i++) {
+      var p = POS[(i - 1) >> 1];
+      var e = el("line", { "class": "edge", x1: dx + p[0], y1: p[1], x2: dx + POS[i][0], y2: POS[i][1] });
+      g0.appendChild(e); edges[i] = e;
+    }
+    var ghostLayer = el("g", {}); g0.appendChild(ghostLayer);
+    for (var j = 0; j < POS.length; j++) {
+      var g = el("g", { "class": "node" });
+      g.appendChild(el("circle", { cx: dx + POS[j][0], cy: POS[j][1], r: R }));
+      var t = el("text", { x: dx + POS[j][0], y: POS[j][1] });
+      g.appendChild(t);
+      var b = el("text", { x: dx + POS[j][0] + R + 3, y: POS[j][1] + 4, "class": "badge" });
+      g.appendChild(b);
+      g0.appendChild(g); nodes[j] = g; texts[j] = t; badges[j] = b;
+    }
+    function has(arr, i) { return arr && arr.indexOf(i) !== -1; }
+    return function draw(s) {
+      var tree = s.tree, badgeMap = s.badges || {};
+      for (var i = 0; i < POS.length; i++) {
+        var v = i < tree.length ? tree[i] : null;
+        var parentOff = i > 0 && (((i - 1) >> 1) >= tree.length || tree[(i - 1) >> 1] === null);
+        var off = v === null || parentOff;
+        var cls = "node";
+        if (off) cls += " off";
+        else if (i === s.cur) cls += " cur";
+        else if (has(s.bad, i)) cls += " bad";
+        else if (has(s.hits, i)) cls += " hit";
+        else if (has(s.dim, i)) cls += " dim";
+        nodes[i].setAttribute("class", cls);
+        texts[i].textContent = off ? "" : v;
+        badges[i].textContent = off ? "" : (badgeMap[i] !== undefined ? badgeMap[i] : "");
+        if (i > 0) {
+          var ec = "edge";
+          if (off) ec += " off";
+          else if (has(s.bad, i)) ec += " bad";
+          else if (has(s.hits, i)) ec += " hit";
+          else if (has(s.dim, i)) ec += " dim";
+          edges[i].setAttribute("class", ec);
+        }
+      }
+      while (ghostLayer.firstChild) ghostLayer.removeChild(ghostLayer.firstChild);
+      if (s.ghost) {
+        var gp = POS[s.ghost[0]];
+        var pp = POS[(s.ghost[0] - 1) >> 1];
+        ghostLayer.appendChild(el("line", { "class": "edge bad", x1: dx + pp[0], y1: pp[1], x2: dx + gp[0], y2: gp[1] }));
+        ghostLayer.appendChild(el("circle", { cx: dx + gp[0], cy: gp[1], r: R, "class": "ghost" }));
+        ghostLayer.appendChild(el("text", { x: dx + gp[0], y: gp[1], "class": "ghost-lbl" }, s.ghost[1]));
+      }
+    };
+  }
+  var POS7 = [[200, 32], [105, 102], [295, 102], [55, 172], [155, 172], [245, 172], [345, 172]];
+  var POS7S = [[100, 46], [55, 112], [145, 112], [30, 178], [80, 178], [120, 178], [170, 178]];
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function renderVars(vars) {
+    if (!vars || vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">nothing decided yet</span>';
+      return;
+    }
+    var d = "";
+    for (var k = 0; k < vars.length; k++) {
+      var e = vars[k];
+      d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+    }
+    $("dict").innerHTML = d;
+  }
+  function renderBig(s) {
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+  }
+  function renderCode(hl) {
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  var drawTree = makeTree(document.getElementById("tree"), POS7, 21, 0, "");
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+    drawTree(s);
+    var arr = "";
+    for (var i = 0; i < s.tree.length; i++) {
+      var v = s.tree[i];
+      var cls = "cell";
+      if (v === null) cls += " dim";
+      else if (i === s.cur) cls += " cur";
+      else if (s.bad.indexOf(i) !== -1) cls += " bad";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.dim.indexOf(i) !== -1) cls += " dim";
+      arr += '<div class="' + cls + '">' + (v === null ? "·" : v) + '</div>';
+    }
+    $("array").innerHTML = arr;
+    renderVars(s.vars);
+    renderBig(s);
+    renderCode(s.hl);
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

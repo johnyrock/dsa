@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Copy List with Random Pointer Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+  .list { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .list .edge { stroke: var(--muted); stroke-width: 2.5; fill: none; transition: stroke 0.25s, opacity 0.25s; }
+  .list .edge.dead { stroke: var(--line); }
+  .list .edge.rnd { stroke: var(--warn); stroke-width: 2; fill: none; opacity: 0.85; }
+  .list .edge.rnd.ok { stroke: var(--ok); }
+  .list .edge.rnd.cross { stroke: var(--warn); stroke-dasharray: 5 4; animation: dash 1s linear infinite; }
+  .list .edge.map { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 3 4; opacity: 0.8; }
+  .list .head { fill: var(--muted); }
+  .list .head.rnd { fill: var(--warn); }
+  .list .head.ok { fill: var(--ok); }
+  .list .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .list .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 15px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
+  .list .node.cur circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3.5; }
+  .list .node.new circle { stroke: var(--accent); }
+  .list .node.done circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .list .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .list .node.dim circle, .list .node.dim text { opacity: 0.35; }
+  .list .node.ghost circle { stroke-dasharray: 3 3; opacity: 0.35; }
+  .list .node.ghost text { opacity: 0.25; }
+  .list .nil { fill: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 12px; text-anchor: middle; dominant-baseline: central; }
+  .list .row { fill: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 10px; letter-spacing: 0.06em; text-anchor: start; }
+  .list .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .list .lbl.warn { fill: var(--warn); }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Hash Map · LeetCode #138</div>
+  <h1>Copy List with Random Pointer, narrated</h1>
+  <p>Scroll through the thinking, from a copy that quietly points back into the original to a two-pass map from every old node to its new twin, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/hash-map.html">Hash Map</a> <span class="how">old node → new node, so any pointer can be translated in O(1)</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Each node in this linked list has the usual <code>val</code> and <code>next</code>, plus a <code>random</code> pointer that may aim at any node in the list, or at nothing. Build a <em>deep copy</em>: a second list of brand-new nodes with the same values and the same pointer shape, sharing no node with the original.</p>
+      <div class="callout">Running example: <code>[[7,null],[13,0],[11,4],[10,2],[1,0]]</code>. Node 7's random is null; 13's random points to index 0 (node 7); 11's points to index 4 (node 1); 10's to index 2 (node 11); 1's to index 0 (node 7). The answer is a new list that serialises to exactly the same array.</div>
+      <p>The output looks identical to the input, which is why this problem is about <em>identity</em> rather than values. A copy that returns the same array but whose nodes' <code>random</code> fields point into the original list is wrong, even though printing it would look fine.</p>
+      <p>Notice in the panel that random pointers go both directions: 13 points backward to 7, but 11 points forward to 1, a node that comes later in the list. That forward pointer is the whole difficulty.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: copy in one pass, resolve random by searching</h2>
+      <p>Walk the list once, creating a new node per original and linking <code>next</code> as you go. That handles <code>val</code> and <code>next</code>. For <code>random</code>, you need to know <em>which copy</em> corresponds to the target — so first find the target's position in the original list, then walk that many steps in the copy:</p>
+      <pre class="code"><span class="ln">for each original node (index i):</span><span class="ln">    j = position of node.random in the original list   # O(n) scan</span><span class="ln">    copy_i.random = j-th node of the copied list          # O(n) walk</span></pre>
+      <p style="margin-top:14px">Because random can point forward, this has to be a second pass after every copy exists. Each node then costs two linear walks, one to find <code>j</code> and one to reach the <code>j</code>-th copy, so the total is <strong>O(n²)</strong> time with O(1) extra space. On the example, resolving 11's random means scanning to find that node 1 is at index 4, then walking four steps down the copy.</p>
+      <p>The repeated work is the "find the position" step. We are doing a linear search to answer a question, "what is the copy of this node?", that a dictionary answers in O(1).</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: a map from old node to new node</h2>
+      <p>Keep a dictionary <code>old_to_new</code> whose keys are the <em>original node objects</em> and whose values are their copies. Once it is filled, translating any pointer is one lookup: the copy of <code>node.random</code> is <code>old_to_new[node.random]</code>, whatever direction it points.</p>
+      <p>Because random can point forward, fill the map completely <em>before</em> wiring anything. That splits the job into two passes:</p>
+      <ul>
+        <li>Pass 1: for every original node, create <code>Node(node.val)</code> and store it in the map.</li>
+        <li>Pass 2: for every original node, set its copy's <code>next</code> and <code>random</code> by translating the original's targets through the map.</li>
+      </ul>
+      <div class="callout">Seed the map with <code>{None: None}</code>. Then a null <code>next</code> (at the tail) or a null <code>random</code> translates to <code>None</code> through the same lookup, with no special case.</div>
+      <p>The keys are node objects, not values. Python dicts hash objects by identity by default, so two nodes with equal <code>val</code> are different keys — exactly what a deep copy needs.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>old_to_new = {None: None}</code> — the map, pre-seeded so null pointers translate.</li>
+        <li><code>while node is not None: old_to_new[node] = Node(node.val)</code> — pass 1 creates every copy, values only.</li>
+        <li><code>copy = old_to_new[node]</code> — pass 2 picks up the copy made in pass 1.</li>
+        <li><code>copy.next = old_to_new[node.next]</code> — the copy's next is the copy of the original's next.</li>
+        <li><code>copy.random = old_to_new[node.random]</code> — same translation, same lookup.</li>
+        <li><code>return old_to_new[head]</code> — the copy of the head; for an empty list this is <code>old_to_new[None]</code>, i.e. <code>None</code>.</li>
+      </ul>
+      <p>Both loops are the same <code>node = head; while node is not None: …; node = node.next</code> walk. Only the body differs.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: pass 1 creates the copies</h2>
+      <p>Start at 7: <code>old_to_new[7] = Node(7)</code>. Its <code>next</code> and <code>random</code> are both still <code>None</code>; we are not wiring anything yet. Move to 13, create <code>Node(13)</code>. Then 11, 10, 1.</p>
+      <p>After the pass the map has six entries: the <code>None → None</code> seed plus five originals, each mapped to a fresh node holding only a value. The panel draws each copy under its original with a dashed line for the map entry.</p>
+      <p>Nothing about the <code>random</code> pointers has been read yet. That is deliberate: when we get to 11, whose random points forward to 1, the copy of 1 will already exist because pass 1 finished first.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: pass 2 wires 7 and 13</h2>
+      <p>Back to the head. <code>node = 7</code>, <code>copy = old_to_new[7]</code>. Its next: <code>old_to_new[13]</code>, the copy of 13. Its random: <code>node.random</code> is <code>None</code>, and <code>old_to_new[None]</code> is <code>None</code>, courtesy of the seed. So <code>copy.random = None</code>.</p>
+      <p><code>node = 13</code>. Next becomes the copy of 11. Random: 13's random is node 7 (index 0), and <code>old_to_new[7]</code> is the copy of 7, so the copy of 13 now points back at the <em>copy</em> of 7 — not at the original 7.</p>
+      <p>Two copies are fully wired. Both of their random pointers stay inside the bottom row, which is what "deep" means.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the forward pointer, and the rest</h2>
+      <p><code>node = 11</code>. Its random is node 1 at index 4, two positions <em>ahead</em>. In a one-pass design this is where things would break, but the copy of 1 was created in pass 1, so <code>old_to_new[1]</code> returns it and <code>copy.random</code> is set in O(1).</p>
+      <p><code>node = 10</code>: random → copy of 11 (index 2). <code>node = 1</code>: next → <code>old_to_new[None]</code> = <code>None</code>, the tail; random → copy of 7 (index 0).</p>
+      <div class="callout">All five copies wired. <code>return old_to_new[head]</code> hands back the copy of 7, and walking it serialises to <strong>[[7,null],[13,0],[11,4],[10,2],[1,0]]</strong>: identical shape, zero shared nodes.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: random into the original, and the missing seed</h2>
+      <p><strong>Copying the pointer instead of translating it.</strong> Write <code>copy.random = node.random</code> and every copy's random points into the <em>original</em> list. Serialising the copy by index still finds the right positions if you look up positions in the original, so a careless test prints <strong>[[7,null],[13,0],[11,4],[10,2],[1,0]]</strong> and passes — but the copy shares five nodes with the input, and mutating one list corrupts the other. The panel shows the crossed pointers.</p>
+      <p><strong>Forgetting <code>{None: None}</code>.</strong> Start with <code>old_to_new = {}</code> and the very first node in pass 2, 7, does <code>old_to_new[node.random]</code> with <code>node.random = None</code>: <code>KeyError: None</code>. Even if every random were non-null, the tail's <code>next</code> would hit the same error.</p>
+      <p><strong>Keying by value.</strong> <code>old_to_new[node.val]</code> collapses equal values into one key. On <code>[[3,null],[3,0],[3,null]]</code> only one copy survives and the result is the single node <strong>[[3,null]]</strong>.</p>
+      <div class="callout warn">Every pointer on a copy must come out of the map. If a line assigns <code>node.something</code> directly to a copy, the copy is not deep.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Two passes over <code>n</code> nodes, with a constant number of dictionary operations each: <strong>O(n) time</strong>. The map holds one entry per node, <strong>O(n) extra space</strong> on top of the O(n) output that any solution must produce.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Extra space</th></tr>
+        <tr><td>Copy, then resolve random by position search</td><td>O(n²)</td><td>O(1)</td></tr>
+        <tr><td>Two passes with old → new map</td><td>O(n)</td><td>O(n)</td></tr>
+        <tr><td>Interleave copies (A → A′ → B → B′), then split</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>The interleaving trick is the classic follow-up: put each copy right after its original so <code>node.next</code> <em>is</em> the map, then set <code>node.next.random = node.random.next</code> and unzip the two lists. Same idea, with the list itself standing in for the dictionary.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Two identical walks and one dictionary.</p>
+      <ul>
+        <li><code>old_to_new = {None: None}</code> — seed so null pointers need no branch.</li>
+        <li><code>old_to_new[node] = Node(node.val)</code> — pass 1: one fresh node per original, keyed by identity.</li>
+        <li><code>copy = old_to_new[node]</code> — pass 2: fetch the twin.</li>
+        <li><code>copy.next = old_to_new[node.next]</code> — translate next.</li>
+        <li><code>copy.random = old_to_new[node.random]</code> — translate random, forward or backward.</li>
+        <li><code>return old_to_new[head]</code> — the new head (or <code>None</code> for an empty list).</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>create all the copies first, then wire every pointer through the old-to-new map — never assign an original node to a copy.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>original (top) and copy (bottom) · head = [[7,null],[13,0],[11,4],[10,2],[1,0]]</h3>
+        <svg class="list" id="list" viewBox="0 0 400 236" aria-label="original list and its copy"></svg>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>old_to_new</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="copy_list_with_random_pointer.py">copy_list_with_random_pointer.py</a> · <a href="copy_list_with_random_pointer_annotated.py">copy_list_with_random_pointer_annotated.py</a> · <a href="test_copy_list_with_random_pointer.py">test_copy_list_with_random_pointer.py</a> · <a href="../../md.html?f=medium/042-copy-list-with-random-pointer/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def copy_random_list(self, head: Node | None) -> Node | None:",
+    "        old_to_new = {None: None}",
+    "        node = head",
+    "        while node is not None:",
+    "            old_to_new[node] = Node(node.val)",
+    "            node = node.next",
+    "        node = head",
+    "        while node is not None:",
+    "            copy = old_to_new[node]",
+    "            copy.next = old_to_new[node.next]",
+    "            copy.random = old_to_new[node.random]",
+    "            node = node.next",
+    "        return old_to_new[head]"
+  ];
+
+  var VALS = [7, 13, 11, 10, 1];
+  var RAND = [null, 0, 4, 2, 0];   // random target index per node, or null
+  var MAP_ALL = [["None", "None"], ["7", "7′", "new"], ["13", "13′", "new"], ["11", "11′", "new"], ["10", "10′", "new"], ["1", "1′", "new"]];
+  var MAP_SEED = [["None", "None"]];
+
+  // copies: indices whose copy exists; wired: indices whose copy has next+random set;
+  // cross: indices whose copy.random wrongly points at an ORIGINAL (pitfall); cur: original being processed.
+  var STATES = {
+    problem: {
+      caption: "Five nodes, each with next and a random pointer. Build a brand-new list with the same shape.",
+      cur: -1, copies: [], wired: [], cross: [], dim: [], vars: [],
+      meta: "random: 7 → null, 13 → 7, <b>11 → 1 (forward)</b>, 10 → 11, 1 → 7.", hl: []
+    },
+    brute: {
+      caption: "One-pass copy, then resolve each random by scanning for its index and walking the copy.",
+      cur: 2, copies: [0, 1, 2, 3, 4], wired: [], cross: [], dim: [], vars: [["position of 11.random", "index 4"], ["walk copy", "4 steps"]],
+      meta: "Two linear walks per node just to translate one pointer.", hl: [],
+      big: "O(n²)", bigNote: "a linear search per random pointer"
+    },
+    idea: {
+      caption: "A dict from original node to its copy turns every pointer translation into one lookup.",
+      cur: -1, copies: [], wired: [], cross: [], dim: [], vars: MAP_SEED,
+      meta: "Seeded with None → None so null pointers translate too. Keys are node objects, not values.", hl: [2]
+    },
+    approach: {
+      caption: "Pass 1 creates every copy; pass 2 wires next and random through the map.",
+      cur: -1, copies: [], wired: [], cross: [], dim: [], vars: MAP_SEED,
+      meta: "Two walks with the same shape; only the loop body differs.", hl: [4, 5, 8, 9, 10, 11, 13]
+    },
+    t1: {
+      caption: "Pass 1 done: five fresh nodes holding only values, one map entry each.",
+      cur: 4, copies: [0, 1, 2, 3, 4], wired: [], cross: [], dim: [], vars: MAP_ALL,
+      meta: "No copy has next or random yet. 1′ exists, so 11′.random can be set later in O(1).", hl: [4, 5, 6]
+    },
+    t2: {
+      caption: "Pass 2: 7′.next = 13′, 7′.random = old_to_new[None] = None; 13′.next = 11′, 13′.random = 7′.",
+      cur: 1, copies: [0, 1, 2, 3, 4], wired: [0, 1], cross: [], dim: [], vars: MAP_ALL,
+      meta: "13's random is node 7, so 13′.random is the <b>copy</b> 7′, not the original.", hl: [9, 10, 11]
+    },
+    t3: {
+      caption: "11′.random = old_to_new[1] = 1′ (forward pointer, already created). Then 10′ and 1′.",
+      cur: 4, copies: [0, 1, 2, 3, 4], wired: [0, 1, 2, 3, 4], cross: [], dim: [], vars: MAP_ALL,
+      meta: "1′.next = old_to_new[None] = None closes the tail. Return old_to_new[7] = 7′.", hl: [9, 10, 11, 13],
+      big: "[[7,null],[13,0],[11,4],[10,2],[1,0]]", bigNote: "same shape, no shared nodes"
+    },
+    pitfall: {
+      caption: "copy.random = node.random: the copies point back into the original list.",
+      cur: -1, copies: [0, 1, 2, 3, 4], wired: [0, 1, 2, 3, 4], cross: [1, 2, 3, 4], dim: [], vars: MAP_ALL,
+      meta: "Serialises identically, but 13′, 11′, 10′, 1′ all reference original nodes. Not a deep copy.", hl: [11],
+      big: "looks right, shares 4 nodes", bigNote: "identity check fails; mutating one list breaks the other"
+    },
+    complexity: {
+      caption: "Two passes, one dict entry per node.",
+      cur: -1, copies: [0, 1, 2, 3, 4], wired: [0, 1, 2, 3, 4], cross: [], dim: [], vars: MAP_ALL,
+      meta: "n = 5 nodes, 6 map entries including the None seed.", hl: [4, 8],
+      big: "O(n) time · O(n) space", bigNote: "O(1) extra is possible by interleaving copies"
+    },
+    final: {
+      caption: "The whole solution.",
+      cur: -1, copies: [0, 1, 2, 3, 4], wired: [0, 1, 2, 3, 4], cross: [], dim: [], vars: MAP_ALL,
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var listSvg = document.getElementById("list");
+  var R = 17, Y_TOP = 68, Y_BOT = 176;
+
+  function randArc(x1, x2, y, up, cls, marker) {
+    // arc from node at x1 to node at x2 along row y, bulging upward (up) or downward
+    var dir = up ? -1 : 1;
+    var span = Math.abs(x2 - x1);
+    var bulge = dir * (18 + span * 0.16);
+    var sx = x1, sy = y + dir * R, ex = x2 + (x2 > x1 ? -R * 0.5 : R * 0.5), ey = y + dir * (R + 1);
+    var d = "M" + sx + "," + sy + " Q" + ((sx + ex) / 2) + "," + (y + bulge) + " " + ex + "," + ey;
+    listSvg.appendChild(el("path", { "class": cls, d: d, "marker-end": marker }));
+  }
+
+  function renderList(s) {
+    while (listSvg.firstChild) listSvg.removeChild(listSvg.firstChild);
+    var defs = el("defs", {});
+    [["arrow", "head"], ["arrow-rnd", "head rnd"], ["arrow-ok", "head ok"]].forEach(function (m) {
+      var mk = el("marker", { id: m[0], viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "6", markerHeight: "6", orient: "auto" });
+      mk.appendChild(el("path", { d: "M0,0 L10,5 L0,10 z", "class": m[1] }));
+      defs.appendChild(mk);
+    });
+    listSvg.appendChild(defs);
+
+    var n = VALS.length;
+    var step = 66, x0 = (400 - step * n) / 2 + 8;   // leaves room for "None" at the end
+    var xs = [];
+    for (var i = 0; i <= n; i++) xs[i] = x0 + i * step;
+
+    listSvg.appendChild(el("text", { "class": "row", x: 6, y: 12 }, "ORIGINAL"));
+    listSvg.appendChild(el("text", { "class": "row", x: 6, y: 128 }, "COPY"));
+
+    // map lines (drawn first, underneath)
+    s.copies.forEach(function (i) {
+      listSvg.appendChild(el("line", { "class": "edge map", x1: xs[i], y1: Y_TOP + R + 2, x2: xs[i], y2: Y_BOT - R - 2 }));
+    });
+
+    // original row: next edges, random arcs above, nodes
+    for (var i = 0; i < n; i++) {
+      var toNil = i === n - 1;
+      listSvg.appendChild(el("line", { "class": "edge" + (toNil ? " dead" : ""), x1: xs[i] + R + 2, y1: Y_TOP, x2: xs[i + 1] - (toNil ? 20 : R + 2), y2: Y_TOP, "marker-end": "url(#arrow)" }));
+    }
+    for (var i = 0; i < n; i++) {
+      if (RAND[i] !== null) randArc(xs[i], xs[RAND[i]], Y_TOP, true, "edge rnd", "url(#arrow-rnd)");
+    }
+    for (var i = 0; i < n; i++) {
+      var cls = "node" + (i === s.cur ? " cur" : "") + (s.dim.indexOf(i) !== -1 ? " dim" : "");
+      var g = el("g", { "class": cls });
+      g.appendChild(el("circle", { cx: xs[i], cy: Y_TOP, r: R }));
+      g.appendChild(el("text", { x: xs[i], y: Y_TOP }, String(VALS[i])));
+      listSvg.appendChild(g);
+    }
+    listSvg.appendChild(el("text", { "class": "nil", x: xs[n], y: Y_TOP }, "None"));
+
+    // copy row
+    for (var i = 0; i < n; i++) {
+      if (s.wired.indexOf(i) === -1) continue;
+      var toNil = i === n - 1;
+      listSvg.appendChild(el("line", { "class": "edge" + (toNil ? " dead" : ""), x1: xs[i] + R + 2, y1: Y_BOT, x2: xs[i + 1] - (toNil ? 20 : R + 2), y2: Y_BOT, "marker-end": "url(#arrow)" }));
+    }
+    for (var i = 0; i < n; i++) {
+      if (s.wired.indexOf(i) === -1 || RAND[i] === null) continue;
+      if (s.cross.indexOf(i) !== -1) {
+        // pitfall: copy.random aimed at the ORIGINAL node
+        var tx = xs[RAND[i]], ty = Y_TOP + R + 2;
+        var d = "M" + xs[i] + "," + (Y_BOT - R) + " Q" + ((xs[i] + tx) / 2 + 14) + "," + ((Y_BOT + Y_TOP) / 2) + " " + tx + "," + ty;
+        listSvg.appendChild(el("path", { "class": "edge rnd cross", d: d, "marker-end": "url(#arrow-rnd)" }));
+      } else {
+        randArc(xs[i], xs[RAND[i]], Y_BOT, false, "edge rnd ok", "url(#arrow-ok)");
+      }
+    }
+    for (var i = 0; i < n; i++) {
+      var exists = s.copies.indexOf(i) !== -1;
+      var cls = "node";
+      if (!exists) cls += " ghost";
+      else if (s.cross.indexOf(i) !== -1) cls += " bad";
+      else if (s.wired.indexOf(i) !== -1) cls += " done";
+      else cls += " new";
+      var g = el("g", { "class": cls });
+      g.appendChild(el("circle", { cx: xs[i], cy: Y_BOT, r: R }));
+      g.appendChild(el("text", { x: xs[i], y: Y_BOT }, exists ? VALS[i] + "′" : "?"));
+      listSvg.appendChild(g);
+    }
+    if (s.wired.indexOf(n - 1) !== -1) listSvg.appendChild(el("text", { "class": "nil", x: xs[n], y: Y_BOT }, "None"));
+    if (s.cross.length) listSvg.appendChild(el("text", { "class": "lbl warn", x: 200, y: 228 }, "copy.random points into the original row"));
+    else if (s.copies.length && !s.wired.length) listSvg.appendChild(el("text", { "class": "lbl", x: 200, y: 228 }, "dashed = old_to_new entry · copies have no pointers yet"));
+    else if (RAND.length) listSvg.appendChild(el("text", { "class": "lbl", x: 200, y: 228 }, "orange arcs = random pointers"));
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+    renderList(s);
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not created yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " → " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l.replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

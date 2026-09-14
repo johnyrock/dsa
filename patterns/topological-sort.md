@@ -37,6 +37,7 @@ has_cycle = len(order) != n
 | Problem | Difficulty | Note |
 |---------|------------|------|
 | [medium/018 Course Schedule](../medium/018-course-schedule/) | Medium | BFS with indegree counts; a cycle leaves nodes permanently stuck above indegree 0 |
+| [medium/066 Course Schedule II](../medium/066-course-schedule-ii/) | Medium | A course can be taken the moment all of its prerequisites have been taken, i.e |
 
 ## Common mistakes
 

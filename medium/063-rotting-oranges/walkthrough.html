@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rotting Oranges Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* number-of-islands additions: a grid of square cells with land, water, sunk and current states */
+  .grid { display: grid; gap: 4px; margin: 8px 0 4px; }
+  .gc {
+    aspect-ratio: 1; border-radius: 6px; border: 2px solid var(--line); background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.9rem; color: var(--muted); transition: all 0.25s;
+  }
+  .gc.land { background: var(--ok-soft); border-color: var(--ok); color: var(--ink); font-weight: 600; }
+  .gc.sunk { background: var(--code-bg); border-color: var(--line); color: var(--muted); text-decoration: line-through; }
+  .gc.cur { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); transform: scale(1.06); }
+  .gc.scan { outline: 2px dashed var(--accent); outline-offset: -2px; }
+  .dict .kv.island { border-color: var(--ok); }
+  /* rotting-oranges additions: empty, fresh, rotten, and the wave that just rotted */
+  .gc.fresh { background: var(--ok-soft); border-color: var(--ok); color: var(--ink); font-weight: 600; }
+  .gc.rotten { background: var(--warn-soft); border-color: var(--warn); color: var(--ink); font-weight: 600; }
+  .gc.wave { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); font-weight: 700; transform: scale(1.06); }
+  .gc.stuck { border-color: var(--accent); outline: 2px dashed var(--accent); outline-offset: -2px; }
+  .array .cell { font-size: 0.85rem; padding: 8px 0 6px; }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Graph · LeetCode #994</div>
+  <h1>Rotting Oranges, narrated</h1>
+  <p>Scroll through the thinking, from simulating the grid minute by minute to a breadth-first search seeded with every rotten orange, where each queue level is one minute, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph Traversal</a> <span class="how">multi-source BFS by levels: one level of the queue is one minute</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>A grid holds empty cells (<code>0</code>), fresh oranges (<code>1</code>) and rotten oranges (<code>2</code>). Every minute, every fresh orange that shares an edge with a rotten one turns rotten. Return how many minutes pass until no fresh orange is left, or <code>-1</code> if some fresh orange can never be reached.</p>
+      <p>Rot spreads from all rotten oranges at the same time, in all four directions, one cell per minute. Diagonal contact does nothing. An empty cell is a wall: rot does not cross it.</p>
+      <div class="callout">Running example: a 3 × 3 grid with one rotten orange at <code>(0, 0)</code>, six fresh oranges, and two empty cells. The answer is <strong>4</strong>: the last orange, at <code>(2, 2)</code>, is four steps from the source along the only path the empty cells leave open.</div>
+      <p>Two answers are asked for at once: <em>how long</em>, and <em>whether it finishes at all</em>. The second needs a way to notice an orange that no wave ever reaches.</p>
+    </section>
+
+    <section class="step" data-state="naive">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: simulate the whole grid every minute</h2>
+      <p>The rules describe a simulation, so simulate. Each minute, scan the entire grid, collect every fresh orange next to a rotten one, and rot them all together after the scan (not during it, or a single minute would chain across the row):</p>
+      <pre class="code"><span class="ln">while True:</span><span class="ln">    to_rot = [(r, c) for every fresh (r, c) with a rotten neighbour]</span><span class="ln">    if not to_rot: break</span><span class="ln">    for r, c in to_rot: grid[r][c] = 2</span><span class="ln">    minutes += 1</span></pre>
+      <p style="margin-top:14px">It is correct and, at 10 × 10, it is fast enough. But every minute rescans all <code>m × n</code> cells to find the handful that changed, and there can be up to <code>m × n</code> minutes on a snake-shaped path: <strong>O((m × n)²)</strong>.</p>
+      <div class="callout warn">The waste is the rescan. The only cells that can rot next minute are the neighbours of the cells that rotted <em>this</em> minute. Everything else is either already rotten, empty, or too far away.</div>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: minutes are BFS levels</h2>
+      <p>Cells are nodes and orthogonal adjacency is an edge. "Rots at minute <code>t</code>" means "is <code>t</code> steps from the nearest rotten orange". That is a shortest-path distance, and breadth-first search computes shortest paths on an unweighted graph by visiting nodes level by level: all nodes at distance 1, then all at distance 2, and so on.</p>
+      <p>There may be several rotten oranges at the start. Put all of them in the queue before the first pop and they form level 0 together, so a fresh orange is reached by whichever source is closest, at exactly the minute the simulation would rot it.</p>
+      <div class="callout">The answer is the number of levels the BFS runs while there is still something to rot. The queue never rescans anything: it holds exactly the cells that rotted last minute.</div>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: level-by-level BFS with a fresh counter</h2>
+      <ul>
+        <li>One scan: every <code>2</code> goes into <code>queue</code>, every <code>1</code> adds one to <code>fresh</code>.</li>
+        <li><code>while queue and fresh</code>: run a minute only if there is a frontier and something left to rot.</li>
+        <li><code>for _ in range(len(queue))</code>: pop exactly the oranges that were rotten at the start of the minute. <code>len(queue)</code> is read once, so the appends made during the minute wait for the next one.</li>
+        <li>For each popped orange, every in-bounds neighbour equal to <code>1</code> is set to <code>2</code>, <code>fresh -= 1</code>, and appended.</li>
+        <li>After the inner loop, <code>minutes += 1</code>.</li>
+        <li><code>return -1 if fresh else minutes</code>.</li>
+      </ul>
+      <p>Marking <code>grid[nr][nc] = 2</code> at append time is the visited set. An orange with two rotten neighbours in the same wave is appended once, not twice, and <code>fresh</code> is decremented once.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: minute 1</h2>
+      <p>The scan finds one rotten orange, so <code>queue = [(0, 0)]</code>, and six fresh ones, so <code>fresh = 6</code>. Both are non-zero, so the first minute runs. <code>len(queue)</code> is 1: pop <code>(0, 0)</code>.</p>
+      <p>Below, <code>(1, 0)</code>, is fresh: set to 2, <code>fresh = 5</code>, append. Above is out of bounds. Right, <code>(0, 1)</code>, is fresh: set to 2, <code>fresh = 4</code>, append. Left is out of bounds.</p>
+      <p>The inner loop ends after that single pop, so <code>minutes = 1</code>. The queue is <code>[(1, 0), (0, 1)]</code>: the two oranges that rotted this minute, and nothing else. The panel highlights them as the wave.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: minute 2</h2>
+      <p><code>len(queue)</code> is 2, so this minute pops two oranges. Pop <code>(1, 0)</code>: below, <code>(2, 0)</code>, is empty, skipped; above is already rotten; right, <code>(1, 1)</code>, is fresh: rot it, <code>fresh = 3</code>, append. Pop <code>(0, 1)</code>: below is <code>(1, 1)</code>, rotten a moment ago, so the <code>== 1</code> test skips it and it is not appended a second time; right, <code>(0, 2)</code>, is fresh: rot it, <code>fresh = 2</code>, append.</p>
+      <p><code>minutes = 2</code>, <code>queue = [(1, 1), (0, 2)]</code>. Notice the order of the queue is the order of discovery, and both were discovered in the same minute, so their order relative to each other does not matter.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: minutes 3 and 4, the answer</h2>
+      <p>Minute 3, two pops. <code>(1, 1)</code>: below, <code>(2, 1)</code>, is fresh: rot, <code>fresh = 1</code>, append; right, <code>(1, 2)</code>, is empty. <code>(0, 2)</code>: below is that same empty cell; everything else is rotten or out of bounds. <code>minutes = 3</code>, <code>queue = [(2, 1)]</code>. The empty cell at <code>(1, 2)</code> is why <code>(2, 2)</code> is not rotten yet: the only way to it goes through <code>(2, 1)</code>.</p>
+      <p>Minute 4, one pop. <code>(2, 1)</code>: right, <code>(2, 2)</code>, is fresh: rot, <code>fresh = 0</code>, append. <code>minutes = 4</code>.</p>
+      <p>Back at the top of the loop, <code>queue</code> still holds <code>(2, 2)</code>, but <code>fresh</code> is 0, so <code>while queue and fresh</code> stops. <code>fresh</code> is falsy, so <code>return minutes</code> gives <strong>4</strong>.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the extra minute</h2>
+      <p><strong><code>while queue:</code> without <code>and fresh</code>.</strong> After minute 4 the queue is <code>[(2, 2)]</code>. The loop runs again, pops <code>(2, 2)</code>, finds nothing fresh, and still does <code>minutes += 1</code>. The function returns <strong>5</strong> instead of 4. The panel shows that fifth, empty wave. The tempting patch <code>return minutes - 1</code> then breaks <code>[[0, 2]]</code>, which never enters the loop and must return 0, not -1; the honest fix is to stop as soon as nothing is fresh.</p>
+      <p><strong>Ticking the clock per pop.</strong> Move <code>minutes += 1</code> inside the inner loop and it counts oranges instead of waves: 6 on this example. One minute is one level of the queue, however many oranges are in it.</p>
+      <p><strong>Forgetting the <code>-1</code>.</strong> Return <code>minutes</code> unconditionally and a grid with a walled-off orange reports the time the reachable ones took, as if the job were done. <code>fresh</code> is the evidence that it is not.</p>
+      <div class="callout warn">Count the level, not the pop; stop when nothing is fresh; and let the leftover <code>fresh</code> count be the impossibility check.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>The seed scan touches every cell once. Afterwards a cell is appended only while it is <code>1</code>, and the append turns it into <code>2</code>, so every cell is appended and popped at most once, with four constant-time neighbour checks per pop. Total: <strong>O(m × n) time</strong>. The queue holds at most one full level, which is at most every cell: <strong>O(m × n) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Rescan the grid every minute</td><td>O((m × n)²)</td><td>O(m × n) per minute's to-rot list</td></tr>
+        <tr><td>BFS from each rotten orange separately, keeping the min time</td><td>O(k × m × n)</td><td>O(m × n)</td></tr>
+        <tr><td>One BFS seeded with all rotten oranges, by levels</td><td>O(m × n)</td><td>O(m × n)</td></tr>
+      </table>
+      <p>With <code>m, n &lt;= 10</code> the simulation also passes. The level-by-level BFS is what an interviewer expects because it shows you recognise "spreads one step per tick from many sources" as a multi-source shortest path.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>A BFS template with a fixed-size inner loop. Every line maps to a step above.</p>
+      <ul>
+        <li>The seed scan fills <code>queue</code> with every <code>2</code> and counts every <code>1</code> into <code>fresh</code>.</li>
+        <li><code>while queue and fresh</code> runs a minute only while there is a frontier and something to rot.</li>
+        <li><code>for _ in range(len(queue))</code> fixes the size of this minute's wave before any appends happen.</li>
+        <li><code>0 &lt;= nr &lt; rows and 0 &lt;= nc &lt; cols and grid[nr][nc] == 1</code> admits only in-bounds fresh oranges.</li>
+        <li><code>grid[nr][nc] = 2</code>, <code>fresh -= 1</code>, <code>queue.append((nr, nc))</code> rot it, count it, and make it next minute's source.</li>
+        <li><code>minutes += 1</code> after the inner loop ticks once per wave.</li>
+        <li><code>return -1 if fresh else minutes</code> reports impossibility or the time.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>seed the queue with every rotten orange, pop one level per minute, and stop the moment nothing is fresh.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>grid · green = fresh, amber = rotten, blue = rotted this minute, dashed = never reached</h3>
+        <div class="grid" id="grid"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>queue after this minute · front on the left</h3>
+        <div class="array" id="queue"></div>
+      </div>
+
+      <div class="block">
+        <h3>minutes and fresh</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="rotting_oranges.py">rotting_oranges.py</a> · <a href="rotting_oranges_annotated.py">rotting_oranges_annotated.py</a> · <a href="test_rotting_oranges.py">test_rotting_oranges.py</a> · <a href="../../md.html?f=medium/063-rotting-oranges/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+
+  var CODE = [
+    "class Solution:",
+    "    def oranges_rotting(self, grid: list[list[int]]) -> int:",
+    "        rows, cols = len(grid), len(grid[0])",
+    "        queue = deque()",
+    "        fresh = 0",
+    "        for r in range(rows):",
+    "            for c in range(cols):",
+    "                if grid[r][c] == 2:",
+    "                    queue.append((r, c))",
+    "                elif grid[r][c] == 1:",
+    "                    fresh += 1",
+    "        minutes = 0",
+    "        while queue and fresh:",
+    "            for _ in range(len(queue)):",
+    "                r, c = queue.popleft()",
+    "                for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):",
+    "                    if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == 1:",
+    "                        grid[nr][nc] = 2",
+    "                        fresh -= 1",
+    "                        queue.append((nr, nc))",
+    "            minutes += 1",
+    "        return -1 if fresh else minutes"
+  ];
+
+  // 0 = empty, 1 = fresh, 2 = rotten
+  var G0 = [[2, 1, 1], [1, 1, 0], [0, 1, 1]];
+  var G1 = [[2, 2, 1], [2, 1, 0], [0, 1, 1]];
+  var G2 = [[2, 2, 2], [2, 2, 0], [0, 1, 1]];
+  var G3 = [[2, 2, 2], [2, 2, 0], [0, 2, 1]];
+  var G4 = [[2, 2, 2], [2, 2, 0], [0, 2, 2]];
+
+  // Each state describes what the sticky panel shows for one step.
+  // g = grid, wave = cells rotted in this minute, stuck = cells no wave ever reaches, q = queue after the minute.
+  var STATES = {
+    problem: {
+      caption: "Every minute, each fresh orange next to a rotten one rots. How long until none are fresh?",
+      g: G0, wave: [], stuck: [], q: [], chips: [], meta: "Answer: <b>4</b>. The path to (2, 2) has to go around the empty cell at (1, 2).", hl: []
+    },
+    naive: {
+      caption: "Rescanning all 9 cells every minute finds the 1 or 2 that actually change.",
+      g: G0, wave: [[1, 0], [0, 1]], stuck: [], q: [], chips: [["cells scanned per minute", "9"], ["cells that rot", "2"]],
+      meta: "The only cells that can rot next are neighbours of the cells that rotted now.", hl: [],
+      big: "O((m × n)²)", bigNote: "a full rescan per minute"
+    },
+    reframe: {
+      caption: "Minute t = distance t from the nearest rotten orange. BFS visits by distance, level by level.",
+      g: G0, wave: [[0, 0]], stuck: [], q: ["(0,0)"], chips: [["level 0", "the rotten oranges"]],
+      meta: "Queue every rotten orange before the first pop, and the levels come out as minutes.", hl: []
+    },
+    idea: {
+      caption: "Seed the queue with all 2s, count the 1s, then pop one whole level per minute.",
+      g: G0, wave: [], stuck: [], q: ["(0,0)"], chips: [["minutes", "0", "new"], ["fresh", "6", "new"]],
+      meta: "<b>range(len(queue))</b> fixes the wave size before any appends; <b>== 1</b> skips empty and rotten cells.", hl: [7, 8, 9, 10, 12, 13, 16, 17, 18, 19, 20]
+    },
+    t1: {
+      caption: "Minute 1: pop (0, 0); (1, 0) and (0, 1) rot. fresh = 4.",
+      g: G1, wave: [[1, 0], [0, 1]], stuck: [], q: ["(1,0)", "(0,1)"], chips: [["minutes", "1", "new"], ["fresh", "6 − 2 = 4"]],
+      meta: "One pop this minute, because len(queue) was 1 when the level started.", hl: [13, 14, 16, 17, 18, 19, 20]
+    },
+    t2: {
+      caption: "Minute 2: pop (1, 0) and (0, 1); (1, 1) and (0, 2) rot. fresh = 2.",
+      g: G2, wave: [[1, 1], [0, 2]], stuck: [], q: ["(1,1)", "(0,2)"], chips: [["minutes", "2", "new"], ["fresh", "4 − 2 = 2"]],
+      meta: "(0, 1) sees (1, 1) already at 2, so it is not appended twice.", hl: [13, 14, 16, 17, 18, 19, 20]
+    },
+    t3: {
+      caption: "Minute 3: (2, 1) rots. Minute 4: (2, 2) rots, fresh = 0, the loop stops.",
+      g: G4, wave: [[2, 2]], stuck: [], q: ["(2,2)"], chips: [["minutes", "4", "found"], ["fresh", "0", "found"]],
+      meta: "The queue is not empty, but <b>fresh</b> is 0, so no fifth minute runs. Return <b>4</b>.", hl: [12, 20, 21],
+      big: "4", bigNote: "one level of the queue per minute"
+    },
+    pitfall: {
+      caption: "while queue: alone runs a fifth minute that pops (2, 2), rots nothing, and still ticks.",
+      g: G4, wave: [], stuck: [], q: [], chips: [["minutes (buggy)", "5"], ["minutes (correct)", "4", "found"]],
+      meta: "Also: <b>minutes += 1</b> per pop gives 6; returning <b>minutes</b> when fresh &gt; 0 hides an unreachable orange.", hl: [12, 20],
+      big: "5, not 4", bigNote: "stop when nothing is fresh, not when the queue drains"
+    },
+    complexity: {
+      caption: "Every cell appended at most once, popped at most once, four neighbour checks each.",
+      g: G4, wave: [], stuck: [], q: [], chips: [["cells", "9"], ["appends", "6"], ["levels", "4"]],
+      meta: "The grid records rot in place, so the queue is the only extra memory.", hl: [12, 13, 19],
+      big: "O(m × n) time · O(m × n) queue worst case", bigNote: "versus O((m × n)²) for a rescan per minute"
+    },
+    final: {
+      caption: "The whole solution.",
+      g: G4, wave: [], stuck: [], q: [], chips: [["minutes", "4", "found"]], meta: "",
+      hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function inList(list, r, c) {
+    for (var i = 0; i < list.length; i++) if (list[i][0] === r && list[i][1] === c) return true;
+    return false;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var grid = $("grid");
+    grid.style.gridTemplateColumns = "repeat(" + s.g[0].length + ", 1fr)";
+    var html = "";
+    for (var r = 0; r < s.g.length; r++) {
+      for (var c = 0; c < s.g[r].length; c++) {
+        var v = s.g[r][c];
+        var cls = "gc" + (v === 1 ? " fresh" : v === 2 ? " rotten" : "");
+        if (inList(s.wave, r, c)) cls += " wave";
+        if (inList(s.stuck, r, c)) cls += " stuck";
+        html += '<div class="' + cls + '">' + v + '</div>';
+      }
+    }
+    grid.innerHTML = html;
+
+    var q = "";
+    if (s.q.length === 0) {
+      q = '<div class="cell dim">empty</div>';
+    } else {
+      for (var i = 0; i < s.q.length; i++) {
+        q += '<div class="cell' + (i === 0 ? " cur" : "") + '">' + s.q[i] + '<span class="idx">' + (i === 0 ? "front" : "") + '</span></div>';
+      }
+    }
+    $("queue").innerHTML = q;
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.chips.length; k++) {
+        var e = s.chips[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var code = "";
+    for (var l = 0; l < CODE.length; l++) {
+      code += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = code;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

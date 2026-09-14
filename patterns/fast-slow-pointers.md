@@ -35,7 +35,8 @@ return slow  # middle node (second middle if even length)
 | Problem | Difficulty | Note |
 |---------|------------|------|
 | [easy/012 Linked List Cycle](../easy/012-linked-list-cycle/) | Easy | slow steps by 1, fast by 2; they meet only if a cycle exists |
-
+| [easy/022 Happy Number](../easy/022-happy-number/) | Easy | Two speeds detect the non-happy digit-square cycle. |
+| [medium/043 Find the Duplicate Number](../medium/043-find-the-duplicate-number/) | Medium | Read the array as a function `i -> nums[i]` |
 ## Common mistakes
 
 - Checking only `fast is not None` and then dereferencing `fast.next.next`, which crashes when `fast.next` is `None`. Both halves of the guard are required.

@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Longest Consecutive Sequence Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* heap additions: the heap array drawn as a complete binary tree (easy/011 renderer) */
+  .tree { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .tree .edge { stroke: var(--line); stroke-width: 2.5; fill: none; transition: stroke 0.25s; }
+  .tree .edge.hit { stroke: var(--ok); }
+  .tree .edge.bad { stroke: var(--warn); stroke-dasharray: 5 4; }
+  .tree .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .tree .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 17px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .tree .node.cur circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3.5; }
+  .tree .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .tree .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .tree .node.dim circle, .tree .node.dim text { opacity: 0.4; }
+  .tree .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .tree .lbl.cur { fill: var(--accent); font-weight: 700; }
+  .tree .lbl.bad { fill: var(--warn); font-weight: 700; }
+  .tree .lbl.hit { fill: var(--ok); font-weight: 700; }
+  .array.compact { gap: 4px; margin-top: 2px; }
+  .array.compact .cell { min-width: 28px; padding: 3px 0 2px; font-size: 0.9rem; border-width: 1.5px; border-radius: 6px; }
+  .array.compact .cell.cur { transform: none; }
+  .cell.bad { border-color: var(--warn); background: var(--warn-soft); }
+  .meta b { color: var(--ink); }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Hash Set · LeetCode #128</div>
+  <h1>Longest Consecutive Sequence, narrated</h1>
+  <p>Scroll through the thinking, from sorting the array to a set that lets every run be walked exactly once from its smallest value, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/hash-map.html">Hash Set</a> <span class="how">a value with no predecessor in the set starts a run; walk upward only from those starts</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get an unsorted array <code>nums</code>. Find the longest run of consecutive integers that are all present, and return its length. The run is about the <em>values</em>, not the positions: the members can be scattered anywhere in the array.</p>
+      <div class="callout">Running example: <code>nums = [100, 4, 200, 1, 3, 2]</code>. The values 1, 2, 3, 4 are all present, so the answer is <strong>4</strong>. The 100 and the 200 are runs of length 1 on their own.</div>
+      <p>The problem insists on <strong>O(n) time</strong>. That is the whole difficulty: sorting would make this trivial, and sorting is O(n log n), so it is off the table.</p>
+      <p>Duplicates can appear and must not stretch a run: <code>[1, 1, 2]</code> has a run of length 2, not 3. And the empty array has no run at all, so its answer is 0.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: sort and scan</h2>
+      <p>Sort the array, then walk it once, extending a counter while each value is exactly one more than the previous and resetting on a gap. Equal neighbours are skipped so duplicates do not count.</p>
+      <pre class="code"><span class="ln">nums.sort()</span><span class="ln">best = run = 0</span><span class="ln">for i in range(len(nums)):</span><span class="ln">    if i &gt; 0 and nums[i] == nums[i - 1]: continue</span><span class="ln">    run = run + 1 if i &gt; 0 and nums[i] == nums[i - 1] + 1 else 1</span><span class="ln">    best = max(best, run)</span></pre>
+      <p style="margin-top:14px">On the running example the sorted array is <code>[1, 2, 3, 4, 100, 200]</code>, the counter climbs to 4 and resets at 100. Correct, and easy to get right. But the sort is <strong>O(n log n)</strong>, and the problem said linear.</p>
+      <p>The sort does more than we need. We do not care about the order of 100 relative to 200; we only care, for each value, whether its immediate neighbours <code>num - 1</code> and <code>num + 1</code> exist. That is a membership question, not an ordering question.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: only walk from the start of a run</h2>
+      <p>Put every value in a set. Now <code>x in seen</code> is O(1), so from any value we can step upward, <code>num + 1</code>, <code>num + 2</code>, and so on, for as long as the next integer is present. That measures the run that contains <code>num</code> from <code>num</code> upward.</p>
+      <p>Doing that from <em>every</em> value is wasteful: the run 1–4 would be walked from 1, again from 2, again from 3, and again from 4. The fix is to notice that a value is the <strong>start</strong> of its run exactly when <code>num - 1</code> is not in the set.</p>
+      <div class="callout">Walk upward only from values whose predecessor is missing. Then every run is walked exactly once, from its smallest member, and each value is stepped over by exactly one walk. The <code>while</code> inside the <code>for</code> is O(n) in total, not O(n²).</div>
+      <p>In the running example only 1, 100, and 200 have no predecessor in the set. Those are the three runs, and only those three walks happen.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>seen = set(nums)</code> — O(1) membership, and duplicates collapse.</li>
+        <li><code>best = 0</code> — the longest run so far; 0 is correct for an empty input.</li>
+        <li><code>for num in seen</code> — visit each distinct value once.</li>
+        <li><code>if num - 1 in seen: continue</code> — not the start of its run, skip it.</li>
+        <li><code>length = 1</code> — the start itself counts.</li>
+        <li><code>while num + length in seen: length += 1</code> — step upward while the next integer exists.</li>
+        <li><code>best = max(best, length)</code> — record the finished run.</li>
+        <li><code>return best</code>.</li>
+      </ul>
+      <p>The loop goes over <code>seen</code> rather than <code>nums</code> so that a duplicated start does not trigger the same walk twice.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: 1 is a start, walk to 4</h2>
+      <p>Python happens to hand the set out as 1, 2, 3, 100, 4, 200, but the order does not matter for correctness. The first value is <code>num = 1</code>. Is <code>0</code> in the set? No, so 1 is the start of a run.</p>
+      <p>Set <code>length = 1</code>. Is <code>1 + 1 = 2</code> in the set? Yes, <code>length = 2</code>. Is <code>3</code> in? Yes, <code>length = 3</code>. Is <code>4</code> in? Yes, <code>length = 4</code>. Is <code>5</code> in? No, the walk stops.</p>
+      <p><code>best = max(0, 4) = 4</code>. The whole run 1–4 has been measured in a single pass from its bottom.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: 2, 3, and 4 are skipped</h2>
+      <p>Next is <code>num = 2</code>. Is <code>1</code> in the set? Yes, so 2 is in the middle of a run that has already been walked. <code>continue</code>, no work done.</p>
+      <p>The same happens for <code>3</code> (its predecessor 2 is present) and later for <code>4</code> (predecessor 3 is present). Three values, three O(1) checks, zero steps of walking.</p>
+      <p>This is the step that makes the algorithm linear. Without the predecessor check, 2 would walk 2–4, 3 would walk 3–4, and 4 would walk itself: 6 extra membership tests on this small input, and quadratic work on a long run.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: 100 and 200, then the answer</h2>
+      <p><code>num = 100</code>: is <code>99</code> in the set? No, so it is a start. <code>length = 1</code>; is <code>101</code> in? No. The run has length 1. <code>best = max(4, 1) = 4</code>, unchanged.</p>
+      <p><code>num = 200</code>: <code>199</code> is absent, so it is a start; <code>201</code> is absent, so its run is also length 1. <code>best</code> stays 4.</p>
+      <p>The loop is over and we return <strong>4</strong>. Count the membership tests: 6 predecessor checks, plus 4 + 1 + 1 = 6 upward steps. Twelve O(1) operations for six values, which is the linear bound in action.</p>
+      <div class="callout">Each value was stepped over by exactly one walk, the one from its run's start. That is the invariant that makes the nested loop O(n).</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: which side to check, and where to start counting</h2>
+      <p><strong>Checking <code>num + 1</code> instead of <code>num - 1</code>.</strong> Now the values that survive the skip are the <em>tops</em> of runs, and walking upward from a top finds nothing. On the running example, 1, 2, and 3 are all skipped (each has a successor), 4 walks to 5 and stops immediately, and the function returns <strong>1 instead of 4</strong>.</p>
+      <p><strong>Inverting the skip: <code>if num - 1 not in seen: continue</code>.</strong> Now the starts are thrown away and only the non-starts walk. 2 walks to 4 for a length of 3, 3 gets 2, 4 gets 1, and 1, 100, 200 are never measured: <strong>3 instead of 4</strong>.</p>
+      <p><strong>Dropping the skip entirely.</strong> The answer is still right, but every member walks its own run: 12 steps instead of 6 here, and O(n²) on one long run, which is a timeout at <code>10^5</code> values.</p>
+      <p><strong>Starting <code>best = 1</code>.</strong> The empty array then returns 1 instead of 0.</p>
+      <div class="callout warn">The start of a run is the value with no predecessor. Check <code>num - 1 in seen</code> and skip when it is <em>present</em>, then walk upward with <code>num + length</code>.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Building the set is O(n). The outer loop does one O(1) check per distinct value. The inner <code>while</code> loops look nested, but each value is visited by at most one of them, so their total work is O(n) as well. <strong>O(n) time</strong>.</p>
+      <p>The set holds up to n values: <strong>O(n) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Sort, then scan</td><td>O(n log n)</td><td>O(1) extra (in place)</td></tr>
+        <tr><td>Set, walk from every value</td><td>O(n²) worst case</td><td>O(n)</td></tr>
+        <tr><td>Set, walk only from run starts</td><td>O(n)</td><td>O(n)</td></tr>
+      </table>
+      <p>The middle row is the same code minus one <code>if</code>. That single line is the difference between passing and timing out.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Eleven lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>seen = set(nums)</code> gives O(1) membership and removes duplicates.</li>
+        <li><code>best = 0</code> handles the empty input by default.</li>
+        <li><code>for num in seen</code> visits each distinct value once.</li>
+        <li><code>if num - 1 in seen: continue</code> is the line that makes it linear.</li>
+        <li><code>length = 1</code> then <code>while num + length in seen: length += 1</code> measures the run from its bottom.</li>
+        <li><code>best = max(best, length)</code> and <code>return best</code>.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>a value with no predecessor starts a run; walk upward only from those, and every run is measured once.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>nums · <span id="target">[100, 4, 200, 1, 3, 2]</span></h3>
+        <div class="array compact" id="nums"></div>
+      </div>
+
+      <div class="block">
+        <h3>seen, laid out as a number line (gaps shown as …)</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>this value</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="longest_consecutive_sequence.py">longest_consecutive_sequence.py</a> · <a href="longest_consecutive_sequence_annotated.py">longest_consecutive_sequence_annotated.py</a> · <a href="test_longest_consecutive_sequence.py">test_longest_consecutive_sequence.py</a> · <a href="../../md.html?f=medium/028-longest-consecutive-sequence/notes.md">notes.md</a> · <a href="../../patterns/hash-set.md">hash-set pattern</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def longest_consecutive(self, nums: list[int]) -> int:",
+    "        seen = set(nums)",
+    "        best = 0",
+    "        for num in seen:",
+    "            if num - 1 in seen:",
+    "                continue",
+    "            length = 1",
+    "            while num + length in seen:",
+    "                length += 1",
+    "            best = max(best, length)",
+    "        return best"
+  ];
+
+  var NUMS = [100, 4, 200, 1, 3, 2];
+  // The set drawn as a number line: value or "…" for a gap. Index into this row is what cur/hits/dim/bad refer to.
+  var LINE = [1, 2, 3, 4, "…", 100, "…", 200];
+  var SORTED = [1, 2, 3, 4, 100, 200];
+
+  // numCur: index into NUMS to tint (or -1). line: the number-line row. cur = the value being examined (blue),
+  // hits = values the current walk has stepped over (green), dim = skipped / not yet visited, bad = wrong step (amber).
+  var STATES = {
+    problem: {
+      caption: "Which run of consecutive integers is longest? Positions in the array do not matter.",
+      numCur: -1, line: LINE, cur: -1, hits: [0, 1, 2, 3], dim: [], bad: [],
+      vars: [], meta: "1, 2, 3, 4 are all present: a run of length <b>4</b>. 100 and 200 are runs of 1.", hl: []
+    },
+    brute: {
+      caption: "Sort, then scan for neighbours that differ by exactly 1.",
+      numCur: -1, line: SORTED, cur: -1, hits: [0, 1, 2, 3], dim: [4, 5], bad: [],
+      vars: [["sorted", "[1, 2, 3, 4, 100, 200]", ""], ["run", "1 → 2 → 3 → 4, reset at 100", ""]], meta: "Correct, but the sort orders 100 against 200, which we never needed to know.", hl: [],
+      big: "O(n log n)", bigNote: "the sort dominates; the problem asks for O(n)"
+    },
+    insight: {
+      caption: "A value with no predecessor in the set is the start of a run. Only 1, 100, 200 qualify.",
+      numCur: -1, line: LINE, cur: 0, hits: [5, 7], dim: [1, 2, 3], bad: [],
+      vars: [["1", "0 not in seen → start", "new"], ["100", "99 not in seen → start", "new"], ["200", "199 not in seen → start", "new"], ["2, 3, 4", "predecessor present → skip", ""]], meta: "Three starts, three walks, and every value is stepped over exactly once.", hl: [5, 6, 8]
+    },
+    approach: {
+      caption: "Build the set, skip non-starts, walk upward from each start, keep the longest.",
+      numCur: -1, line: LINE, cur: -1, hits: [], dim: [], bad: [],
+      vars: [["seen", "{1, 2, 3, 4, 100, 200}", ""], ["best", "0", ""]], meta: "Iterate the set, not the list, so a duplicated start is walked once.", hl: [2, 3, 4, 5, 6, 7, 8, 9, 10]
+    },
+    t1: {
+      caption: "num = 1: 0 is absent, so walk: 2 ✓, 3 ✓, 4 ✓, 5 ✗. length = 4, best = 4.",
+      numCur: 3, line: LINE, cur: 0, hits: [1, 2, 3], dim: [4, 5, 6, 7], bad: [],
+      vars: [["num", "1", "new"], ["num - 1 in seen", "0? no → start", ""], ["length", "1 → 2 → 3 → 4", ""], ["best", "max(0, 4) = 4", "found"]], meta: "The walk stops when <b>1 + 4 = 5</b> is not in the set.", hl: [5, 7, 8, 9, 10]
+    },
+    t2: {
+      caption: "num = 2: 1 is in the set, so this is not a start. Skip. Same for 3 and 4.",
+      numCur: 5, line: LINE, cur: 1, hits: [], dim: [2, 3, 4, 5, 6, 7], bad: [],
+      vars: [["num", "2", "new"], ["num - 1 in seen", "1? yes → continue", ""], ["walk steps", "0", ""], ["best", "4", ""]], meta: "2, 3, and 4 each cost one O(1) lookup and no walking; their run was measured from 1.", hl: [5, 6]
+    },
+    t3: {
+      caption: "num = 100: 99 absent, 101 absent, length 1. num = 200: same. best stays 4.",
+      numCur: 2, line: LINE, cur: 7, hits: [0, 1, 2, 3, 5], dim: [], bad: [],
+      vars: [["100", "start, 101 absent → length 1", ""], ["200", "start, 201 absent → length 1", "new"], ["best", "max(4, 1) = 4", "found"]], meta: "6 predecessor checks + 6 upward steps = 12 O(1) operations for 6 values.", hl: [8, 10, 11],
+      big: "4", bigNote: "the run 1, 2, 3, 4"
+    },
+    pitfall: {
+      caption: "Checking num + 1 instead of num - 1 keeps only the tops of runs, and walking up from a top finds nothing.",
+      numCur: 1, line: LINE, cur: 3, hits: [], dim: [0, 1, 2], bad: [4],
+      vars: [["1, 2, 3", "successor present → skipped", ""], ["4", "5 absent → 'start', walk: 5? no", ""], ["length", "1", ""]], meta: "Every run is measured from its wrong end: the answer becomes 1.", hl: [5, 8],
+      big: "1, not 4", bigNote: "the skip test faces the wrong way"
+    },
+    complexity: {
+      caption: "One set build, one lookup per value, and each value stepped over by exactly one walk.",
+      numCur: -1, line: LINE, cur: -1, hits: [0, 1, 2, 3, 5, 7], dim: [], bad: [],
+      vars: [["set build", "O(n)", ""], ["predecessor checks", "n × O(1)", ""], ["total walk steps", "≤ n", ""]], meta: "The while inside the for is not quadratic, because non-starts never walk.", hl: [2, 4, 5, 8],
+      big: "O(n) time · O(n) space", bigNote: "versus O(n log n) for sorting"
+    },
+    final: {
+      caption: "The whole solution.",
+      numCur: -1, line: LINE, cur: -1, hits: [0, 1, 2, 3], dim: [], bad: [],
+      vars: [["answer", "4", "found"]], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var row = "";
+    for (var q = 0; q < NUMS.length; q++) {
+      row += '<div class="cell' + (q === s.numCur ? " cur" : "") + '">' + NUMS[q] + '<span class="idx">' + q + '</span></div>';
+    }
+    $("nums").innerHTML = row;
+
+    var arr = "";
+    for (var i = 0; i < s.line.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.bad.indexOf(i) !== -1) cls += " bad";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.dim.indexOf(i) !== -1 || s.line[i] === "…") cls += " dim";
+      arr += '<div class="' + cls + '">' + s.line[i] + '<span class="idx">' + (s.line[i] === "…" ? "gap" : "in seen") + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">nothing examined yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

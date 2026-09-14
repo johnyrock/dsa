@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Graph Valid Tree Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; flex-wrap: wrap; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem; min-width: 44px;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .edge { stroke: var(--muted); stroke-width: 2.5; fill: none; opacity: 0.7; transition: opacity 0.25s, stroke 0.25s; }
+  .fig .edge.dim { opacity: 0.25; }
+  .fig .edge.hit { stroke: var(--ok); opacity: 1; }
+  .fig .edge.cur { stroke: var(--accent); stroke-width: 3.5; opacity: 1; }
+  .fig .edge.cycle { stroke: var(--warn); stroke-dasharray: 6 4; animation: dash 1s linear infinite; opacity: 1; }
+  .fig .head { fill: var(--muted); }
+  .fig .head.cycle { fill: var(--warn); }
+  .fig .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 16px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .fig .node.cur circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3.5; }
+  .fig .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .fig .node.dim circle, .fig .node.dim text { opacity: 0.35; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .array.compact { gap: 4px; margin-top: 2px; }
+  .array[hidden] { display: none; }
+  .array.compact .cell { min-width: 28px; padding: 3px 0 2px; font-size: 0.9rem; border-width: 1.5px; border-radius: 6px; }
+  .array.compact .cell .idx { display: none; }
+  .array.compact .cell.cur { transform: none; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; margin-bottom: 6px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Graph · LeetCode #261</div>
+  <h1>Graph Valid Tree, narrated</h1>
+  <p>Scroll through the thinking, from pulling edges out one at a time to see if anything breaks, to a two-part test — the right number of edges and no edge that joins two nodes already in the same set — with the union-find parent array shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph Traversal</a> <span class="how">union-find: n − 1 edges and every union merges two different roots</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get <code>n</code> nodes numbered from 0 and a list of undirected edges. Decide whether they form a tree. A tree has two properties at once: it is <strong>connected</strong> (you can walk from any node to any other) and it is <strong>acyclic</strong> (there is no closed loop of edges).</p>
+      <p>Either property can fail on its own. Two separate chains are acyclic but not connected. A triangle with an extra node hanging off it is connected but not acyclic. Both must hold.</p>
+      <div class="callout">Running example: <code>n = 5</code>, <code>edges = [[0,1],[0,2],[0,3],[1,4]]</code>. Node 0 fans out to 1, 2 and 3, and node 4 hangs off 1. Every node is reachable and nothing loops back, so the answer is <strong>True</strong>.</div>
+      <p>The edges are undirected, so <code>[0, 1]</code> and <code>[1, 0]</code> would be the same edge. The constraints promise there are no duplicates and no self-loops, which removes two easy ways to smuggle in a cycle.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: is every edge load-bearing?</h2>
+      <p>An edge in a tree is essential: remove it and its two endpoints are no longer connected. An edge on a cycle is redundant: remove it and its endpoints can still reach each other the long way round. So test each edge by removing it and running a BFS from one endpoint to see whether the other is still reachable. If any edge is redundant, there is a cycle. Then run one more BFS from node 0 to confirm everything is connected.</p>
+      <pre class="code"><span class="ln">for i, (a, b) in enumerate(edges):</span><span class="ln">    rest = edges[:i] + edges[i + 1:]</span><span class="ln">    if reachable(a, b, rest):      # BFS over the remaining edges</span><span class="ln">        return False               # a, b still connected: this edge closed a cycle</span><span class="ln">return reachable_from_zero_count(edges) == n</span></pre>
+      <p style="margin-top:14px">This is correct, and it says something true about trees that is worth holding on to: <em>every edge of a tree is the only path between its endpoints</em>. But it runs a full BFS per edge, each costing O(n + E), so the whole thing is <strong>O(E × (n + E))</strong>. With 5000 edges that is tens of millions of node visits for a question that should take one pass.</p>
+      <p>The waste is that each BFS rediscovers the same connectivity from scratch. What we want is a structure that remembers "these nodes are already connected" as edges are added, so each new edge is a constant-time question.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: count the edges, then merge sets</h2>
+      <p>Two facts about trees do all the work.</p>
+      <p><strong>A tree on <code>n</code> nodes has exactly <code>n - 1</code> edges.</strong> Fewer and it cannot be connected; more and there must be a cycle. So <code>if len(edges) != n - 1: return False</code> is a legitimate first line, not a hack.</p>
+      <p><strong>Given <code>n - 1</code> edges, acyclic implies connected.</strong> Start with <code>n</code> isolated nodes, which is <code>n</code> separate components. Every edge that joins two <em>different</em> components reduces the count by one. If none of the <code>n - 1</code> edges closes a cycle, all of them merged something, and <code>n - (n - 1) = 1</code> component remains. Connected.</p>
+      <div class="callout">So after the count check, the only remaining question is: <em>does any edge join two nodes that are already in the same component?</em> That is exactly what union-find answers.</div>
+      <p>Union-find keeps a <code>parent</code> array. Each component is a small tree of pointers, and <code>find(x)</code> follows them to the root. Two nodes are in the same component when they have the same root. Merging two components is one pointer assignment: point one root at the other.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>if len(edges) != n - 1: return False</code> handles both "too few" and "too many" before any traversal.</li>
+        <li><code>parent = list(range(n))</code>: every node starts as its own root. <code>rank = [0] * n</code>: an upper bound on each root's tree height.</li>
+        <li><code>find(x)</code>: <code>while parent[x] != x</code>, set <code>parent[x] = parent[parent[x]]</code> (skip a generation, so the chain halves for next time) and step up. Return the root.</li>
+        <li>For each edge <code>[a, b]</code>: <code>ra, rb = find(a), find(b)</code>. <code>if ra == rb: return False</code> is the cycle check.</li>
+        <li>Union by rank: <code>if rank[ra] &lt; rank[rb]: ra, rb = rb, ra</code>, then <code>parent[rb] = ra</code>, and bump <code>rank[ra]</code> only when the two ranks were equal.</li>
+        <li>If the loop finishes, every edge merged two different sets: <code>return True</code>.</li>
+      </ul>
+      <p>The running example passes the count check (4 edges, <code>n - 1 = 4</code>) and starts with <code>parent = [0, 1, 2, 3, 4]</code> and <code>rank = [0, 0, 0, 0, 0]</code>.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: edges [0,1] and [0,2]</h2>
+      <p>Edge <code>[0, 1]</code>: <code>find(0) = 0</code> and <code>find(1) = 1</code>. Different roots, so no cycle. Ranks are both 0, so no swap; <code>parent[1] = 0</code>, and since the ranks were equal, <code>rank[0]</code> becomes 1. Now <code>parent = [0, 0, 2, 3, 4]</code>.</p>
+      <p>Edge <code>[0, 2]</code>: <code>find(0) = 0</code>, <code>find(2) = 2</code>. Different. <code>rank[0] = 1</code> is not less than <code>rank[2] = 0</code>, so no swap; <code>parent[2] = 0</code>. The ranks were not equal, so <code>rank[0]</code> stays 1. Now <code>parent = [0, 0, 0, 3, 4]</code>.</p>
+      <p>Three nodes share root 0; nodes 3 and 4 are still their own roots. Two components merged into one, two edges used, and the component count went from 5 to 3.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: edges [0,3] and [1,4], the answer</h2>
+      <p>Edge <code>[0, 3]</code>: roots 0 and 3, different. <code>parent[3] = 0</code>. <code>parent = [0, 0, 0, 0, 4]</code>.</p>
+      <p>Edge <code>[1, 4]</code>: <code>find(1)</code> follows <code>parent[1] = 0</code> and <code>parent[0] = 0</code>, so the root is 0. <code>find(4) = 4</code>. Different, so <code>parent[4] = 0</code> (rank 1 beats rank 0, node 4 goes under 0, not under 1). <code>parent = [0, 0, 0, 0, 0]</code>.</p>
+      <p>The loop ends without ever seeing <code>ra == rb</code>. Four merges took five components down to one. <code>return True</code>.</p>
+      <div class="callout">Notice that the final <code>parent</code> array is flat: every node points straight at 0. That is union by rank doing its job; <code>find</code> never had to walk more than one step.</div>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Contrast: a cycle is caught by the first repeated root</h2>
+      <p>Take <code>n = 5</code>, <code>edges = [[0,1],[1,2],[2,3],[1,3],[1,4]]</code>. That is 5 edges on 5 nodes, so the count check already fails. But suppose it were skipped, to see how the cycle check behaves on its own.</p>
+      <p><code>[0, 1]</code>: merge, <code>parent[1] = 0</code>, <code>rank[0] = 1</code>. <code>[1, 2]</code>: <code>find(1) = 0</code>, <code>find(2) = 2</code>, merge, <code>parent[2] = 0</code>. <code>[2, 3]</code>: <code>find(2) = 0</code>, <code>find(3) = 3</code>, merge, <code>parent[3] = 0</code>. Now <code>parent = [0, 0, 0, 0, 4]</code>.</p>
+      <p><code>[1, 3]</code>: <code>find(1) = 0</code> and <code>find(3) = 0</code>. <strong>Same root.</strong> Nodes 1 and 3 were already connected (via 2), so this edge closes the loop 1–2–3–1. <code>return False</code> immediately; edge <code>[1, 4]</code> is never looked at.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: cycle-free is not the same as tree</h2>
+      <p>Two specific bugs live here, and both return a confident wrong answer.</p>
+      <p><strong>Dropping the edge-count guard.</strong> Without <code>if len(edges) != n - 1: return False</code>, take <code>n = 5</code>, <code>edges = [[0,1],[1,2],[3,4]]</code>. Every edge merges two different roots: <code>parent</code> ends as <code>[0, 0, 0, 3, 3]</code>, the loop finishes, and the function returns <strong>True</strong>. But there are two components, {0, 1, 2} and {3, 4}. Union-find only ever detects cycles; connectivity comes from the count.</p>
+      <p><strong>A <code>find</code> that does not loop.</strong> Writing <code>return parent[x]</code> returns the immediate parent, not the root. On <code>[[0,1],[2,3],[1,3],[0,3]]</code> the third union points root 2 at root 0, so node 3's parent is still 2 while its root is 0. The cycle-closing edge <code>[0, 3]</code> compares 0 with 2, sees "different", and returns <strong>True</strong> for a graph with a cycle and an isolated node 4.</p>
+      <div class="callout warn">Check the count first. Then <code>find</code> must walk all the way to a node whose parent is itself.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>The count check is O(1). The loop does two <code>find</code> calls and one union per edge. With path halving and union by rank, a <code>find</code> costs amortised <strong>O(α(n))</strong>, the inverse Ackermann function, which is at most 4 for any input that fits in memory. Total <strong>O(n + E × α(n))</strong>, effectively linear.</p>
+      <p><code>parent</code> and <code>rank</code> are each <code>n</code> integers: <strong>O(n) space</strong>. No adjacency list is ever built.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Remove each edge, BFS to test redundancy</td><td>O(E × (n + E))</td><td>O(n + E)</td></tr>
+        <tr><td>One DFS from 0 with parent tracking, then count visited</td><td>O(n + E)</td><td>O(n + E) adjacency + stack</td></tr>
+        <tr><td>Count check + union-find</td><td>O(n + E × α(n))</td><td>O(n)</td></tr>
+      </table>
+      <p>The DFS version is also linear, but it needs the adjacency list built first and has to remember which node it arrived from so the edge back to the parent is not mistaken for a cycle. Union-find sidesteps both.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Every line maps to a step above.</p>
+      <ul>
+        <li><code>if len(edges) != n - 1: return False</code>: a tree has exactly <code>n - 1</code> edges, and with that many, acyclic means connected.</li>
+        <li><code>parent = list(range(n))</code> and <code>rank = [0] * n</code>: every node is its own root at rank 0.</li>
+        <li><code>find(x)</code> walks up with <code>parent[x] = parent[parent[x]]</code> at each step until <code>parent[x] == x</code>.</li>
+        <li><code>if ra == rb: return False</code>: the endpoints were already connected, so this edge closes a cycle.</li>
+        <li><code>parent[rb] = ra</code> after swapping so <code>ra</code> is the higher rank; <code>rank[ra] += 1</code> only on a tie.</li>
+        <li><code>return True</code>: every edge merged two sets, so one component is left.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>exactly n − 1 edges, and no edge whose endpoints already share a root.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>graph · n = 5, edges = [[0,1],[0,2],[0,3],[1,4]]</h3>
+        <svg class="fig" id="fig" viewBox="0 0 400 225" aria-label="undirected graph"></svg>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>parent · index = node, value = parent pointer</h3>
+        <div class="array" id="array"></div>
+      </div>
+
+      <div class="block">
+        <h3>roots and rank</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="graph_valid_tree.py">graph_valid_tree.py</a> · <a href="graph_valid_tree_annotated.py">graph_valid_tree_annotated.py</a> · <a href="test_graph_valid_tree.py">test_graph_valid_tree.py</a> · <a href="../../md.html?f=medium/067-graph-valid-tree/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def valid_tree(self, n: int, edges: list[list[int]]) -> bool:",
+    "        if len(edges) != n - 1:",
+    "            return False",
+    "        parent = list(range(n))",
+    "        rank = [0] * n",
+    "        def find(x: int) -> int:",
+    "            while parent[x] != x:",
+    "                parent[x] = parent[parent[x]]",
+    "                x = parent[x]",
+    "            return x",
+    "        for a, b in edges:",
+    "            ra, rb = find(a), find(b)",
+    "            if ra == rb:",
+    "                return False",
+    "            if rank[ra] < rank[rb]:",
+    "                ra, rb = rb, ra",
+    "            parent[rb] = ra",
+    "            if rank[ra] == rank[rb]:",
+    "                rank[ra] += 1",
+    "        return True"
+  ];
+
+  // parent arrays at each moment, as [label, value] cells
+  function P(arr) { return arr.map(function (v, i) { return [String(i), v]; }); }
+  var P_UNSET = [["0", "?"], ["1", "?"], ["2", "?"], ["3", "?"], ["4", "?"]];
+
+  // Each state describes what the sticky panel shows for one step.
+  // cur / hits / dim index graph nodes; ecur / ehits / ebad index graph edges; acur / ahits / adim index the parent cells.
+  var STATES = {
+    problem: {
+      caption: "Do these 4 edges on 5 nodes form a tree: connected and with no cycle?",
+      dp: P_UNSET, acur: -1, ahits: [], adim: [0, 1, 2, 3, 4], cur: -1, hits: [], dim: [], ecur: -1, ehits: [], vars: [],
+      meta: "0 fans out to 1, 2, 3; node 4 hangs off 1. Answer: <b>True</b>.", hl: []
+    },
+    brute: {
+      caption: "Remove each edge in turn and BFS to see whether its endpoints are still connected.",
+      dp: P_UNSET, acur: -1, ahits: [], adim: [0, 1, 2, 3, 4], cur: 1, hits: [0], dim: [], ecur: 0, ehits: [],
+      vars: [["edges tested", "4"], ["BFS per test", "O(n + E)"]],
+      meta: "Without [0,1], node 1 cannot reach 0: the edge is essential. Repeat for every edge, then BFS once more for connectivity.", hl: [],
+      big: "O(E × (n + E))", bigNote: "one full traversal per edge"
+    },
+    insight: {
+      caption: "A tree has exactly n − 1 edges, and with n − 1 edges, no cycle means connected.",
+      dp: P([0, 1, 2, 3, 4]), acur: -1, ahits: [], adim: [], cur: -1, hits: [], dim: [], ecur: -1, ehits: [],
+      vars: [["len(edges)", "4", "found"], ["n − 1", "4", "found"], ["components", "5"]],
+      meta: "5 isolated nodes = 5 components. Each edge that joins two different components removes one.", hl: [2, 3]
+    },
+    approach: {
+      caption: "parent[i] = i for every node. For each edge, find both roots; equal roots = cycle, else point one root at the other.",
+      dp: P([0, 1, 2, 3, 4]), acur: -1, ahits: [0, 1, 2, 3, 4], adim: [], cur: -1, hits: [], dim: [], ecur: -1, ehits: [],
+      vars: [["parent", "[0, 1, 2, 3, 4]", "new"], ["rank", "[0, 0, 0, 0, 0]", "new"]],
+      meta: "Every node is its own root. find(x) walks parent pointers up to a node with parent[x] == x.", hl: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 17]
+    },
+    t1: {
+      caption: "[0,1]: roots 0 and 1, merge, parent[1] = 0, rank[0] = 1. [0,2]: roots 0 and 2, merge, parent[2] = 0.",
+      dp: P([0, 0, 0, 3, 4]), acur: 2, ahits: [1], adim: [], cur: 2, hits: [0, 1], dim: [3, 4], ecur: 1, ehits: [0],
+      vars: [["find(0), find(2)", "0, 2", "new"], ["rank", "[1, 0, 0, 0, 0]"], ["components", "3"]],
+      meta: "rank[0] = 1 ≥ rank[2] = 0, so no swap: 2 goes under 0. Ranks differ, so rank[0] stays 1.", hl: [12, 13, 15, 16, 17, 18, 19]
+    },
+    t2: {
+      caption: "[0,3]: parent[3] = 0. [1,4]: find(1) = 0, find(4) = 4, merge, parent[4] = 0. No repeated root: True.",
+      dp: P([0, 0, 0, 0, 0]), acur: 4, ahits: [1, 2, 3], adim: [], cur: 4, hits: [0, 1, 2, 3], dim: [], ecur: 3, ehits: [0, 1, 2],
+      vars: [["find(1), find(4)", "0, 4", "new"], ["rank", "[1, 0, 0, 0, 0]"], ["components", "1", "found"]],
+      meta: "find(1): parent[1] = 0, parent[0] = 0 → root 0. Node 4 goes under root 0, not under 1.", hl: [12, 17, 20],
+      big: "True", bigNote: "4 merges took 5 components to 1"
+    },
+    t3: {
+      caption: "Cycle example: after [0,1], [1,2], [2,3], the edge [1,3] finds root 0 on both sides.",
+      dp: P([0, 0, 0, 0, 4]), acur: -1, ahits: [], adim: [4], cur: -1, hits: [], dim: [4], bad: [1, 2, 3], ecur: -1, ehits: [0, 1, 2], ebad: [3],
+      vars: [["find(1), find(3)", "0, 0", "found"], ["rank", "[1, 0, 0, 0, 0]"]],
+      meta: "1 and 3 were already connected via 2, so [1,3] closes the loop 1–2–3–1. return False.", hl: [12, 13, 14],
+      big: "False", bigNote: "ra == rb: the edge closes a cycle"
+    },
+    pitfall: {
+      caption: "Without the count check, a forest passes: [[0,1],[1,2],[3,4]] never repeats a root.",
+      dp: P([0, 0, 0, 3, 3]), acur: -1, ahits: [0, 1, 2], adim: [], cur: -1, hits: [0, 1, 2], dim: [], bad: [3, 4], ecur: -1, ehits: [0, 1, 2],
+      vars: [["len(edges)", "3"], ["n − 1", "4"], ["components", "2"]],
+      meta: "Two roots, 0 and 3, survive. Union-find detects cycles only; connectivity comes from the count.", hl: [2, 3, 20],
+      big: "True, not False", bigNote: "3 edges on 5 nodes cannot be connected"
+    },
+    complexity: {
+      caption: "Two finds and one union per edge; each find is amortised inverse-Ackermann.",
+      dp: P([0, 0, 0, 0, 0]), acur: -1, ahits: [0, 1, 2, 3, 4], adim: [], cur: -1, hits: [0, 1, 2, 3, 4], dim: [], ecur: -1, ehits: [0, 1, 2, 3],
+      vars: [["find calls", "8"], ["unions", "4"], ["max find steps", "1"]],
+      meta: "parent and rank are the only storage: n integers each. No adjacency list.", hl: [7, 8, 9, 12],
+      big: "O(n + E × α(n)) time · O(n) space", bigNote: "versus O(E × (n + E)) for the edge-removal test"
+    },
+    final: {
+      caption: "The whole solution.",
+      dp: P([0, 0, 0, 0, 0]), acur: -1, ahits: [0, 1, 2, 3, 4], adim: [], cur: -1, hits: [], dim: [], ecur: -1, ehits: [],
+      vars: [["result", "True", "found"]],
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---- figure renderer: an undirected graph from nodes + edges (node/edge styling shared with 018/019) ----
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var R = 19;
+  function layoutGraph(g) {
+    var nodes = g.nodes.map(function (n) { return { val: n[0], x: n[1], y: n[2] }; });
+    return { nodes: nodes, edges: g.edges, h: g.h || 200, note: g.note };
+  }
+  var figSvg = document.getElementById("fig");
+  function renderFig(fig, s) {
+    while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild);
+    figSvg.setAttribute("viewBox", "0 0 400 " + fig.h);
+    var bad = s.bad || [], ebad = s.ebad || [];
+    function state(i) {
+      if (i === s.cur) return "cur";
+      if (bad.indexOf(i) !== -1) return "bad";
+      if (s.hits.indexOf(i) !== -1) return "hit";
+      if (s.dim.indexOf(i) !== -1) return "dim";
+      return "";
+    }
+    fig.edges.forEach(function (e, idx) {
+      var a = fig.nodes[e[0]], b = fig.nodes[e[1]];
+      var cls = "edge";
+      if (idx === s.ecur) cls += " cur";
+      else if (ebad.indexOf(idx) !== -1) cls += " cycle";
+      else if (s.ehits.indexOf(idx) !== -1) cls += " hit";
+      else if (state(e[0]) === "dim" || state(e[1]) === "dim") cls += " dim";
+      var dx = b.x - a.x, dy = b.y - a.y, len = Math.sqrt(dx * dx + dy * dy) || 1;
+      var ux = dx / len, uy = dy / len;
+      figSvg.appendChild(el("line", { "class": cls, x1: a.x + ux * (R + 2), y1: a.y + uy * (R + 2), x2: b.x - ux * (R + 2), y2: b.y - uy * (R + 2) }));
+    });
+    fig.nodes.forEach(function (n, i) {
+      var g = el("g", { "class": "node " + state(i) });
+      g.appendChild(el("circle", { cx: n.x, cy: n.y, r: R }));
+      g.appendChild(el("text", { x: n.x, y: n.y }, n.val));
+      figSvg.appendChild(g);
+    });
+    if (fig.note) figSvg.appendChild(el("text", { "class": "lbl", x: 200, y: fig.h - 8 }, fig.note));
+  }
+  var FIG = layoutGraph({ h: 225, nodes: [[0, 200, 40], [1, 100, 115], [2, 200, 115], [3, 300, 115], [4, 100, 190]], edges: [[0, 1], [0, 2], [0, 3], [1, 4]] });
+  var FIG_BY_STATE = {
+    t3: layoutGraph({ h: 225, nodes: [[0, 60, 90], [1, 170, 90], [2, 290, 40], [3, 290, 140], [4, 170, 190]], edges: [[0, 1], [1, 2], [2, 3], [1, 3], [1, 4]], note: "edges [[0,1],[1,2],[2,3],[1,3],[1,4]]: 1–2–3–1 is a cycle" }),
+    pitfall: layoutGraph({ h: 225, nodes: [[0, 50, 100], [1, 140, 100], [2, 230, 100], [3, 310, 60], [4, 360, 140]], edges: [[0, 1], [1, 2], [3, 4]], note: "edges [[0,1],[1,2],[3,4]]: acyclic, but two pieces" })
+  };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.dp.length; i++) {
+      var cls = "cell";
+      if (i === s.acur) cls += " cur";
+      else if (s.ahits.indexOf(i) !== -1) cls += " hit";
+      else if (s.adim.indexOf(i) !== -1) cls += " dim";
+      arr += '<div class="' + cls + '">' + s.dp[i][1] + '<span class="idx">' + s.dp[i][0] + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+    renderFig(FIG_BY_STATE[name] || FIG, s);
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not built yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l.replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

@@ -24,6 +24,7 @@ For a true sliding window with two edges, advance `right` every step and advance
 |---------|------------|------|
 | [easy/005 Best Time to Buy and Sell Stock](../easy/005-best-time-to-buy-and-sell-stock/) | Easy | track min price so far, profit = price - min |
 | [medium/003 Longest Substring Without Repeating Characters](../medium/003-longest-substring-without-repeating-characters/) | Medium | char -> last index, jump left past the repeat |
+| [medium/030 Permutation in String](../medium/030-permutation-in-string/) | Medium | A permutation of `s1` is any string with the same letter counts as `s1`, and it is… |
 
 ## Common mistakes
 

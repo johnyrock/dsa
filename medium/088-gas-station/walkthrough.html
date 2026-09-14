@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gas Station Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Greedy · LeetCode #134</div>
+  <h1>Gas Station, narrated</h1>
+  <p>Scroll through the thinking, from simulating every possible start to a single pass that moves the candidate forward whenever the tank runs dry, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/greedy.html">Greedy</a> <span class="how">running dry at i rules out every start up to i, so restart at i + 1 with an empty tank</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>There are <code>n</code> gas stations on a circle. At station <code>i</code> you can take on <code>gas[i]</code> litres, and driving from station <code>i</code> to station <code>i + 1</code> (wrapping from the last back to the first) burns <code>cost[i]</code> litres. You pick a station, start with an empty tank, fill up there, and drive clockwise.</p>
+      <p>Return the index of the unique station from which you can complete the full circle, or <code>-1</code> if there is none.</p>
+      <div class="callout">Running example: <code>gas = [1,2,3,4,5]</code>, <code>cost = [3,4,5,1,2]</code>. The answer is <strong>3</strong>. Starting there the tank reads 4 − 1 = 3, then 3 + 5 − 2 = 6, then 6 + 1 − 3 = 4, then 4 + 2 − 4 = 2, then 2 + 3 − 5 = 0, back at station 3 with exactly nothing to spare.</div>
+      <p>The useful quantity is the <em>net</em> change per leg, <code>gas[i] - cost[i]</code>: here <code>[-2, -2, -2, 3, 3]</code>. The tank must never go below zero at any point of the trip, and that constraint is what kills most starting points.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>Brute force: simulate every start</h2>
+      <p>The direct approach tries each station as a start and drives the whole circle, stopping early if the tank goes negative.</p>
+      <pre class="code"><span class="ln">for start in range(n):</span><span class="ln">    tank = 0</span><span class="ln">    for k in range(n):</span><span class="ln">        i = (start + k) % n</span><span class="ln">        tank += gas[i] - cost[i]</span><span class="ln">        if tank &lt; 0:</span><span class="ln">            break</span><span class="ln">    else:</span><span class="ln">        return start</span><span class="ln">return -1</span></pre>
+      <p style="margin-top:14px">On the example: start 0 reads <code>1 - 3 = -2</code> and dies on the first leg. Start 1 dies at once too (<code>2 - 4</code>), and so does start 2 (<code>3 - 5</code>). Start 3 survives all five legs, so the answer is 3. That is n simulations of up to n legs, <strong>O(n²)</strong>, and at <code>n = 10⁵</code> it is far too slow.</p>
+      <p>The waste is that the simulations overlap. When start 3's drive passes through stations 4, 0, 1 and 2, it is re-driving legs the earlier attempts already measured.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: a failure rules out a whole stretch</h2>
+      <p>Suppose you leave station <code>s</code> and the tank first goes negative on the leg out of station <code>i</code>. Then no station between <code>s</code> and <code>i</code> can be the answer either. Why: you arrived at each of those stations with fuel <code>&gt;= 0</code> (otherwise you would have died earlier), so starting from one of them with an <em>empty</em> tank puts you in a strictly worse position on the same legs, and you die at <code>i</code> at the latest.</p>
+      <div class="callout">So the next candidate is <code>i + 1</code>, with <code>tank = 0</code>. Every station is examined once as a candidate or skipped in one go.</div>
+      <p>The second fact closes the loop. The single pass only drives from the candidate to the end of the array, never wrapping around. It is enough because <code>sum(gas) &gt;= sum(cost)</code> guarantees <em>some</em> start works, and the pass has eliminated every station except the survivor. If the totals fail, no start can work at all, and that check comes first.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach</h2>
+      <ul>
+        <li><code>if sum(gas) &lt; sum(cost): return -1</code>: the circle burns more than it provides; nobody finishes.</li>
+        <li><code>start = 0</code>, <code>tank = 0</code>: assume station 0 until proven otherwise.</li>
+        <li><code>for i in range(len(gas))</code>: drive each leg once.</li>
+        <li><code>tank += gas[i] - cost[i]</code>: fill up and drive to the next station.</li>
+        <li><code>if tank &lt; 0</code>: the candidate died on this leg, so <code>start = i + 1</code> and <code>tank = 0</code>.</li>
+        <li><code>return start</code>: the last candidate never went negative, and the total check covers the wrap.</li>
+      </ul>
+      <p>In the panel the blue cell is the current leg, green cells are legs the current candidate has survived, and dimmed cells are stations already ruled out.</p>
+    </section>
+
+    <section class="step" data-state="t0">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: leg 0</h2>
+      <p>First, <code>sum(gas) = 15</code> and <code>sum(cost) = 15</code>, so a solution exists and we go on.</p>
+      <p><code>i = 0</code>: <code>tank = 0 + (1 - 3) = -2</code>. Negative, so station 0 is out. Set <code>start = 1</code> and <code>tank = 0</code>.</p>
+      <p>Only one station was ruled out here, because the candidate died on its very first leg. The elimination gets more powerful when a candidate lasts a few legs before failing.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: legs 1 and 2</h2>
+      <p><code>i = 1</code>: <code>tank = 0 + (2 - 4) = -2</code>. Station 1 dies immediately as well: <code>start = 2</code>, <code>tank = 0</code>.</p>
+      <p><code>i = 2</code>: <code>tank = 0 + (3 - 5) = -2</code>. Station 2 dies: <code>start = 3</code>, <code>tank = 0</code>.</p>
+      <p>Three legs driven, three candidates eliminated, and the pass has never gone back to re-drive anything. Stations 0, 1, 2 are dimmed for good.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: legs 3 and 4</h2>
+      <p><code>i = 3</code>: <code>tank = 0 + (4 - 1) = 3</code>. Positive, so station 3 survives its first leg.</p>
+      <p><code>i = 4</code>: <code>tank = 3 + (5 - 2) = 6</code>. Still positive, and the array is finished. The loop exits with <code>start = 3</code>.</p>
+      <div class="callout">We never drove the wrap-around legs 0, 1, 2 from station 3. We do not have to: the totals balance, so the 6 litres in hand are exactly enough to cover the <code>-2 -2 -2</code> that those legs cost. <code>return 3</code>.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the reset and the total check</h2>
+      <p><strong>Resetting to <code>start = i</code>.</strong> It feels natural: "the tank died at station i, try i". But <code>i</code> is the station we ran dry <em>leaving</em>; we filled up there and it was not enough, so it cannot be the start. On the example the last reset happens at <code>i = 2</code> and the function returns <strong>2</strong> instead of 3. The next candidate is <code>i + 1</code>.</p>
+      <p><strong>Skipping the <code>sum(gas) &lt; sum(cost)</code> check.</strong> The sweep never wraps, so it always ends with some <code>start</code> in hand. On <code>gas = [2,3,4]</code>, <code>cost = [3,4,3]</code> the net legs are <code>[-1, -1, 1]</code>; the sweep resets twice and returns <strong>2</strong>, but total gas 9 is less than total cost 10 and the correct answer is <code>-1</code>. The greedy pass proves "nobody else", the total check proves "somebody"; you need both.</p>
+      <p><strong>Forgetting <code>tank = 0</code> on reset.</strong> The deficit leaks into the next candidate. On the example the tank runs −2, −4, −6, −3, 0, so the reset also fires at <code>i = 3</code> and the answer comes out as 4.</p>
+      <div class="callout warn">On failure at <code>i</code>: candidate becomes <code>i + 1</code>, tank becomes 0. Before the sweep: compare the totals.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Two sums and one sweep, each a single pass: <strong>O(n) time</strong>. Two integers of state: <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Simulate every start</td><td>O(n²)</td><td>O(1)</td></tr>
+        <tr><td>Prefix sums of net fuel, pick the start after the minimum</td><td>O(n)</td><td>O(n)</td></tr>
+        <tr><td>Greedy reset (this solution)</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>The prefix-sum version is the same idea seen from a different angle: the valid start is the station right after the lowest point of the running total, which is exactly where the last reset lands.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <ul>
+        <li><code>if sum(gas) &lt; sum(cost): return -1</code> settles existence before any driving.</li>
+        <li><code>start = 0</code>, <code>tank = 0</code> seed the first candidate with an empty tank.</li>
+        <li><code>tank += gas[i] - cost[i]</code> drives one leg.</li>
+        <li><code>if tank &lt; 0: start = i + 1; tank = 0</code> discards the candidate and every station up to <code>i</code> in one move.</li>
+        <li><code>return start</code> is the only station the pass could not eliminate.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>if the totals balance a start exists; sweep once and restart at i + 1 every time the tank dips below zero, and the last restart is the answer.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>stations · blue = leg i, green = survived by the candidate, dim = ruled out</h3>
+        <div id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>running variables</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="gas_station.py">gas_station.py</a> · <a href="gas_station_annotated.py">gas_station_annotated.py</a> · <a href="test_gas_station.py">test_gas_station.py</a> · <a href="../../md.html?f=medium/088-gas-station/notes.md">notes.md</a> · <a href="../../patterns/greedy.md">greedy pattern</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def can_complete_circuit(self, gas: list[int], cost: list[int]) -> int:",
+    "        if sum(gas) < sum(cost):",
+    "            return -1",
+    "        start = 0",
+    "        tank = 0",
+    "        for i in range(len(gas)):",
+    "            tank += gas[i] - cost[i]",
+    "            if tank < 0:",
+    "                start = i + 1",
+    "                tank = 0",
+    "        return start"
+  ];
+
+  var GAS = [1, 2, 3, 4, 5];
+  var COST = [3, 4, 5, 1, 2];
+  var NET = [-2, -2, -2, 3, 3];
+
+  function rows(cur, hits, dims) {
+    return [
+      { lbl: "gas", vals: GAS, cur: cur, hits: hits, dims: dims },
+      { lbl: "cost", vals: COST, cur: cur, hits: hits, dims: dims },
+      { lbl: "gas − cost", vals: NET, cur: cur, hits: hits, dims: dims }
+    ];
+  }
+
+  // Each state describes what the sticky panel shows for one step.
+  var STATES = {
+    problem: {
+      caption: "Which station can you start from, with an empty tank, and drive the whole circle without running dry?",
+      rows: rows(-1, [], []), vars: [],
+      meta: "sum(gas) = 15, sum(cost) = 15: the circle exactly balances.", hl: []
+    },
+    brute: {
+      caption: "Simulate every start: 0, 1 and 2 each die on their first leg; 3 survives all five.",
+      rows: rows(0, [], []), vars: [["start 0", "1 − 3 = −2, dead"], ["start 3", "3, 6, 4, 2, 0, done"]],
+      meta: "Start 3 re-drives legs 0, 1, 2 that the first three attempts already measured.", hl: [],
+      big: "O(n²)", bigNote: "n candidate starts × up to n legs each"
+    },
+    insight: {
+      caption: "Running dry on the leg out of i rules out every station from the candidate up to i.",
+      rows: rows(-1, [3, 4], [0, 1, 2]), vars: [["next candidate", "i + 1", "new"], ["tank", 0]],
+      meta: "You arrived at each of those stations with fuel ≥ 0; starting there empty is only worse.", hl: [8, 9, 10]
+    },
+    approach: {
+      caption: "Check the totals, then sweep once: restart at i + 1 with an empty tank whenever the tank goes negative.",
+      rows: rows(-1, [], []), vars: [["start", 0], ["tank", 0]],
+      meta: "Before the loop the candidate is station 0.", hl: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    },
+    t0: {
+      caption: "Totals 15 vs 15 pass. i = 0: tank = 0 + (1 − 3) = −2 < 0, so start = 1, tank = 0.",
+      rows: rows(0, [], []), vars: [["i", 0], ["tank", "−2 → 0"], ["start", 1, "new"]],
+      meta: "tank = 0 + (1 − 3) = <b>−2</b>: station 0 is out.", hl: [7, 8, 9, 10]
+    },
+    t1: {
+      caption: "i = 1: tank = 2 − 4 = −2, start = 2. i = 2: tank = 3 − 5 = −2, start = 3.",
+      rows: rows(2, [], [0, 1]), vars: [["i", 2], ["tank", "−2 → 0"], ["start", 3, "new"]],
+      meta: "Three legs driven, three candidates eliminated, nothing re-driven.", hl: [7, 8, 9, 10]
+    },
+    t3: {
+      caption: "i = 3: tank = 0 + 3 = 3. i = 4: tank = 3 + 3 = 6. The loop ends with start = 3.",
+      rows: rows(4, [3], [0, 1, 2]), vars: [["i", 4], ["tank", 6], ["start", 3, "found"]],
+      meta: "The 6 litres in hand cover the −2 −2 −2 wrap-around, because the totals balance.", hl: [7, 8, 11],
+      big: "3", bigNote: "the only station the sweep could not eliminate"
+    },
+    pitfall: {
+      caption: "start = i instead of i + 1: the last reset at i = 2 leaves the candidate on the station that just ran dry.",
+      rows: rows(2, [], [0, 1]), vars: [["i", 2], ["tank", "−2 → 0"], ["start", 2]],
+      meta: "Station 2 filled up and still could not reach station 3; it cannot be the start.", hl: [8, 9],
+      big: "2, not 3", bigNote: "the next candidate is the station after the failure"
+    },
+    complexity: {
+      caption: "Two sums and one sweep, two integers of state.",
+      rows: rows(-1, [3, 4], [0, 1, 2]), vars: [["start", 3], ["tank", 6]],
+      meta: "Every leg is driven exactly once; no candidate is ever re-simulated.", hl: [2, 6, 7],
+      big: "O(n) time · O(1) space", bigNote: "versus O(n²) for simulating every start"
+    },
+    final: {
+      caption: "The whole solution.",
+      rows: rows(-1, [3, 4], [0, 1, 2]), vars: [["start", 3, "found"], ["tank", 6]],
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  function rowHtml(r) {
+    var h = "";
+    if (r.lbl) h += '<div class="meta" style="margin:6px 0 -4px">' + r.lbl + "</div>";
+    h += '<div class="array">';
+    for (var i = 0; i < r.vals.length; i++) {
+      var cls = "cell";
+      if (i === r.cur) cls += " cur";
+      else if ((r.hits || []).indexOf(i) !== -1) cls += " hit";
+      else if ((r.dims || []).indexOf(i) !== -1) cls += " dim";
+      var idx = r.noIdx ? "" : '<span class="idx">' + (r.idx ? r.idx[i] : i) + "</span>";
+      h += '<div class="' + cls + '">' + r.vals[i] + idx + "</div>";
+    }
+    return h + "</div>";
+  }
+
+  function kvHtml(list, empty) {
+    if (!list || list.length === 0) return '<span class="empty">' + empty + "</span>";
+    var d = "";
+    for (var k = 0; k < list.length; k++) {
+      var e = list[k];
+      d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+    }
+    return d;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+    $("array").innerHTML = s.rows.map(rowHtml).join("");
+    $("dict").innerHTML = kvHtml(s.vars, "not started");
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

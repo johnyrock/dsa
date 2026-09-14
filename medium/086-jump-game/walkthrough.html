@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jump Game Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Greedy · LeetCode #55</div>
+  <h1>Jump Game, narrated</h1>
+  <p>Scroll through the thinking, from exploring every possible jump to a single frontier swept left to right, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/greedy.html">Greedy</a> <span class="how">keep the farthest reachable index; an index beyond it is unreachable forever</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You stand on index 0 of an array <code>nums</code>. The value at your index is the <em>longest</em> jump you may take forward: from index <code>i</code> you can land anywhere in <code>i + 1 .. i + nums[i]</code>. Shorter jumps are allowed; a 0 means you are stuck.</p>
+      <p>The question is yes or no: can you reach the last index at all?</p>
+      <div class="callout">Running example: <code>nums = [2,3,1,1,4]</code>. The answer is <strong>true</strong>: jump 1 step to index 1, then 3 steps to index 4.</div>
+      <p>Contrast with <code>[3,2,1,0,4]</code>, where the answer is false. Every route from index 0 passes through index 3, its value is 0, and from a 0 you never move again. We are not asked for the route, only whether one exists, and that distinction is what lets the solution become a single number.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>Brute force: explore every jump</h2>
+      <p>The literal approach is a search. From index <code>i</code>, try every jump length from 1 to <code>nums[i]</code> and recurse; succeed when any call reaches the last index.</p>
+      <pre class="code"><span class="ln">def can_jump(nums, i=0):</span><span class="ln">    if i &gt;= len(nums) - 1:</span><span class="ln">        return True</span><span class="ln">    for step in range(1, nums[i] + 1):</span><span class="ln">        if can_jump(nums, i + step):</span><span class="ln">            return True</span><span class="ln">    return False</span></pre>
+      <p style="margin-top:14px">From index 0 in the example you can land on 1 or 2; from 1 on 2, 3 or 4; from 2 on 3, and so on. The call tree branches at every index and re-explores the same suffixes many times, so this is <strong>O(2ⁿ)</strong> in the worst case. Memoising <code>i</code> brings it to O(n²), since each index tries up to n jump lengths.</p>
+      <p>That is a lot of work to answer a yes/no question, and the waste is specific: the search keeps asking "can I reach index 3?" from different places when one fact would settle it.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: reachable indices form a prefix</h2>
+      <p>Suppose you can reach index 4 somehow. Then you can also reach index 3, because the jump that landed on 4 could have been one shorter. And index 2, and so on down. So the set of reachable indices is never scattered; it is always <code>0 .. reach</code> for some frontier <code>reach</code>.</p>
+      <div class="callout">One integer describes everything reachable. After processing index 0 of the example, <code>reach = 0 + 2 = 2</code>: indices 0, 1, 2 are reachable and 3, 4 are not (yet).</div>
+      <p>The frontier only ever moves right, and each index <code>i</code> pushes it to <code>max(reach, i + nums[i])</code>, but only if <code>i</code> is itself reachable. That gives the whole algorithm: sweep <code>i</code> from left to right, refuse to stand on any <code>i &gt; reach</code>, and update the frontier from every index you do stand on.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach</h2>
+      <ul>
+        <li><code>reach = 0</code>: before any jump, only index 0 is reachable.</li>
+        <li><code>for i, n in enumerate(nums)</code>: visit each index with its jump length.</li>
+        <li><code>if i &gt; reach: return False</code>: nothing to the left could carry us here, so nothing ever will.</li>
+        <li><code>reach = max(reach, i + n)</code>: standing on <code>i</code> lets us land anywhere up to <code>i + n</code>.</li>
+        <li><code>return True</code>: the sweep survived to the end, so the last index was inside the frontier when we got there.</li>
+      </ul>
+      <p>The panel colours the current index blue, every index inside the frontier green, and everything past <code>reach</code> dimmed. Watch the dimmed region shrink.</p>
+    </section>
+
+    <section class="step" data-state="t0">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: index 0</h2>
+      <p><code>i = 0</code>, <code>n = 2</code>. Is <code>0 &gt; reach</code>? <code>reach</code> is 0, so no: we may stand here. The frontier becomes <code>max(0, 0 + 2) = 2</code>.</p>
+      <p>Indices 1 and 2 turn green: they are reachable with a single jump. Indices 3 and 4 stay dimmed. Nothing has been decided about them, but nothing so far can get there either.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: index 1</h2>
+      <p><code>i = 1</code>, <code>n = 3</code>. <code>1 &gt; 2</code> is false, so index 1 is a legal place to stand. The frontier becomes <code>max(2, 1 + 3) = 4</code>.</p>
+      <p>That already covers the last index. The whole array is green, and no later index can shrink <code>reach</code>, since it only grows. The rest of the sweep is a formality, but the code keeps going, because the check <code>i &gt; reach</code> is what protects against the case where a 0 was blocking the way.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: indices 2, 3 and 4</h2>
+      <p><code>i = 2</code>: <code>2 &gt; 4</code> is false; <code>max(4, 2 + 1) = 4</code>. <code>i = 3</code>: <code>max(4, 3 + 1) = 4</code>. <code>i = 4</code>: <code>4 &gt; 4</code> is false, so the last index is reachable; <code>max(4, 4 + 4) = 8</code> pushes the frontier past the array, which is harmless.</p>
+      <p>The loop ends and we <code>return True</code>. On <code>[3,2,1,0,4]</code> the same sweep would stall at <code>reach = 3</code> after indices 0 to 3, and at <code>i = 4</code> the test <code>4 &gt; 3</code> fires and returns <code>False</code> without ever using the 4.</p>
+      <div class="callout">The search tried every combination of jumps. The sweep did four comparisons and four <code>max</code> calls.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the frontier test and the max</h2>
+      <p><strong>Off by one on the guard.</strong> Write <code>if i &gt;= reach: return False</code> and the very first iteration fails: <code>i = 0</code>, <code>reach = 0</code>, <code>0 &gt;= 0</code> is true. The function returns <strong>false</strong> for <code>[2,3,1,1,4]</code>, and in fact for every input. Standing exactly on the frontier is fine; only indices strictly beyond it are unreachable.</p>
+      <p><strong>Overwriting instead of maxing.</strong> Write <code>reach = i + n</code> and the frontier can move backwards. On <code>[2,0,0]</code> it goes 2, then 1, and at <code>i = 2</code> the test <code>2 &gt; 1</code> returns false, though index 0 could have jumped straight to index 2. The frontier is a record of the best jump seen so far, and records never regress.</p>
+      <div class="callout warn">Two comparisons carry the whole algorithm: <code>i &gt; reach</code> with a strict inequality, and <code>max(reach, i + n)</code> so the frontier only grows.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>One pass over the array with a comparison and a <code>max</code> per index: <strong>O(n) time</strong>. One integer of state: <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Recursive search over jumps</td><td>O(2ⁿ)</td><td>O(n) call stack</td></tr>
+        <tr><td>Memoised search / DP per index</td><td>O(n²)</td><td>O(n)</td></tr>
+        <tr><td>Greedy frontier</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>The DP already removes the exponential blow-up. The greedy removes the remaining factor of n by observing that the reachable set is a prefix, so a single frontier replaces the whole boolean table.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <ul>
+        <li><code>reach = 0</code> seeds the frontier with the starting index.</li>
+        <li><code>for i, n in enumerate(nums)</code> sweeps every index once, in order.</li>
+        <li><code>if i &gt; reach: return False</code> rejects an index that no earlier index could reach.</li>
+        <li><code>reach = max(reach, i + n)</code> extends the frontier from every reachable index.</li>
+        <li><code>return True</code> is only reached if the last index passed the guard.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>reachable indices are always a prefix, so track its right edge and fail the moment the sweep steps past it.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>nums = [2,3,1,1,4] · blue = i, green = within reach, dim = beyond</h3>
+        <div id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>running variables</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="jump_game.py">jump_game.py</a> · <a href="jump_game_annotated.py">jump_game_annotated.py</a> · <a href="test_jump_game.py">test_jump_game.py</a> · <a href="../../md.html?f=medium/086-jump-game/notes.md">notes.md</a> · <a href="../../patterns/greedy.md">greedy pattern</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def can_jump(self, nums: list[int]) -> bool:",
+    "        reach = 0",
+    "        for i, n in enumerate(nums):",
+    "            if i > reach:",
+    "                return False",
+    "            reach = max(reach, i + n)",
+    "        return True"
+  ];
+
+  var NUMS = [2, 3, 1, 1, 4];
+
+  // Each state describes what the sticky panel shows for one step.
+  var STATES = {
+    problem: {
+      caption: "Can you get from index 0 to index 4 when each value is the longest jump allowed from there?",
+      rows: [{ vals: NUMS, cur: 0, hits: [], dims: [] }], vars: [],
+      meta: "One route: 0 → 1 (jump 1), then 1 → 4 (jump 3).", hl: []
+    },
+    brute: {
+      caption: "Search every jump length from every index: from 0 you may land on 1 or 2, and each of those branches again.",
+      rows: [{ vals: NUMS, cur: 0, hits: [1, 2], dims: [] }], vars: [],
+      meta: "The same suffixes get re-explored from different launch points.", hl: [],
+      big: "O(2ⁿ)", bigNote: "every combination of jump lengths, before memoisation"
+    },
+    insight: {
+      caption: "Reachable indices are always a prefix 0..reach, so a single integer describes them all.",
+      rows: [{ vals: NUMS, cur: -1, hits: [0, 1, 2], dims: [3, 4] }],
+      vars: [["reach", 2, "new"]],
+      meta: "After index 0: 0, 1, 2 reachable; 3 and 4 beyond the frontier for now.", hl: [2, 6]
+    },
+    approach: {
+      caption: "Sweep left to right; refuse any i past the frontier, and push the frontier from every i you stand on.",
+      rows: [{ vals: NUMS, cur: 0, hits: [], dims: [1, 2, 3, 4] }],
+      vars: [["reach", 0]],
+      meta: "Before the loop only index 0 is reachable.", hl: [2, 3, 4, 5, 6, 7]
+    },
+    t0: {
+      caption: "i = 0: 0 > 0 is false, so stand here. reach = max(0, 0 + 2) = 2.",
+      rows: [{ vals: NUMS, cur: 0, hits: [1, 2], dims: [3, 4] }],
+      vars: [["i", 0], ["nums[i]", 2], ["i + nums[i]", 2], ["reach", 2, "new"]],
+      meta: "reach = max(0, 0 + 2) = <b>2</b>", hl: [4, 6]
+    },
+    t1: {
+      caption: "i = 1: 1 > 2 is false. reach = max(2, 1 + 3) = 4, which already covers the last index.",
+      rows: [{ vals: NUMS, cur: 1, hits: [0, 2, 3, 4], dims: [] }],
+      vars: [["i", 1], ["nums[i]", 3], ["i + nums[i]", 4], ["reach", 4, "new"]],
+      meta: "reach = max(2, 1 + 3) = <b>4</b>", hl: [4, 6]
+    },
+    t2: {
+      caption: "i = 2, 3, 4 all pass the guard; reach stays 4 then becomes 8. The loop ends and returns True.",
+      rows: [{ vals: NUMS, cur: 4, hits: [0, 1, 2, 3], dims: [] }],
+      vars: [["i", 4], ["nums[i]", 4], ["i + nums[i]", 8], ["reach", 8, "found"]],
+      meta: "4 > 4 is false: the last index was inside the frontier.", hl: [4, 6, 7],
+      big: "True", bigNote: "the sweep never stepped past reach"
+    },
+    pitfall: {
+      caption: "if i >= reach fires at i = 0, where reach is also 0, and returns False before any jump is considered.",
+      rows: [{ vals: NUMS, cur: 0, hits: [], dims: [1, 2, 3, 4] }],
+      vars: [["i", 0], ["reach", 0]],
+      meta: "0 >= 0 is true, so the guard rejects the starting index itself.", hl: [4, 5],
+      big: "False, not True", bigNote: "a strict > is the only correct guard"
+    },
+    complexity: {
+      caption: "One pass, one comparison and one max per index, one integer of state.",
+      rows: [{ vals: NUMS, cur: -1, hits: [0, 1, 2, 3, 4], dims: [] }],
+      vars: [["reach", 8]],
+      meta: "No table, no recursion: the frontier replaces the whole boolean array.", hl: [3, 4, 6],
+      big: "O(n) time · O(1) space", bigNote: "versus O(2ⁿ) for the search and O(n²) for the DP"
+    },
+    final: {
+      caption: "The whole solution.",
+      rows: [{ vals: NUMS, cur: -1, hits: [0, 1, 2, 3, 4], dims: [] }],
+      vars: [["reach", 8, "found"]],
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  function rowHtml(r) {
+    var h = "";
+    if (r.lbl) h += '<div class="meta" style="margin:6px 0 -4px">' + r.lbl + "</div>";
+    h += '<div class="array">';
+    for (var i = 0; i < r.vals.length; i++) {
+      var cls = "cell";
+      if (i === r.cur) cls += " cur";
+      else if ((r.hits || []).indexOf(i) !== -1) cls += " hit";
+      else if ((r.dims || []).indexOf(i) !== -1) cls += " dim";
+      var idx = r.noIdx ? "" : '<span class="idx">' + (r.idx ? r.idx[i] : i) + "</span>";
+      h += '<div class="' + cls + '">' + r.vals[i] + idx + "</div>";
+    }
+    return h + "</div>";
+  }
+
+  function kvHtml(list, empty) {
+    if (!list || list.length === 0) return '<span class="empty">' + empty + "</span>";
+    var d = "";
+    for (var k = 0; k < list.length; k++) {
+      var e = list[k];
+      d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+    }
+    return d;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+    $("array").innerHTML = s.rows.map(rowHtml).join("");
+    $("dict").innerHTML = kvHtml(s.vars, "not started");
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

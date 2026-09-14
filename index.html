@@ -172,6 +172,8 @@
     <button class="chip" data-pattern="trie" aria-pressed="false">Trie <span class="count"></span></button>
     <button class="chip" data-pattern="intervals" aria-pressed="false">Intervals <span class="count"></span></button>
     <button class="chip" data-pattern="bit-manipulation" aria-pressed="false">Bit Manipulation <span class="count"></span></button>
+    <button class="chip" data-pattern="matrix" aria-pressed="false">Matrix <span class="count"></span></button>
+    <button class="chip" data-pattern="math" aria-pressed="false">Math <span class="count"></span></button>
   </div>
 
   <section id="sec-concepts" data-section="concepts" data-label="Concepts">
@@ -294,6 +296,20 @@
         <h3>Bit Manipulation, Explained</h3>
         <p>AND, OR, XOR, and shifts, and the handful of tricks that turn up in interviews.</p>
         <div class="foot"><span class="pill">Bit Manipulation</span><span class="open">Open explanation →</span></div>
+      </a>
+
+      <a class="card" href="concepts/matrix.html" data-pattern="matrix">
+        <div class="meta">Concept · Pattern</div>
+        <h3>Matrix Manipulation, Explained</h3>
+        <p>Rotate via transpose and reverse, walk a spiral with shrinking bounds, and use row 0 and column 0 as flag storage.</p>
+        <div class="foot"><span class="pill">Matrix</span><span class="open">Open explanation →</span></div>
+      </a>
+
+      <a class="card" href="concepts/math.html" data-pattern="math">
+        <div class="meta">Concept · Pattern</div>
+        <h3>Math Tricks, Explained</h3>
+        <p>Fast exponentiation, digit-array multiplication, and reversing an integer without overflowing.</p>
+        <div class="foot"><span class="pill">Math</span><span class="open">Open explanation →</span></div>
       </a>
 
     </div>
@@ -443,6 +459,120 @@
       </a>
 
 
+
+
+
+      <a class="card" href="easy/013-maximum-depth-of-binary-tree/walkthrough.html" data-pattern="tree">
+        <div class="meta">easy/013 · LeetCode #104</div>
+        <h3>Maximum Depth of Binary Tree</h3>
+        <p>Maximum depth is one plus the taller child subtree.</p>
+        <div class="foot"><span class="pill">Tree</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/014-diameter-of-binary-tree/walkthrough.html" data-pattern="tree">
+        <div class="meta">easy/014 · LeetCode #543</div>
+        <h3>Diameter of Binary Tree</h3>
+        <p>Compute heights bottom-up while recording the best path through a node.</p>
+        <div class="foot"><span class="pill">Tree</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/015-balanced-binary-tree/walkthrough.html" data-pattern="tree">
+        <div class="meta">easy/015 · LeetCode #110</div>
+        <h3>Balanced Binary Tree</h3>
+        <p>Return a height or an unbalanced sentinel in one post-order pass.</p>
+        <div class="foot"><span class="pill">Tree</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/016-same-tree/walkthrough.html" data-pattern="tree">
+        <div class="meta">easy/016 · LeetCode #100</div>
+        <h3>Same Tree</h3>
+        <p>Compare values and corresponding children recursively.</p>
+        <div class="foot"><span class="pill">Tree</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/017-subtree-of-another-tree/walkthrough.html" data-pattern="tree">
+        <div class="meta">easy/017 · LeetCode #572</div>
+        <h3>Subtree of Another Tree</h3>
+        <p>Try each root position, then compare the candidate structure.</p>
+        <div class="foot"><span class="pill">Tree</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/018-kth-largest-element-in-a-stream/walkthrough.html" data-pattern="heap">
+        <div class="meta">easy/018 · LeetCode #703</div>
+        <h3>Kth Largest Element in a Stream</h3>
+        <p>A min-heap of k values makes its root the k-th largest.</p>
+        <div class="foot"><span class="pill">Heap</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/019-last-stone-weight/walkthrough.html" data-pattern="heap">
+        <div class="meta">easy/019 · LeetCode #1046</div>
+        <h3>Last Stone Weight</h3>
+        <p>A max-heap repeatedly exposes the two stones to smash.</p>
+        <div class="foot"><span class="pill">Heap</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/020-min-cost-climbing-stairs/walkthrough.html" data-pattern="dynamic-programming">
+        <div class="meta">easy/020 · LeetCode #746</div>
+        <h3>Min Cost Climbing Stairs</h3>
+        <p>Keep the cheapest costs for the prior two positions.</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/021-meeting-rooms/walkthrough.html" data-pattern="intervals">
+        <div class="meta">easy/021 · LeetCode #252</div>
+        <h3>Meeting Rooms</h3>
+        <p>Sort by start time and compare neighboring meetings.</p>
+        <div class="foot"><span class="pill">Intervals</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/022-happy-number/walkthrough.html" data-pattern="fast-slow-pointers">
+        <div class="meta">easy/022 · LeetCode #202</div>
+        <h3>Happy Number</h3>
+        <p>Two speeds detect the non-happy digit-square cycle.</p>
+        <div class="foot"><span class="pill">Fast Slow Pointers</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/023-plus-one/walkthrough.html" data-pattern="two-pointers">
+        <div class="meta">easy/023 · LeetCode #66</div>
+        <h3>Plus One</h3>
+        <p>Propagate the carry from the rightmost digit.</p>
+        <div class="foot"><span class="pill">Two Pointers</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/024-single-number/walkthrough.html" data-pattern="bit-manipulation">
+        <div class="meta">easy/024 · LeetCode #136</div>
+        <h3>Single Number</h3>
+        <p>XOR cancels every duplicated value.</p>
+        <div class="foot"><span class="pill">Bit Manipulation</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/025-number-of-1-bits/walkthrough.html" data-pattern="bit-manipulation">
+        <div class="meta">easy/025 · LeetCode #191</div>
+        <h3>Number of 1 Bits</h3>
+        <p>Clear the lowest set bit once per one bit.</p>
+        <div class="foot"><span class="pill">Bit Manipulation</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/026-counting-bits/walkthrough.html" data-pattern="bit-manipulation">
+        <div class="meta">easy/026 · LeetCode #338</div>
+        <h3>Counting Bits</h3>
+        <p>Build each count from its shifted binary prefix.</p>
+        <div class="foot"><span class="pill">Bit Manipulation</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/027-reverse-bits/walkthrough.html" data-pattern="bit-manipulation">
+        <div class="meta">easy/027 · LeetCode #190</div>
+        <h3>Reverse Bits</h3>
+        <p>Append each of 32 input bits to a reversed output.</p>
+        <div class="foot"><span class="pill">Bit Manipulation</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="easy/028-missing-number/walkthrough.html" data-pattern="bit-manipulation">
+        <div class="meta">easy/028 · LeetCode #268</div>
+        <h3>Missing Number</h3>
+        <p>XOR the complete range against the supplied values.</p>
+        <div class="foot"><span class="pill">Bit Manipulation</span><span class="open">Open walkthrough →</span></div>
+      </a>
 
     </div>
     <p class="none" hidden>No easy walkthroughs use this pattern yet.</p>
@@ -619,6 +749,554 @@
         <h3>Word Container</h3>
         <p>Insert every word into one trie, then walk from every starting index to find words that contain another word from the list.</p>
         <div class="foot"><span class="pill">Trie</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+
+      <a class="card" href="medium/025-top-k-frequent-elements/walkthrough.html" data-pattern="heap">
+        <div class="meta">medium/025 · LeetCode #347</div>
+        <h3>Top K Frequent Elements</h3>
+        <p>Counting is the easy half (Counter(nums)); the real question is how to pick the k largest counts without sorting all of them.</p>
+        <div class="foot"><span class="pill">Heap</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/026-encode-and-decode-strings/walkthrough.html" data-pattern="hash-map">
+        <div class="meta">medium/026 · LeetCode #271</div>
+        <h3>Encode and Decode Strings</h3>
+        <p>A separator character cannot work on its own, because any character you pick may appear inside a string.</p>
+        <div class="foot"><span class="pill">Hash Map</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/027-valid-sudoku/walkthrough.html" data-pattern="hash-set">
+        <div class="meta">medium/027 · LeetCode #36</div>
+        <h3>Valid Sudoku</h3>
+        <p>Every filled cell belongs to exactly three groups: its row, its column, and its 3x3 box.</p>
+        <div class="foot"><span class="pill">Hash Set</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/028-longest-consecutive-sequence/walkthrough.html" data-pattern="hash-set">
+        <div class="meta">medium/028 · LeetCode #128</div>
+        <h3>Longest Consecutive Sequence</h3>
+        <p>Put the values in a set so x in seen is O(1).</p>
+        <div class="foot"><span class="pill">Hash Set</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/029-two-sum-ii-input-array-is-sorted/walkthrough.html" data-pattern="two-pointers">
+        <div class="meta">medium/029 · LeetCode #167</div>
+        <h3>Two Sum II - Input Array Is Sorted</h3>
+        <p>Because the array is sorted, the pair (numbers[left], numbers[right]) with left at the start and right at the end tells you which direction to move.</p>
+        <div class="foot"><span class="pill">Two Pointers</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/030-permutation-in-string/walkthrough.html" data-pattern="sliding-window">
+        <div class="meta">medium/030 · LeetCode #567</div>
+        <h3>Permutation in String</h3>
+        <p>A permutation of s1 is any string with the same letter counts as s1, and it is always exactly len(s1) characters long.</p>
+        <div class="foot"><span class="pill">Sliding Window</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/031-min-stack/walkthrough.html" data-pattern="stack">
+        <div class="meta">medium/031 · LeetCode #155</div>
+        <h3>Min Stack</h3>
+        <p>The minimum of a stack only changes at two moments: when a new value at or below the current minimum is pushed, and when that value is later popped.</p>
+        <div class="foot"><span class="pill">Stack</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/032-evaluate-reverse-polish-notation/walkthrough.html" data-pattern="stack">
+        <div class="meta">medium/032 · LeetCode #150</div>
+        <h3>Evaluate Reverse Polish Notation</h3>
+        <p>In postfix notation an operator always applies to the two values computed most recently before it, so a stack of pending operands is the whole state.</p>
+        <div class="foot"><span class="pill">Stack</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/033-generate-parentheses/walkthrough.html" data-pattern="backtracking">
+        <div class="meta">medium/033 · LeetCode #22</div>
+        <h3>Generate Parentheses</h3>
+        <p>Build the string one character at a time and only ever extend a prefix that can still become well-formed.</p>
+        <div class="foot"><span class="pill">Backtracking</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/034-daily-temperatures/walkthrough.html" data-pattern="stack">
+        <div class="meta">medium/034 · LeetCode #739</div>
+        <h3>Daily Temperatures</h3>
+        <p>Walk the days left to right and keep a stack of indices whose warmer day has not arrived yet; by construction their temperatures are decreasing from bottom to top.</p>
+        <div class="foot"><span class="pill">Stack</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/035-car-fleet/walkthrough.html" data-pattern="stack">
+        <div class="meta">medium/035 · LeetCode #853</div>
+        <h3>Car Fleet</h3>
+        <p>Whether a car joins the fleet ahead of it depends only on arrival times: compute time = (target - pos) / spd for every car as if the road were empty, sort the cars…</p>
+        <div class="foot"><span class="pill">Stack</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/036-search-a-2d-matrix/walkthrough.html" data-pattern="binary-search">
+        <div class="meta">medium/036 · LeetCode #74</div>
+        <h3>Search a 2D Matrix</h3>
+        <p>Because every row is sorted and each row starts after the previous one ends, reading the matrix row by row is one sorted list of rows * cols values.</p>
+        <div class="foot"><span class="pill">Binary Search</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/037-koko-eating-bananas/walkthrough.html" data-pattern="binary-search">
+        <div class="meta">medium/037 · LeetCode #875</div>
+        <h3>Koko Eating Bananas</h3>
+        <p>The answer is a number, not a position, and feasibility is monotonic in it: if speed k finishes within h hours then every faster speed does too, and if k fails then…</p>
+        <div class="foot"><span class="pill">Binary Search</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/038-find-minimum-in-rotated-sorted-array/walkthrough.html" data-pattern="binary-search">
+        <div class="meta">medium/038 · LeetCode #153</div>
+        <h3>Find Minimum in Rotated Sorted Array</h3>
+        <p>A rotated sorted array is two ascending runs, and the minimum is the first element of the second run.</p>
+        <div class="foot"><span class="pill">Binary Search</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/039-time-based-key-value-store/walkthrough.html" data-pattern="binary-search">
+        <div class="meta">medium/039 · LeetCode #981</div>
+        <h3>Time Based Key-Value Store</h3>
+        <p>Because timestamps for one key arrive strictly increasing, appending to a per-key list keeps that list sorted for free, so set is O(1).</p>
+        <div class="foot"><span class="pill">Binary Search</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/040-reorder-list/walkthrough.html" data-pattern="linked-list">
+        <div class="meta">medium/040 · LeetCode #143</div>
+        <h3>Reorder List</h3>
+        <p>The target order L0, Ln, L1, Ln-1, ...</p>
+        <div class="foot"><span class="pill">Linked List</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/041-remove-nth-node-from-end-of-list/walkthrough.html" data-pattern="two-pointers">
+        <div class="meta">medium/041 · LeetCode #19</div>
+        <h3>Remove Nth Node From End of List</h3>
+        <p>Two pointers that start together and are separated by exactly n steps stay n apart no matter how far they walk.</p>
+        <div class="foot"><span class="pill">Two Pointers</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/042-copy-list-with-random-pointer/walkthrough.html" data-pattern="hash-map">
+        <div class="meta">medium/042 · LeetCode #138</div>
+        <h3>Copy List with Random Pointer</h3>
+        <p>A random pointer can target a node that has not been copied yet (it may point forward), so the pointers cannot be wired in the same pass that creates the nodes.</p>
+        <div class="foot"><span class="pill">Hash Map</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/043-find-the-duplicate-number/walkthrough.html" data-pattern="fast-slow-pointers">
+        <div class="meta">medium/043 · LeetCode #287</div>
+        <h3>Find the Duplicate Number</h3>
+        <p>Read the array as a function i -&gt; nums[i].</p>
+        <div class="foot"><span class="pill">Fast Slow Pointers</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/044-binary-tree-right-side-view/walkthrough.html" data-pattern="tree">
+        <div class="meta">medium/044 · LeetCode #199</div>
+        <h3>Binary Tree Right Side View</h3>
+        <p>&quot;Visible from the right&quot; means &quot;last node of its level&quot;, not &quot;reachable by going right&quot;.</p>
+        <div class="foot"><span class="pill">Tree</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/045-count-good-nodes-in-binary-tree/walkthrough.html" data-pattern="tree">
+        <div class="meta">medium/045 · LeetCode #1448</div>
+        <h3>Count Good Nodes in Binary Tree</h3>
+        <p>A node is good exactly when node.val &gt;= max(values on the path above it), so the only thing a node needs from its ancestors is one number: the largest value seen so far.</p>
+        <div class="foot"><span class="pill">Tree</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/046-construct-binary-tree-from-preorder-and-inorder-traversal/walkthrough.html" data-pattern="tree">
+        <div class="meta">medium/046 · LeetCode #105</div>
+        <h3>Construct Binary Tree from Preorder and Inorder Traversal</h3>
+        <p>The first preorder value is the root.</p>
+        <div class="foot"><span class="pill">Tree</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/047-implement-trie-prefix-tree/walkthrough.html" data-pattern="trie">
+        <div class="meta">medium/047 · LeetCode #208</div>
+        <h3>Implement Trie (Prefix Tree)</h3>
+        <p>Store words as a tree of characters: each node holds a dict of child nodes keyed by the next letter, and a boolean is_word on the node where an inserted word ends.</p>
+        <div class="foot"><span class="pill">Trie</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/048-design-add-and-search-words-data-structure/walkthrough.html" data-pattern="trie">
+        <div class="meta">medium/048 · LeetCode #211</div>
+        <h3>Design Add and Search Words Data Structure</h3>
+        <p>Store the words in a trie exactly as in Implement Trie.</p>
+        <div class="foot"><span class="pill">Trie</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/049-k-closest-points-to-origin/walkthrough.html" data-pattern="heap">
+        <div class="meta">medium/049 · LeetCode #973</div>
+        <h3>K Closest Points to Origin</h3>
+        <p>The square root never changes which point is closer, so compare x*x + y*y directly and stay in integers.</p>
+        <div class="foot"><span class="pill">Heap</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/050-kth-largest-element-in-an-array/walkthrough.html" data-pattern="heap">
+        <div class="meta">medium/050 · LeetCode #215</div>
+        <h3>Kth Largest Element in an Array</h3>
+        <p>Keep a min-heap of at most k values.</p>
+        <div class="foot"><span class="pill">Heap</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/051-task-scheduler/walkthrough.html" data-pattern="heap">
+        <div class="meta">medium/051 · LeetCode #621</div>
+        <h3>Task Scheduler</h3>
+        <p>Greedy on counts: at every tick, run whichever *available* task has the most copies left, because the letter with the most copies is the one that will force idles…</p>
+        <div class="foot"><span class="pill">Heap</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/052-design-twitter/walkthrough.html" data-pattern="heap">
+        <div class="meta">medium/052 · LeetCode #355</div>
+        <h3>Design Twitter</h3>
+        <p>Store each user&#x27;s tweets in their own list with a global timestamp, and each user&#x27;s followees in a set.</p>
+        <div class="foot"><span class="pill">Heap</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/053-subsets/walkthrough.html" data-pattern="backtracking">
+        <div class="meta">medium/053 · LeetCode #78</div>
+        <h3>Subsets</h3>
+        <p>Every state of the shared path list is itself a subset, so the recursion records path[:] on entry instead of waiting for a &quot;complete&quot; check.</p>
+        <div class="foot"><span class="pill">Backtracking</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/054-combination-sum/walkthrough.html" data-pattern="backtracking">
+        <div class="meta">medium/054 · LeetCode #39</div>
+        <h3>Combination Sum</h3>
+        <p>Build a combination in a shared path while tracking remaining.</p>
+        <div class="foot"><span class="pill">Backtracking</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/055-permutations/walkthrough.html" data-pattern="backtracking">
+        <div class="meta">medium/055 · LeetCode #46</div>
+        <h3>Permutations</h3>
+        <p>Fill path one slot at a time.</p>
+        <div class="foot"><span class="pill">Backtracking</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/056-subsets-ii/walkthrough.html" data-pattern="backtracking">
+        <div class="meta">medium/056 · LeetCode #90</div>
+        <h3>Subsets II</h3>
+        <p>Sort so equal values are adjacent, then run the ordinary Subsets recursion (record path[:] on entry, loop from start, recurse with i + 1) with one skip: if i &gt; start…</p>
+        <div class="foot"><span class="pill">Backtracking</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/057-combination-sum-ii/walkthrough.html" data-pattern="backtracking">
+        <div class="meta">medium/057 · LeetCode #40</div>
+        <h3>Combination Sum II</h3>
+        <p>Sort the candidates, then build combinations in ascending order by only ever choosing from index start onward and recursing with i + 1, so each index is used at most…</p>
+        <div class="foot"><span class="pill">Backtracking</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/058-word-search/walkthrough.html" data-pattern="backtracking">
+        <div class="meta">medium/058 · LeetCode #79</div>
+        <h3>Word Search</h3>
+        <p>Start a depth-first search from every cell.</p>
+        <div class="foot"><span class="pill">Backtracking</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/059-palindrome-partitioning/walkthrough.html" data-pattern="backtracking">
+        <div class="meta">medium/059 · LeetCode #131</div>
+        <h3>Palindrome Partitioning</h3>
+        <p>A partition is a sequence of cut positions, so build it left to right: backtrack(start) decides where the piece beginning at start ends.</p>
+        <div class="foot"><span class="pill">Backtracking</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/060-letter-combinations-of-a-phone-number/walkthrough.html" data-pattern="backtracking">
+        <div class="meta">medium/060 · LeetCode #17</div>
+        <h3>Letter Combinations of a Phone Number</h3>
+        <p>Each output string is one letter chosen from each digit&#x27;s key, in order, so it is a product of small sets.</p>
+        <div class="foot"><span class="pill">Backtracking</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/061-max-area-of-island/walkthrough.html" data-pattern="graph">
+        <div class="meta">medium/061 · LeetCode #695</div>
+        <h3>Max Area of Island</h3>
+        <p>This is Number of Islands with one extra counter.</p>
+        <div class="foot"><span class="pill">Graph</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/062-walls-and-gates/walkthrough.html" data-pattern="graph">
+        <div class="meta">medium/062 · LeetCode #286</div>
+        <h3>Walls and Gates</h3>
+        <p>Searching from each room toward the gates repeats work; searching from the gates toward the rooms shares it.</p>
+        <div class="foot"><span class="pill">Graph</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/063-rotting-oranges/walkthrough.html" data-pattern="graph">
+        <div class="meta">medium/063 · LeetCode #994</div>
+        <h3>Rotting Oranges</h3>
+        <p>Rot spreads one cell per minute in every direction from every rotten orange at once, which is exactly what a breadth-first search does if all the rotten oranges start…</p>
+        <div class="foot"><span class="pill">Graph</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/064-pacific-atlantic-water-flow/walkthrough.html" data-pattern="graph">
+        <div class="meta">medium/064 · LeetCode #417</div>
+        <h3>Pacific Atlantic Water Flow</h3>
+        <p>Tracing water downhill from every cell repeats the same paths thousands of times.</p>
+        <div class="foot"><span class="pill">Graph</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/065-surrounded-regions/walkthrough.html" data-pattern="graph">
+        <div class="meta">medium/065 · LeetCode #130</div>
+        <h3>Surrounded Regions</h3>
+        <p>Deciding whether a region is surrounded means checking whether any of its cells touches the border, and that is awkward to do while flood-filling from the inside…</p>
+        <div class="foot"><span class="pill">Graph</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/066-course-schedule-ii/walkthrough.html" data-pattern="topological-sort">
+        <div class="meta">medium/066 · LeetCode #210</div>
+        <h3>Course Schedule II</h3>
+        <p>A course can be taken the moment all of its prerequisites have been taken, i.e.</p>
+        <div class="foot"><span class="pill">Topological Sort</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/067-graph-valid-tree/walkthrough.html" data-pattern="graph">
+        <div class="meta">medium/067 · LeetCode #261</div>
+        <h3>Graph Valid Tree</h3>
+        <p>A tree on n nodes is exactly a connected graph with n - 1 edges, and a graph with n - 1 edges is connected if and only if it has no cycle (every edge must join two…</p>
+        <div class="foot"><span class="pill">Graph</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/068-number-of-connected-components-in-an-undirected-graph/walkthrough.html" data-pattern="graph">
+        <div class="meta">medium/068 · LeetCode #323</div>
+        <h3>Number of Connected Components in an Undirected Graph</h3>
+        <p>With no edges there are n components.</p>
+        <div class="foot"><span class="pill">Graph</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/069-redundant-connection/walkthrough.html" data-pattern="graph">
+        <div class="meta">medium/069 · LeetCode #684</div>
+        <h3>Redundant Connection</h3>
+        <p>Add the edges one at a time while tracking connected components with union-find.</p>
+        <div class="foot"><span class="pill">Graph</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/070-network-delay-time/walkthrough.html" data-pattern="graph">
+        <div class="meta">medium/070 · LeetCode #743</div>
+        <h3>Network Delay Time</h3>
+        <p>The signal reaches each node along its shortest path from k, and the whole network is done when the slowest of those shortest paths finishes.</p>
+        <div class="foot"><span class="pill">Graph</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/071-min-cost-to-connect-all-points/walkthrough.html" data-pattern="graph">
+        <div class="meta">medium/071 · LeetCode #1584</div>
+        <h3>Min Cost to Connect All Points</h3>
+        <p>Every pair of points is a potential edge, so this is a minimum spanning tree on a complete graph.</p>
+        <div class="foot"><span class="pill">Graph</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/072-house-robber/walkthrough.html" data-pattern="dynamic-programming">
+        <div class="meta">medium/072 · LeetCode #198</div>
+        <h3>House Robber</h3>
+        <p>For each house the decision is binary: rob it and add its money to the best total from two houses back, or leave it and keep the best total from one house back.</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/073-house-robber-ii/walkthrough.html" data-pattern="dynamic-programming">
+        <div class="meta">medium/073 · LeetCode #213</div>
+        <h3>House Robber II</h3>
+        <p>On a circle the only new constraint is that house 0 and house n-1 cannot both be robbed.</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/074-palindromic-substrings/walkthrough.html" data-pattern="dynamic-programming">
+        <div class="meta">medium/074 · LeetCode #647</div>
+        <h3>Palindromic Substrings</h3>
+        <p>Every palindrome has a centre: a character for odd length, the gap between two characters for even length, so 2n - 1 centres in all.</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/075-decode-ways/walkthrough.html" data-pattern="dynamic-programming">
+        <div class="meta">medium/075 · LeetCode #91</div>
+        <h3>Decode Ways</h3>
+        <p>Look at how a decoding of the prefix s[:i+1] ends: either its last code is the single digit s[i] (legal if it is not &quot;0&quot;), and the rest is a decoding of s[:i], or its…</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/076-maximum-product-subarray/walkthrough.html" data-pattern="dynamic-programming">
+        <div class="meta">medium/076 · LeetCode #152</div>
+        <h3>Maximum Product Subarray</h3>
+        <p>Kadane&#x27;s idea, &quot;best subarray ending here is either this element alone or this element joined to the best ending just before it&quot;, is not enough for products, because…</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/077-word-break/walkthrough.html" data-pattern="dynamic-programming">
+        <div class="meta">medium/077 · LeetCode #139</div>
+        <h3>Word Break</h3>
+        <p>Ask about prefixes, not the whole string: dp[i] is &quot;can s[:i] be segmented?&quot;.</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/078-longest-increasing-subsequence/walkthrough.html" data-pattern="dynamic-programming">
+        <div class="meta">medium/078 · LeetCode #300</div>
+        <h3>Longest Increasing Subsequence</h3>
+        <p>Anchor the subproblem on where the subsequence *ends*: dp[i] is the length of the longest increasing subsequence whose last element is nums[i].</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/079-partition-equal-subset-sum/walkthrough.html" data-pattern="dynamic-programming">
+        <div class="meta">medium/079 · LeetCode #416</div>
+        <h3>Partition Equal Subset Sum</h3>
+        <p>Two equal halves each sum to total / 2, so the problem is really &quot;is there a subset summing to exactly target = total // 2?&quot; (the rest of the elements are…</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/080-unique-paths/walkthrough.html" data-pattern="dynamic-programming">
+        <div class="meta">medium/080 · LeetCode #62</div>
+        <h3>Unique Paths</h3>
+        <p>The robot enters any cell from exactly one of two neighbours: the cell above (its last move was down) or the cell to the left (its last move was right).</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/081-longest-common-subsequence/walkthrough.html" data-pattern="dynamic-programming">
+        <div class="meta">medium/081 · LeetCode #1143</div>
+        <h3>Longest Common Subsequence</h3>
+        <p>dp[i][j] is the LCS length of the first i characters of text1 and the first j characters of text2.</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/082-best-time-to-buy-and-sell-stock-with-cooldown/walkthrough.html" data-pattern="dynamic-programming">
+        <div class="meta">medium/082 · LeetCode #309</div>
+        <h3>Best Time to Buy and Sell Stock with Cooldown</h3>
+        <p>At the end of any day you are in one of three states: hold (own a share), sold (sold today, so tomorrow is a forced rest), or rest (own nothing and are free to buy).</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/083-coin-change-ii/walkthrough.html" data-pattern="dynamic-programming">
+        <div class="meta">medium/083 · LeetCode #518</div>
+        <h3>Coin Change II</h3>
+        <p>dp[a] is the number of combinations that make amount a using only the coins processed so far, seeded with dp[0] = 1 for the empty combination.</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/084-target-sum/walkthrough.html" data-pattern="dynamic-programming">
+        <div class="meta">medium/084 · LeetCode #494</div>
+        <h3>Target Sum</h3>
+        <p>Split the numbers into the plus group P and the minus group N.</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/086-jump-game/walkthrough.html" data-pattern="greedy">
+        <div class="meta">medium/086 · LeetCode #55</div>
+        <h3>Jump Game</h3>
+        <p>The set of reachable indices is always a prefix 0..reach, because any index below the farthest reachable one is reachable too (take a shorter jump).</p>
+        <div class="foot"><span class="pill">Greedy</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/087-jump-game-ii/walkthrough.html" data-pattern="greedy">
+        <div class="meta">medium/087 · LeetCode #45</div>
+        <h3>Jump Game II</h3>
+        <p>Think of it as breadth-first search where level k is the set of indices reachable with exactly k jumps.</p>
+        <div class="foot"><span class="pill">Greedy</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/088-gas-station/walkthrough.html" data-pattern="greedy">
+        <div class="meta">medium/088 · LeetCode #134</div>
+        <h3>Gas Station</h3>
+        <p>Two facts make a single pass enough.</p>
+        <div class="foot"><span class="pill">Greedy</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/089-hand-of-straights/walkthrough.html" data-pattern="greedy">
+        <div class="meta">medium/089 · LeetCode #846</div>
+        <h3>Hand of Straights</h3>
+        <p>The smallest card still in hand has no smaller neighbour, so it cannot be the middle or end of any group: it must *start* one.</p>
+        <div class="foot"><span class="pill">Greedy</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/090-merge-triplets-to-form-target-triplet/walkthrough.html" data-pattern="greedy">
+        <div class="meta">medium/090 · LeetCode #1899</div>
+        <h3>Merge Triplets to Form Target Triplet</h3>
+        <p>Merging is an element-wise max, so values only ever go up.</p>
+        <div class="foot"><span class="pill">Greedy</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/091-partition-labels/walkthrough.html" data-pattern="greedy">
+        <div class="meta">medium/091 · LeetCode #763</div>
+        <h3>Partition Labels</h3>
+        <p>A part that contains a letter must extend at least to that letter&#x27;s last occurrence.</p>
+        <div class="foot"><span class="pill">Greedy</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/092-valid-parenthesis-string/walkthrough.html" data-pattern="greedy">
+        <div class="meta">medium/092 · LeetCode #678</div>
+        <h3>Valid Parenthesis String</h3>
+        <p>Walk the string tracking the *range* of possible open-bracket counts instead of one value: lo assumes every star so far closed and hi assumes every star opened.</p>
+        <div class="foot"><span class="pill">Greedy</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/093-non-overlapping-intervals/walkthrough.html" data-pattern="intervals">
+        <div class="meta">medium/093 · LeetCode #435</div>
+        <h3>Non-overlapping Intervals</h3>
+        <p>Removing the fewest intervals is the same as keeping the most non-overlapping ones, and the classic activity-selection greedy does that: sort by end time and always…</p>
+        <div class="foot"><span class="pill">Intervals</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/095-rotate-image/walkthrough.html" data-pattern="matrix">
+        <div class="meta">medium/095 · LeetCode #48</div>
+        <h3>Rotate Image</h3>
+        <p>A clockwise 90-degree rotation sends cell (r, c) to (c, n - 1 - r).</p>
+        <div class="foot"><span class="pill">Matrix</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/096-spiral-matrix/walkthrough.html" data-pattern="matrix">
+        <div class="meta">medium/096 · LeetCode #54</div>
+        <h3>Spiral Matrix</h3>
+        <p>Keep four inclusive bounds, top, bottom, left, right, that describe the rectangle not yet emitted.</p>
+        <div class="foot"><span class="pill">Matrix</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/097-set-matrix-zeroes/walkthrough.html" data-pattern="matrix">
+        <div class="meta">medium/097 · LeetCode #73</div>
+        <h3>Set Matrix Zeroes</h3>
+        <p>The obvious approach records which rows and columns need zeroing in two boolean lists.</p>
+        <div class="foot"><span class="pill">Matrix</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/099-multiply-strings/walkthrough.html" data-pattern="math">
+        <div class="meta">medium/099 · LeetCode #43</div>
+        <h3>Multiply Strings</h3>
+        <p>The product of digit num1[i] and digit num2[j] (indices counted from the left) always lands in the two result cells i + j and i + j + 1 of an array sized len(num1) +…</p>
+        <div class="foot"><span class="pill">Math</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/100-detect-squares/walkthrough.html" data-pattern="hash-map">
+        <div class="meta">medium/100 · LeetCode #2013</div>
+        <h3>Detect Squares</h3>
+        <p>An axis-aligned square is fixed by one diagonal: once the query point (px, py) and a stored point (x, y) with |x - px| == |y - py| != 0 are chosen as opposite…</p>
+        <div class="foot"><span class="pill">Hash Map</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/101-sum-of-two-integers/walkthrough.html" data-pattern="bit-manipulation">
+        <div class="meta">medium/101 · LeetCode #371</div>
+        <h3>Sum of Two Integers</h3>
+        <p>Binary addition splits into two independent parts: a ^ b is the sum of each bit position ignoring carries, and (a &amp; b) &lt;&lt; 1 is the carry every position sends one…</p>
+        <div class="foot"><span class="pill">Bit Manipulation</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+
+      <a class="card" href="medium/085-interleaving-string/walkthrough.html" data-pattern="dynamic-programming">
+        <div class="meta">medium/085 · LeetCode #97</div>
+        <h3>Interleaving String</h3>
+        <p>dp[i][j] asks whether the first i characters of s1 and the first j of s2 can interleave to form the first i + j of s3.</p>
+        <div class="foot"><span class="pill">Dynamic Programming</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/094-meeting-rooms-ii/walkthrough.html" data-pattern="intervals">
+        <div class="meta">medium/094 · LeetCode #253</div>
+        <h3>Meeting Rooms II</h3>
+        <p>Sort meetings by start time and keep a min-heap of end times, one per room in use.</p>
+        <div class="foot"><span class="pill">Intervals</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/098-powx-n/walkthrough.html" data-pattern="math">
+        <div class="meta">medium/098 · LeetCode #50</div>
+        <h3>Pow(x, n)</h3>
+        <p>Write n in binary.</p>
+        <div class="foot"><span class="pill">Math</span><span class="open">Open walkthrough →</span></div>
+      </a>
+
+      <a class="card" href="medium/102-reverse-integer/walkthrough.html" data-pattern="math">
+        <div class="meta">medium/102 · LeetCode #7</div>
+        <h3>Reverse Integer</h3>
+        <p>Strip the sign, then peel digits off the low end of x with digit = x % 10 and x //= 10, appending each to result with result = result * 10 + digit.</p>
+        <div class="foot"><span class="pill">Math</span><span class="open">Open walkthrough →</span></div>
       </a>
 
     </div>

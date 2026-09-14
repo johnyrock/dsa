@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Number of Connected Components in an Undirected Graph Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; flex-wrap: wrap; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem; min-width: 44px;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .edge { stroke: var(--muted); stroke-width: 2.5; fill: none; opacity: 0.7; transition: opacity 0.25s, stroke 0.25s; }
+  .fig .edge.dim { opacity: 0.25; }
+  .fig .edge.hit { stroke: var(--ok); opacity: 1; }
+  .fig .edge.cur { stroke: var(--accent); stroke-width: 3.5; opacity: 1; }
+  .fig .edge.cycle { stroke: var(--warn); stroke-dasharray: 6 4; animation: dash 1s linear infinite; opacity: 1; }
+  .fig .head { fill: var(--muted); }
+  .fig .head.cycle { fill: var(--warn); }
+  .fig .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 16px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .fig .node.cur circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3.5; }
+  .fig .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .fig .node.dim circle, .fig .node.dim text { opacity: 0.35; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .array.compact { gap: 4px; margin-top: 2px; }
+  .array[hidden] { display: none; }
+  .array.compact .cell { min-width: 28px; padding: 3px 0 2px; font-size: 0.9rem; border-width: 1.5px; border-radius: 6px; }
+  .array.compact .cell .idx { display: none; }
+  .array.compact .cell.cur { transform: none; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; margin-bottom: 6px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Graph · LeetCode #323</div>
+  <h1>Number of Connected Components in an Undirected Graph, narrated</h1>
+  <p>Scroll through the thinking, from running a traversal out of every node to a counter that starts at n and drops by one each time an edge joins two sets that were separate, with the union-find parent array shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph Traversal</a> <span class="how">union-find: count = n, minus one per edge that merges two different roots</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get <code>n</code> nodes numbered from 0 and a list of undirected edges. Two nodes are in the same <em>component</em> when some chain of edges connects them. Count the components.</p>
+      <p>A node that appears in no edge at all still counts: it is a component of size one. With no edges the answer is <code>n</code>; with enough edges to reach everything it is 1.</p>
+      <div class="callout">Running example: <code>n = 5</code>, <code>edges = [[0,1],[1,2],[3,4]]</code>. Nodes 0, 1, 2 form a chain and nodes 3, 4 form a pair. Nothing links the two groups, so the answer is <strong>2</strong>.</div>
+      <p>Notice we are asked for a <em>count</em>, not for the groups themselves. That is a hint that we may not need to enumerate the members of each component, only to notice when two of them merge.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: find everyone's reachable set</h2>
+      <p>The definition talks about reachability, so compute it. Build an adjacency list, then for every node run a BFS and collect the set of nodes it can reach. Two nodes are in the same component when their reachable sets are equal, so the number of distinct sets is the answer.</p>
+      <pre class="code"><span class="ln">groups = set()</span><span class="ln">for start in range(n):</span><span class="ln">    reached = bfs(start, adjacency)   # O(n + E) each time</span><span class="ln">    groups.add(frozenset(reached))</span><span class="ln">return len(groups)</span></pre>
+      <p style="margin-top:14px">This is correct, and it is a fair thing to say first. But it runs a whole BFS from every node, including all the nodes in a component that an earlier BFS already explored completely. That is <strong>O(n × (n + E))</strong>, and each reachable set can be as large as <code>n</code>, so the memory is quadratic too.</p>
+      <p>The obvious fix is to skip nodes that some earlier BFS already visited and count how many BFS runs actually start. That is the standard DFS solution and it is O(n + E). But it still needs the adjacency list and a visited array, and it answers a question we never asked: <em>which</em> nodes are in each component. We only want to know how many components there are.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: start at n and count the merges</h2>
+      <p>Before any edge is considered, there are <code>n</code> components: every node is alone. Now add the edges one at a time and ask what each one does to the count.</p>
+      <ul>
+        <li>If its two endpoints are already in the same component, the edge changes nothing. The count stays.</li>
+        <li>If they are in different components, the edge glues those two components into one. The count drops by exactly 1.</li>
+      </ul>
+      <div class="callout">So the answer is <code>n</code> minus the number of edges that merged two <em>different</em> components. We never need to know what the components contain, only whether two nodes are currently in the same one.</div>
+      <p>That question is what union-find is for. Keep a <code>parent</code> array where each component is a small tree of pointers and <code>find(x)</code> follows them to the root. Same root means same component. Merging is one pointer assignment: point one root at the other.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>parent = list(range(n))</code>: every node is its own root. <code>rank = [0] * n</code>: an upper bound on each root's tree height, used to keep the trees shallow.</li>
+        <li><code>find(x)</code>: <code>while parent[x] != x</code>, set <code>parent[x] = parent[parent[x]]</code> (skip a generation, so the path halves for next time) and step up. Return the root.</li>
+        <li><code>count = n</code>.</li>
+        <li>For each edge <code>[a, b]</code>: <code>ra, rb = find(a), find(b)</code>. <code>if ra == rb: continue</code>, because a redundant edge must not touch the count.</li>
+        <li>Otherwise union by rank: swap so <code>ra</code> has the larger rank, <code>parent[rb] = ra</code>, bump <code>rank[ra]</code> only on a tie, then <code>count -= 1</code>.</li>
+        <li><code>return count</code>.</li>
+      </ul>
+      <p>For the running example the loop starts with <code>parent = [0, 1, 2, 3, 4]</code>, <code>rank = [0, 0, 0, 0, 0]</code>, and <code>count = 5</code>.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: edge [0,1]</h2>
+      <p><code>find(0)</code>: <code>parent[0] == 0</code>, so the root is 0 immediately. <code>find(1)</code>: root 1. They differ, so this edge merges two components.</p>
+      <p>Ranks are both 0, so no swap; <code>parent[1] = 0</code>. The ranks were equal, so <code>rank[0]</code> becomes 1. <code>count</code> goes <code>5 - 1 = 4</code>. Now <code>parent = [0, 0, 2, 3, 4]</code>.</p>
+      <p>Nodes 0 and 1 are one component with root 0. Nodes 2, 3 and 4 are still alone, which is what the four remaining roots in the array say.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: edge [1,2]</h2>
+      <p><code>find(1)</code>: <code>parent[1] = 0</code>, and <code>parent[0] = 0</code>, so the root is 0. <code>find(2)</code>: root 2. Different, so merge.</p>
+      <p><code>rank[0] = 1</code> is not less than <code>rank[2] = 0</code>, so no swap; <code>parent[2] = 0</code>. Ranks differ, so <code>rank[0]</code> stays 1. <code>count</code> goes <code>4 - 1 = 3</code>. Now <code>parent = [0, 0, 0, 3, 4]</code>.</p>
+      <p>Node 2 was attached directly under root 0, not under node 1, even though the edge said <code>[1, 2]</code>. That is the point of unioning roots rather than endpoints: the tree stays one level deep.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: edge [3,4], the answer</h2>
+      <p><code>find(3)</code> is 3 and <code>find(4)</code> is 4. Different, so merge. Ranks are both 0: <code>parent[4] = 3</code>, <code>rank[3]</code> becomes 1. <code>count</code> goes <code>3 - 1 = 2</code>. Now <code>parent = [0, 0, 0, 3, 3]</code>.</p>
+      <p>No edges remain. <code>return 2</code>. Three edges, three merges, <code>5 - 3 = 2</code> components: {0, 1, 2} rooted at 0 and {3, 4} rooted at 3. The two roots are exactly the two indices where <code>parent[i] == i</code>.</p>
+      <div class="callout">Every edge in this example merged something. The next step shows the case where one does not, which is the whole reason for the <code>if ra == rb: continue</code> line.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: counting edges instead of merges</h2>
+      <p>Two specific bugs live here, and both pass on the running example.</p>
+      <p><strong>Decrementing on every edge.</strong> Move <code>count -= 1</code> above the <code>if ra == rb: continue</code> check, or shortcut the whole thing as <code>n - len(edges)</code>. Add one redundant edge to the running example: <code>[[0,1],[1,2],[3,4],[0,2]]</code>. Nodes 0 and 2 are already together, so the answer is still 2, but the buggy version returns <strong>1</strong>. Only a merge of two <em>different</em> roots lowers the count.</p>
+      <p><strong>Counting <code>len(set(parent))</code> at the end.</strong> After unions the array is not flat. On <code>n = 4</code>, <code>edges = [[0,1],[2,3],[1,3]]</code> the third edge points root 2 at root 0, giving <code>parent = [0, 0, 0, 2]</code>. The set has two values but there is one component. Either count the indices with <code>parent[i] == i</code>, or, as here, count merges as they happen and never look at the array again.</p>
+      <div class="callout warn">Skip redundant edges before touching <code>count</code>. And if you must read the array at the end, count roots (<code>parent[i] == i</code>), not distinct values.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Initialising <code>parent</code> and <code>rank</code> is O(n). The loop does two <code>find</code> calls and at most one union per edge. With path halving and union by rank, a <code>find</code> costs amortised <strong>O(α(n))</strong>, the inverse Ackermann function, at most 4 for any realistic input. Total <strong>O(n + E × α(n))</strong>, effectively linear.</p>
+      <p><code>parent</code> and <code>rank</code> are each <code>n</code> integers: <strong>O(n) space</strong>. No adjacency list, no visited set, no queue.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>BFS from every node, count distinct reachable sets</td><td>O(n × (n + E))</td><td>O(n²)</td></tr>
+        <tr><td>DFS, count how many starts find an unvisited node</td><td>O(n + E)</td><td>O(n + E) adjacency + visited + stack</td></tr>
+        <tr><td>Union-find, count merges</td><td>O(n + E × α(n))</td><td>O(n)</td></tr>
+      </table>
+      <p>DFS and union-find are both linear in practice. Union-find wins when the edges arrive one at a time and you need the count after each one, because the DFS would have to start over.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Every line maps to a step above.</p>
+      <ul>
+        <li><code>parent = list(range(n))</code> and <code>rank = [0] * n</code>: every node is its own root at rank 0.</li>
+        <li><code>find(x)</code> walks up with <code>parent[x] = parent[parent[x]]</code> at each step until <code>parent[x] == x</code>.</li>
+        <li><code>count = n</code>: with no edges, every node is a component.</li>
+        <li><code>if ra == rb: continue</code>: a redundant edge merges nothing and must not lower the count.</li>
+        <li><code>parent[rb] = ra</code> after swapping so <code>ra</code> is the higher rank; <code>rank[ra] += 1</code> only on a tie.</li>
+        <li><code>count -= 1</code> once per successful merge, then <code>return count</code>.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>start at n and subtract one for every edge whose endpoints have different roots.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>graph · n = 5, edges = [[0,1],[1,2],[3,4]]</h3>
+        <svg class="fig" id="fig" viewBox="0 0 400 200" aria-label="undirected graph"></svg>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>parent · index = node, value = parent pointer</h3>
+        <div class="array" id="array"></div>
+      </div>
+
+      <div class="block">
+        <h3>count, roots and rank</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="number_of_connected_components_in_an_undirected_graph.py">number_of_connected_components_in_an_undirected_graph.py</a> · <a href="number_of_connected_components_in_an_undirected_graph_annotated.py">number_of_connected_components_in_an_undirected_graph_annotated.py</a> · <a href="test_number_of_connected_components_in_an_undirected_graph.py">test_number_of_connected_components_in_an_undirected_graph.py</a> · <a href="../../md.html?f=medium/068-number-of-connected-components-in-an-undirected-graph/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def count_components(self, n: int, edges: list[list[int]]) -> int:",
+    "        parent = list(range(n))",
+    "        rank = [0] * n",
+    "        def find(x: int) -> int:",
+    "            while parent[x] != x:",
+    "                parent[x] = parent[parent[x]]",
+    "                x = parent[x]",
+    "            return x",
+    "        count = n",
+    "        for a, b in edges:",
+    "            ra, rb = find(a), find(b)",
+    "            if ra == rb:",
+    "                continue",
+    "            if rank[ra] < rank[rb]:",
+    "                ra, rb = rb, ra",
+    "            parent[rb] = ra",
+    "            if rank[ra] == rank[rb]:",
+    "                rank[ra] += 1",
+    "            count -= 1",
+    "        return count"
+  ];
+
+  // parent arrays at each moment, as [label, value] cells
+  function P(arr) { return arr.map(function (v, i) { return [String(i), v]; }); }
+  var P_UNSET = [["0", "?"], ["1", "?"], ["2", "?"], ["3", "?"], ["4", "?"]];
+
+  // Each state describes what the sticky panel shows for one step.
+  // cur / hits / dim index graph nodes; ecur / ehits / ebad index graph edges; acur / ahits / adim index the parent cells.
+  var STATES = {
+    problem: {
+      caption: "How many connected components do these 3 edges on 5 nodes form?",
+      dp: P_UNSET, acur: -1, ahits: [], adim: [0, 1, 2, 3, 4], cur: -1, hits: [], dim: [], ecur: -1, ehits: [], vars: [],
+      meta: "{0, 1, 2} is a chain, {3, 4} is a pair, nothing joins them. Answer: <b>2</b>.", hl: []
+    },
+    brute: {
+      caption: "BFS from every node, collect its reachable set, count the distinct sets.",
+      dp: P_UNSET, acur: -1, ahits: [], adim: [0, 1, 2, 3, 4], cur: 1, hits: [0, 2], dim: [3, 4], ecur: -1, ehits: [0, 1],
+      vars: [["BFS runs", "5"], ["reachable(1)", "{0, 1, 2}"], ["distinct sets", "2", "found"]],
+      meta: "The BFS from 0, from 1 and from 2 all rediscover the same set {0, 1, 2}.", hl: [],
+      big: "O(n × (n + E))", bigNote: "one full traversal per node, quadratic memory for the sets"
+    },
+    insight: {
+      caption: "Start at n components. An edge that joins two different components lowers the count by 1; a redundant one does nothing.",
+      dp: P([0, 1, 2, 3, 4]), acur: -1, ahits: [], adim: [], cur: -1, hits: [], dim: [], ecur: -1, ehits: [],
+      vars: [["count", "5", "new"], ["merging edges", "?"]],
+      meta: "5 isolated nodes = 5 components. The answer is n minus the number of edges that actually merge.", hl: [9, 19]
+    },
+    approach: {
+      caption: "parent[i] = i for every node. For each edge, find both roots; equal roots → skip, else point one root at the other and count −= 1.",
+      dp: P([0, 1, 2, 3, 4]), acur: -1, ahits: [0, 1, 2, 3, 4], adim: [], cur: -1, hits: [], dim: [], ecur: -1, ehits: [],
+      vars: [["parent", "[0, 1, 2, 3, 4]", "new"], ["rank", "[0, 0, 0, 0, 0]", "new"], ["count", "5", "new"]],
+      meta: "Every node is its own root. find(x) walks parent pointers up to a node with parent[x] == x.", hl: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 16, 19]
+    },
+    t1: {
+      caption: "[0,1]: find(0) = 0, find(1) = 1, different. parent[1] = 0, rank[0] = 1, count = 5 − 1 = 4.",
+      dp: P([0, 0, 2, 3, 4]), acur: 1, ahits: [0], adim: [], cur: 1, hits: [0], dim: [2, 3, 4], ecur: 0, ehits: [],
+      vars: [["find(0), find(1)", "0, 1", "new"], ["count", "4", "new"], ["rank", "[1, 0, 0, 0, 0]"]],
+      meta: "Ranks were equal (0, 0), so rank[0] is bumped to 1. Four roots remain: 0, 2, 3, 4.", hl: [11, 12, 16, 17, 18, 19]
+    },
+    t2: {
+      caption: "[1,2]: find(1) = 0 (via parent[1]), find(2) = 2, different. parent[2] = 0, count = 4 − 1 = 3.",
+      dp: P([0, 0, 0, 3, 4]), acur: 2, ahits: [0, 1], adim: [], cur: 2, hits: [0, 1], dim: [3, 4], ecur: 1, ehits: [0],
+      vars: [["find(1), find(2)", "0, 2", "new"], ["count", "3", "new"], ["rank", "[1, 0, 0, 0, 0]"]],
+      meta: "rank[0] = 1 ≥ rank[2] = 0, so 2 goes under root 0, not under node 1. rank[0] stays 1.", hl: [11, 12, 14, 15, 16, 19]
+    },
+    t3: {
+      caption: "[3,4]: find(3) = 3, find(4) = 4, different. parent[4] = 3, rank[3] = 1, count = 3 − 1 = 2. Done.",
+      dp: P([0, 0, 0, 3, 3]), acur: 4, ahits: [0, 1, 2, 3], adim: [], cur: 4, hits: [0, 1, 2, 3], dim: [], ecur: 2, ehits: [0, 1],
+      vars: [["find(3), find(4)", "3, 4", "new"], ["count", "2", "found"], ["roots", "0, 3"]],
+      meta: "Two indices satisfy parent[i] == i: 0 and 3. Three edges, three merges, 5 − 3 = <b>2</b>.", hl: [11, 12, 16, 19, 20],
+      big: "2", bigNote: "{0, 1, 2} rooted at 0 · {3, 4} rooted at 3"
+    },
+    pitfall: {
+      caption: "Add the redundant edge [0,2]: find(0) = find(2) = 0. Decrementing anyway gives 1, not 2.",
+      dp: P([0, 0, 0, 3, 3]), acur: -1, ahits: [0, 1, 2], adim: [], cur: -1, hits: [], dim: [], bad: [0, 2], ecur: -1, ehits: [0, 1, 2], ebad: [3],
+      vars: [["find(0), find(2)", "0, 0"], ["correct count", "2", "found"], ["n − len(edges)", "1"]],
+      meta: "Nodes 0 and 2 already share root 0. Only a merge of two different roots lowers the count.", hl: [12, 13, 19],
+      big: "1, not 2", bigNote: "a redundant edge must skip the decrement"
+    },
+    complexity: {
+      caption: "Two finds and at most one union per edge; each find is amortised inverse-Ackermann.",
+      dp: P([0, 0, 0, 3, 3]), acur: -1, ahits: [0, 1, 2, 3, 4], adim: [], cur: -1, hits: [0, 1, 2, 3, 4], dim: [], ecur: -1, ehits: [0, 1, 2],
+      vars: [["find calls", "6"], ["unions", "3"], ["max find steps", "1"]],
+      meta: "parent and rank are the only storage: n integers each. No adjacency list, no visited set.", hl: [5, 6, 7, 11],
+      big: "O(n + E × α(n)) time · O(n) space", bigNote: "versus O(n × (n + E)) for a BFS from every node"
+    },
+    final: {
+      caption: "The whole solution.",
+      dp: P([0, 0, 0, 3, 3]), acur: -1, ahits: [0, 1, 2, 3, 4], adim: [], cur: -1, hits: [], dim: [], ecur: -1, ehits: [],
+      vars: [["count", "2", "found"]],
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---- figure renderer: an undirected graph from nodes + edges (node/edge styling shared with 018/019) ----
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var R = 19;
+  function layoutGraph(g) {
+    var nodes = g.nodes.map(function (n) { return { val: n[0], x: n[1], y: n[2] }; });
+    return { nodes: nodes, edges: g.edges, h: g.h || 200, note: g.note };
+  }
+  var figSvg = document.getElementById("fig");
+  function renderFig(fig, s) {
+    while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild);
+    figSvg.setAttribute("viewBox", "0 0 400 " + fig.h);
+    var bad = s.bad || [], ebad = s.ebad || [];
+    function state(i) {
+      if (i === s.cur) return "cur";
+      if (bad.indexOf(i) !== -1) return "bad";
+      if (s.hits.indexOf(i) !== -1) return "hit";
+      if (s.dim.indexOf(i) !== -1) return "dim";
+      return "";
+    }
+    fig.edges.forEach(function (e, idx) {
+      var a = fig.nodes[e[0]], b = fig.nodes[e[1]];
+      var cls = "edge";
+      if (idx === s.ecur) cls += " cur";
+      else if (ebad.indexOf(idx) !== -1) cls += " cycle";
+      else if (s.ehits.indexOf(idx) !== -1) cls += " hit";
+      else if (state(e[0]) === "dim" || state(e[1]) === "dim") cls += " dim";
+      var dx = b.x - a.x, dy = b.y - a.y, len = Math.sqrt(dx * dx + dy * dy) || 1;
+      var ux = dx / len, uy = dy / len;
+      figSvg.appendChild(el("line", { "class": cls, x1: a.x + ux * (R + 2), y1: a.y + uy * (R + 2), x2: b.x - ux * (R + 2), y2: b.y - uy * (R + 2) }));
+    });
+    fig.nodes.forEach(function (n, i) {
+      var g = el("g", { "class": "node " + state(i) });
+      g.appendChild(el("circle", { cx: n.x, cy: n.y, r: R }));
+      g.appendChild(el("text", { x: n.x, y: n.y }, n.val));
+      figSvg.appendChild(g);
+    });
+    if (fig.note) figSvg.appendChild(el("text", { "class": "lbl", x: 200, y: fig.h - 8 }, fig.note));
+  }
+  var NODES = [[0, 60, 140], [1, 150, 70], [2, 240, 140], [3, 310, 70], [4, 370, 150]];
+  var FIG = layoutGraph({ h: 200, nodes: NODES, edges: [[0, 1], [1, 2], [3, 4]] });
+  var FIG_BY_STATE = {
+    pitfall: layoutGraph({ h: 200, nodes: NODES, edges: [[0, 1], [1, 2], [3, 4], [0, 2]], note: "edges [[0,1],[1,2],[3,4],[0,2]]: the dashed edge merges nothing" })
+  };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.dp.length; i++) {
+      var cls = "cell";
+      if (i === s.acur) cls += " cur";
+      else if (s.ahits.indexOf(i) !== -1) cls += " hit";
+      else if (s.adim.indexOf(i) !== -1) cls += " dim";
+      arr += '<div class="' + cls + '">' + s.dp[i][1] + '<span class="idx">' + s.dp[i][0] + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+    renderFig(FIG_BY_STATE[name] || FIG, s);
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not built yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l.replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

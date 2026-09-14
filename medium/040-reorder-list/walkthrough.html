@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reorder List Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+
+  .list { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .list .edge { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  .list .edge.cycle { stroke: var(--warn); stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .list .edge.dead { stroke: var(--line); }
+  .list .head { fill: var(--muted); }
+  .list .head.cycle { fill: var(--warn); }
+  .list .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .list .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 16px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
+  .list .node.slow circle { fill: var(--accent-soft); stroke: var(--accent); }
+  .list .node.fast circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .list .node.meet circle { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 4; }
+  .list .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .list .node.dim circle, .list .node.dim text { opacity: 0.4; }
+  .list .nil { fill: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 13px; text-anchor: middle; dominant-baseline: central; }
+  .list .tag { font-family: ui-monospace, Menlo, monospace; font-size: 11px; font-weight: 700; text-anchor: middle; }
+  .list .tag.slow { fill: var(--accent); }
+  .list .tag.fast { fill: var(--ok); }
+  .list .tag.bad { fill: var(--warn); }
+  .list .lbl { fill: var(--warn); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Linked List · LeetCode #143</div>
+  <h1>Reorder List, narrated</h1>
+  <p>Scroll through the thinking, from copying the nodes into an array to rewiring the list in place in three passes, with the state of the list shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/linked-list.html">Linked List</a> <span class="how">find the middle, reverse the second half, merge the halves alternately</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get the head of a singly linked list <code>L0 → L1 → … → Ln</code>. Rewire it so it reads <code>L0 → Ln → L1 → Ln-1 → L2 → Ln-2 → …</code>: one node from the front, one from the back, alternating until they meet in the middle. Only the <code>next</code> pointers may change — the values stay on their nodes — and nothing is returned; the caller's <code>head</code> is still the first node.</p>
+      <div class="callout">Running example: <code>head = [1, 2, 3, 4, 5]</code>. The result is <strong><code>[1, 5, 2, 4, 3]</code></strong>: front 1, back 5, front 2, back 4, and the middle node 3 is what is left.</div>
+      <p>The catch is that a singly linked list only goes forward. Reaching "the back" means walking to the end, and once you have taken the last node you have no pointer to the new last node. Any solution that repeatedly walks to the tail is O(n²).</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: copy the nodes into an array</h2>
+      <p>Random access is what the list lacks, so buy it: walk the list once and put every node in a Python list. Then two indices, one from each end, pick nodes in the target order and you rewire as you go:</p>
+      <pre class="code"><span class="ln">nodes = []</span><span class="ln">while head: nodes.append(head); head = head.next</span><span class="ln">i, j = 0, len(nodes) - 1</span><span class="ln">while i &lt; j:</span><span class="ln">    nodes[i].next = nodes[j]; i += 1</span><span class="ln">    if i == j: break</span><span class="ln">    nodes[j].next = nodes[i]; j -= 1</span><span class="ln">nodes[i].next = None</span></pre>
+      <p style="margin-top:14px">This is <strong>O(n) time</strong> and it works. Its cost is <strong>O(n) extra space</strong> for the array, and the problem is really asking whether you can do without it. The break-and-terminate dance at the end is also fiddly: the pointer that ends up last has to be set to <code>None</code> or the list keeps a stale link into the middle.</p>
+      <p>Keep the idea, though. The array made two things easy: reaching the back, and walking the back <em>toward</em> the front. We need to get both from the list itself.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: reverse the second half, then zip</h2>
+      <p>Write the target next to the input. <code>[1, 5, 2, 4, 3]</code> is <code>[1, 2, 3]</code> and <code>[5, 4]</code> interleaved — the first half of the list, and the second half <em>backwards</em>. The reversed second half is exactly the "walk the back toward the front" the array gave us, and reversing a linked list in place is a standard loop you already know.</p>
+      <div class="callout">Three phases, each a well-known linked-list move: <strong>find the middle</strong> with slow/fast pointers (<code>slow</code> stops at 3), <strong>reverse</strong> everything after it (<code>4 → 5</code> becomes <code>5 → 4</code>), and <strong>merge</strong> the two halves by alternating one node from each.</div>
+      <p>One detail decides whether the merge is clean: the first half has to be <em>cut</em> from the second with <code>slow.next = None</code>. After that, both halves end in <code>None</code>, and the merge loop can run <code>while second is not None</code> — the first half is never shorter than the second, so when the second runs out the first half's remaining node (the middle, if any) is already in place and already terminated.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>if head is None or head.next is None: return</code> — zero or one node is already reordered, and the loop below would dereference <code>None</code> on an empty list.</li>
+        <li><code>slow = fast = head</code>, then <code>while fast.next is not None and fast.next.next is not None</code> — advance <code>slow</code> one hop and <code>fast</code> two. The double-<code>.next</code> guard leaves <code>slow</code> on the <em>last node of the first half</em> for even lengths, so <code>[1, 2, 3, 4]</code> splits as <code>[1, 2]</code> / <code>[3, 4]</code>.</li>
+        <li><code>second = slow.next</code>, <code>slow.next = None</code> — detach the second half.</li>
+        <li><code>prev = None</code>, <code>while second is not None: nxt = second.next; second.next = prev; prev = second; second = nxt</code> — reverse the second half; <code>prev</code> is its new head.</li>
+        <li><code>first, second = head, prev</code>, then <code>while second is not None:</code> — merge.</li>
+        <li><code>first_next, second_next = first.next, second.next</code> — save both successors <em>before</em> touching any pointer.</li>
+        <li><code>first.next = second</code>, <code>second.next = first_next</code> — splice one back node after one front node.</li>
+        <li><code>first, second = first_next, second_next</code> — advance both cursors.</li>
+      </ul>
+      <p>The panel shows phase 1 about to start: <code>slow</code> and <code>fast</code> both on node 1.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: find the middle and cut</h2>
+      <p>Iteration 1: <code>fast.next</code> is node 2 and <code>fast.next.next</code> is node 3, both non-<code>None</code>, so <code>slow</code> moves to 2 and <code>fast</code> to 3. Iteration 2: <code>fast.next</code> is 4 and <code>fast.next.next</code> is 5, so <code>slow</code> moves to 3 and <code>fast</code> to 5. Now <code>fast.next</code> is <code>None</code> and the loop stops.</p>
+      <p><code>slow</code> is on node 3, the middle. <code>second = slow.next</code> is node 4, and <code>slow.next = None</code> cuts the list: the first half is now <code>1 → 2 → 3 → None</code> and the second half is <code>4 → 5 → None</code>. Two independent lists.</p>
+      <p>The panel shows the moment just before the cut, with <code>slow</code> on 3 and <code>fast</code> on 5, and the link that is about to be severed drawn faded.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: reverse the second half</h2>
+      <p>Standard three-pointer reversal on <code>4 → 5</code>. Start <code>prev = None</code>, <code>second = 4</code>. First pass: <code>nxt = 5</code>, point <code>4.next = None</code> (the old <code>prev</code>), then <code>prev = 4</code>, <code>second = 5</code>. Second pass: <code>nxt = None</code>, point <code>5.next = 4</code>, then <code>prev = 5</code>, <code>second = None</code>. The loop ends.</p>
+      <p><code>prev</code> is node 5, the head of the reversed half <code>5 → 4 → None</code>. The first half is untouched: <code>1 → 2 → 3 → None</code>.</p>
+      <p>Compare with the target <code>[1, 5, 2, 4, 3]</code>: it is exactly these two lists read alternately, first-half node, second-half node, first-half node, and so on, with the first half's leftover 3 at the end.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: merge, the answer</h2>
+      <p>Set <code>first = 1</code>, <code>second = 5</code>. Splice 1: save <code>first_next = 2</code> and <code>second_next = 4</code>. Then <code>1.next = 5</code> and <code>5.next = 2</code>. The list now reads <code>1 → 5 → 2 → 3 → None</code>, and the cursors advance to <code>first = 2</code>, <code>second = 4</code>.</p>
+      <p>Splice 2: save <code>first_next = 3</code> and <code>second_next = None</code>. Then <code>2.next = 4</code> and <code>4.next = 3</code>. The list reads <code>1 → 5 → 2 → 4 → 3 → None</code>. Advance: <code>first = 3</code>, <code>second = None</code>, and the loop condition <code>second is not None</code> fails.</p>
+      <p>Nothing else to do. Node 3 was already the end of the first half with <code>3.next = None</code> from the cut, so the merged list is properly terminated. <code>head</code> still points at node 1, which is why the function returns nothing.</p>
+      <div class="callout">Three passes, each over roughly half the list, and never more than a handful of pointers alive at once.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the missing cut and the lost successor</h2>
+      <p><strong>Forgetting <code>slow.next = None</code>.</strong> Without the cut, the "first half" is still <code>1 → 2 → 3 → 4 → 5</code> when the merge starts — and after the reversal, node 4's <code>next</code> is <code>None</code> and node 5's is 4, so it is really <code>1 → 2 → 3 → 4 → None</code>. Merging then splices 5 after 1 and 4 after 2, setting <code>4.next = 3</code>. But 3's own <code>next</code> is still 4. Result: <code>1 → 5 → 2 → 4 → 3 → 4 → 3 → …</code>, a cycle. Printing it never ends; the test helper's length cap is the only thing that makes the failure visible.</p>
+      <p><strong>Rewiring before saving.</strong> Write the splice as <code>first.next = second</code> followed by <code>second.next = first.next</code>. By the time the second line runs, <code>first.next</code> <em>is</em> <code>second</code>, so node 5 gets pointed at itself: <code>1 → 5 → 5 → 5 → …</code>. Both successors must be read into <code>first_next</code> and <code>second_next</code> before either pointer is written.</p>
+      <p><strong>No guard for the empty list.</strong> With <code>head = None</code>, the middle-finding loop evaluates <code>fast.next</code> on <code>None</code> and raises <code>AttributeError</code>. A single node happens to work without the guard, which is why it is easy to forget.</p>
+      <div class="callout warn">Cut the halves apart before you reverse, and save every successor before you overwrite a <code>next</code>.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Finding the middle is n/2 hops for <code>slow</code> and n hops for <code>fast</code>; reversing is n/2 pointer flips; merging is n/2 splices. All together <strong>O(n) time</strong>. The only extra state is a fixed handful of node references — <code>slow</code>, <code>fast</code>, <code>prev</code>, <code>first</code>, <code>second</code>, and two saved successors — so <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Walk to the tail for every back node</td><td>O(n²)</td><td>O(1)</td></tr>
+        <tr><td>Copy nodes into an array, two indices</td><td>O(n)</td><td>O(n)</td></tr>
+        <tr><td>Find middle, reverse second half, merge</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>The array version is not wrong, and in an interview it is a good thing to say first. The in-place version is what the follow-up is really asking for, and it is built entirely from loops you have already written for other problems.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Three loops. Every line maps to a step above.</p>
+      <ul>
+        <li><code>if head is None or head.next is None: return</code> — nothing to reorder.</li>
+        <li><code>while fast.next is not None and fast.next.next is not None</code> — <code>slow</code> lands on the last node of the first half.</li>
+        <li><code>second = slow.next; slow.next = None</code> — cut.</li>
+        <li><code>nxt = second.next; second.next = prev; prev = second; second = nxt</code> — reverse the second half; <code>prev</code> is its head.</li>
+        <li><code>first, second = head, prev</code> — set up the merge.</li>
+        <li><code>first_next, second_next = first.next, second.next</code> — save before writing.</li>
+        <li><code>first.next = second; second.next = first_next</code> — one splice.</li>
+        <li><code>first, second = first_next, second_next</code> — advance; the loop ends when the reversed half is used up.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>the reordered list is the first half zipped with the reversed second half — find the middle, cut, reverse, merge.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>list · <span id="target">[1,2,3,4,5]</span></h3>
+        <svg class="list" id="list" viewBox="0 0 400 120" aria-label="linked list"></svg>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>pointers</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="reorder_list.py">reorder_list.py</a> · <a href="reorder_list_annotated.py">reorder_list_annotated.py</a> · <a href="test_reorder_list.py">test_reorder_list.py</a> · <a href="../../md.html?f=medium/040-reorder-list/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def reorder_list(self, head):",
+    "        if head is None or head.next is None:",
+    "            return",
+    "        slow = fast = head",
+    "        while fast.next is not None and fast.next.next is not None:",
+    "            slow = slow.next",
+    "            fast = fast.next.next",
+    "        second = slow.next",
+    "        slow.next = None",
+    "        prev = None",
+    "        while second is not None:",
+    "            nxt = second.next",
+    "            second.next = prev",
+    "            prev = second",
+    "            second = nxt",
+    "        first, second = head, prev",
+    "        while second is not None:",
+    "            first_next, second_next = first.next, second.next",
+    "            first.next = second",
+    "            second.next = first_next",
+    "            first, second = first_next, second_next"
+  ];
+
+  // Each state describes what the sticky panel shows for one step.
+  // rows: one or two linked lists drawn top to bottom. Each row: nodes (values in link order),
+  // tags {index: [pointer names]}, cls {index: "slow" | "fast" | "meet" | "bad"}, dead: index whose
+  // outgoing link is drawn faded (about to be cut), cycleTo: index the last node links back to (-1 = None).
+  // Values verified by running the Python.
+  var STATES = {
+    problem: {
+      caption: "Rewire 1 → 2 → 3 → 4 → 5 into 1 → 5 → 2 → 4 → 3, in place.",
+      label: "[1,2,3,4,5]",
+      rows: [{ nodes: [1, 2, 3, 4, 5], tags: {}, cls: {}, dead: -1, cycleTo: -1 }],
+      vars: [], meta: "Front, back, front, back … the middle node 3 is left over at the end.", hl: []
+    },
+    brute: {
+      caption: "Copy the nodes into an array, then pick from both ends with two indices.",
+      label: "[1,2,3,4,5]",
+      rows: [{ nodes: [1, 2, 3, 4, 5], tags: { 0: ["i"], 4: ["j"] }, cls: { 0: "slow", 4: "fast" }, dead: -1, cycleTo: -1 }],
+      vars: [["nodes", "[1, 2, 3, 4, 5]"], ["i", 0], ["j", 4]],
+      meta: "Random access makes the back reachable, at the cost of an n-element array.", hl: [],
+      big: "O(n) time · O(n) space", bigNote: "correct, but the problem wants O(1) extra space"
+    },
+    idea: {
+      caption: "[1, 5, 2, 4, 3] is the first half [1, 2, 3] zipped with the reversed second half [5, 4].",
+      label: "[1,2,3] and reversed [5,4]",
+      rows: [
+        { nodes: [1, 2, 3], tags: {}, cls: { 0: "slow", 1: "slow", 2: "slow" }, dead: -1, cycleTo: -1 },
+        { nodes: [5, 4], tags: {}, cls: { 0: "fast", 1: "fast" }, dead: -1, cycleTo: -1 }
+      ],
+      vars: [["first half", "1 → 2 → 3"], ["second half, reversed", "5 → 4"]],
+      meta: "Three phases: find the middle, reverse what follows, merge alternately.", hl: [5, 11, 17]
+    },
+    approach: {
+      caption: "Phase 1 starts: slow and fast both on node 1.",
+      label: "[1,2,3,4,5]",
+      rows: [{ nodes: [1, 2, 3, 4, 5], tags: { 0: ["slow", "fast"] }, cls: { 0: "meet" }, dead: -1, cycleTo: -1 }],
+      vars: [["slow", 1, "new"], ["fast", 1, "new"]],
+      meta: "slow moves one hop per iteration, fast moves two.", hl: [2, 3, 4, 5]
+    },
+    t1: {
+      caption: "After two iterations slow is on 3 and fast on 5. Cut: second = 4, slow.next = None.",
+      label: "[1,2,3,4,5], about to cut after 3",
+      rows: [{ nodes: [1, 2, 3, 4, 5], tags: { 2: ["slow"], 3: ["second"], 4: ["fast"] }, cls: { 2: "slow", 4: "fast" }, dead: 2, cycleTo: -1 }],
+      vars: [["slow", 3], ["fast", 5], ["second", 4, "new"], ["slow.next", "None", "new"]],
+      meta: "fast.next is None, so the loop stops. The faded link 3 → 4 is the one being severed.", hl: [5, 6, 7, 8, 9]
+    },
+    t2: {
+      caption: "Reverse the second half: 4 → 5 becomes 5 → 4. prev = 5 is its new head.",
+      label: "[1,2,3] and [5,4]",
+      rows: [
+        { nodes: [1, 2, 3], tags: { 0: ["head"] }, cls: {}, dead: -1, cycleTo: -1 },
+        { nodes: [5, 4], tags: { 0: ["prev"] }, cls: { 0: "fast" }, dead: -1, cycleTo: -1 }
+      ],
+      vars: [["prev", 5, "new"], ["second", "None"], ["4.next", "None"], ["5.next", 4]],
+      meta: "Pass 1: 4.next = None, prev = 4. Pass 2: 5.next = 4, prev = 5. Loop ends.", hl: [10, 11, 12, 13, 14, 15]
+    },
+    t3: {
+      caption: "Merge: 1 → 5 → 2 → 3, then 1 → 5 → 2 → 4 → 3. second is None, done.",
+      label: "[1,5,2,4,3]",
+      rows: [{ nodes: [1, 5, 2, 4, 3], tags: { 4: ["first"] }, cls: { 1: "fast", 3: "fast", 4: "slow" }, dead: -1, cycleTo: -1 }],
+      vars: [["first", 3], ["second", "None", "found"], ["head", 1]],
+      meta: "Splice 1: 1.next = 5, 5.next = 2. Splice 2: 2.next = 4, 4.next = 3. Node 3 already ends in None.", hl: [16, 17, 18, 19, 20, 21],
+      big: "[1, 5, 2, 4, 3]", bigNote: "rewired in place; head is still node 1"
+    },
+    pitfall: {
+      caption: "Without slow.next = None, node 3 still links to 4, and the merge closes a cycle 3 → 4 → 3.",
+      label: "[1,2,3,4,5] without the cut",
+      rows: [{ nodes: [1, 5, 2, 4, 3], tags: { 4: ["3.next → 4"] }, cls: { 3: "bad", 4: "bad" }, dead: -1, cycleTo: 3 }],
+      vars: [["3.next", 4, "new"], ["4.next", 3, "new"]],
+      meta: "Traversal prints 1, 5, 2, 4, 3, 4, 3, 4, 3 … and never reaches None.", hl: [8, 9],
+      big: "1, 5, 2, 4, 3, 4, 3, …", bigNote: "an infinite list instead of [1, 5, 2, 4, 3]"
+    },
+    complexity: {
+      caption: "Three passes of about n/2 each, with a fixed handful of pointers.",
+      label: "[1,5,2,4,3]",
+      rows: [{ nodes: [1, 5, 2, 4, 3], tags: {}, cls: { 1: "fast", 3: "fast" }, dead: -1, cycleTo: -1 }],
+      vars: [], meta: "find middle: n hops · reverse: n/2 flips · merge: n/2 splices", hl: [5, 11, 17],
+      big: "O(n) time · O(1) space", bigNote: "versus O(n) space for the array copy"
+    },
+    final: {
+      caption: "The whole solution.",
+      label: "[1,5,2,4,3]",
+      rows: [{ nodes: [1, 5, 2, 4, 3], tags: {}, cls: {}, dead: -1, cycleTo: -1 }],
+      vars: [["result", "1 → 5 → 2 → 4 → 3", "found"]],
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+    }
+  };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var listSvg = document.getElementById("list");
+  var R = 20, ROW_H = 120;
+
+  // Draws one straight list per row (values, forward arrows, a None terminator or a cycle edge),
+  // with pointer tags above the nodes. Adapted from easy/012-linked-list-cycle's renderer.
+  function renderRows(rows) {
+    while (listSvg.firstChild) listSvg.removeChild(listSvg.firstChild);
+    var H = ROW_H * rows.length - (rows.length > 1 ? 30 : 0);
+    listSvg.setAttribute("viewBox", "0 0 400 " + H);
+    var defs = el("defs", {});
+    ["head", "head cycle"].forEach(function (cls, i) {
+      var m = el("marker", { id: i ? "arrow-cycle" : "arrow", viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "6", markerHeight: "6", orient: "auto" });
+      m.appendChild(el("path", { d: "M0,0 L10,5 L0,10 z", "class": cls }));
+      defs.appendChild(m);
+    });
+    listSvg.appendChild(defs);
+
+    rows.forEach(function (row, r) {
+      var Y = 62 + r * (ROW_H - 30);
+      var n = row.nodes.length, hasNil = row.cycleTo < 0;
+      var slots = n + (hasNil ? 1 : 0);
+      var step = Math.min(72, (400 - 90) / (slots - 1));
+      var x0 = (400 - step * (slots - 1)) / 2;
+      var xs = [];
+      for (var i = 0; i < slots; i++) xs.push(x0 + i * step);
+
+      for (var i = 0; i < slots - 1; i++) {
+        var isNilEdge = hasNil && i === n - 1;
+        var cls = "edge" + (isNilEdge || i === row.dead ? " dead" : "");
+        listSvg.appendChild(el("line", { "class": cls, x1: xs[i] + R + 2, y1: Y, x2: xs[i + 1] - (isNilEdge ? 24 : R + 2), y2: Y, "marker-end": "url(#arrow)" }));
+      }
+      if (!hasNil) {
+        var a = xs[n - 1], b = xs[row.cycleTo], dip = Y + R + 26;
+        var d = "M" + a + "," + (Y + R) + " C" + a + "," + dip + " " + b + "," + dip + " " + b + "," + (Y + R + 2);
+        listSvg.appendChild(el("path", { "class": "edge cycle", d: d, "marker-end": "url(#arrow-cycle)" }));
+        listSvg.appendChild(el("text", { "class": "lbl", x: (a + b) / 2, y: dip + 4 }, "next → back to " + row.nodes[row.cycleTo]));
+      }
+      for (var i = 0; i < n; i++) {
+        var g = el("g", { "class": "node" + (row.cls[i] ? " " + row.cls[i] : "") });
+        g.appendChild(el("circle", { cx: xs[i], cy: Y, r: R }));
+        g.appendChild(el("text", { x: xs[i], y: Y }, row.nodes[i]));
+        listSvg.appendChild(g);
+      }
+      if (hasNil) listSvg.appendChild(el("text", { "class": "nil", x: xs[n], y: Y }, "None"));
+      for (var k in row.tags) {
+        var names = row.tags[k], y = Y - R - 12;
+        for (var t = 0; t < names.length; t++) {
+          var nm = names[t];
+          var tcls = row.cls[k] === "fast" ? "fast" : row.cls[k] === "bad" ? "bad" : "slow";
+          listSvg.appendChild(el("text", { "class": "tag " + tcls, x: xs[+k], y: y - (names.length - 1 - t) * 13 }, nm + " ▼"));
+        }
+      }
+    });
+  }
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.label;
+    $("meta").innerHTML = s.meta;
+    renderRows(s.rows);
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">no pointers in play</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

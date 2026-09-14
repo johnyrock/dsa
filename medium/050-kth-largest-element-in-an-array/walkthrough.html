@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kth Largest Element in an Array Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* heap additions: the heap array drawn as a complete binary tree (easy/011 renderer) */
+  .tree { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .tree .edge { stroke: var(--line); stroke-width: 2.5; fill: none; transition: stroke 0.25s; }
+  .tree .edge.hit { stroke: var(--ok); }
+  .tree .edge.bad { stroke: var(--warn); stroke-dasharray: 5 4; }
+  .tree .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .tree .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 17px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .tree .node.cur circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3.5; }
+  .tree .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .tree .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .tree .node.dim circle, .tree .node.dim text { opacity: 0.4; }
+  .tree .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .tree .lbl.cur { fill: var(--accent); font-weight: 700; }
+  .tree .lbl.bad { fill: var(--warn); font-weight: 700; }
+  .tree .lbl.hit { fill: var(--ok); font-weight: 700; }
+  .array.compact { gap: 4px; margin-top: 2px; }
+  .array.compact .cell { min-width: 28px; padding: 3px 0 2px; font-size: 0.9rem; border-width: 1.5px; border-radius: 6px; }
+  .array.compact .cell.cur { transform: none; }
+  .cell.bad { border-color: var(--warn); background: var(--warn-soft); }
+  .meta b { color: var(--ink); }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Heap · LeetCode #215</div>
+  <h1>Kth Largest Element in an Array, narrated</h1>
+  <p>Scroll from sorting the whole array to a min-heap that never holds more than k values, with the heap’s layout shown alongside as each number is pushed and the smallest survivor is evicted.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/heap.html">Heap</a> <span class="how">A min-heap capped at k keeps the k largest values seen so far; its root is the smallest of them, which is the kth largest.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Given an integer array <code>nums</code> and an integer <code>k</code>, return the <code>k</code>th largest element. "Largest" is in sorted order, not distinct order: if the array has two 5s and <code>k = 2</code>, the answer is 5 twice over.</p>
+      <div class="callout">Running example: <code>nums = [3, 2, 1, 5, 6, 4]</code>, <code>k = 2</code>. Sorted descending that is <code>6, 5, 4, 3, 2, 1</code>, so the 2nd largest is <strong>5</strong>.</div>
+      <p>The obvious solution sorts, and the problem explicitly asks whether you can avoid that. The tension is that we need <em>rank</em> information, which sorting gives in full, but we only care about one rank: position <code>k</code> from the top. Everything below it is irrelevant, and everything above it only matters as a count.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: sort, then index</h2>
+      <p>Sort descending and read position <code>k - 1</code>, or sort ascending and read position <code>len(nums) - k</code>:</p>
+      <pre class="code"><span class="ln">nums.sort()</span><span class="ln">return nums[len(nums) - k]</span></pre>
+      <p style="margin-top:14px">Two lines, obviously correct, and <strong>O(n log n)</strong>. For <code>n = 10⁵</code> it is fast enough in practice, which is why the interviewer adds "without sorting". The point of the follow-up is to notice how much of the sort is wasted: after sorting, positions 0 through 3 of <code>[1, 2, 3, 4, 5, 6]</code> are fully ordered relative to each other, and none of that order was ever needed. Only "which two are on top, and which of those two is smaller" matters.</p>
+      <p>The panel shows the sorted array with the answer slot highlighted. Every dimmed cell was placed by the sort and then ignored.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: keep only the k largest, in a min-heap</h2>
+      <p>Imagine a box that can hold <code>k</code> numbers. Walk the array; every time you see a number, put it in the box. If the box now has <code>k + 1</code> numbers, throw out the <em>smallest</em>. When you reach the end, the box holds exactly the <code>k</code> largest values of the array, and the smallest of those is the <code>k</code>th largest.</p>
+      <p>The box needs two fast operations: insert, and remove-the-smallest. That is precisely what a <strong>min-heap</strong> offers, in O(log k) each. Python's <code>heapq</code> is already a min-heap, so unlike the max-heap problems there is no negation at all: <code>heapq.heappush(heap, num)</code> and <code>heapq.heappop(heap)</code> do exactly what the box needs.</p>
+      <div class="callout">After every step, <code>heap[0]</code> is the smallest of the largest <code>k</code> values seen so far. At the end of the array, that is the answer: <code>return heap[0]</code>.</div>
+      <p>The heap never grows beyond <code>k + 1</code>, so every operation costs O(log k) rather than O(log n). With <code>k = 2</code> the heap in the panel has at most three nodes.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: push, trim, read the root</h2>
+      <ul>
+        <li><code>heap = []</code>: starts empty, holds at most <code>k</code> values between iterations.</li>
+        <li><code>for num in nums: heapq.heappush(heap, num)</code>: every number goes in, so it is compared against the current survivors by the heap itself.</li>
+        <li><code>if len(heap) &gt; k: heapq.heappop(heap)</code>: after a push the heap may hold <code>k + 1</code>; evict the root, the smallest.</li>
+        <li><code>return heap[0]</code>: the root of the final heap is the smallest of the <code>k</code> largest.</li>
+      </ul>
+      <p>The order of push and pop matters. Push first, and the newcomer competes against the current root inside the heap. Pop first, and the newcomer walks in unchallenged even if it is smaller than everything that was just evicted. The panel shows the empty heap and the six numbers waiting to be pushed.</p>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: 3, 2, 1</h2>
+      <p>Push <code>3</code>: heap <code>[3]</code>, size 1, no pop. Push <code>2</code>: it is smaller than 3 so it sifts up, heap <code>[2, 3]</code>, size 2, still not more than <code>k</code>, no pop.</p>
+      <p>Push <code>1</code>: it sifts to the root, heap <code>[1, 3, 2]</code>. Now <code>len(heap) = 3 &gt; 2</code>, so pop the root. The 1 is gone, and the heap re-settles to <code>[2, 3]</code>. That is right: of the three numbers seen, the two largest are 2 and 3, and the smaller of those, <code>heap[0] = 2</code>, is the 2nd largest so far.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: 5, then 6</h2>
+      <p>Push <code>5</code>: it is larger than everything, so it lands at index 2 as a leaf, heap <code>[2, 3, 5]</code>. Size 3 again, so pop the root <code>2</code>. The heap re-settles to <code>[3, 5]</code>: the two largest so far are 3 and 5.</p>
+      <p>Push <code>6</code>: heap <code>[3, 5, 6]</code>, size 3, pop the root <code>3</code>, leaving <code>[5, 6]</code>. Each of those two pushes evicted the previous root because the newcomer was bigger than every survivor. Notice the heap did not need to know that <code>6 &gt; 5</code>; it only needed to know that 3 was the smallest of the three.</p>
+      <div class="callout">The values 1, 2, 3 were each evicted the moment a third value outranked them. They were never sorted against each other.</div>
+    </section>
+
+    <section class="step" data-state="trace3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: 4, and the answer</h2>
+      <p>Push <code>4</code>: it is smaller than both survivors, so it sifts up to the root, heap <code>[4, 6, 5]</code>. Size 3, pop the root, and the <code>4</code> is evicted straight back out. Heap: <code>[5, 6]</code>.</p>
+      <p>That was the last number. The heap holds the two largest values of the array, 5 and 6, and its root <code>heap[0] = 5</code> is the smaller of them: the 2nd largest. <code>return heap[0]</code> gives <strong>5</strong>.</p>
+      <p>Note that 4 cost one push and one pop and changed nothing, which is the common case once the heap is full of large values: most numbers bounce straight off.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the wrong heap, the wrong bound</h2>
+      <p><strong>Negating out of habit.</strong> Many heap problems store <code>-num</code> to fake a max-heap. Do that here, with the same size-<code>k</code> cap, and the heap keeps the <code>k</code> <em>smallest</em> values instead: on the example it ends as <code>[-2, -1]</code>, i.e. values 2 and 1, and <code>-heap[0]</code> returns <strong>2</strong>, the 2nd smallest. The eviction always removes the root; the root must be the value you want gone, and here that is the smallest survivor, which a plain min-heap already exposes.</p>
+      <p><strong>Trimming with <code>&gt;=</code>.</strong> <code>if len(heap) &gt;= k</code> pops as soon as the heap reaches <code>k</code>, so it can never hold <code>k</code> survivors. On the example the heap ends as <code>[6]</code> and the function returns 6, the 1st largest.</p>
+      <p><strong>Reading the wrong slot.</strong> <code>heap[-1]</code> is just the last leaf, not the maximum; after the last step it is 6, which is wrong for <code>k = 2</code>. Only <code>heap[0]</code> has a guaranteed meaning in a heap.</p>
+      <div class="callout warn">Decide what should be evicted, then make that the root. To keep the k largest, evict the smallest, so use a min-heap and do not negate.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Each of the <code>n</code> numbers is pushed once and popped at most once, on a heap that never exceeds <code>k + 1</code> entries: <strong>O(n log k) time</strong>, <strong>O(k) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Sort and index</td><td>O(n log n)</td><td>O(1) extra if in place</td></tr>
+        <tr><td>Min-heap capped at k</td><td>O(n log k)</td><td>O(k)</td></tr>
+        <tr><td>Quickselect</td><td>O(n) average, O(n²) worst</td><td>O(1) extra</td></tr>
+        <tr><td>Counting (values bounded by 10⁴)</td><td>O(n + range)</td><td>O(range)</td></tr>
+      </table>
+      <p>For small <code>k</code> the heap is close to linear. Quickselect is the theoretical winner on average and works in place, but its worst case is quadratic unless the pivot is randomised, and it does not survive a streaming input. The heap does: it is the same structure as Kth Largest Element in a Stream, just fed by a loop instead of by <code>add</code> calls.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Six lines.</p>
+      <ul>
+        <li><code>heap = []</code> holds the <code>k</code> largest values seen so far.</li>
+        <li><code>for num in nums</code> visits each number once.</li>
+        <li><code>heapq.heappush(heap, num)</code> inserts it, no negation.</li>
+        <li><code>if len(heap) &gt; k: heapq.heappop(heap)</code> evicts the smallest whenever the heap overflows.</li>
+        <li><code>return heap[0]</code> is the smallest of the <code>k</code> largest, which is the <code>k</code>th largest.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>keep the k largest in a min-heap; the root is the kth largest.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>min-heap capped at k · <span id="target">nums = [3,2,1,5,6,4], k = 2</span></h3>
+        <svg class="tree" id="tree" viewBox="0 0 400 240" aria-label="heap as a binary tree"></svg>
+        <div class="array compact" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>this step</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="kth_largest_element_in_an_array.py">kth_largest_element_in_an_array.py</a> · <a href="kth_largest_element_in_an_array_annotated.py">kth_largest_element_in_an_array_annotated.py</a> · <a href="test_kth_largest_element_in_an_array.py">test_kth_largest_element_in_an_array.py</a> · <a href="../../md.html?f=medium/050-kth-largest-element-in-an-array/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def find_kth_largest(self, nums: list[int], k: int) -> int:",
+    "        heap = []",
+    "        for num in nums:",
+    "            heapq.heappush(heap, num)",
+    "            if len(heap) > k:",
+    "                heapq.heappop(heap)",
+    "        return heap[0]"
+  ];
+
+  // heap: the list exactly as heapq lays it out (index 0 = root).
+  // bad = popped this step (amber), cur = just pushed (blue), hits = survivors / answer (green).
+  var STATES = {
+    problem: {
+      caption: "Which value is 2nd largest in [3, 2, 1, 5, 6, 4]?",
+      phase: "nums = [3,2,1,5,6,4], k = 2", heap: [3, 2, 1, 5, 6, 4], cur: -1, hits: [3], bad: [], dim: [], tags: { 3: "2nd largest" },
+      vars: [], meta: "Input order, not a heap yet. Descending: 6, 5, 4, 3, 2, 1 → the 2nd is <b>5</b>.", hl: []
+    },
+    brute: {
+      caption: "Sort everything, then read nums[len(nums) - k].",
+      phase: "sorted ascending", heap: [1, 2, 3, 4, 5, 6], cur: -1, hits: [4], bad: [], dim: [0, 1, 2, 3], tags: { 4: "n − k" },
+      vars: [["sort", "O(n log n)", ""], ["index", "6 − 2 = 4", ""]], meta: "The four dimmed values were fully ordered by the sort and then never read.", hl: [],
+      big: "O(n log n)", bigNote: "a full ordering when only one rank is needed"
+    },
+    insight: {
+      caption: "A min-heap of the k largest so far: the root is the smallest of them, the kth largest.",
+      phase: "k largest in a min-heap", heap: [5, 6], cur: -1, hits: [0], bad: [], dim: [], tags: { 0: "kth largest" },
+      vars: [["heap[0]", "smallest of the k largest", "found"]], meta: "No negation: the value to evict is the smallest survivor, and a min-heap already puts that at the root.", hl: [4, 5, 6, 7]
+    },
+    approach: {
+      caption: "Push each number; if the heap holds k + 1, pop the root; return heap[0] at the end.",
+      phase: "heap = [], k = 2", heap: [], cur: -1, hits: [], bad: [], dim: [], tags: {},
+      vars: [["to push", "3, 2, 1, 5, 6, 4", ""], ["cap", "len(heap) > 2 → pop", ""]], meta: "Push first, then pop: the newcomer must be inside the heap to compete with the root.", hl: [2, 3, 4, 5, 6, 7]
+    },
+    trace1: {
+      caption: "Push 3, push 2 → [2, 3]. Push 1 → [1, 3, 2], size 3 > k, pop the root 1 → [2, 3].",
+      phase: "after 3, 2, 1", heap: [1, 3, 2], cur: 0, hits: [], bad: [0], dim: [], tags: { 0: "popped" },
+      vars: [["pushed", "1", "new"], ["len(heap)", "3 > 2 → pop", ""], ["after pop", "[2, 3]", ""]], meta: "1 sifted up to the root on push and was immediately popped back out. Survivors: 2 and 3.", hl: [4, 5, 6]
+    },
+    trace2: {
+      caption: "Push 5 → [2, 3, 5], pop 2 → [3, 5]. Push 6 → [3, 5, 6], pop 3 → [5, 6].",
+      phase: "after 5 and 6", heap: [3, 5, 6], cur: 2, hits: [], bad: [0], dim: [], tags: { 0: "popped", 2: "pushed" },
+      vars: [["pushed", "6", "new"], ["popped", "3", ""], ["after pop", "[5, 6]", ""]], meta: "Both newcomers outranked every survivor, so each push evicted the previous root.", hl: [4, 5, 6]
+    },
+    trace3: {
+      caption: "Push 4 → [4, 6, 5], pop 4 → [5, 6]. Last number. heap[0] = 5 is the answer.",
+      phase: "after 4, loop finished", heap: [5, 6], cur: -1, hits: [0], bad: [], dim: [], tags: { 0: "heap[0]" },
+      vars: [["pushed then popped", "4", ""], ["heap", "[5, 6]", ""], ["heap[0]", "5", "found"]], meta: "The heap holds the 2 largest values, 5 and 6; the root is the smaller: the 2nd largest.", hl: [7],
+      big: "5", bigNote: "the 2nd largest of [3, 2, 1, 5, 6, 4]"
+    },
+    pitfall: {
+      caption: "Negating the values turns the cap into 'keep the k smallest': the heap ends as [-2, -1].",
+      phase: "negated values (bug)", heap: [-2, -1], cur: -1, hits: [], bad: [0], dim: [], tags: { 0: "-heap[0] ?" },
+      vars: [["kept", "2 and 1", ""], ["returns", "2", ""]], meta: "The root of a max-heap is the largest survivor, so every overflow evicts the largest value, the opposite of what we want.", hl: [4, 6, 7],
+      big: "2, not 5", bigNote: "the 2nd smallest instead of the 2nd largest"
+    },
+    complexity: {
+      caption: "n pushes and at most n pops, each on a heap of size at most k + 1.",
+      phase: "nums = [3,2,1,5,6,4], k = 2", heap: [5, 6], cur: -1, hits: [], bad: [], dim: [], tags: {},
+      vars: [["per number", "O(log k)", ""], ["heap size", "≤ k + 1", ""]], meta: "The heap never holds all n numbers, so the log factor is in k, not n.", hl: [3, 4, 5, 6],
+      big: "O(n log k) time · O(k) space", bigNote: "versus O(n log n) for sorting the whole array"
+    },
+    final: {
+      caption: "The whole solution.",
+      phase: "nums = [3,2,1,5,6,4], k = 2", heap: [5, 6], cur: -1, hits: [0], bad: [], dim: [], tags: {},
+      vars: [["answer", "5", "found"]], meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7]
+    }
+  };
+
+  // Fixed layout for a complete 3-level tree, indexed in heap (level) order. Only the first heap.length slots are drawn.
+  var POS = [[200, 32], [105, 102], [295, 102], [55, 172], [155, 172], [245, 172], [345, 172]];
+  var R = 21;
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var treeSvg = document.getElementById("tree");
+
+  function nodeClass(s, i) {
+    if (i === s.cur) return "cur";
+    if (s.bad.indexOf(i) !== -1) return "bad";
+    if (s.hits.indexOf(i) !== -1) return "hit";
+    if (s.dim.indexOf(i) !== -1) return "dim";
+    return "";
+  }
+
+  function renderHeap(s) {
+    while (treeSvg.firstChild) treeSvg.removeChild(treeSvg.firstChild);
+    var n = Math.min(s.heap.length, POS.length);
+    for (var i = 1; i < n; i++) {
+      var p = POS[(i - 1) >> 1], c = nodeClass(s, i);
+      treeSvg.appendChild(el("line", { "class": "edge" + (c === "bad" || c === "hit" ? " " + c : ""), x1: p[0], y1: p[1], x2: POS[i][0], y2: POS[i][1] }));
+    }
+    for (var j = 0; j < n; j++) {
+      var cls = nodeClass(s, j);
+      var g = el("g", { "class": "node" + (cls ? " " + cls : "") });
+      g.appendChild(el("circle", { cx: POS[j][0], cy: POS[j][1], r: R }));
+      g.appendChild(el("text", { x: POS[j][0], y: POS[j][1] }, String(s.heap[j])));
+      treeSvg.appendChild(g);
+      if (s.tags[j] !== undefined) {
+        treeSvg.appendChild(el("text", { "class": "lbl" + (cls ? " " + cls : ""), x: POS[j][0] + (j === 0 ? R + 40 : 0), y: POS[j][1] + (j === 0 ? 0 : R + 14) }, s.tags[j]));
+      }
+    }
+    if (n === 0) treeSvg.appendChild(el("text", { "class": "lbl", x: 200, y: 110 }, "heap is empty"));
+  }
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.phase;
+    $("meta").innerHTML = s.meta;
+
+    renderHeap(s);
+
+    var arr = "";
+    for (var i = 0; i < s.heap.length; i++) {
+      var cls = nodeClass(s, i);
+      arr += '<div class="cell' + (cls ? " " + cls : "") + '">' + s.heap[i] + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">nothing pushed yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

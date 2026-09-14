@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Letter Combinations of a Phone Number Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Backtracking · LeetCode #17</div>
+  <h1>Letter Combinations of a Phone Number, narrated</h1>
+  <p>Scroll through the thinking, from enumerating every letter string to a recursion that picks one letter per digit and undoes it, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/backtracking.html">Backtracking</a> <span class="how">one recursion level per digit; push a letter, recurse, pop</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>On an old phone keypad each digit from <code>2</code> to <code>9</code> carries three or four letters: <code>2 → abc</code>, <code>3 → def</code>, … <code>7 → pqrs</code>, <code>9 → wxyz</code>. Given a string of such digits, return every string that could be typed by choosing one letter from each digit's key, in order.</p>
+      <div class="callout">Running example: <code>digits = "23"</code>. The answer is <strong>["ad","ae","af","bd","be","bf","cd","ce","cf"]</strong>: 3 choices for the first letter times 3 for the second, nine strings.</div>
+      <p>There is no constraint to satisfy and nothing to reject. Every combination of one letter per digit is an answer, so the task is purely to enumerate a product of small sets, with the number of factors, <code>len(digits)</code>, not known until run time. That is what makes a fixed set of nested loops impossible to write.</p>
+      <p>One edge case matters: <code>digits = ""</code> must return <code>[]</code>, not a list holding one empty string.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>Brute force: every string of letters, filtered</h2>
+      <p>The dumbest correct approach ignores the keypad while generating: build every string of length <code>len(digits)</code> over all 26 letters, then keep the ones whose letter at each position sits on the right key.</p>
+      <pre class="code"><span class="ln">from itertools import product</span><span class="ln">letters = "abcdefghijklmnopqrstuvwxyz"</span><span class="ln">result = []</span><span class="ln">for s in product(letters, repeat=len(digits)):</span><span class="ln">    if all(s[i] in keypad[digits[i]] for i in range(len(digits))):</span><span class="ln">        result.append("".join(s))</span></pre>
+      <p style="margin-top:14px">For <code>"23"</code> that is <code>26^2 = 676</code> candidates to find 9 answers; for four digits it is <code>26^4 = 456,976</code> candidates for at most 256 answers. <strong>O(26ⁿ · n)</strong>, almost all of it spent building strings whose first letter was already off the first key.</p>
+      <p>The obvious fix is to never generate a letter that is not on the current digit's key. Then every string we build is an answer, and the only remaining question is how to write "one loop per digit" for an unknown number of digits.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 3</div>
+      <h2>Key insight: one recursion level per digit</h2>
+      <p>A recursive function <code>backtrack(index)</code> is responsible for exactly one position. It loops over the letters of <code>keypad[digits[index]]</code>, and for each one appends it to <code>path</code>, calls <code>backtrack(index + 1)</code> to fill the rest, and then pops it so the next letter of the same key starts from the same prefix.</p>
+      <p>Each level of the call stack is one of the nested loops we could not write by hand, and the depth adjusts itself to <code>len(digits)</code>.</p>
+      <div class="callout">The base case is <code>index == len(digits)</code>: every position has its letter, so <code>"".join(path)</code> is a complete answer. Record it and return. There is no pruning anywhere, because there is nothing to prune.</div>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>if not digits: return []</code> — the empty input is handled before the recursion can record an empty string.</li>
+        <li><code>keypad</code> — a dict from digit character to its letters.</li>
+        <li><code>backtrack(index)</code> — if <code>index == len(digits)</code>, append <code>"".join(path)</code> to <code>result</code> and return.</li>
+        <li><code>for letter in keypad[digits[index]]</code> — the choices for this position, in key order so the output comes out lexicographic.</li>
+        <li><code>path.append(letter)</code>, <code>backtrack(index + 1)</code>, <code>path.pop()</code> — choose, recurse, undo.</li>
+        <li><code>backtrack(0)</code> then <code>return result</code>.</li>
+      </ul>
+      <p>The panel shows the digits with the one being filled in blue, the letters available on that key, the current <code>path</code>, and the strings recorded so far.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace: "a" then d, e, f</h2>
+      <p><code>backtrack(0)</code>: <code>digits[0] = "2"</code>, so the loop runs over <code>"abc"</code>. First <code>letter = "a"</code>: <code>path = ["a"]</code>, call <code>backtrack(1)</code>.</p>
+      <p><code>backtrack(1)</code>: <code>digits[1] = "3"</code>, loop over <code>"def"</code>. Push <code>"d"</code>, call <code>backtrack(2)</code>: <code>2 == len(digits)</code>, so <code>"ad"</code> is recorded. Pop <code>"d"</code>. Push <code>"e"</code>: <code>"ae"</code> recorded, pop. Push <code>"f"</code>: <code>"af"</code> recorded, pop.</p>
+      <div class="callout">The loop in <code>backtrack(1)</code> is finished, so it returns to <code>backtrack(0)</code>, which pops <code>"a"</code>. The path is empty again, exactly as it was before <code>"a"</code> was chosen.</div>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace: "b" then d, e, f</h2>
+      <p>Second iteration of the outer loop: <code>letter = "b"</code>. Push it, call <code>backtrack(1)</code>, and the inner loop repeats over <code>"def"</code> from the new prefix: <code>"bd"</code>, <code>"be"</code>, <code>"bf"</code> are recorded, each after a push and before a pop.</p>
+      <p>Notice that <code>backtrack(1)</code> is the same function with the same argument as before; it only produces different strings because <code>path</code> now begins with <code>"b"</code>. The prefix is the only state that changes between calls, and the pop is what keeps it honest.</p>
+      <p>Six strings so far, three calls to <code>backtrack(2)</code> per outer letter.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace: "c" then d, e, f, and done</h2>
+      <p>Third and last iteration: <code>letter = "c"</code>. The same inner loop records <code>"cd"</code>, <code>"ce"</code>, <code>"cf"</code>. The outer loop is exhausted, <code>backtrack(0)</code> returns, and <code>result</code> holds nine strings in lexicographic order.</p>
+      <p>Count the calls: one <code>backtrack(0)</code>, three <code>backtrack(1)</code>, nine <code>backtrack(2)</code>: thirteen in all, and nine of them recorded an answer. Nothing was built and thrown away.</p>
+      <div class="callout">Compare the brute force: 676 candidate strings generated to find the same nine.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong</h2>
+      <p><strong>Dropping the empty-input guard.</strong> Without <code>if not digits: return []</code>, <code>backtrack(0)</code> runs with <code>len(digits) == 0</code>, hits the base case at once, and records <code>"".join([])</code>. The function returns <strong><code>[""]</code> instead of <code>[]</code></strong>, a list with one string in it, which fails the problem's second example.</p>
+      <p><strong>Forgetting <code>path.pop()</code>.</strong> Letters pile up across siblings: after <code>"ad"</code> the next push gives <code>"ade"</code>, then <code>"adef"</code>, and the outer loop's <code>"b"</code> lands on top of all that. The output is <code>["ad", "ade", "adef", "adefbd", …]</code>, nine strings of the wrong lengths.</p>
+      <p><strong>Stopping one level early.</strong> A base case of <code>index == len(digits) - 1</code> records before the last digit's letter is chosen: <code>"23"</code> returns <code>["a", "b", "c"]</code>.</p>
+      <div class="callout warn">The base case is <code>index == len(digits)</code>, every push has a matching pop, and the empty string is rejected before the recursion starts.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Each digit offers at most 4 letters, so there are at most <code>4^n</code> strings, and each one costs O(n) to join. Every call in the tree is on the path to an answer, so the work is proportional to the output.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>All 26ⁿ strings, filtered</td><td>O(26ⁿ · n)</td><td>O(n) per candidate + output</td></tr>
+        <tr><td>Iterative product (extend a list per digit)</td><td>O(4ⁿ · n)</td><td>O(4ⁿ · n) intermediate lists</td></tr>
+        <tr><td>Backtracking with push / pop</td><td>O(4ⁿ · n)</td><td>O(n) for path and stack + output</td></tr>
+      </table>
+      <p>The iterative version is the same count of strings but keeps every intermediate prefix list alive; the recursion keeps one prefix at a time.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <ul>
+        <li><code>if not digits: return []</code> — no digits, no strings.</li>
+        <li><code>keypad = {"2": "abc", …, "9": "wxyz"}</code> — the letters on each key.</li>
+        <li><code>if index == len(digits): result.append("".join(path))</code> — one letter per digit chosen; record.</li>
+        <li><code>for letter in keypad[digits[index]]</code> — the choices for this position.</li>
+        <li><code>path.append(letter)</code> — choose.</li>
+        <li><code>backtrack(index + 1)</code> — fill the remaining positions.</li>
+        <li><code>path.pop()</code> — undo, so the next letter starts from the same prefix.</li>
+        <li><code>backtrack(0)</code> and <code>return result</code>.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>one recursion level per digit, one loop over that key's letters, push before the call and pop after it.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>digits = "23" · blue = position being filled</h3>
+        <div class="array" id="digits"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>letters on this key · blue = chosen now</h3>
+        <div class="array" id="keys"></div>
+      </div>
+
+      <div class="block">
+        <h3>path</h3>
+        <div class="array" id="array"></div>
+      </div>
+
+      <div class="block">
+        <h3>result</h3>
+        <div class="dict" id="result"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="letter_combinations_of_a_phone_number.py">letter_combinations_of_a_phone_number.py</a> · <a href="letter_combinations_of_a_phone_number_annotated.py">letter_combinations_of_a_phone_number_annotated.py</a> · <a href="test_letter_combinations_of_a_phone_number.py">test_letter_combinations_of_a_phone_number.py</a> · <a href="../../md.html?f=medium/060-letter-combinations-of-a-phone-number/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def letter_combinations(self, digits: str) -> list[str]:",
+    "        if not digits:",
+    "            return []",
+    "        keypad = {",
+    "            \"2\": \"abc\", \"3\": \"def\", \"4\": \"ghi\", \"5\": \"jkl\",",
+    "            \"6\": \"mno\", \"7\": \"pqrs\", \"8\": \"tuv\", \"9\": \"wxyz\",",
+    "        }",
+    "        result = []",
+    "        path = []",
+    "",
+    "        def backtrack(index: int) -> None:",
+    "            if index == len(digits):",
+    "                result.append(\"\".join(path))",
+    "                return",
+    "            for letter in keypad[digits[index]]:",
+    "                path.append(letter)",
+    "                backtrack(index + 1)",
+    "                path.pop()",
+    "",
+    "        backtrack(0)",
+    "        return result"
+  ];
+
+  var DIGITS = "23";
+  var KEYPAD = { "2": "abc", "3": "def" };
+  var ALL = ["ad", "ae", "af", "bd", "be", "bf", "cd", "ce", "cf"];
+
+  // index = position being filled (-1 = none), keys = letters shown for that key ("" = none),
+  // pick = the letter being chosen from keys, path = letters chosen so far, found = strings recorded.
+  var STATES = {
+    problem: {
+      caption: "Every string made by taking one letter from key 2 and then one from key 3.",
+      index: -1, keys: "", pick: "", path: [], found: ALL,
+      meta: "3 × 3 = <b>9</b> strings. An empty digits string must give [].", hl: []
+    },
+    brute: {
+      caption: "Brute force generates all 26² = 676 two-letter strings and keeps those on the right keys.",
+      index: -1, keys: "", pick: "", path: ["q", "z"], found: [],
+      meta: "\"qz\" was doomed at its first letter, but it was built and checked anyway.", hl: [],
+      big: "O(26ⁿ · n)", bigNote: "456,976 candidates for at most 256 answers at four digits"
+    },
+    idea: {
+      caption: "backtrack(index) owns one position: loop over that key's letters, push, recurse, pop.",
+      index: 0, keys: "abc", pick: "a", path: ["a"], found: [],
+      meta: "Depth of the call stack = number of digits; each level is one of the loops we could not write by hand.", hl: [11, 12, 13, 15, 16, 17, 18]
+    },
+    approach: {
+      caption: "Guard the empty input, then start the recursion at index 0 with an empty path.",
+      index: 0, keys: "abc", pick: "", path: [], found: [],
+      meta: "backtrack(0) begins with path = [].", hl: [2, 3, 12, 13, 15, 16, 17, 18, 20]
+    },
+    t1: {
+      caption: "\"a\" at index 0, then d, e, f at index 1: \"ad\", \"ae\", \"af\" recorded, each popped after.",
+      index: 1, keys: "def", pick: "f", path: ["a", "f"], found: ["ad", "ae", "af"],
+      meta: "backtrack(2): 2 == len(digits), so \"\".join([\"a\", \"f\"]) = <b>\"af\"</b> is recorded.", hl: [12, 13, 15, 16, 17, 18]
+    },
+    t2: {
+      caption: "\"a\" is popped; \"b\" pushed; the same inner loop gives \"bd\", \"be\", \"bf\".",
+      index: 1, keys: "def", pick: "f", path: ["b", "f"], found: ["ad", "ae", "af", "bd", "be", "bf"],
+      meta: "backtrack(1) is the same call as before; only the prefix in path differs.", hl: [15, 16, 17, 18]
+    },
+    t3: {
+      caption: "\"c\" then d, e, f: nine strings, thirteen calls, nothing discarded.",
+      index: 1, keys: "def", pick: "f", path: ["c", "f"], found: ALL,
+      meta: "1 call at index 0, 3 at index 1, 9 at index 2.", hl: [12, 13, 20, 21],
+      big: "9 strings", bigNote: "versus 676 candidates for the brute force"
+    },
+    pitfall: {
+      caption: "Without the guard, digits = \"\" hits the base case immediately and records the empty string.",
+      index: -1, keys: "", pick: "", path: [], found: ["\"\""],
+      meta: "len(digits) == 0 == index on the very first call, so \"\".join([]) is appended.", hl: [2, 3, 12, 13],
+      big: "[\"\"], not []", bigNote: "a list holding one empty string"
+    },
+    complexity: {
+      caption: "At most 4 letters per digit, so at most 4ⁿ strings, each joined in O(n).",
+      index: -1, keys: "", pick: "", path: [], found: ALL,
+      meta: "path and the call stack are bounded by the number of digits.", hl: [12, 13, 15],
+      big: "O(4ⁿ · n) time · O(n) space", bigNote: "every call is on the way to an answer"
+    },
+    final: {
+      caption: "The whole solution.",
+      index: -1, keys: "", pick: "", path: [], found: ALL,
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 20, 21]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function chips(list, emptyText) {
+    if (list.length === 0) return '<span class="empty">' + emptyText + '</span>';
+    var d = "";
+    for (var k = 0; k < list.length; k++) {
+      var e = list[k];
+      d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + (e[1] !== undefined ? " = " + e[1] : "") + "</span>";
+    }
+    return d;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var dg = "";
+    for (var i = 0; i < DIGITS.length; i++) {
+      var dc = "cell";
+      if (i === s.index) dc += " cur";
+      else if (i < s.path.length) dc += " hit";
+      else dc += " dim";
+      dg += '<div class="' + dc + '">' + DIGITS.charAt(i) + '<span class="idx">' + KEYPAD[DIGITS.charAt(i)] + '</span></div>';
+    }
+    $("digits").innerHTML = dg;
+
+    var ks = "";
+    if (s.keys === "") {
+      ks = '<div class="cell dim">·<span class="idx">no key active</span></div>';
+    } else {
+      for (var k = 0; k < s.keys.length; k++) {
+        var kc = "cell";
+        if (s.keys.charAt(k) === s.pick) kc += " cur";
+        else if (s.pick && s.keys.indexOf(s.pick) > k) kc += " dim";
+        ks += '<div class="' + kc + '">' + s.keys.charAt(k) + '<span class="idx">key ' + DIGITS.charAt(s.index) + '</span></div>';
+      }
+    }
+    $("keys").innerHTML = ks;
+
+    var arr = "";
+    for (var p = 0; p < DIGITS.length; p++) {
+      var pc = "cell", ch = p < s.path.length ? s.path[p] : "·";
+      if (p < s.path.length) pc += (p === s.path.length - 1 && s.index !== -1 ? " cur" : " hit");
+      else pc += " dim";
+      arr += '<div class="' + pc + '">' + ch + '<span class="idx">' + p + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    var found = [];
+    for (var f = 0; f < s.found.length; f++) found.push([s.found[f], undefined, name === "pitfall" ? "" : "found"]);
+    $("result").innerHTML = chips(found, "empty");
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

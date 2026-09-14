@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Math Tricks, Explained</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --node-bg: #ffffff;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --node-bg: #1c1f24;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.9em; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-size: 0.88rem; line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  a { color: var(--accent); }
+
+  header { max-width: 760px; margin: 0 auto; padding: 48px 24px 8px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header h1 { margin: 6px 0 8px; font-size: 2.1rem; line-height: 1.15; }
+  header p.lede { margin: 0; color: var(--muted); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 24px 24px 72px; }
+
+  section { margin: 44px 0; }
+  section h2 { font-size: 1.35rem; margin: 0 0 12px; }
+  section h3 { font-size: 1.05rem; margin: 28px 0 10px; }
+  section p { margin: 0 0 14px; }
+  section ul, section ol { margin: 0 0 14px; padding-left: 22px; }
+  section li { margin: 4px 0; }
+  .muted { color: var(--muted); }
+
+  .callout {
+    border: 1px solid var(--line); background: var(--panel); border-radius: 10px;
+    padding: 14px 18px; margin: 18px 0; font-size: 0.95rem;
+  }
+  .callout.why { border-left: 4px solid var(--accent); }
+  .callout.gotcha { border-left: 4px solid var(--warn); }
+  .callout.tip { border-left: 4px solid var(--ok); }
+
+  /* --- array / cell diagrams --- */
+  .cells-wrap { margin: 26px 0 8px; overflow-x: auto; padding: 22px 2px 26px; }
+  .cells { display: flex; gap: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem; }
+  .cell {
+    position: relative; flex-shrink: 0; min-width: 46px; height: 46px; padding: 0 8px;
+    border: 1.5px solid var(--ink); border-radius: 8px; background: var(--node-bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cell .idx { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 0.7rem; color: var(--muted); }
+  .cell .ptr { position: absolute; bottom: -22px; left: 0; right: 0; text-align: center; font-size: 0.72rem; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .cell.hi { border-color: var(--accent); background: var(--accent-soft); }
+  .cell.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .cell.dim { opacity: 0.4; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin: 0 0 18px; }
+
+  /* --- node diagrams (linked lists, trees drawn inline) --- */
+  .diagram {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    margin: 22px 0; overflow-x: auto; padding: 8px 2px 14px;
+  }
+  .node {
+    display: flex; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: 8px;
+    overflow: hidden; background: var(--node-bg); font-family: ui-monospace, Menlo, monospace;
+    font-size: 0.95rem;
+  }
+  .node .val { padding: 10px 16px; border-right: 1.5px solid var(--ink); min-width: 2.2em; text-align: center; }
+  .node .ptr { padding: 10px 12px; color: var(--muted); min-width: 2.4em; text-align: center; }
+  .node.hi { border-color: var(--accent); }
+  .node.hi .val { background: var(--accent-soft); }
+  .node.null { flex-shrink: 0; font-family: ui-monospace, Menlo, monospace; color: var(--muted); padding: 10px 8px; font-size: 0.9rem; }
+  .arrow { flex-shrink: 0; padding: 0 8px; color: var(--muted); font-size: 1.2rem; line-height: 1; }
+  .arrow.back { color: var(--accent); font-weight: 700; }
+
+  /* --- ascii-style diagrams (trees, graphs, grids) --- */
+  pre.art { font-size: 0.9rem; line-height: 1.4; }
+
+  /* --- trace tables --- */
+  .tbl { overflow-x: auto; margin: 12px 0 20px; -webkit-overflow-scrolling: touch; }
+  table.trace { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.trace th, table.trace td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.trace th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+  table.trace td code { white-space: nowrap; }
+  table.trace tr.hi td { background: var(--accent-soft); }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .compare .box { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+  .compare .box h4 { margin: 0 0 8px; font-size: 0.95rem; }
+  .compare .box ul { margin: 0; padding-left: 18px; font-size: 0.92rem; color: var(--muted); }
+  .compare .box li { margin: 4px 0; }
+  @media (max-width: 560px) { .compare { grid-template-columns: 1fr; } }
+
+  .steps { counter-reset: step; list-style: none; margin: 0; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 4px 0 4px 40px; margin-bottom: 10px; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--ink);
+    font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .problems { list-style: none; padding: 0; margin: 0; }
+  .problems li { display: flex; gap: 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .problems .id { color: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 0.8rem; min-width: 8.5em; }
+  .problems .note { color: var(--muted); font-size: 0.9rem; }
+
+  footer { max-width: 760px; margin: 0 auto; padding: 0 24px 64px; color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 32px; }
+    header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../index.html#concepts">← All concepts</a>
+  <div class="tag">Concept · Pattern</div>
+  <h1>Math Tricks, Explained</h1>
+  <p class="lede">Fast exponentiation, schoolbook multiplication on digit arrays, and reversing an integer without overflowing.</p>
+</header>
+
+<main>
+  <section>
+    <h2>The core idea</h2>
+    <p>
+      Some interview problems are pure arithmetic, but with a catch: the obvious way is too slow, the numbers
+      are too big for a machine word, or the language's built-in shortcut is off limits. The fix is always to
+      go back to how you did arithmetic by hand in school, and then to notice one structural trick that cuts
+      the work.
+    </p>
+    <p>
+      Three of those tricks come up again and again. To compute <code>x<sup>n</sup></code>, <strong>square the
+      base and halve the exponent</strong> instead of multiplying n times. To multiply two huge numbers,
+      <strong>multiply digit by digit into an array of slots</strong> and carry afterwards. To reverse or rebuild
+      an integer, <strong>peel digits with <code>% 10</code> and <code>// 10</code></strong>, and check the
+      overflow bound <em>before</em> the step that would cross it.
+    </p>
+    <div class="callout why">
+      <strong>Why it's fast:</strong> halving the exponent turns n multiplications into about log₂ n. The digit
+      loops are O(number of digits), which is the size of the input, so nothing is wasted.
+    </div>
+  </section>
+
+  <section>
+    <h2>How to recognise it</h2>
+    <p>Reach for these techniques when a problem says, or quietly implies, one of these:</p>
+    <ul>
+      <li><strong>A huge exponent or repeat count</strong>: n up to 2<sup>31</sup>, "compute x to the power n", "apply this operation n times" where the operation composes.</li>
+      <li><strong>Numbers given as strings</strong> because they will not fit in 64 bits. The problem is asking you to be the big-integer library.</li>
+      <li><strong>"Assume a 32-bit signed integer"</strong> and "return 0 if it overflows". You must detect the overflow without ever producing an out-of-range value.</li>
+      <li><strong>"Do not use built-in <code>int()</code>, <code>str()</code>, <code>pow</code>"</strong>. The one-liner exists; the interviewer wants the loop.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>The naive way first</h2>
+    <p>
+      Take this problem: <em>compute x raised to the integer power n.</em> The instinctive answer multiplies
+      n times:
+    </p>
+    <pre>def power_slow(x, n):
+    result = 1.0
+    for _ in range(abs(n)):
+        result *= x
+    return result if n &gt;= 0 else 1 / result</pre>
+    <p>
+      That is O(n). For n = 2<sup>31</sup> − 1, the largest allowed input, it is two billion multiplications.
+      The waste is that <code>x<sup>8</sup></code> is being computed as <code>x·x·x·x·x·x·x·x</code> when it is
+      also <code>((x²)²)²</code>, three multiplications instead of seven.
+    </p>
+  </section>
+
+  <section>
+    <h2>The pattern</h2>
+    <p>
+      Read n in binary. Each set bit says "multiply <code>x<sup>2<sup>k</sup></sup></code> into the answer". You get those
+      powers for free by squaring x once per bit.
+    </p>
+    <pre>def power(x, n):
+    if n &lt; 0:
+        x, n = 1 / x, -n           # x^-n is (1/x)^n
+    result = 1.0
+    while n:
+        if n &amp; 1:                  # lowest bit set: this power of x belongs in the answer
+            result *= x
+        x *= x                     # x, x^2, x^4, x^8, ...
+        n &gt;&gt;= 1                    # drop the bit we just handled
+    return result</pre>
+    <p>
+      The line that matters is <code>x *= x</code>. After k iterations, <code>x</code> holds
+      <code>x<sup>2<sup>k</sup></sup></code>, and bit k of n decides whether that factor is used. The loop runs once per
+      bit of n, so about 31 times for the worst case instead of two billion.
+    </p>
+  </section>
+
+  <section>
+    <h2>One example, traced by hand</h2>
+    <p>Compute <code>3<sup>13</sup></code>. In binary, 13 is <code>1101</code>, so 3<sup>13</sup> = 3<sup>8</sup> · 3<sup>4</sup> · 3<sup>1</sup>.</p>
+
+    <div class="tbl">
+      <table class="trace">
+        <thead><tr><th>Step</th><th>n (binary)</th><th>low bit</th><th>x before</th><th>result after</th><th>x after squaring</th></tr></thead>
+        <tbody>
+          <tr class="hi"><td>1</td><td><code>1101</code></td><td>1</td><td>3</td><td>1 · 3 = <strong>3</strong></td><td>9</td></tr>
+          <tr><td>2</td><td><code>110</code></td><td>0</td><td>9</td><td>3</td><td>81</td></tr>
+          <tr class="hi"><td>3</td><td><code>11</code></td><td>1</td><td>81</td><td>3 · 81 = <strong>243</strong></td><td>6561</td></tr>
+          <tr class="hi"><td>4</td><td><code>1</code></td><td>1</td><td>6561</td><td>243 · 6561 = <strong>1594323</strong></td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption">Four iterations, five multiplications. The plain loop needed twelve. Step 2 skips the multiply because bit 1 of 13 is zero; 3<sup>2</sup> is not part of the answer.</p>
+
+    <p>
+      The highlighted rows are exactly the set bits of 13. Notice that <code>x</code> is squared every step
+      whether or not the bit is set, because the next bit needs the next power ready.
+    </p>
+  </section>
+
+  <section>
+    <h2>Variations</h2>
+
+    <h3>Schoolbook multiplication on digit arrays</h3>
+    <p>
+      To multiply two numbers given as strings, do exactly what you did in primary school, but skip the
+      "shift left one column per row" ritual by computing the slot directly. Digit <code>i</code> of
+      <code>a</code> times digit <code>j</code> of <code>b</code> lands in slot <code>i + j + 1</code>, and its
+      carry goes to slot <code>i + j</code>. The product of an m-digit and an n-digit number has at most
+      m + n digits, so that is the array size.
+    </p>
+    <pre>def multiply(a, b):
+    if a == "0" or b == "0":
+        return "0"
+    digits = [0] * (len(a) + len(b))
+    for i in range(len(a) - 1, -1, -1):
+        for j in range(len(b) - 1, -1, -1):
+            total = int(a[i]) * int(b[j]) + digits[i + j + 1]
+            digits[i + j + 1] = total % 10         # ones digit stays here
+            digits[i + j] += total // 10           # carry moves one slot left
+    k = 0
+    while digits[k] == 0:                          # strip leading zeroes
+        k += 1
+    return "".join(map(str, digits[k:]))</pre>
+    <p>
+      It is O(m · n), which is fine for the string lengths interviews use. The <code>+=</code> on the carry
+      line matters: that slot may already hold a carry from an earlier pair.
+    </p>
+
+    <h3>Digit-by-digit reversal with an overflow check</h3>
+    <p>
+      <code>x % 10</code> is the last digit; <code>x // 10</code> drops it. Rebuild the number from the other
+      end with <code>result * 10 + digit</code>. The overflow question is: will <code>result * 10 + digit</code>
+      exceed 2<sup>31</sup> − 1? Rearranged so nothing overflows, that is
+      <code>result &gt; (INT_MAX − digit) // 10</code>.
+    </p>
+    <pre>def reverse(x):
+    INT_MAX = 2 ** 31 - 1
+    sign = -1 if x &lt; 0 else 1
+    x = abs(x)                               # Python's % is floor-based; keep it positive
+    result = 0
+    while x:
+        digit = x % 10
+        x //= 10
+        if result &gt; (INT_MAX - digit) // 10:
+            return 0                         # the next step would overflow
+        result = result * 10 + digit
+    return sign * result</pre>
+    <p>
+      Python integers never actually overflow, so you could check <code>result &gt; INT_MAX</code> at the end.
+      In C, Java or Go the damage would already be done by then, which is why the interview wants the
+      pre-check.
+    </p>
+
+    <h3>Recursive fast power</h3>
+    <p>
+      The same idea reads naturally as recursion: <code>x<sup>n</sup> = (x<sup>n/2</sup>)²</code>, times one extra
+      <code>x</code> when n is odd. Compute the half <em>once</em> and store it; calling
+      <code>power(x, n // 2)</code> twice brings back the O(n) you were trying to avoid.
+    </p>
+    <pre>def power_rec(x, n):
+    if n == 0:
+        return 1.0
+    if n &lt; 0:
+        return 1 / power_rec(x, -n)
+    half = power_rec(x, n // 2)              # once, not twice
+    return half * half * (x if n % 2 else 1)</pre>
+
+    <h3>Modular arithmetic</h3>
+    <p>
+      When the answer is asked "modulo 10<sup>9</sup> + 7", apply the modulus after every multiply in the fast
+      power loop. The squaring trick is also how <code>pow(x, n, mod)</code> is implemented under the hood.
+    </p>
+  </section>
+
+  <section>
+    <h2>Common mistakes</h2>
+    <div class="callout gotcha">
+      <strong>Negative exponent handled halfway.</strong> Flipping the sign of n without also replacing
+      x with 1/x gives x<sup>|n|</sup>. Do both, at the top, before the loop.
+    </div>
+    <div class="callout gotcha">
+      <strong>Recursing on the half twice.</strong> <code>power(x, n//2) * power(x, n//2)</code> is
+      O(n) calls. Store the half in a variable and square it.
+    </div>
+    <div class="callout gotcha">
+      <strong>Negative numbers and <code>%</code>.</strong> In Python <code>-123 % 10</code> is 7, not −3.
+      Work on <code>abs(x)</code> and reapply the sign at the end.
+    </div>
+    <div class="callout gotcha">
+      <strong>Assigning the carry instead of adding it.</strong> <code>digits[i + j] = total // 10</code>
+      throws away a carry that an earlier digit pair already put there. Use <code>+=</code>.
+    </div>
+    <div class="callout gotcha">
+      <strong>Checking overflow after the fact.</strong> Compare against <code>(INT_MAX − digit) // 10</code>
+      before <code>result * 10 + digit</code>, not after.
+    </div>
+    <div class="callout gotcha">
+      <strong>Leading zeroes.</strong> "0" times anything should return <code>"0"</code>, not
+      <code>"00"</code> or an empty string. Handle the zero case up front and strip zeroes at the end.
+    </div>
+  </section>
+
+  <section>
+    <h2>Complexity</h2>
+    <ul>
+      <li><strong>Fast power:</strong> O(log n) multiplications, O(1) space iteratively or O(log n) stack recursively.</li>
+      <li><strong>String multiplication:</strong> O(m · n) time for m- and n-digit inputs, O(m + n) space for the digit array.</li>
+      <li><strong>Digit reversal:</strong> O(d) time for a d-digit number (d ≤ 10 for 32-bit), O(1) space.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Problems in this repo</h2>
+    <ul class="problems">
+      <li><span class="id">medium/098</span><a href="../medium/098-powx-n/walkthrough.html">Pow(x, n)</a><span class="note">square the base, halve the exponent</span></li>
+      <li><span class="id">medium/099</span><a href="../medium/099-multiply-strings/walkthrough.html">Multiply Strings</a><span class="note">digit i × digit j lands in slot i + j + 1</span></li>
+      <li><span class="id">medium/102</span><a href="../medium/102-reverse-integer/walkthrough.html">Reverse Integer</a><span class="note">peel digits, pre-check the 32-bit bound</span></li>
+    </ul>
+    <p class="muted" style="margin-top:14px">Classic LeetCode problems not yet in the repo: Add Strings (#415), Sqrt(x) (#69), Divide Two Integers (#29), Happy Number (#202, see <a href="../easy/022-happy-number/walkthrough.html">easy/022</a>).</p>
+  </section>
+</main>
+
+<footer>
+  Part of the <a href="../index.html#concepts">DSA concepts</a> collection.
+</footer>
+
+</body>
+</html>

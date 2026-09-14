@@ -22,6 +22,8 @@ return False
 | Problem | Difficulty | Note |
 |---------|------------|------|
 | [easy/003 Contains Duplicate](../easy/003-contains-duplicate/) | Easy | early exit on first repeat |
+| [medium/027 Valid Sudoku](../medium/027-valid-sudoku/) | Medium | Every filled cell belongs to exactly three groups: its row, its column, and its 3x3 box |
+| [medium/028 Longest Consecutive Sequence](../medium/028-longest-consecutive-sequence/) | Medium | Put the values in a set so `x in seen` is O(1) |
 
 ## Common mistakes
 

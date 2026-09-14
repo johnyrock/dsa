@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Valid Parenthesis String Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  /* valid-parenthesis-string additions: the characters, plus a number line of reachable open counts */
+  .array.compact { gap: 4px; margin: 2px 0; }
+  .array.compact .cell { min-width: 28px; padding: 4px 0 2px; font-size: 1rem; border-width: 1.5px; border-radius: 6px; }
+  .array.compact .cell.cur { transform: none; }
+  .cell.bad { border-color: var(--warn); background: var(--warn-soft); }
+  .sub { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 8px 0 0; }
+  .dict .kv.bad { border-color: var(--warn); background: var(--warn-soft); }
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Greedy · LeetCode #678</div>
+  <h1>Valid Parenthesis String, narrated</h1>
+  <p>Scroll through the thinking, from trying all three readings of every star to one pass that carries the lowest and highest possible open count, with the reachable range shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/greedy.html">Greedy</a> <span class="how">track the range [lo, hi] of possible open counts; valid if hi never goes negative and lo ends at 0</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>A string <code>s</code> holds <code>'('</code>, <code>')'</code> and <code>'*'</code>. Each star is a wildcard: independently, it can be read as <code>'('</code>, as <code>')'</code>, or as nothing at all. Decide whether <em>some</em> reading of the stars makes the string a valid parenthesis string.</p>
+      <p>Valid means what it always means: scanning left to right, the number of opens minus the number of closes never dips below zero, and it ends at exactly zero.</p>
+      <div class="callout">Running example: <code>s = "(*))"</code>. Read the star as <code>'('</code> and you get <code>"(())"</code>, which is valid. Answer <strong>true</strong>. Read it as empty and you get <code>"())"</code>, which is not; the question only asks whether at least one reading works.</div>
+      <p>The wildcard is what makes this harder than plain bracket matching. A star early in the string may need to be an open bracket to absorb a close bracket that shows up much later, and you cannot know which until you have seen the rest.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every reading of every star</h2>
+      <p>Each star has three options. Recurse over the string carrying the current open count, branching three ways at each star, and succeed if any branch ends at zero without ever going negative:</p>
+      <pre class="code"><span class="ln">def ok(i, open_count):</span><span class="ln">    if open_count &lt; 0: return False</span><span class="ln">    if i == len(s): return open_count == 0</span><span class="ln">    if s[i] == '(': return ok(i + 1, open_count + 1)</span><span class="ln">    if s[i] == ')': return ok(i + 1, open_count - 1)</span><span class="ln">    return ok(i + 1, open_count + 1) or ok(i + 1, open_count - 1) or ok(i + 1, open_count)</span></pre>
+      <p style="margin-top:14px">Correct, but with <code>k</code> stars there are <code>3^k</code> readings, so this is <strong>O(3ᵏ · n)</strong>. On <code>"(*))"</code> that is three branches, trivial; on a string of 100 stars it is <code>3^100</code>. Memoizing on <code>(i, open_count)</code> cuts it to O(n²), but there is a much simpler observation waiting.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: every open count between the extremes is reachable</h2>
+      <p>Instead of asking "what is the open count?" ask "what is the <em>set</em> of open counts some reading could have produced by now?" Two readings bound it: treat every star as <code>')'</code> and you get the lowest count, <code>lo</code>; treat every star as <code>'('</code> and you get the highest, <code>hi</code>.</p>
+      <p>Crucially, every integer in between is also reachable: flipping a single star from <code>')'</code> to empty raises the count by one, and from empty to <code>'('</code> by another one. So the reachable set is a contiguous range <code>[lo, hi]</code>, and two numbers describe it completely.</p>
+      <div class="callout">After <code>"(*"</code> the panel shows <code>lo = 0</code> and <code>hi = 2</code>: the star could have closed the bracket (0 open), vanished (1 open), or opened another (2 open). All three counts are live.</div>
+      <p>With a range instead of a number, validity has two checks. If <code>hi &lt; 0</code> at any point, even the most generous reading has an unmatched <code>')'</code>, so the answer is false. And at the end, the string is valid exactly when 0 is inside the range, which is <code>lo == 0</code>.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: shift the range with each character</h2>
+      <ul>
+        <li><code>lo = hi = 0</code>: before any character, exactly zero brackets are open.</li>
+        <li><code>'('</code>: <code>lo += 1; hi += 1</code>. A real open bracket shifts the whole range up.</li>
+        <li><code>')'</code>: <code>lo -= 1; hi -= 1</code>. A real close bracket shifts it down.</li>
+        <li><code>'*'</code>: <code>lo -= 1; hi += 1</code>. The range widens by one on each side.</li>
+        <li><code>if hi &lt; 0: return False</code>: no reading survives an excess of closes.</li>
+        <li><code>lo = max(lo, 0)</code>: readings whose count went negative are invalid and are discarded from the range.</li>
+        <li><code>return lo == 0</code>: zero is reachable at the end.</li>
+      </ul>
+      <p>The clamp on <code>lo</code> is the subtle line. A negative <code>lo</code> would mean "some reading has more closes than opens so far", and that reading is dead; keeping it would let it later cancel against opens it never had.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: <code>'('</code> then <code>'*'</code></h2>
+      <p>Index 0 is <code>'('</code>: <code>lo = 0 + 1 = 1</code>, <code>hi = 0 + 1 = 1</code>. One bracket is open in every reading. <code>hi &lt; 0</code> is false, and <code>max(1, 0)</code> leaves <code>lo</code> at 1.</p>
+      <p>Index 1 is <code>'*'</code>: <code>lo = 1 - 1 = 0</code>, <code>hi = 1 + 1 = 2</code>. The range is now <code>[0, 2]</code>. The panel's number line lights up 0, 1 and 2 as reachable: the star closed, vanished, or opened.</p>
+      <p>Nothing has been decided about the star yet, and nothing needs to be. The range carries all three possibilities forward at the cost of two integers.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: the first <code>')'</code></h2>
+      <p>Index 2 is <code>')'</code>: <code>lo = 0 - 1 = -1</code>, <code>hi = 2 - 1 = 1</code>. <code>hi</code> is not negative, so we continue.</p>
+      <p>Now the clamp: <code>lo = max(-1, 0) = 0</code>. The reading that had the star as <code>')'</code> would now be at <code>-1</code>, meaning <code>"())"</code> with an unmatched close. That reading is dead and the clamp removes it from the range. The live range is <code>[0, 1]</code>: the star was empty (count 0) or the star was <code>'('</code> (count 1).</p>
+      <div class="callout">The number line shows <code>-1</code> in amber: a count that some reading would produce, but which is not a real state and is dropped.</div>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the second <code>')'</code> and the verdict</h2>
+      <p>Index 3 is <code>')'</code>: <code>lo = 0 - 1 = -1</code>, <code>hi = 1 - 1 = 0</code>. <code>hi</code> is still not negative; the reading with the star as <code>'('</code> has just closed its last bracket. Clamp: <code>lo = max(-1, 0) = 0</code>. The range is <code>[0, 0]</code>.</p>
+      <p>End of string. <code>lo == 0</code>, so return <strong>true</strong>. Exactly one reading survived, and it is the one where the star was <code>'('</code>, giving <code>"(())"</code>.</p>
+      <p>Four characters, four constant-time updates. The brute force would have explored three branches; on a longer string it would have explored exponentially many, while this pass stays linear.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: forgetting the clamp</h2>
+      <p><strong>Dropping <code>lo = max(lo, 0)</code>.</strong> Run the same example without it. After <code>'('</code> and <code>'*'</code> the range is <code>[0, 2]</code> as before. The first <code>')'</code> gives <code>[-1, 1]</code>, and the second gives <code>[-2, 0]</code>. Now <code>lo == 0</code> is false and the function returns <strong>false</strong> for a valid string. The dead reading (star as <code>')'</code>) was carried along and dragged <code>lo</code> below zero, even though zero is still reachable via the star-as-<code>'('</code> reading.</p>
+      <p><strong>Dropping <code>if hi &lt; 0: return False</code>.</strong> On <code>")**"</code>, <code>hi</code> goes <code>-1, 0, 1</code> while <code>lo</code> is clamped to 0 at every step, so the final test says <strong>true</strong>. But a leading <code>')'</code> has nothing before it to match, and no later star can fix that. The <code>hi</code> check catches it at index 0.</p>
+      <p><strong>Returning <code>hi == 0</code>.</strong> <code>hi</code> is the reading where every star opened, the most unbalanced reading there is. On <code>"(*)"</code> it ends at 1 and the code returns <strong>false</strong>. Validity asks whether zero is <em>reachable</em>, which is a question about the low end of the range.</p>
+      <div class="callout warn">Two integers, two guards: <code>hi &lt; 0</code> means no reading survives; <code>lo = max(lo, 0)</code> discards the readings that already died.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>One pass, and each character does two additions or subtractions, a comparison and a <code>max</code>: <strong>O(n) time</strong>. The state is the pair <code>(lo, hi)</code>: <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Try every reading of every star</td><td>O(3ᵏ · n)</td><td>O(n) stack</td></tr>
+        <tr><td>Memoized on (index, open count)</td><td>O(n²)</td><td>O(n²)</td></tr>
+        <tr><td>Range of open counts, one pass</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>The memoized version already kills the exponential blow-up; the range trick notices that of all the <code>(index, open count)</code> states, only the lowest and highest count at each index matter.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Sixteen lines, most of them the three-way branch. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>lo = hi = 0</code> starts the range at "nothing open".</li>
+        <li><code>'('</code> adds one to both bounds; <code>')'</code> subtracts one from both.</li>
+        <li><code>'*'</code> does <code>lo -= 1</code> and <code>hi += 1</code>, widening the range by one on each side.</li>
+        <li><code>if hi &lt; 0: return False</code>: even the reading with every star open has an unmatched close.</li>
+        <li><code>lo = max(lo, 0)</code>: readings that went negative are invalid and leave the range.</li>
+        <li><code>return lo == 0</code>: some reading ends exactly balanced.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>carry the range of possible open counts; the string is valid if the range never leaves zero behind and still contains zero at the end.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>s = "(*))" · <span id="target"></span></h3>
+        <div class="array compact" id="array"></div>
+        <div class="sub">reachable open counts · green = in [lo, hi], amber = clamped away</div>
+        <div class="array compact" id="range"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>running variables</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="valid_parenthesis_string.py">valid_parenthesis_string.py</a> · <a href="valid_parenthesis_string_annotated.py">valid_parenthesis_string_annotated.py</a> · <a href="test_valid_parenthesis_string.py">test_valid_parenthesis_string.py</a> · <a href="../../md.html?f=medium/092-valid-parenthesis-string/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def check_valid_string(self, s: str) -> bool:",
+    "        lo = hi = 0",
+    "        for ch in s:",
+    "            if ch == '(':",
+    "                lo += 1",
+    "                hi += 1",
+    "            elif ch == ')':",
+    "                lo -= 1",
+    "                hi -= 1",
+    "            else:",
+    "                lo -= 1",
+    "                hi += 1",
+    "            if hi < 0:",
+    "                return False",
+    "            lo = max(lo, 0)",
+    "        return lo == 0"
+  ];
+
+  var S = ["(", "*", ")", ")"];
+  var COUNTS = [-2, -1, 0, 1, 2, 3];
+
+  // cur = index being processed (blue), done = indices already consumed (dim), lo/hi = the live range (green),
+  // clamped = counts below 0 that a reading produced before the clamp (amber), vars = dict entries.
+  var STATES = {
+    problem: {
+      caption: "Can the star be read as '(', ')' or nothing so that the whole string is balanced?",
+      phase: "one star, three readings", cur: -1, done: [], lo: 0, hi: 0, clamped: [], vars: [],
+      meta: "Star as '(' gives <b>\"(())\"</b>, which is valid. Answer <b>true</b>.", hl: []
+    },
+    brute: {
+      caption: "Brute force branches three ways at every star and checks each complete reading.",
+      phase: "3 readings for 1 star", cur: 1, done: [0], lo: 0, hi: 0, clamped: [], vars: [["readings", "\"(())\" · \"())\" · \"()))\"", ""]],
+      meta: "With k stars that is 3ᵏ readings, and a scan of the string for each.", hl: [],
+      big: "O(3ᵏ · n)", bigNote: "every combination of star choices"
+    },
+    insight: {
+      caption: "After \"(*\", the open count could be 0, 1 or 2. Every value between the extremes is reachable.",
+      phase: "after \"(*\"", cur: 1, done: [0], lo: 0, hi: 2, clamped: [], vars: [["lo", 0, "new"], ["hi", 2, "new"]],
+      meta: "lo = every star read as ')'. hi = every star read as '('. The set of possible counts is the whole range.", hl: [2]
+    },
+    approach: {
+      caption: "'(' shifts the range up, ')' shifts it down, '*' widens it. Guard hi < 0, clamp lo at 0.",
+      phase: "before the loop", cur: -1, done: [], lo: 0, hi: 0, clamped: [], vars: [["lo", 0, "new"], ["hi", 0, "new"]],
+      meta: "Valid at the end means 0 is still in the range: lo == 0.", hl: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    },
+    t1: {
+      caption: "'(' → [1, 1]. Then '*' → [0, 2]: the star closed, vanished, or opened.",
+      phase: "i = 1, ch = '*'", cur: 1, done: [0], lo: 0, hi: 2, clamped: [], vars: [["lo", "1 − 1 = 0", "new"], ["hi", "1 + 1 = 2", "new"]],
+      meta: "Nothing about the star is decided; all three counts stay live.", hl: [11, 12]
+    },
+    t2: {
+      caption: "')' → [−1, 1]. hi ≥ 0, so continue. Clamp: lo = max(−1, 0) = 0. Range [0, 1].",
+      phase: "i = 2, ch = ')'", cur: 2, done: [0, 1], lo: 0, hi: 1, clamped: [-1], vars: [["lo", "max(0 − 1, 0) = 0", "new"], ["hi", "2 − 1 = 1", "new"]],
+      meta: "The reading with the star as ')' is now \"())\", dead. The clamp drops it.", hl: [8, 9, 13, 15]
+    },
+    t3: {
+      caption: "')' → [−1, 0]. hi is still ≥ 0. Clamp lo to 0. End of string: lo == 0, so true.",
+      phase: "i = 3, ch = ')'", cur: 3, done: [0, 1, 2], lo: 0, hi: 0, clamped: [-1], vars: [["lo", "max(0 − 1, 0) = 0", "found"], ["hi", "1 − 0 = 0", "found"], ["lo == 0", "True", "found"]],
+      meta: "One reading survives: the star as '(', giving <b>\"(())\"</b>.", hl: [8, 9, 15, 16],
+      big: "true", bigNote: "0 is reachable at the end"
+    },
+    pitfall: {
+      caption: "Without lo = max(lo, 0) the dead reading is carried: the range ends at [−2, 0] and lo == 0 fails.",
+      phase: "no clamp, i = 3", cur: 3, done: [0, 1, 2], lo: -2, hi: 0, clamped: [], vars: [["lo (buggy)", "−2", "bad"], ["hi", 0, ""], ["lo == 0", "False", "bad"]],
+      meta: "Correct answer <b>true</b>; the star-as-')' reading was invalid two characters ago and should have been dropped.", hl: [15, 16],
+      big: "false, not true", bigNote: "a negative lo is a reading that already failed"
+    },
+    complexity: {
+      caption: "One pass, two integers, constant work per character.",
+      phase: "done", cur: -1, done: [0, 1, 2, 3], lo: 0, hi: 0, clamped: [], vars: [["state", "(lo, hi)", ""], ["per char", "2 updates + guard + clamp", ""]],
+      meta: "Of all (index, open count) states, only the lowest and highest count per index matter.", hl: [3, 13, 15],
+      big: "O(n) time · O(1) space", bigNote: "versus O(3ᵏ · n) for trying every reading"
+    },
+    final: {
+      caption: "The whole solution.",
+      phase: "done", cur: -1, done: [0, 1, 2, 3], lo: 0, hi: 0, clamped: [], vars: [["answer", "True", "found"]],
+      meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.phase;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < S.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.done.indexOf(i) !== -1) cls += " dim";
+      arr += '<div class="' + cls + '">' + S[i] + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    var rng = "";
+    for (var c = 0; c < COUNTS.length; c++) {
+      var v = COUNTS[c], rc = "cell";
+      if (v >= s.lo && v <= s.hi) rc += (v < 0 ? " bad" : " hit");
+      else if (s.clamped.indexOf(v) !== -1) rc += " bad";
+      else rc += " dim";
+      rng += '<div class="' + rc + '">' + v + '<span class="idx">' + (v === s.lo && v === s.hi ? "lo·hi" : v === s.lo ? "lo" : v === s.hi ? "hi" : "&nbsp;") + '</span></div>';
+    }
+    $("range").innerHTML = rng;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c2 = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c2 += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>";
+    }
+    $("code").innerHTML = c2;
+  }
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

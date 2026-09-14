@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Target Sum Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Dynamic Programming · LeetCode #494</div>
+  <h1>Target Sum, narrated</h1>
+  <p>Scroll through the thinking, from trying all 2ⁿ sign assignments to a subset-sum reduction and a single dp row walked backwards, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">0/1 knapsack: P = (total + target) / 2, count subsets that sum to P</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You get an array of non-negative integers and a target. In front of <em>every</em> number you must write either <code>+</code> or <code>-</code>, then evaluate the expression. Count how many of the <code>2ⁿ</code> sign assignments produce exactly <code>target</code>.</p>
+      <div class="callout">Running example: <code>nums = [1, 1, 1, 1, 1]</code>, <code>target = 3</code>. The answer is <strong>5</strong>: exactly one of the five ones must get a minus sign (<code>4 − 1 = 3</code>), and there are five ways to choose which one.</div>
+      <p>Two expressions are different if any sign differs, even when the numbers are equal. That is why the five ones give five expressions, not one. Zeros count too: <code>+0</code> and <code>−0</code> are two different expressions with the same value.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every sign</h2>
+      <p>Recurse over the array, branching into <code>+nums[i]</code> and <code>−nums[i]</code> at each index, and count the leaves whose running total equals the target.</p>
+      <pre class="code"><span class="ln">def ways(i, running):</span><span class="ln">    if i == len(nums):</span><span class="ln">        return 1 if running == target else 0</span><span class="ln">    return ways(i + 1, running + nums[i]) + ways(i + 1, running - nums[i])</span></pre>
+      <p style="margin-top:14px">That is <strong>O(2ⁿ)</strong>. With <code>n ≤ 20</code> it is about a million leaves and actually passes, which is why this problem is famous for having a brute force that works. Memoizing on <code>(i, running)</code> gives O(n × total), but the running total can be negative and ranges over <code>2 × total + 1</code> values, so the table is awkward. The reduction in the next step makes it clean.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: it is subset sum in disguise</h2>
+      <p>Split the numbers into the ones that got a plus, with sum <code>P</code>, and the ones that got a minus, with sum <code>N</code>. Then:</p>
+      <ul>
+        <li><code>P − N = target</code>, because that is what the expression evaluates to.</li>
+        <li><code>P + N = total</code>, because every number is in one group or the other.</li>
+      </ul>
+      <p>Add the two equations: <code>2P = total + target</code>, so <code>P = (total + target) / 2</code>. Choosing a sign assignment is exactly the same as choosing which subset gets the plus sign, and that subset must sum to <code>P</code>.</p>
+      <div class="callout">The question becomes: <em>how many subsets of <code>nums</code> sum to <code>goal = (total + target) / 2</code>?</em> For the running example, <code>goal = (5 + 3) / 2 = 4</code>: pick four of the five ones for the plus side. That is a 0/1 knapsack count, every number used at most once.</div>
+      <p>Two things fall out of the formula. If <code>total + target</code> is odd, <code>P</code> is not an integer and the answer is 0. If <code>|target| &gt; total</code>, no assignment can reach it, and <code>goal</code> would be negative or too large; return 0 before building the table.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>total = sum(nums)</code>, then <code>if abs(target) &gt; total or (total + target) % 2: return 0</code> rejects the impossible cases.</li>
+        <li><code>goal = (total + target) // 2</code> — the sum the plus group must reach.</li>
+        <li><code>dp = [0] * (goal + 1)</code> and <code>dp[0] = 1</code> — <code>dp[s]</code> counts subsets of the numbers so far that sum to <code>s</code>; the empty subset sums to 0.</li>
+        <li><code>for num in nums</code> — add one number at a time.</li>
+        <li><code>for s in range(goal, num - 1, -1)</code> — walk the sums <em>downward</em>, so that <code>dp[s - num]</code> is still the count from before this number was added.</li>
+        <li><code>dp[s] += dp[s - num]</code> — every subset summing to <code>s − num</code> becomes one summing to <code>s</code> by adding <code>num</code>.</li>
+        <li><code>return dp[goal]</code>.</li>
+      </ul>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the first number</h2>
+      <p>The row starts as <code>dp = [1, 0, 0, 0, 0]</code> for sums 0 through 4. Add the first 1, walking <code>s</code> from 4 down to 1: <code>dp[4] += dp[3]</code>, <code>dp[3] += dp[2]</code>, <code>dp[2] += dp[1]</code> all add 0, and finally <code>dp[1] += dp[0]</code> gives <code>0 + 1 = 1</code>.</p>
+      <p>After the first number: <code>dp = [1, 1, 0, 0, 0]</code>. One subset sums to 0 (the empty one) and one sums to 1 (just this number). Because the walk went downward, <code>dp[2]</code> read <code>dp[1]</code> <em>before</em> it became 1, so "this number twice" was never counted.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: the second and third numbers</h2>
+      <p>Second 1, downward again: <code>dp[2] += dp[1]</code> gives <code>0 + 1 = 1</code> (both ones), <code>dp[1] += dp[0]</code> gives <code>1 + 1 = 2</code> (either one alone). Row: <code>[1, 2, 1, 0, 0]</code>.</p>
+      <p>Third 1: <code>dp[3] += dp[2]</code> gives 1, <code>dp[2] += dp[1]</code> gives <code>1 + 2 = 3</code>, <code>dp[1] += dp[0]</code> gives 3. Row: <code>[1, 3, 3, 1, 0]</code>.</p>
+      <div class="callout">The row is turning into Pascal's triangle: <code>dp[s]</code> after <code>k</code> ones is <code>C(k, s)</code>, the number of ways to pick <code>s</code> of them. That is exactly what "subsets summing to <code>s</code>" means when every number is 1.</div>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the last number, the answer</h2>
+      <p>After the fourth 1 the row is <code>[1, 4, 6, 4, 1]</code>. The fifth 1 walks down once more: <code>dp[4] += dp[3]</code> gives <code>1 + 4 = 5</code>, <code>dp[3] += dp[2]</code> gives <code>4 + 6 = 10</code>, <code>dp[2] += dp[1]</code> gives 10, <code>dp[1] += dp[0]</code> gives 5.</p>
+      <p>Final row: <code>[1, 5, 10, 10, 5]</code>. Return <code>dp[4] = 5</code>: five subsets of four ones, each one a sign assignment with a single minus.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: loop direction and parity</h2>
+      <p><strong>Walking the sums upward.</strong> Write the inner loop as <code>for s in range(num, goal + 1)</code> and <code>dp[s - num]</code> has already been bumped by this same number, so the number can be reused any number of times. The row for the running example becomes <code>[1, 5, 15, 35, 70]</code> and the function returns <strong>70, not 5</strong>. That is the unlimited-supply row from Coin Change II; here every number is a single physical item that gets exactly one sign.</p>
+      <p><strong>Skipping the parity check.</strong> <code>(total + target) // 2</code> rounds down silently. For <code>nums = [1, 2, 3]</code>, <code>target = 1</code> the true <code>P</code> would be 3.5, no subset works, and the answer is 0; the floor gives <code>goal = 3</code> and the function returns <strong>2</strong>.</p>
+      <p><strong>Skipping the range check.</strong> <code>nums = [100]</code>, <code>target = −200</code> gives <code>goal = −50</code>, <code>[0] * (goal + 1)</code> is empty, and <code>dp[0] = 1</code> raises <code>IndexError</code>.</p>
+      <div class="callout warn">Each number is used once, so the inner loop runs from <code>goal</code> down to <code>num</code>. Check with <code>[1, 1]</code>, <code>target = 2</code>: the answer is 1 (both plus), and a 3 means a number was reused.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>One addition per (number, sum) pair: <strong>O(n × goal) time</strong>, and <code>goal ≤ total ≤ 1000</code>, so at most 20,000 steps. One row of <code>goal + 1</code> integers: <strong>O(goal) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Every sign assignment</td><td>O(2ⁿ)</td><td>O(n) call stack</td></tr>
+        <tr><td>Memoized on (index, running total)</td><td>O(n × total)</td><td>O(n × total), offset for negatives</td></tr>
+        <tr><td>Subset-sum row, downward</td><td>O(n × goal)</td><td>O(goal)</td></tr>
+      </table>
+      <p>With <code>n ≤ 20</code> the brute force is about a million leaves and passes; the reduction is what you want when <code>n</code> is 50 and <code>total</code> is still small.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Eleven lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>total = sum(nums)</code> — needed for the reduction.</li>
+        <li><code>if abs(target) &gt; total or (total + target) % 2: return 0</code> — unreachable or non-integer plus side.</li>
+        <li><code>goal = (total + target) // 2</code> — the subset sum to count.</li>
+        <li><code>dp = [0] * (goal + 1)</code>, <code>dp[0] = 1</code> — the empty subset.</li>
+        <li><code>for num in nums</code> — one number at a time, each used once.</li>
+        <li><code>for s in range(goal, num - 1, -1)</code> — downward, so the number is not reused.</li>
+        <li><code>dp[s] += dp[s - num]</code> — extend every subset that leaves room for <code>num</code>.</li>
+        <li><code>return dp[goal]</code>.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>the plus side must sum to (total + target) / 2, so count subsets with that sum, walking the row downward.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>dp[s] · subsets summing to s · goal = 4 · blue = slot being updated, green = slot read</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>reduction and current number</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="target_sum.py">target_sum.py</a> · <a href="target_sum_annotated.py">target_sum_annotated.py</a> · <a href="test_target_sum.py">test_target_sum.py</a> · <a href="../../md.html?f=medium/084-target-sum/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def find_target_sum_ways(self, nums: list[int], target: int) -> int:",
+    "        total = sum(nums)",
+    "        if abs(target) > total or (total + target) % 2:",
+    "            return 0",
+    "        goal = (total + target) // 2",
+    "        dp = [0] * (goal + 1)",
+    "        dp[0] = 1",
+    "        for num in nums:",
+    "            for s in range(goal, num - 1, -1):",
+    "                dp[s] += dp[s - num]",
+    "        return dp[goal]"
+  ];
+
+  // dp = the row after the described update, cur = slot being written, hits = slots read, vars = chips.
+  var STATES = {
+    problem: {
+      caption: "Put + or − in front of each of [1, 1, 1, 1, 1] so the expression equals 3.",
+      dp: [0, 0, 0, 0, 0], cur: -1, hits: [], vars: [["nums", "[1, 1, 1, 1, 1]"], ["target", "3"]],
+      meta: "Answer: <b>5</b>, one minus sign in any of five positions.", hl: []
+    },
+    brute: {
+      caption: "Branch + / − at every index and count the leaves that hit the target.",
+      dp: [0, 0, 0, 0, 0], cur: -1, hits: [], vars: [["leaves", "2^5 = 32"], ["at n = 20", "2^20 ≈ 10^6"]],
+      meta: "ways(i, running) with a running total that can go negative.", hl: [],
+      big: "O(2ⁿ)", bigNote: "passes at n ≤ 20, but does not scale"
+    },
+    idea: {
+      caption: "P − N = 3 and P + N = 5, so P = 4: count subsets of nums that sum to 4.",
+      dp: [1, 0, 0, 0, 0], cur: -1, hits: [0], vars: [["total", "5"], ["goal", "(5 + 3) / 2 = 4", "new"], ["dp[0]", "1 (empty subset)", "new"]],
+      meta: "Each number used at most once: a 0/1 knapsack count.", hl: [2, 3, 4, 5]
+    },
+    approach: {
+      caption: "Seed dp[0] = 1, then for each number walk s from goal down to num adding dp[s − num] into dp[s].",
+      dp: [1, 0, 0, 0, 0], cur: -1, hits: [0], vars: [["goal", "4"], ["order", "s = 4, 3, 2, 1"]],
+      meta: "Downward so dp[s − num] is the count from before this number.", hl: [6, 7, 8, 9, 10]
+    },
+    t1: {
+      caption: "First 1: dp[1] += dp[0], 0 + 1 = 1. The higher slots read zeros and stay 0.",
+      dp: [1, 1, 0, 0, 0], cur: 1, hits: [0], vars: [["num", "1 (1st)", "new"], ["dp[1]", "0 + 1 = 1", "found"]],
+      meta: "After the first number: <b>[1, 1, 0, 0, 0]</b>.", hl: [9, 10]
+    },
+    t2: {
+      caption: "Third 1: dp[2] += dp[1], 1 + 2 = 3. Row after three ones: [1, 3, 3, 1, 0].",
+      dp: [1, 3, 3, 1, 0], cur: 2, hits: [1], vars: [["num", "1 (3rd)", "new"], ["dp[2]", "1 + 2 = 3", "found"]],
+      meta: "After two ones the row was <b>[1, 2, 1, 0, 0]</b>. Pascal's triangle, one row per number.", hl: [9, 10]
+    },
+    t3: {
+      caption: "Fifth 1: dp[4] += dp[3], 1 + 4 = 5. Five subsets of four ones.",
+      dp: [1, 5, 10, 10, 5], cur: 4, hits: [3], vars: [["num", "1 (5th)", "new"], ["dp[4]", "1 + 4 = 5", "found"]],
+      meta: "After four ones the row was <b>[1, 4, 6, 4, 1]</b>. Final: <b>[1, 5, 10, 10, 5]</b>.", hl: [9, 10, 11],
+      big: "5", bigNote: "sign assignments of [1, 1, 1, 1, 1] that equal 3"
+    },
+    pitfall: {
+      caption: "Inner loop upward: dp[s − num] already includes this number, so every 1 can be reused.",
+      dp: [1, 5, 15, 35, 70], cur: 4, hits: [3], vars: [["loop", "range(num, goal + 1)"], ["dp[4]", "35 + 35 = 70"]],
+      meta: "This is the unlimited-supply row from Coin Change II, not a count of subsets.", hl: [9],
+      big: "70, not 5", bigNote: "an upward walk lets one number take several signs"
+    },
+    complexity: {
+      caption: "One addition per (number, sum) pair; one row of goal + 1 integers.",
+      dp: [1, 5, 10, 10, 5], cur: -1, hits: [], vars: [["numbers", "5"], ["slots per pass", "≤ 5"]],
+      meta: "goal ≤ total ≤ 1000 and n ≤ 20, so at most 20,000 additions.", hl: [8, 9, 10],
+      big: "O(n × goal) time · O(goal) space", bigNote: "versus O(2ⁿ) sign assignments"
+    },
+    final: {
+      caption: "The whole solution.",
+      dp: [1, 5, 10, 10, 5], cur: -1, hits: [4], vars: [["dp[4]", "5", "found"]],
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.dp.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      arr += '<div class="' + cls + '">' + s.dp[i] + '<span class="idx">s = ' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var code = "";
+    for (var l = 0; l < CODE.length; l++) {
+      code += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = code;
+  }
+
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

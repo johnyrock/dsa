@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Encode and Decode Strings Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* heap additions: the heap array drawn as a complete binary tree (easy/011 renderer) */
+  .tree { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .tree .edge { stroke: var(--line); stroke-width: 2.5; fill: none; transition: stroke 0.25s; }
+  .tree .edge.hit { stroke: var(--ok); }
+  .tree .edge.bad { stroke: var(--warn); stroke-dasharray: 5 4; }
+  .tree .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .tree .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 17px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .tree .node.cur circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3.5; }
+  .tree .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .tree .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .tree .node.dim circle, .tree .node.dim text { opacity: 0.4; }
+  .tree .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .tree .lbl.cur { fill: var(--accent); font-weight: 700; }
+  .tree .lbl.bad { fill: var(--warn); font-weight: 700; }
+  .tree .lbl.hit { fill: var(--ok); font-weight: 700; }
+  .array.compact { gap: 4px; margin-top: 2px; }
+  .array.compact .cell { min-width: 28px; padding: 3px 0 2px; font-size: 0.9rem; border-width: 1.5px; border-radius: 6px; }
+  .array.compact .cell.cur { transform: none; }
+  .cell.bad { border-color: var(--warn); background: var(--warn-soft); }
+  .meta b { color: var(--ink); }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Hash Map / String Design · LeetCode #271</div>
+  <h1>Encode and Decode Strings, narrated</h1>
+  <p>Scroll through the thinking, from joining with a separator that can be forged to length-prefixed chunks that can never be misread, with the state of the decoder shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/hash-map.html">Hash Map</a> <span class="how">length-prefix framing: write &lt;len&gt;#&lt;chars&gt; and let the length, not a separator, delimit each string</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Write two functions. <code>encode</code> takes a list of strings and produces one single string. <code>decode</code> takes that single string and rebuilds the original list, element for element. The strings can contain any character at all, and the list can contain empty strings, so nothing about the content can be assumed.</p>
+      <div class="callout">Running example: <code>strs = ["neet", "code", "love", "you"]</code>. Our encoding is <code>"4#neet4#code4#love3#you"</code>, and decoding it must return exactly the four original strings.</div>
+      <p>There is no single correct output string. Any format works as long as <code>decode(encode(strs)) == strs</code> for <em>every</em> possible list. The problem is really about designing a format that cannot be ambiguous, then writing the parser for it.</p>
+      <p>Two edge cases are worth writing down before starting: the empty list <code>[]</code> must round-trip to <code>[]</code>, not to <code>[""]</code>, and a list of empty strings such as <code>["", ""]</code> must keep its count of two.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: join with a separator</h2>
+      <p>Pick a character that "will never appear", join with it, and split on it to decode.</p>
+      <pre class="code"><span class="ln">def encode(strs):</span><span class="ln">    return ",".join(strs)</span><span class="ln"></span><span class="ln">def decode(s):</span><span class="ln">    return s.split(",")</span></pre>
+      <p style="margin-top:14px">It is O(N) in the total number of characters and it passes the running example: <code>"neet,code,love,you"</code> splits back into four strings. It is also wrong, twice over.</p>
+      <p>First, the input can contain the separator. <code>["a,b"]</code> encodes to <code>"a,b"</code> and decodes to <code>["a", "b"]</code>: two strings where there was one. Second, the empty list encodes to <code>""</code>, and <code>"".split(",")</code> is <code>[""]</code>, a list with one empty string in it. No choice of separator character fixes either problem, because whatever you choose is a legal character.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: say how long each string is</h2>
+      <p>Instead of marking where a string <em>ends</em> with a character that might be forged, announce up front how many characters it <em>has</em>. Write each string as its length, a <code>#</code>, and then the characters: <code>"neet"</code> becomes <code>"4#neet"</code>.</p>
+      <p>The decoder then reads the digits up to the first <code>#</code>, converts them to a number, and slices exactly that many characters. It never inspects the payload, so a <code>#</code> inside a string is harmless: by the time the decoder is looking for the next <code>#</code>, its index has already jumped past the whole payload.</p>
+      <div class="callout">The <code>#</code> only terminates the <em>digits</em>. Digits never contain <code>#</code>, so that boundary is always unambiguous. The payload boundary comes from the number, which is why the content of the payload does not matter.</div>
+      <p>The edge cases fall out for free. An empty string is <code>"0#"</code>. An empty list is <code>""</code>, which the decoder's <code>while i &lt; len(s)</code> loop never enters, so it returns <code>[]</code>.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <p>Encoding is one line: <code>"".join(f"{len(s)}#{s}" for s in strs)</code>. Decoding is a cursor walk.</p>
+      <ul>
+        <li><code>result = []</code>, <code>i = 0</code> — the output list and a cursor at the start of the first header.</li>
+        <li><code>while i &lt; len(s)</code> — one iteration per chunk; stops when the cursor runs off the end.</li>
+        <li><code>j = s.index("#", i)</code> — find the <code>#</code> that ends this header, searching <em>from i</em>, not from the start.</li>
+        <li><code>length = int(s[i:j])</code> — the digits between the cursor and the <code>#</code>.</li>
+        <li><code>result.append(s[j + 1:j + 1 + length])</code> — the payload starts one past the <code>#</code> and is exactly <code>length</code> characters.</li>
+        <li><code>i = j + 1 + length</code> — jump the cursor to the character after the payload, which is the next header.</li>
+        <li><code>return result</code>.</li>
+      </ul>
+    </section>
+
+    <section class="step" data-state="encode">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: encoding the list</h2>
+      <p><code>"neet"</code> has length 4, so it becomes <code>"4#neet"</code>. <code>"code"</code> and <code>"love"</code> likewise become <code>"4#code"</code> and <code>"4#love"</code>. <code>"you"</code> has length 3: <code>"3#you"</code>.</p>
+      <p>Concatenated with no separator between chunks, the result is <code>"4#neet4#code4#love3#you"</code>, 23 characters. The panel shows the chunks with the index at which each one starts: headers at 0, 6, 12, 18 and payloads at 2, 8, 14, 20.</p>
+      <p>Notice there is nothing between <code>neet</code> and the next <code>4</code>. The decoder does not need a gap; it knows the payload is over because it counted four characters.</p>
+    </section>
+
+    <section class="step" data-state="d1">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: decoding the first chunk</h2>
+      <p>Start with <code>i = 0</code>. <code>s.index("#", 0)</code> finds the <code>#</code> at index 1, so <code>j = 1</code>. The digits are <code>s[0:1] = "4"</code>, so <code>length = 4</code>.</p>
+      <p>The payload is <code>s[j + 1 : j + 1 + length] = s[2:6] = "neet"</code>. Append it. Then move the cursor: <code>i = j + 1 + length = 1 + 1 + 4 = 6</code>.</p>
+      <p>Index 6 is the <code>4</code> of the second header. The cursor landed exactly on it without ever looking at the letters of <code>neet</code>.</p>
+    </section>
+
+    <section class="step" data-state="d2">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the remaining chunks</h2>
+      <p>From <code>i = 6</code>: the <code>#</code> is at <code>j = 7</code>, <code>length = int(s[6:7]) = 4</code>, payload <code>s[8:12] = "code"</code>, and <code>i = 7 + 1 + 4 = 12</code>.</p>
+      <p>From <code>i = 12</code>: <code>j = 13</code>, <code>length = 4</code>, payload <code>s[14:18] = "love"</code>, <code>i = 18</code>.</p>
+      <p>From <code>i = 18</code>: <code>j = 19</code>, <code>length = int(s[18:19]) = 3</code>, payload <code>s[20:23] = "you"</code>, and <code>i = 19 + 1 + 3 = 23</code>. That equals <code>len(s)</code>, so the loop condition <code>i &lt; 23</code> fails and we return <code>["neet", "code", "love", "you"]</code>.</p>
+      <div class="callout">Four iterations for four strings, and the cursor visited every character exactly once: the headers to read them, the payloads to slice them.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the +1 for the '#'</h2>
+      <p><strong>Slicing from <code>j</code> instead of <code>j + 1</code>.</strong> Write <code>s[j:j + length]</code> and every payload starts on the <code>#</code> and stops one character early. The cursor update is still correct, so the loop runs to completion and returns <strong><code>["#nee", "#cod", "#lov", "#yo"]</code></strong>. Same list length, every string wrong.</p>
+      <p><strong>Advancing with <code>i = j + length</code>.</strong> The cursor lands on the last character of the payload instead of the next header. On the running example the second "header" is <code>s[5:7] = "t4"</code>, and <code>int("t4")</code> raises <code>ValueError</code>. The crash is the friendly version of this bug; with all-digit payloads it would silently decode garbage.</p>
+      <p><strong>Searching for <code>#</code> from the start.</strong> <code>s.index("#")</code> without the <code>i</code> argument always finds index 1, so <code>length</code> is always 4 and <code>i</code> is always reset to 6. The loop never advances past the first chunk.</p>
+      <div class="callout warn">Three offsets, all of them "one past the #": the payload starts at <code>j + 1</code>, it ends at <code>j + 1 + length</code>, and the next header starts at that same <code>j + 1 + length</code>.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Let N be the total number of characters over all strings and m the number of strings. Encoding writes every character once plus a short header per string: <strong>O(N + m)</strong>. Decoding reads every character once (<code>s.index</code> scans only the digits of the current header, and slicing copies only the payload): also <strong>O(N + m)</strong>. Since <code>m &le; N + m</code>, both are O(N) in practice.</p>
+      <p>The encoded string and the decoded list each hold all the characters: <strong>O(N) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Correct?</th></tr>
+        <tr><td>Join with a separator, split</td><td>O(N)</td><td>No: breaks on the separator and on <code>[]</code></td></tr>
+        <tr><td>Escape the separator inside payloads</td><td>O(N)</td><td>Yes, but decode must scan every character</td></tr>
+        <tr><td>Length-prefix each string</td><td>O(N)</td><td>Yes, and decode skips payloads in one jump</td></tr>
+      </table>
+      <p>All three are linear. The difference is correctness and simplicity, not speed, which is why this problem is about the design rather than the complexity.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Two methods, twelve lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>"".join(f"{len(s)}#{s}" for s in strs)</code> is the whole encoder: length, hash, characters, no separator between chunks.</li>
+        <li><code>i = 0</code> and <code>while i &lt; len(s)</code> walk the encoded string one chunk at a time; an empty input never enters the loop.</li>
+        <li><code>j = s.index("#", i)</code> ends the header; searching from <code>i</code> is what makes payload hashes invisible.</li>
+        <li><code>length = int(s[i:j])</code> reads the digits, however many there are.</li>
+        <li><code>result.append(s[j + 1:j + 1 + length])</code> slices the payload blindly.</li>
+        <li><code>i = j + 1 + length</code> jumps to the next header.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>a separator can be forged, a length cannot; write <code>&lt;len&gt;#&lt;chars&gt;</code> and let the decoder count instead of search.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>strs · the list being round-tripped</h3>
+        <div class="array compact" id="strs"></div>
+      </div>
+
+      <div class="block">
+        <h3>encoded · <span id="target">23 chars</span></h3>
+        <div class="array compact" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>decode cursor</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="encode_and_decode_strings.py">encode_and_decode_strings.py</a> · <a href="encode_and_decode_strings_annotated.py">encode_and_decode_strings_annotated.py</a> · <a href="test_encode_and_decode_strings.py">test_encode_and_decode_strings.py</a> · <a href="../../md.html?f=medium/026-encode-and-decode-strings/notes.md">notes.md</a> · <a href="../../patterns/hash-map.md">hash-map pattern</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def encode(self, strs: list[str]) -> str:",
+    '        return "".join(f"{len(s)}#{s}" for s in strs)',
+    "",
+    "    def decode(self, s: str) -> list[str]:",
+    "        result = []",
+    "        i = 0",
+    "        while i < len(s):",
+    '            j = s.index("#", i)',
+    "            length = int(s[i:j])",
+    "            result.append(s[j + 1:j + 1 + length])",
+    "            i = j + 1 + length",
+    "        return result"
+  ];
+
+  var STRS = ["neet", "code", "love", "you"];
+  // The encoded string "4#neet4#code4#love3#you" split into header / payload chunks, each with its start index.
+  var CHUNKS = [["4#", 0], ["neet", 2], ["4#", 6], ["code", 8], ["4#", 12], ["love", 14], ["3#", 18], ["you", 20]];
+  var CSV = [["neet,", 0], ["code,", 5], ["love,", 10], ["you", 15]];
+
+  // strs: [[text, cls]] for the input row. chunks: the encoded row; cur (blue) = header being read,
+  // hits (green) = payloads already decoded, bad (amber) = misread, dim = not reached yet. vars: decode cursor.
+  var STATES = {
+    problem: {
+      caption: "Turn four strings into one string, then get exactly the same four back.",
+      phase: "4#neet4#code4#love3#you", strs: [["neet", ""], ["code", ""], ["love", ""], ["you", ""]], chunks: CHUNKS, cur: -1, hits: [], bad: [], dim: [],
+      vars: [], meta: "Any format is allowed, as long as decode(encode(strs)) == strs for every list.", hl: []
+    },
+    brute: {
+      caption: "Join with a comma and split on it. Works here, breaks on any string containing a comma.",
+      phase: "neet,code,love,you", strs: [["neet", ""], ["code", ""], ["love", ""], ["you", ""]], chunks: CSV, cur: -1, hits: [], bad: [0, 1, 2], dim: [],
+      vars: [["[\"a,b\"]", "→ \"a,b\" → [\"a\", \"b\"]", ""], ["[]", "→ \"\" → [\"\"]", ""]], meta: "Whatever separator you pick is a legal character inside a string.", hl: [],
+      big: "wrong on [\"a,b\"] and []", bigNote: "the separator can be forged"
+    },
+    insight: {
+      caption: "Prefix each string with its length: the number, not a separator, says where the payload ends.",
+      phase: "4#neet4#code4#love3#you", strs: [["neet", "cur"], ["code", ""], ["love", ""], ["you", ""]], chunks: CHUNKS, cur: 0, hits: [1], bad: [], dim: [2, 3, 4, 5, 6, 7],
+      vars: [["\"neet\"", "→ \"4#neet\"", "new"], ["\"\"", "→ \"0#\"", ""]], meta: "The <b>#</b> ends the digits; the digits end the payload. Neither boundary can be faked by content.", hl: [2]
+    },
+    approach: {
+      caption: "Decode is a cursor: read digits to the '#', slice that many characters, jump past them.",
+      phase: "4#neet4#code4#love3#you", strs: [["neet", ""], ["code", ""], ["love", ""], ["you", ""]], chunks: CHUNKS, cur: -1, hits: [], bad: [], dim: [],
+      vars: [["i", "start of a header", ""], ["j", "index of its #", ""], ["length", "int(s[i:j])", ""]], meta: "payload = s[j + 1 : j + 1 + length], then i = j + 1 + length.", hl: [5, 6, 7, 8, 9, 10, 11]
+    },
+    encode: {
+      caption: "Encode: \"4#neet\" + \"4#code\" + \"4#love\" + \"3#you\", no separator between chunks.",
+      phase: "4#neet4#code4#love3#you", strs: [["neet", "hit"], ["code", "hit"], ["love", "hit"], ["you", "hit"]], chunks: CHUNKS, cur: -1, hits: [0, 1, 2, 3, 4, 5, 6, 7], bad: [], dim: [],
+      vars: [["len(encoded)", "23", ""], ["headers at", "0, 6, 12, 18", ""]], meta: "The small index under each chunk is where it starts in the 23-character string.", hl: [1, 2]
+    },
+    d1: {
+      caption: "i = 0: '#' at j = 1, length = int(\"4\") = 4, payload s[2:6] = \"neet\", i becomes 6.",
+      phase: "decoding chunk 1", strs: [["neet", "hit"], ["code", "dim"], ["love", "dim"], ["you", "dim"]], chunks: CHUNKS, cur: 0, hits: [1], bad: [], dim: [2, 3, 4, 5, 6, 7],
+      vars: [["i", "0", "new"], ["j", "1", ""], ["length", "4", ""], ["payload", "s[2:6] = \"neet\"", "found"], ["next i", "1 + 1 + 4 = 6", ""]], meta: "The cursor jumps from 0 straight to 6 without reading n, e, e, t.", hl: [8, 9, 10, 11]
+    },
+    d2: {
+      caption: "i = 6, 12, 18 decode \"code\", \"love\", \"you\"; i reaches 23 = len(s) and the loop ends.",
+      phase: "decoding chunks 2-4", strs: [["neet", "hit"], ["code", "hit"], ["love", "hit"], ["you", "hit"]], chunks: CHUNKS, cur: 6, hits: [1, 3, 5, 7], bad: [], dim: [],
+      vars: [["i", "18 → 23", ""], ["j", "19", ""], ["length", "3", ""], ["payload", "s[20:23] = \"you\"", "found"], ["result", "[neet, code, love, you]", "found"]], meta: "23 &lt; 23 is false, so <b>while i &lt; len(s)</b> stops and result is returned.", hl: [7, 12],
+      big: "[\"neet\", \"code\", \"love\", \"you\"]", bigNote: "identical to the input list"
+    },
+    pitfall: {
+      caption: "s[j:j + length] starts the slice on the '#': every payload is shifted one character left.",
+      phase: "payload sliced from j, not j + 1", strs: [["#nee", "bad"], ["#cod", "bad"], ["#lov", "bad"], ["#yo", "bad"]], chunks: CHUNKS, cur: -1, hits: [], bad: [1, 3, 5, 7], dim: [],
+      vars: [["j", "1", ""], ["s[1:5]", "\"#nee\"", ""], ["i", "still 6, so the loop goes on", ""]], meta: "The cursor update is right, so nothing crashes; the strings are just wrong.", hl: [10],
+      big: "[\"#nee\", \"#cod\", \"#lov\", \"#yo\"]", bigNote: "instead of [\"neet\", \"code\", \"love\", \"you\"]"
+    },
+    complexity: {
+      caption: "Every character is written once by encode and read once by decode.",
+      phase: "4#neet4#code4#love3#you", strs: [["neet", ""], ["code", ""], ["love", ""], ["you", ""]], chunks: CHUNKS, cur: -1, hits: [], bad: [], dim: [],
+      vars: [["N", "total characters", ""], ["m", "number of strings", ""]], meta: "Headers add a few characters per string; payloads are sliced, never scanned.", hl: [2, 7, 8, 10],
+      big: "O(N + m) time · O(N) space", bigNote: "linear both ways; the design is what matters"
+    },
+    final: {
+      caption: "The whole solution.",
+      phase: "4#neet4#code4#love3#you", strs: [["neet", "hit"], ["code", "hit"], ["love", "hit"], ["you", "hit"]], chunks: CHUNKS, cur: -1, hits: [0, 1, 2, 3, 4, 5, 6, 7], bad: [], dim: [],
+      vars: [["round trip", "ok", "found"]], meta: "", hl: [0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function esc(t) { return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.phase;
+    $("meta").innerHTML = s.meta;
+
+    var row = "";
+    for (var q = 0; q < s.strs.length; q++) {
+      row += '<div class="cell' + (s.strs[q][1] ? " " + s.strs[q][1] : "") + '">' + esc(s.strs[q][0]) + '<span class="idx">' + q + '</span></div>';
+    }
+    $("strs").innerHTML = row;
+
+    var arr = "";
+    for (var i = 0; i < s.chunks.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.bad.indexOf(i) !== -1) cls += " bad";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.dim.indexOf(i) !== -1) cls += " dim";
+      arr += '<div class="' + cls + '">' + esc(s.chunks[i][0]) + '<span class="idx">' + s.chunks[i][1] + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not decoding yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + esc(e[0]) + " = " + esc(e[1]) + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = esc(s.big) + '<small>' + esc(s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + esc(CODE[l]) + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

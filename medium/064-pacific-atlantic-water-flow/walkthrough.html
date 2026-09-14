@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pacific Atlantic Water Flow Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* number-of-islands additions: a grid of square cells with land, water, sunk and current states */
+  .grid { display: grid; gap: 4px; margin: 8px 0 4px; }
+  .gc {
+    aspect-ratio: 1; border-radius: 6px; border: 2px solid var(--line); background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.9rem; color: var(--muted); transition: all 0.25s;
+  }
+  .gc.land { background: var(--ok-soft); border-color: var(--ok); color: var(--ink); font-weight: 600; }
+  .gc.sunk { background: var(--code-bg); border-color: var(--line); color: var(--muted); text-decoration: line-through; }
+  .gc.cur { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); transform: scale(1.06); }
+  .gc.scan { outline: 2px dashed var(--accent); outline-offset: -2px; }
+  .dict .kv.island { border-color: var(--ok); }
+  /* pacific-atlantic additions: which ocean(s) each cell has been reached from */
+  .gc.pac { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); font-weight: 600; }
+  .gc.atl { background: var(--warn-soft); border-color: var(--warn); color: var(--ink); font-weight: 600; }
+  .gc.both { background: var(--ok-soft); border-color: var(--ok); color: var(--ink); font-weight: 700; }
+  .gc.wrong { outline: 2px solid var(--warn); outline-offset: -2px; text-decoration: line-through; }
+  .ocean { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; margin: 0 2px; }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Graph · LeetCode #417</div>
+  <h1>Pacific Atlantic Water Flow, narrated</h1>
+  <p>Scroll through the thinking, from tracing water downhill from every cell to two uphill searches that start at the oceans and meet in the middle, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph Traversal</a> <span class="how">reverse the flow: DFS uphill from each ocean's edge, intersect the two visited sets</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>A grid of heights is an island. The Pacific touches its top and left edges, the Atlantic its bottom and right edges. Rain on a cell flows to any 4-directional neighbour whose height is <em>less than or equal</em> to the cell's own, and from an edge cell into the ocean on that edge. Return every cell whose water can reach <strong>both</strong> oceans.</p>
+      <p>Equal heights count as downhill, so water wanders freely across a plateau. Diagonal moves are not allowed.</p>
+      <div class="callout">Running example: the 5 × 5 grid from LeetCode. The answer is seven cells: <code>[0,4], [1,3], [1,4], [2,2], [3,0], [3,1], [4,0]</code>. Take <code>(2, 2)</code> at height 5: it drains up through <code>3</code> then <code>2</code> to the top row (Pacific), and down through <code>1</code> to the bottom row (Atlantic).</div>
+      <p>The output is a set of coordinates in any order, not a count. Row-major order is the convention this solution produces.</p>
+    </section>
+
+    <section class="step" data-state="naive">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: trace the water from every cell</h2>
+      <p>Follow the rules literally. From each cell, flood fill <em>downhill</em> (to neighbours with <code>heights[nr][nc] &lt;= heights[r][c]</code>) and record whether the fill ever touches a Pacific edge and whether it ever touches an Atlantic edge:</p>
+      <pre class="code"><span class="ln">for r in range(rows):</span><span class="ln">    for c in range(cols):</span><span class="ln">        reached = flood_downhill(r, c)</span><span class="ln">        if touches_pacific(reached) and touches_atlantic(reached):</span><span class="ln">            out.append([r, c])</span></pre>
+      <p style="margin-top:14px">Each flood can cover the whole grid, and there are <code>m × n</code> of them: <strong>O((m × n)²)</strong>. On a 200 × 200 plateau every one of the 40,000 floods visits all 40,000 cells.</p>
+      <div class="callout warn">The waste is that floods from neighbouring cells overlap almost entirely. If <code>(2, 2)</code> drains to the Pacific through <code>(1, 2)</code>, then the flood from <code>(1, 2)</code> repeats that exact path, and so does every cell above it.</div>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: start at the ocean and walk uphill</h2>
+      <p>"Water from <code>A</code> can flow to <code>B</code>" means there is a path from <code>A</code> to <code>B</code> that never steps up. Read the same path backwards from <code>B</code> and it never steps <em>down</em>. So the set of cells that drain into the Pacific is exactly the set of cells reachable from the Pacific's edge by moving only to neighbours that are <strong>at least as high</strong>.</p>
+      <p>That is one traversal per ocean, not one per cell. Seed it with every edge cell that touches that ocean, walk uphill, and the visited set at the end is the answer for that ocean.</p>
+      <div class="callout">Two traversals, two visited sets, one intersection. A cell reaches both oceans exactly when both uphill searches reached it.</div>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: one helper, two seeds, intersect</h2>
+      <ul>
+        <li><code>reach(starts)</code> is an iterative DFS. <code>seen = set(starts)</code> and <code>stack = list(starts)</code> begin with every edge cell already visited and queued for expansion.</li>
+        <li>Pop a cell; for each in-bounds neighbour that is <code>not in seen</code> and has <code>heights[nr][nc] &gt;= heights[r][c]</code>, add it to <code>seen</code> and push it. Marking on push means no cell is pushed twice.</li>
+        <li><code>pacific = reach(left column + top row)</code>, <code>atlantic = reach(right column + bottom row)</code>.</li>
+        <li>Scan the grid row by row and keep every <code>(r, c)</code> that is in both sets.</li>
+      </ul>
+      <p>The corner <code>(0, 0)</code> appears twice in the Pacific seed (once from the column, once from the row). The <code>set</code> absorbs the duplicate, and the second copy on the stack is popped, finds every neighbour already seen, and does nothing.</p>
+      <p>The panel colours cells blue once the Pacific search has reached them, amber for the Atlantic, and green for both.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the Pacific search climbs the top row</h2>
+      <p>The seed puts the left column then the top row on the stack, so <code>(0, 4)</code> is on top. Pop it (height 5): its only in-bounds, unseen neighbour is <code>(1, 4)</code> at height 4, which is lower, so nothing is pushed. Pop <code>(0, 3)</code> (height 3): below is <code>(1, 3)</code> at height 4, and <code>4 &gt;= 3</code>, so add and push it. Pop <code>(1, 3)</code> (height 4): right is <code>(1, 4)</code> at height 4, equal, so push; below is <code>(2, 3)</code> at height 3, lower, skipped. Pop <code>(1, 4)</code>: nothing new.</p>
+      <p>Pop <code>(0, 2)</code> (height 2): below is <code>(1, 2)</code> at height 3, push. Pop <code>(1, 2)</code>: below is <code>(2, 2)</code> at height 5, push. Pop <code>(2, 2)</code> (height 5): every neighbour is lower or already seen, so this branch ends. That is the cell from the problem statement, reached by walking <em>up</em> the same path the water takes <em>down</em>.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: the Pacific search finishes, the Atlantic search begins</h2>
+      <p>Pop <code>(0, 1)</code> (height 2): below is <code>(1, 1)</code> at height 2, equal, push. Pop <code>(1, 1)</code>: below is <code>(2, 1)</code> at height 4, push. Pop <code>(2, 1)</code>: below is <code>(3, 1)</code> at height 7, push. Pop <code>(3, 1)</code> (height 7): the tallest cell on the island, and nothing around it is higher, so the branch ends. The remaining stack entries are the left-column seeds, and none of them can climb anywhere new. The Pacific set has 16 cells: rows 0 and 1 in full, then <code>(2, 0)</code>, <code>(2, 1)</code>, <code>(2, 2)</code>, <code>(3, 0)</code>, <code>(3, 1)</code>, <code>(4, 0)</code>.</p>
+      <p>The Atlantic search starts the same way from the right column and bottom row. Pop <code>(4, 3)</code> (height 2): above is <code>(3, 3)</code> at height 4, push. Pop <code>(4, 2)</code> (height 1): above is <code>(3, 2)</code> at height 1, equal, push. Pop <code>(3, 2)</code> (height 1): above is <code>(2, 2)</code> at height 5 and left is <code>(3, 1)</code> at height 7, push both. Those two cells are now in both sets: the panel turns them green.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the intersection</h2>
+      <p>The Atlantic search continues: <code>(4, 0)</code> (height 5) climbs to <code>(3, 0)</code> at height 6; <code>(2, 4)</code> (height 1) climbs to <code>(2, 3)</code> at height 3, which climbs to <code>(1, 3)</code> at height 4. Everything else is a seed or blocked by a lower neighbour. The Atlantic set also has 16 cells: column 4 and row 4 in full, plus <code>(1, 3)</code>, <code>(2, 2)</code>, <code>(2, 3)</code>, <code>(3, 0)</code>, <code>(3, 1)</code>, <code>(3, 2)</code>, <code>(3, 3)</code>.</p>
+      <p>The final scan walks the grid in row-major order and keeps the cells in both sets: <code>(0, 4)</code>, <code>(1, 3)</code>, <code>(1, 4)</code>, <code>(2, 2)</code>, <code>(3, 0)</code>, <code>(3, 1)</code>, <code>(4, 0)</code>. Seven green cells, matching the expected output exactly.</p>
+      <div class="callout">Two searches of at most 25 pops each, then one 25-cell scan, instead of 25 separate floods.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the direction of the comparison</h2>
+      <p><strong>Writing <code>heights[nr][nc] &lt;= heights[r][c]</code>.</strong> That is the rule from the problem statement, so it looks right, but it is the rule for water flowing <em>away</em> from the current cell. Starting at the ocean and applying it walks downhill into the island, which answers a different question ("which cells can the ocean flood?"). On the running example it returns <strong>15</strong> cells instead of 7, including <code>(0, 0)</code> at height 1, the lowest cell on the island, which cannot reach the Atlantic at all. The panel shows that wrong set: the eleven cells it wrongly includes are struck through, and it also misses three correct ones, <code>(2, 2)</code>, <code>(3, 0)</code> and <code>(3, 1)</code>.</p>
+      <p><strong>Using a strict <code>&gt;</code>.</strong> Water crosses equal heights, so <code>[[1, 1], [1, 1]]</code> must return all four cells. With <code>&gt;</code> the search never leaves its seeds and every plateau is mis-scored.</p>
+      <p><strong>Seeding one edge per ocean.</strong> The Pacific is the whole top row <em>and</em> the whole left column. Drop the column and <code>(3, 0)</code> at height 6, which reaches the Pacific only by dropping to <code>(2, 0)</code>, is lost.</p>
+      <div class="callout warn">The search runs backwards, so the comparison runs backwards too: from the ocean, step only to neighbours that are at least as high.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Each traversal marks a cell in <code>seen</code> the moment it is pushed, so a cell is pushed at most once per ocean and checks four neighbours when popped. Two traversals plus the final scan: <strong>O(m × n) time</strong>. The two sets and the stack each hold at most every cell: <strong>O(m × n) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Downhill flood from every cell</td><td>O((m × n)²)</td><td>O(m × n) per flood</td></tr>
+        <tr><td>Downhill flood with memoised results</td><td>O(m × n) but hard to get right on plateaus</td><td>O(m × n)</td></tr>
+        <tr><td>Two uphill searches from the oceans</td><td>O(m × n)</td><td>O(m × n)</td></tr>
+      </table>
+      <p>Memoising the per-cell floods is tempting but cycles through equal heights make the cache unsound mid-computation. Reversing the search avoids the problem instead of patching it.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>One helper called twice and an intersection. Every line maps to a step above.</p>
+      <ul>
+        <li><code>def reach(starts)</code> is the uphill DFS shared by both oceans.</li>
+        <li><code>seen = set(starts)</code> and <code>stack = list(starts)</code> treat every edge cell as already reached.</li>
+        <li><code>(nr, nc) not in seen and heights[nr][nc] &gt;= heights[r][c]</code> is the reversed flow rule with the visited check.</li>
+        <li><code>seen.add((nr, nc))</code> before <code>stack.append((nr, nc))</code> marks on push.</li>
+        <li><code>pacific = reach(…)</code> seeds the left column and top row; <code>atlantic = reach(…)</code> seeds the right column and bottom row.</li>
+        <li>The list comprehension keeps <code>(r, c)</code> when it is <code>in pacific and (r, c) in atlantic</code>, in row-major order.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>search uphill from each ocean's edge, and the cells both searches reach are the ones that drain to both.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>heights · blue = pacific reached, amber = atlantic reached, green = both</h3>
+        <div class="ocean"><span>pacific ↑ ←</span><span>atlantic ↓ →</span></div>
+        <div class="grid" id="grid"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>search state</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="pacific_atlantic_water_flow.py">pacific_atlantic_water_flow.py</a> · <a href="pacific_atlantic_water_flow_annotated.py">pacific_atlantic_water_flow_annotated.py</a> · <a href="test_pacific_atlantic_water_flow.py">test_pacific_atlantic_water_flow.py</a> · <a href="../../md.html?f=medium/064-pacific-atlantic-water-flow/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+
+  var CODE = [
+    "class Solution:",
+    "    def pacific_atlantic(self, heights: list[list[int]]) -> list[list[int]]:",
+    "        rows, cols = len(heights), len(heights[0])",
+    "",
+    "        def reach(starts: list[tuple[int, int]]) -> set[tuple[int, int]]:",
+    "            seen = set(starts)",
+    "            stack = list(starts)",
+    "            while stack:",
+    "                r, c = stack.pop()",
+    "                for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):",
+    "                    if 0 <= nr < rows and 0 <= nc < cols and (nr, nc) not in seen and heights[nr][nc] >= heights[r][c]:",
+    "                        seen.add((nr, nc))",
+    "                        stack.append((nr, nc))",
+    "            return seen",
+    "",
+    "        pacific = reach([(r, 0) for r in range(rows)] + [(0, c) for c in range(cols)])",
+    "        atlantic = reach([(r, cols - 1) for r in range(rows)] + [(rows - 1, c) for c in range(cols)])",
+    "        return [[r, c] for r in range(rows) for c in range(cols) if (r, c) in pacific and (r, c) in atlantic]"
+  ];
+
+  var H = [
+    [1, 2, 2, 3, 5],
+    [3, 2, 3, 4, 4],
+    [2, 4, 5, 3, 1],
+    [6, 7, 1, 4, 5],
+    [5, 1, 1, 2, 4]
+  ];
+
+  // Mark grids: "." = unreached, "P" = pacific only, "A" = atlantic only, "B" = both.
+  var M_NONE = [".....", ".....", ".....", ".....", "....."];
+  // pacific seeds only (left column + top row)
+  var M_SEED = ["PPPPP", "P....", "P....", "P....", "P...."];
+  // after the top-row branches: (1,3), (1,4), (1,2), (2,2) reached
+  var M_T1 = ["PPPPP", "P.PPP", "P.P..", "P....", "P...."];
+  // pacific complete, atlantic partway: seeds + (3,3), (3,2), (2,2), (3,1)
+  var M_T2 = ["PPPPB", "PPPPB", "PPB.A", "PBAAA", "BAAAA"];
+  // both complete
+  var M_T3 = ["PPPPB", "PPPBB", "PPBAA", "BBAAA", "BAAAA"];
+  // the <= bug: downhill from the oceans
+  var M_BUG = ["BBBBB", "PBBBB", "P..BB", "P.BAA", "BBBAA"];
+
+  // Each state describes what the sticky panel shows for one step.
+  // marks = per-cell ocean membership, cur = [r, c] just popped, wrong = cells the pitfall wrongly includes.
+  var STATES = {
+    problem: {
+      caption: "Which cells can drain to both the Pacific (top/left) and the Atlantic (bottom/right)?",
+      marks: M_NONE, cur: null, wrong: [], chips: [], meta: "Answer: 7 cells. (2, 2) at height 5 drains up via 3, 2 and down via 1.", hl: []
+    },
+    naive: {
+      caption: "A downhill flood from every one of the 25 cells, each one repeating its neighbours' paths.",
+      marks: M_NONE, cur: [2, 2], wrong: [], chips: [["cells", "25"], ["floods", "25"]],
+      meta: "The flood from (2, 2) and the flood from (1, 2) share the entire path to the top row.", hl: [],
+      big: "O((m × n)²)", bigNote: "one full flood per cell"
+    },
+    reframe: {
+      caption: "Reverse it: from the ocean's edge, walk only to neighbours at least as high.",
+      marks: M_SEED, cur: null, wrong: [], chips: [["pacific seeds", "9 cells"]],
+      meta: "A downhill path read backwards is an uphill path. The visited set is the answer for that ocean.", hl: []
+    },
+    idea: {
+      caption: "reach(starts) is a DFS with a >= rule; run it for each ocean and intersect.",
+      marks: M_SEED, cur: null, wrong: [], chips: [["seen", "9 seeds", "new"], ["stack", "9 seeds, (0,4) on top", "new"]],
+      meta: "Mark on push so no cell is pushed twice. The duplicate corner (0, 0) is absorbed by the set.", hl: [4, 5, 6, 10, 11, 12, 15, 16, 17]
+    },
+    t1: {
+      caption: "Pacific: (0,3)=3 climbs to (1,3)=4, then (1,4)=4. (0,2)=2 climbs to (1,2)=3, then (2,2)=5.",
+      marks: M_T1, cur: [2, 2], wrong: [], chips: [["popped", "(2, 2)", "new"], ["height", "5"], ["pushed", "none: nothing higher"]],
+      meta: "(0, 4) at height 5 pushed nothing: (1, 4) is 4, and 4 &gt;= 5 is false.", hl: [8, 9, 10, 11, 12]
+    },
+    t2: {
+      caption: "Pacific done (16 cells). Atlantic: (4,2)=1 climbs to (3,2)=1, then to (2,2)=5 and (3,1)=7.",
+      marks: M_T2, cur: [3, 2], wrong: [], chips: [["popped", "(3, 2)", "new"], ["height", "1"], ["pushed", "(2,2), (3,1)"]],
+      meta: "(2, 2) and (3, 1) are now in both sets: the first green cells that are not on an edge.", hl: [8, 9, 10, 11, 12, 16]
+    },
+    t3: {
+      caption: "Atlantic done (16 cells). The row-major scan keeps the 7 cells in both sets.",
+      marks: M_T3, cur: null, wrong: [], chips: [["pacific", "16", "new"], ["atlantic", "16", "new"], ["both", "7", "found"]],
+      meta: "[0,4], [1,3], [1,4], [2,2], [3,0], [3,1], [4,0]", hl: [15, 16, 17],
+      big: "7 cells", bigNote: "two uphill searches, one intersection"
+    },
+    pitfall: {
+      caption: "heights[nr][nc] <= heights[r][c] walks downhill from the ocean and returns 15 cells.",
+      marks: M_BUG, cur: null, wrong: [[0, 0], [0, 1], [0, 2], [0, 3], [1, 1], [1, 2], [2, 3], [2, 4], [3, 2], [4, 1], [4, 2]],
+      chips: [["cells (buggy)", "15"], ["cells (correct)", "7", "found"]],
+      meta: "(0, 0) at height 1 is included, yet it is the lowest cell and cannot reach the Atlantic. Struck cells are wrong.", hl: [10],
+      big: "15, not 7", bigNote: "from the ocean, step only to cells at least as high"
+    },
+    complexity: {
+      caption: "Two traversals, each pushing every cell at most once, then one scan.",
+      marks: M_T3, cur: null, wrong: [], chips: [["cells", "25"], ["pushes", "16 + 16"]],
+      meta: "seen is written on push, so the >= test is evaluated at most four times per cell per ocean.", hl: [7, 10, 11, 12],
+      big: "O(m × n) time · O(m × n) space", bigNote: "versus O((m × n)²) for a flood per cell"
+    },
+    final: {
+      caption: "The whole solution.",
+      marks: M_T3, cur: null, wrong: [], chips: [["both", "7", "found"]], meta: "",
+      hl: [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function inList(list, r, c) {
+    for (var i = 0; i < list.length; i++) if (list[i][0] === r && list[i][1] === c) return true;
+    return false;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var grid = $("grid");
+    grid.style.gridTemplateColumns = "repeat(" + H[0].length + ", 1fr)";
+    var html = "";
+    for (var r = 0; r < H.length; r++) {
+      for (var c = 0; c < H[r].length; c++) {
+        var m = s.marks[r].charAt(c);
+        var cls = "gc" + (m === "P" ? " pac" : m === "A" ? " atl" : m === "B" ? " both" : "");
+        if (inList(s.wrong, r, c)) cls += " wrong";
+        if (s.cur && s.cur[0] === r && s.cur[1] === c) cls += " cur";
+        html += '<div class="' + cls + '">' + H[r][c] + '</div>';
+      }
+    }
+    grid.innerHTML = html;
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.chips.length; k++) {
+        var e = s.chips[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var code = "";
+    for (var l = 0; l < CODE.length; l++) {
+      code += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = code;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

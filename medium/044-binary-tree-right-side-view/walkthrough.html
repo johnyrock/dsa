@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binary Tree Right Side View Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+  .fig .edge { stroke: var(--muted); stroke-width: 2.5; fill: none; opacity: 0.7; transition: opacity 0.25s, stroke 0.25s; }
+  .fig .edge.dim { opacity: 0.25; }
+  .fig .edge.hit { stroke: var(--ok); opacity: 1; }
+  .fig .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 16px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .fig .node.cur circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3.5; }
+  .fig .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .fig .node.dim circle, .fig .node.dim text { opacity: 0.35; }
+  .fig .band { fill: var(--accent-soft); opacity: 0.55; }
+  .fig .eye { fill: var(--muted); font-size: 11px; text-anchor: end; font-family: ui-monospace, Menlo, monospace; }
+  .fig .lbl.warn { fill: var(--warn); }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Tree · LeetCode #199</div>
+  <h1>Binary Tree Right Side View, narrated</h1>
+  <p>Scroll through the thinking, from walking down the right spine (which is wrong) to a level-order traversal that keeps the last node of each level, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/tree-traversal.html">Tree Traversal</a> <span class="how">BFS by level; the node popped at i == size − 1 is the rightmost</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Stand to the right of a binary tree and look left. At every depth, the node nearest you hides everything behind it, so you see exactly one node per level. Return those values from the root downward.</p>
+      <div class="callout">Running example: <code>root = [1,2,3,null,5,null,4]</code>. Node 1 has children 2 and 3; 2 has only a right child 5; 3 has only a right child 4. The levels are <code>[1]</code>, <code>[2, 3]</code>, <code>[5, 4]</code>, and the answer is <strong>[1, 3, 4]</strong>.</div>
+      <p>The phrase to hold on to is "one node per level". The answer has exactly as many entries as the tree has levels, which means the job is to find the rightmost node <em>at each depth</em>, not the rightmost path.</p>
+      <p>Those two ideas agree on this example but not in general. The README's second example, <code>[1,2,3,4,null,null,null,5]</code>, has its deepest nodes under the <em>left</em> child, yet they are still visible from the right because nothing on their level is further right.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: walk down the right spine</h2>
+      <p>The tempting shortcut is to start at the root and keep taking <code>.right</code>:</p>
+      <pre class="code"><span class="ln">result = []</span><span class="ln">node = root</span><span class="ln">while node:</span><span class="ln">    result.append(node.val)</span><span class="ln">    node = node.right</span></pre>
+      <p style="margin-top:14px">On the running example this gives <code>1 → 3 → 4</code>, which happens to be correct. It is O(h) time and looks too good to be true, because it is.</p>
+      <p>On <code>[1,2,3,4,null,null,null,5]</code> the right spine is just <code>1 → 3</code>, so it returns <strong>[1, 3]</strong> and misses 4 and 5 entirely. The panel dims what this approach never visits. Any node that is the only one on its level is visible from the right, whichever subtree it lives in.</p>
+      <p>A correct brute force is to compute every level separately — for each depth <code>d</code>, traverse the tree collecting nodes at depth <code>d</code> and take the last one — which is O(n · h). We can do it in one traversal.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: the last node popped in each level</h2>
+      <p>Level-order traversal already visits the tree one depth at a time, left to right, using a queue. If we can tell where each level ends, the node popped just before the boundary is the rightmost node of that level — regardless of which parent it hangs from.</p>
+      <div class="callout">The boundary trick: at the start of each level, record <code>size = len(queue)</code>. Exactly <code>size</code> nodes belong to this level; everything appended while popping them belongs to the next. The node popped at <code>i == size - 1</code> is the one we want.</div>
+      <p>Two details keep the order right. Children are enqueued <code>left</code> first, then <code>right</code>, so each level is queued left to right. And <code>size</code> must be a snapshot: the queue grows during the loop, so re-reading <code>len(queue)</code> would move the boundary.</p>
+      <p>This is <a href="../014-binary-tree-level-order-traversal/walkthrough.html">Level Order Traversal</a> with one change: instead of collecting every node of the level into a list, keep only the last one.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>if root is None: return []</code> — no levels, nothing visible.</li>
+        <li><code>queue = deque([root])</code> — the queue holds one full level whenever the outer loop starts an iteration.</li>
+        <li><code>size = len(queue)</code> — freeze the level's width before popping.</li>
+        <li><code>for i in range(size): node = queue.popleft()</code> — pop exactly this level.</li>
+        <li><code>if i == size - 1: result.append(node.val)</code> — the last pop of the level is its rightmost node.</li>
+        <li><code>if node.left: queue.append(node.left)</code> then <code>if node.right: queue.append(node.right)</code> — queue the next level, left to right.</li>
+        <li><code>return result</code> — one value per level.</li>
+      </ul>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: level 0</h2>
+      <p>The queue starts as <code>[1]</code>, so <code>size = 1</code>. Pop node 1 with <code>i = 0</code>. Since <code>0 == size - 1</code>, append 1 to <code>result</code>: it is the only node on its level, so it is also the rightmost.</p>
+      <p>Enqueue its children, left first: <code>node.left</code> is 2, <code>node.right</code> is 3. The queue is now <code>[2, 3]</code>, which is exactly level 1 in left-to-right order.</p>
+      <p><code>result = [1]</code>. The root is always the first entry — it is alone on level 0.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: level 1</h2>
+      <p><code>size = 2</code>. Pop node 2 (<code>i = 0</code>). It is not the last of the level, so nothing is recorded; 2 has no left child, and its right child 5 is enqueued. Queue: <code>[3, 5]</code>.</p>
+      <p>Pop node 3 (<code>i = 1</code>). Now <code>1 == size - 1</code>, so append 3. Its only child, 4, is enqueued. Queue: <code>[5, 4]</code>.</p>
+      <p><code>result = [1, 3]</code>. Notice the queue held <code>[3, 5]</code> mid-level, three items would have been wrong to treat as a level — that is why <code>size</code> was frozen at 2.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: level 2, the answer</h2>
+      <p><code>size = 2</code>. Pop node 5 (<code>i = 0</code>): not last, no children. Pop node 4 (<code>i = 1</code>): last of the level, append 4. No children, so the queue is empty and the outer <code>while queue</code> loop ends.</p>
+      <div class="callout"><code>result = [1, 3, 4]</code>. Three levels, three values. Node 5 was on the same level as 4 but sat to its left, so it is hidden.</div>
+      <p>Had 3 lacked its child 4, node 5 would have been the last pop at this level and the answer would end in 5 — a node reached through the left subtree. The BFS handles that without a special case.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: a moving boundary, and the wrong end</h2>
+      <p><strong>Reading <code>len(queue)</code> live.</strong> Write the test as <code>if i == len(queue) - 1</code> inside the loop, after the children have been appended. At level 0: pop 1, enqueue 2 and 3, then <code>0 == 2 - 1</code> is false, so the root is skipped. At level 1: pop 2, queue <code>[3, 5]</code>, false; pop 3, queue <code>[5, 4]</code>, <code>1 == 1</code>, record 3. At level 2: pop 5, queue <code>[4]</code>, <code>0 == 0</code>, record <strong>5</strong>; pop 4, queue empty, <code>1 == -1</code> false. Output <strong>[3, 5]</strong>. Snapshot <code>size</code> before the loop.</p>
+      <p><strong>Recording the first pop.</strong> <code>if i == 0</code> gives the left side view: <strong>[1, 2, 5]</strong> on the example.</p>
+      <p><strong>Enqueuing right before left.</strong> Then the last pop of each level is the <em>leftmost</em> node, and the output is again <strong>[1, 2, 5]</strong>.</p>
+      <div class="callout warn">Freeze <code>size</code> once per level, pop exactly <code>size</code> nodes, and record the one at <code>i == size - 1</code>. Children go in left, then right.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Every node is enqueued once and popped once: <strong>O(n) time</strong>. The queue never holds more than one level plus part of the next, so <strong>O(w) space</strong> where <code>w</code> is the widest level — up to about <code>n / 2</code> on a complete tree.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th><th>Correct?</th></tr>
+        <tr><td>Follow the right spine</td><td>O(h)</td><td>O(1)</td><td>no</td></tr>
+        <tr><td>Collect each depth separately</td><td>O(n · h)</td><td>O(h)</td><td>yes</td></tr>
+        <tr><td>BFS, last node per level</td><td>O(n)</td><td>O(w)</td><td>yes</td></tr>
+        <tr><td>DFS right-first, first node per depth</td><td>O(n)</td><td>O(h)</td><td>yes</td></tr>
+      </table>
+      <p>The DFS alternative visits <code>right</code> before <code>left</code> and records a value the first time it reaches each depth. Same answer, recursion stack instead of a queue.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>The level-order loop with one <code>if</code> in it.</p>
+      <ul>
+        <li><code>if root is None: return []</code> — empty tree.</li>
+        <li><code>queue = deque([root])</code> — level 0.</li>
+        <li><code>size = len(queue)</code> — snapshot the level width.</li>
+        <li><code>node = queue.popleft()</code> — pop this level in order.</li>
+        <li><code>if i == size - 1: result.append(node.val)</code> — the rightmost node of the level.</li>
+        <li><code>if node.left: …</code> / <code>if node.right: …</code> — enqueue the next level, left to right.</li>
+        <li><code>return result</code> — one entry per level.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>right side view = the last node of every level in a left-to-right BFS; freeze the level size before popping.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>tree · root = [1,2,3,null,5,null,4]</h3>
+        <svg class="fig" id="fig" viewBox="0 0 400 200" aria-label="binary tree"></svg>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>queue · size · i</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="binary_tree_right_side_view.py">binary_tree_right_side_view.py</a> · <a href="binary_tree_right_side_view_annotated.py">binary_tree_right_side_view_annotated.py</a> · <a href="test_binary_tree_right_side_view.py">test_binary_tree_right_side_view.py</a> · <a href="../../md.html?f=medium/044-binary-tree-right-side-view/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def right_side_view(self, root: TreeNode | None) -> list[int]:",
+    "        if root is None:",
+    "            return []",
+    "        result = []",
+    "        queue = deque([root])",
+    "        while queue:",
+    "            size = len(queue)",
+    "            for i in range(size):",
+    "                node = queue.popleft()",
+    "                if i == size - 1:",
+    "                    result.append(node.val)",
+    "                if node.left:",
+    "                    queue.append(node.left)",
+    "                if node.right:",
+    "                    queue.append(node.right)",
+    "        return result"
+  ];
+
+  // Node indices (order among non-null values): 0 = 1, 1 = 2, 2 = 3, 3 = 5, 4 = 4.
+  var SPEC = [1, 2, 3, null, 5, null, 4];
+
+  // result: values recorded so far; resHit: index of the value just recorded; band: depth being processed (-1 none).
+  var STATES = {
+    problem: {
+      caption: "Seen from the right, each level shows only its rightmost node.",
+      cur: -1, hits: [0, 2, 4], dim: [], bad: [], band: -1, result: ["?", "?", "?"], resHit: -1, vars: [],
+      meta: "Levels: [1], [2, 3], [5, 4]. Expected: <b>[1, 3, 4]</b>.", hl: []
+    },
+    brute: {
+      caption: "Following .right from the root: 1 → 3 → 4. Right here, wrong in general.",
+      cur: -1, hits: [0, 2, 4], dim: [1, 3], bad: [], band: -1, result: [1, 3, 4], resHit: -1, vars: [["path", "1 → 3 → 4"]],
+      meta: "On [1,2,3,4,null,null,null,5] the spine is 1 → 3 and misses 4 and 5.", hl: [],
+      big: "[1, 3] on example 2", bigNote: "should be [1, 3, 4, 5]"
+    },
+    idea: {
+      caption: "BFS one level at a time; the last node popped in a level is its rightmost.",
+      cur: -1, hits: [], dim: [], bad: [], band: 1, result: [], resHit: -1, vars: [["queue", "[2, 3]", "new"], ["size", 2]],
+      meta: "Freeze size = len(queue) at the start of the level; the node popped at i == size − 1 is visible.", hl: [7, 8, 9, 10, 11]
+    },
+    approach: {
+      caption: "Queue holds one level; snapshot its size; pop size nodes; record the last; enqueue children.",
+      cur: -1, hits: [], dim: [], bad: [], band: -1, result: [], resHit: -1, vars: [["queue", "[1]", "new"]],
+      meta: "Children go in left then right, so each level is queued left to right.", hl: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    },
+    t1: {
+      caption: "Level 0: size = 1. Pop 1 at i = 0 = size − 1 → record 1. Enqueue 2, 3.",
+      cur: 0, hits: [], dim: [3, 4], bad: [], band: 0, result: [1], resHit: 0, vars: [["queue after", "[2, 3]"], ["size", 1], ["i", 0]],
+      meta: "result = <b>[1]</b>. The root is always alone on level 0.", hl: [7, 9, 10, 11, 12, 13, 14, 15]
+    },
+    t2: {
+      caption: "Level 1: size = 2. Pop 2 (i = 0, skip, enqueue 5). Pop 3 (i = 1 = size − 1) → record 3, enqueue 4.",
+      cur: 2, hits: [0], dim: [], bad: [], band: 1, result: [1, 3], resHit: 1, vars: [["queue after", "[5, 4]"], ["size", 2], ["i", 1]],
+      meta: "Mid-level the queue was [3, 5]; the frozen size = 2 keeps 5 in the next level.", hl: [7, 9, 10, 11, 14, 15]
+    },
+    t3: {
+      caption: "Level 2: size = 2. Pop 5 (i = 0, skip). Pop 4 (i = 1 = size − 1) → record 4. Queue empty.",
+      cur: 4, hits: [0, 2], dim: [], bad: [], band: 2, result: [1, 3, 4], resHit: 2, vars: [["queue after", "[]"], ["size", 2], ["i", 1]],
+      meta: "5 is on the same level as 4 but to its left, so it is hidden.", hl: [9, 10, 11, 16],
+      big: "[1, 3, 4]", bigNote: "one node per level, top to bottom"
+    },
+    pitfall: {
+      caption: "if i == len(queue) − 1 read live: the boundary moves as children are appended.",
+      cur: -1, hits: [], dim: [], bad: [0, 3], band: -1, result: [3, 5], labels: ["from level 1", "from level 2"], resHit: -1, vars: [["level 0", "pop 1, queue [2,3]: 0 == 1? no"], ["level 2", "pop 5, queue [4]: 0 == 0? yes"]],
+      meta: "The root is skipped and 5 is recorded instead of 4.", hl: [7, 10],
+      big: "[3, 5], not [1, 3, 4]", bigNote: "snapshot size before the loop"
+    },
+    complexity: {
+      caption: "Each node enqueued once and popped once; the queue holds at most one level plus part of the next.",
+      cur: -1, hits: [0, 2, 4], dim: [], bad: [], band: -1, result: [1, 3, 4], resHit: -1, vars: [["n", 5], ["widest level w", 2]],
+      meta: "Widest level here is 2 nodes; a complete tree can reach n / 2.", hl: [6, 8],
+      big: "O(n) time · O(w) space", bigNote: "w = width of the widest level"
+    },
+    final: {
+      caption: "The whole solution.",
+      cur: -1, hits: [0, 2, 4], dim: [], bad: [], band: -1, result: [1, 3, 4], resHit: -1, vars: [],
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var R = 19;
+  // level-order-with-null spec -> { nodes: [{val, x, y, depth, parent}], edges: [[parentIdx, childIdx]] }; node index = order among non-null values
+  function layoutTree(spec) {
+    var nodes = [], queue = [], i = 0;
+    if (!spec.length || spec[0] === null) return { nodes: [], edges: [], h: 60 };
+    nodes.push({ val: spec[0], depth: 0, parent: -1, kids: [null, null] });
+    queue.push(0); i = 1;
+    while (queue.length && i < spec.length) {
+      var p = queue.shift();
+      for (var side = 0; side < 2 && i < spec.length; side++, i++) {
+        if (spec[i] === null) continue;
+        var idx = nodes.length;
+        nodes.push({ val: spec[i], depth: nodes[p].depth + 1, parent: p, kids: [null, null] });
+        nodes[p].kids[side] = idx;
+        queue.push(idx);
+      }
+    }
+    var slot = 0, maxDepth = 0;
+    function walk(n) {
+      if (n === null) return;
+      walk(nodes[n].kids[0]);
+      nodes[n].slot = slot++;
+      maxDepth = Math.max(maxDepth, nodes[n].depth);
+      walk(nodes[n].kids[1]);
+    }
+    walk(0);
+    var levelH = 64, margin = 60, W = 400;
+    var stepX = slot > 1 ? (W - 2 * margin) / (slot - 1) : 0;
+    var edges = [];
+    nodes.forEach(function (n, idx) {
+      n.x = slot > 1 ? margin + n.slot * stepX : W / 2;
+      n.y = 30 + n.depth * levelH;
+      if (n.parent >= 0) edges.push([n.parent, idx]);
+    });
+    return { nodes: nodes, edges: edges, levelH: levelH, maxDepth: maxDepth, h: 30 + maxDepth * levelH + 32 };
+  }
+  var FIG = layoutTree(SPEC);
+  var figSvg = document.getElementById("fig");
+
+  function renderFig(fig, s) {
+    while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild);
+    figSvg.setAttribute("viewBox", "0 0 400 " + fig.h);
+    var bad = s.bad || [];
+    function state(i) {
+      if (i === s.cur) return "cur";
+      if (bad.indexOf(i) !== -1) return "bad";
+      if (s.hits.indexOf(i) !== -1) return "hit";
+      if (s.dim.indexOf(i) !== -1) return "dim";
+      return "";
+    }
+    if (s.band >= 0) {
+      figSvg.appendChild(el("rect", { "class": "band", x: 8, y: 30 + s.band * fig.levelH - R - 6, width: 384, height: 2 * R + 12, rx: 8 }));
+    }
+    fig.edges.forEach(function (e) {
+      var a = fig.nodes[e[0]], b = fig.nodes[e[1]];
+      var sa = state(e[0]), sb = state(e[1]);
+      var cls = "edge";
+      if (sa === "dim" || sb === "dim") cls += " dim";
+      else if ((sa === "hit" || sa === "cur") && (sb === "hit" || sb === "cur")) cls += " hit";
+      var dx = b.x - a.x, dy = b.y - a.y, len = Math.sqrt(dx * dx + dy * dy) || 1;
+      var ux = dx / len, uy = dy / len;
+      figSvg.appendChild(el("line", { "class": cls, x1: a.x + ux * (R + 2), y1: a.y + uy * (R + 2), x2: b.x - ux * (R + 3), y2: b.y - uy * (R + 3) }));
+    });
+    fig.nodes.forEach(function (n, i) {
+      var g = el("g", { "class": "node " + state(i) });
+      g.appendChild(el("circle", { cx: n.x, cy: n.y, r: R }));
+      g.appendChild(el("text", { x: n.x, y: n.y }, n.val));
+      figSvg.appendChild(g);
+    });
+    // the viewpoint: an eye on the right edge, one per level
+    for (var d = 0; d <= fig.maxDepth; d++) {
+      figSvg.appendChild(el("text", { "class": "eye", x: 394, y: 30 + d * fig.levelH + 4 }, "👁"));
+    }
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+    renderFig(FIG, s);
+
+    var arr = "";
+    if (s.result.length === 0) {
+      arr = '<div class="cell dim">[]<span class="idx">result</span></div>';
+    }
+    for (var i = 0; i < s.result.length; i++) {
+      var cls = "cell";
+      if (i === s.resHit) cls += " hit";
+      else if (s.result[i] === "?") cls += " dim";
+      arr += '<div class="' + cls + '">' + s.result[i] + '<span class="idx">' + (s.labels ? s.labels[i] : "level " + i) + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l.replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

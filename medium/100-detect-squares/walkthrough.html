@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Detect Squares Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  .fig .bit { fill: var(--bg); stroke: var(--line); stroke-width: 1.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .bit.one { fill: var(--panel); stroke: var(--muted); }
+  .fig .bit.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2.5; }
+  .fig .bit.hit { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 2.5; }
+  .fig .bit.dim { opacity: 0.35; }
+  .fig .val.zero { fill: var(--muted); font-weight: 400; }
+  .fig .rlbl { fill: var(--muted); font-size: 11px; text-anchor: start; font-family: ui-monospace, Menlo, monospace; }
+  .fig .rlbl.acc { fill: var(--ink); font-weight: 600; }
+  .fig .rlbl.cur { fill: var(--accent); font-weight: 600; }
+  .fig .rlbl.ok { fill: var(--ok); font-weight: 600; }
+  .fig .hdr { fill: var(--muted); font-size: 9px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .box.dim { opacity: 0.4; }
+  .fig .dig { fill: var(--ink); font-size: 22px; font-weight: 700; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .tag-txt { fill: var(--accent); font-size: 11px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .arrow { stroke: var(--accent); stroke-width: 2; fill: none; }
+  .fig .arrow-head { fill: var(--accent); }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Hash Map · LeetCode #2013</div>
+  <h1>Detect Squares, narrated</h1>
+  <p>Scroll through the thinking, from checking every triple of stored points to picking only the diagonal corner and multiplying three counts, with the point map and the grid shown after every operation.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/hash-map.html">Hash Map</a> <span class="how">a counter keyed by (x, y); the diagonal corner fixes the other two, so count = n(diag) × n(x, py) × n(px, y)</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Build a class with two operations. <code>add(point)</code> stores a point on the integer grid, and the same point may be stored several times. <code>count(point)</code> asks: using this query point as one corner, how many axis-aligned squares of positive area can be completed from the stored points?</p>
+      <p>Copies matter. If a corner was stored twice, every square through it is counted twice, because each copy is a different way of choosing that corner.</p>
+      <div class="callout">Running example: <code>add([3,10])</code>, <code>add([11,2])</code>, <code>add([3,2])</code>, then <code>count([11,10])</code> → <strong>1</strong>, <code>count([14,8])</code> → <strong>0</strong>, then <code>add([11,2])</code> again and <code>count([11,10])</code> → <strong>2</strong>.</div>
+      <p>"Axis-aligned" means the sides are horizontal and vertical, so the four corners share x-coordinates in pairs and y-coordinates in pairs. That constraint is what makes the problem tractable.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every triple of stored points</h2>
+      <p>Keep a list of everything added. On <code>count</code>, pick any three stored points and test whether they and the query form a square:</p>
+      <pre class="code"><span class="ln">for a in points:</span><span class="ln">    for b in points:</span><span class="ln">        for c in points:</span><span class="ln">            if is_square(query, a, b, c):</span><span class="ln">                total += 1</span></pre>
+      <p style="margin-top:14px">With k stored points that is <strong>O(k³)</strong> per query, and <code>is_square</code> needs care to avoid counting the same square in six orders. With up to 3000 operations the triple loop is billions of checks. It also treats every corner as unknown, when in fact three of them are tied to each other.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>Key insight: the diagonal corner fixes the other two</h2>
+      <p>Take the query <code>(px, py)</code> and suppose the corner diagonally opposite it is a stored point <code>(x, y)</code>. For an axis-aligned square that diagonal must span the same distance in x as in y, so <code>abs(x - px) == abs(y - py)</code>, and that distance must be non-zero, so <code>x != px</code>.</p>
+      <p>Once those two corners are fixed there is no freedom left: the remaining corners are <code>(x, py)</code>, which shares the query's y, and <code>(px, y)</code>, which shares the query's x.</p>
+      <div class="callout">On the example with query <code>(11, 10)</code>, the stored point <code>(3, 2)</code> is 8 away in x and 8 away in y, so it is a valid diagonal. The other two corners must be <code>(3, 10)</code> and <code>(11, 2)</code>, both stored.</div>
+      <p>So the triple loop collapses to a single loop over candidate diagonals, and each candidate needs two dictionary lookups. Storing the points in a counter <code>count_at[(x, y)]</code> gives both the loop and the lookups.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>self.count_at = defaultdict(int)</code> — copies per point; a missing point reads as 0.</li>
+        <li><code>add</code>: <code>self.count_at[(point[0], point[1])] += 1</code>.</li>
+        <li><code>count</code>: unpack <code>px, py = point</code>, start <code>total = 0</code>.</li>
+        <li>Loop <code>for (x, y), n in self.count_at.items()</code>, treating each stored point as a candidate diagonal.</li>
+        <li><code>if x == px or abs(x - px) != abs(y - py): continue</code> — reject zero-size and non-square offsets.</li>
+        <li><code>total += n * self.count_at[(x, py)] * self.count_at[(px, y)]</code> — copies of the diagonal times copies of the two side corners.</li>
+      </ul>
+      <p>The panel shows the counter as chips and the grid as a scatter. After the first three adds the map holds <code>(3,10)</code>, <code>(11,2)</code>, <code>(3,2)</code>, one copy each.</p>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: count([11, 10]) → 1</h2>
+      <p>The query is <code>px = 11, py = 10</code>. Walk the three stored points as diagonal candidates:</p>
+      <ul>
+        <li><code>(3, 10)</code>: <code>abs(3 - 11) = 8</code> but <code>abs(10 - 10) = 0</code>. Not equal, skip.</li>
+        <li><code>(11, 2)</code>: <code>x == px</code>, skip.</li>
+        <li><code>(3, 2)</code>: <code>abs(3 - 11) = 8</code> and <code>abs(2 - 10) = 8</code>. A valid diagonal.</li>
+      </ul>
+      <p>For that diagonal the side corners are <code>(x, py) = (3, 10)</code> and <code>(px, y) = (11, 2)</code>. The product is <code>1 × 1 × 1 = 1</code>, so <code>total = 1</code>.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: count([14, 8]) → 0</h2>
+      <p>Now <code>px = 14, py = 8</code>. Nothing lines up:</p>
+      <ul>
+        <li><code>(3, 10)</code>: <code>abs(3 - 14) = 11</code>, <code>abs(10 - 8) = 2</code>. Skip.</li>
+        <li><code>(11, 2)</code>: <code>abs(11 - 14) = 3</code>, <code>abs(2 - 8) = 6</code>. Skip.</li>
+        <li><code>(3, 2)</code>: <code>abs(3 - 14) = 11</code>, <code>abs(2 - 8) = 6</code>. Skip.</li>
+      </ul>
+      <p>No candidate survives the filter, so the multiplication line never runs and <code>total</code> stays <code>0</code>. Notice the loop never needed to look up the side corners at all.</p>
+    </section>
+
+    <section class="step" data-state="trace3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: add([11, 2]) again, then count([11, 10]) → 2</h2>
+      <p>The second <code>add([11, 2])</code> bumps <code>count_at[(11, 2)]</code> from 1 to <code>2</code>. The map still has three keys; only a count changed.</p>
+      <p>Repeat the query <code>(11, 10)</code>. The candidates are the same three keys and, as before, only <code>(3, 2)</code> passes. This time the product is <code>n(3,2) × n(3,10) × n(11,2) = 1 × 1 × 2 = 2</code>.</p>
+      <p>Geometrically it is the same square drawn twice, once with each copy of the corner <code>(11, 2)</code>. The counter, not the geometry, is what makes duplicates work.</p>
+      <div class="callout">The loop runs over distinct keys, so duplicates never add iterations. They only scale the product.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: sets, and the zero-size square</h2>
+      <p><strong>Storing points in a set.</strong> Replace the counter with <code>self.points = set()</code> and duplicates vanish. The example's last query then returns <strong>1 instead of 2</strong>, because the second copy of <code>(11, 2)</code> was never recorded.</p>
+      <p><strong>Dropping the <code>x == px</code> guard.</strong> If the query point is itself stored, it passes <code>abs(0) == abs(0)</code> and is counted as its own diagonal, contributing <code>n × n × n</code> squares of side 0. Add <code>(11, 10)</code> once to the example and <code>count([11, 10])</code> returns <strong>3 instead of 2</strong>.</p>
+      <p><strong>Checking only that x and y differ.</strong> The condition <code>x != px and y != py</code> accepts any rectangle: <code>add([0,0])</code>, <code>add([1,2])</code>, <code>add([0,2])</code>, <code>count([1,0])</code> returns <strong>1 instead of 0</strong>.</p>
+      <div class="callout warn">A diagonal needs equal, non-zero offsets in both axes: <code>abs(x - px) == abs(y - py)</code> and <code>x != px</code>. And keep counts, not membership.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p><code>add</code> is a single dictionary increment, <strong>O(1)</strong>. <code>count</code> walks every distinct stored point once and does two O(1) lookups for each survivor, so it is <strong>O(k)</strong> for k distinct points. Space is the counter, <strong>O(k)</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>add</th><th>count</th><th>Space</th></tr>
+        <tr><td>List + triple loop</td><td>O(1)</td><td>O(k³)</td><td>O(k)</td></tr>
+        <tr><td>Counter, diagonal candidates</td><td>O(1)</td><td>O(k)</td><td>O(k)</td></tr>
+        <tr><td>Counter indexed by x (follow-up)</td><td>O(1)</td><td>O(points sharing x)</td><td>O(k)</td></tr>
+      </table>
+      <p>With at most 3000 operations, k is at most 3000 and each <code>count</code> is a few thousand cheap iterations.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <ul>
+        <li><code>self.count_at = defaultdict(int)</code> — the counter; a missing corner multiplies the term to 0.</li>
+        <li><code>self.count_at[(point[0], point[1])] += 1</code> — <code>add</code> is one increment.</li>
+        <li><code>for (x, y), n in self.count_at.items()</code> — every stored point is a candidate diagonal.</li>
+        <li><code>if x == px or abs(x - px) != abs(y - py): continue</code> — equal non-zero offsets only.</li>
+        <li><code>total += n * self.count_at[(x, py)] * self.count_at[(px, y)]</code> — three counts multiplied.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>pick the diagonal corner, the other two are forced; multiply the copies of all three.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>operations · add(3,10), add(11,2), add(3,2), count(11,10), count(14,8), add(11,2), count(11,10)</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>grid · stored points, query, and the candidate square</h3>
+        <svg class="fig" id="fig" viewBox="0 0 400 200" aria-label="scatter of stored points"></svg>
+      </div>
+
+      <div class="block">
+        <h3>count_at · copies per point</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="detect_squares.py">detect_squares.py</a> · <a href="detect_squares_annotated.py">detect_squares_annotated.py</a> · <a href="test_detect_squares.py">test_detect_squares.py</a> · <a href="../../md.html?f=medium/100-detect-squares/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class DetectSquares:",
+    "    def __init__(self):",
+    "        self.count_at = defaultdict(int)",
+    "",
+    "    def add(self, point: list[int]) -> None:",
+    "        self.count_at[(point[0], point[1])] += 1",
+    "",
+    "    def count(self, point: list[int]) -> int:",
+    "        px, py = point",
+    "        total = 0",
+    "        for (x, y), n in self.count_at.items():",
+    "            if x == px or abs(x - px) != abs(y - py):",
+    "                continue",
+    "            total += n * self.count_at[(x, py)] * self.count_at[(px, y)]",
+    "        return total"
+  ];
+
+  var OPS = ["add(3,10)", "add(11,2)", "add(3,2)", "count(11,10)", "count(14,8)", "add(11,2)", "count(11,10)"];
+  var THREE = [[3, 10, 1], [11, 2, 1], [3, 2, 1]];
+  var FOUR = [[3, 10, 1], [11, 2, 2], [3, 2, 1]];
+
+  // Each state describes what the sticky panel shows for one step.
+  // cur = index of the operation just performed (-1 = none); points = [x, y, copies] stored;
+  // query = [x, y] or null; diag = the candidate diagonal corner or null; square = draw the completed square;
+  // vars = chips for count_at (or other values when varsRaw is set).
+  var STATES = {
+    problem: {
+      caption: "Seven operations: three adds, a count that finds one square, a count that finds none, a duplicate add, and a count that finds two.",
+      cur: -1, points: [], query: null, diag: null, square: false, vars: [],
+      meta: "Squares must be axis-aligned and have positive area. Duplicate points count separately.", hl: []
+    },
+    brute: {
+      caption: "Naive: every triple of stored points is tested against the query. O(k³) per count.",
+      cur: 2, points: THREE, query: [11, 10], diag: null, square: false, vars: THREE,
+      meta: "Three stored points, so 27 ordered triples to check for one query. It only gets worse.", hl: [],
+      big: "O(k³) per count", bigNote: "and is_square must dedupe corner orderings"
+    },
+    insight: {
+      caption: "Choose the diagonal corner. abs(x - px) == abs(y - py) and x != px, then the side corners are (x, py) and (px, y).",
+      cur: 2, points: THREE, query: [11, 10], diag: [3, 2], square: true, vars: THREE,
+      meta: "(3, 2) is 8 away from (11, 10) in both axes. The other corners are forced: <b>(3, 10)</b> and <b>(11, 2)</b>.", hl: [11, 13]
+    },
+    approach: {
+      caption: "After add(3,10), add(11,2), add(3,2): three keys in count_at, one copy each.",
+      cur: 2, points: THREE, query: null, diag: null, square: false, vars: THREE,
+      meta: "add is one increment. count loops over these keys as diagonal candidates.", hl: [2, 5, 10, 11, 13]
+    },
+    trace1: {
+      caption: "count(11,10): only (3,2) passes the diagonal test. 1 × 1 × 1 = 1.",
+      cur: 3, points: THREE, query: [11, 10], diag: [3, 2], square: true, vars: THREE,
+      meta: "(3,10): dy = 0, skip. (11,2): x == px, skip. (3,2): dx = dy = 8, side corners (3,10) and (11,2) each stored once. <b>total = 1</b>.", hl: [10, 11, 13, 14],
+      big: "1", bigNote: "count([11,10])"
+    },
+    trace2: {
+      caption: "count(14,8): no stored point has equal offsets in x and y, so total stays 0.",
+      cur: 4, points: THREE, query: [14, 8], diag: null, square: false, vars: THREE,
+      meta: "(3,10): 11 vs 2. (11,2): 3 vs 6. (3,2): 11 vs 6. Every candidate hits continue.", hl: [10, 11, 12, 14],
+      big: "0", bigNote: "count([14,8])"
+    },
+    trace3: {
+      caption: "add(11,2) again, then count(11,10): the same square, but (11,2) now has 2 copies. 1 × 1 × 2 = 2.",
+      cur: 6, points: FOUR, query: [11, 10], diag: [3, 2], square: true, vars: FOUR,
+      meta: "count_at[(11,2)] went 1 → <b>2</b>. The diagonal (3,2) still passes; the product is n(3,2) × n(3,10) × n(11,2) = 1 × 1 × 2.", hl: [5, 13, 14],
+      big: "2", bigNote: "count([11,10]) after the duplicate add"
+    },
+    pitfall: {
+      caption: "A set instead of a counter forgets the second (11,2). The last count returns 1, not 2.",
+      cur: 6, points: THREE, query: [11, 10], diag: [3, 2], square: true, vars: THREE,
+      meta: "set.add((11, 2)) twice leaves one member. Membership can not scale the product.", hl: [2, 5],
+      big: "1, not 2", bigNote: "duplicates need counts, not membership"
+    },
+    complexity: {
+      caption: "add is O(1); count is one pass over the k distinct stored points.",
+      cur: 6, points: FOUR, query: null, diag: null, square: false, vars: FOUR,
+      meta: "Two dictionary lookups per surviving candidate. k is at most 3000 here.", hl: [5, 10],
+      big: "O(1) add · O(k) count", bigNote: "k = distinct stored points"
+    },
+    final: {
+      caption: "The whole class: a counter of points, and a loop over diagonal candidates.",
+      cur: 6, points: FOUR, query: [11, 10], diag: [3, 2], square: true, vars: FOUR,
+      meta: "Results for the seven operations: 1, 0, 2.", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+      big: "[1, 0, 2]", bigNote: "running example"
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var figSvg = document.getElementById("fig");
+  function clearFig(h) { while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild); figSvg.setAttribute("viewBox", "0 0 400 " + h); }
+
+  // Grid coordinates → SVG. x runs 0..16, y runs 0..12, with y up.
+  function gx(x) { return 30 + x * 21; }
+  function gy(y) { return 176 - y * 13; }
+
+  // Scatter of stored points (with copy counts), the query point, and the candidate square when a diagonal is chosen.
+  function renderScatter(s) {
+    clearFig(200);
+    for (var x = 0; x <= 16; x += 2) figSvg.appendChild(el("line", { "class": "ground", x1: gx(x), y1: gy(0), x2: gx(x), y2: gy(12), opacity: 0.35 }));
+    for (var y = 0; y <= 12; y += 2) figSvg.appendChild(el("line", { "class": "ground", x1: gx(0), y1: gy(y), x2: gx(16), y2: gy(y), opacity: 0.35 }));
+    for (var x2 = 0; x2 <= 16; x2 += 4) figSvg.appendChild(el("text", { "class": "lbl", x: gx(x2), y: 194 }, String(x2)));
+    for (var y2 = 0; y2 <= 12; y2 += 4) figSvg.appendChild(el("text", { "class": "lbl", x: gx(0) - 14, y: gy(y2) + 4 }, String(y2)));
+
+    if (s.query && s.diag) {
+      var qx = s.query[0], qy = s.query[1], dx = s.diag[0], dy = s.diag[1];
+      var cls = "span" + (s.square ? "" : " dim");
+      figSvg.appendChild(el("rect", { "class": s.square ? "stair hit" : "stair dim", x: Math.min(gx(qx), gx(dx)), y: Math.min(gy(qy), gy(dy)), width: Math.abs(gx(qx) - gx(dx)), height: Math.abs(gy(qy) - gy(dy)), rx: 2 }));
+      figSvg.appendChild(el("line", { "class": cls, x1: gx(qx), y1: gy(qy), x2: gx(dx), y2: gy(dy) }));
+      figSvg.appendChild(el("text", { "class": "lbl hit-txt", x: gx(dx), y: gy(dy) + (dy < qy ? 20 : -12) }, "(x, py) and (px, y) forced"));
+    }
+    s.points.forEach(function (p) {
+      var isDiag = s.diag && p[0] === s.diag[0] && p[1] === s.diag[1];
+      figSvg.appendChild(el("circle", { "class": isDiag ? "head" : "bar", cx: gx(p[0]), cy: gy(p[1]), r: isDiag ? 7 : 6, opacity: isDiag ? 1 : 0.9 }));
+      figSvg.appendChild(el("text", { "class": "val", x: gx(p[0]), y: gy(p[1]) - 10 }, "(" + p[0] + "," + p[1] + ")" + (p[2] > 1 ? " ×" + p[2] : "")));
+    });
+    if (s.query) {
+      figSvg.appendChild(el("circle", { "class": "bar cur", cx: gx(s.query[0]), cy: gy(s.query[1]), r: 7 }));
+      figSvg.appendChild(el("text", { "class": "val cur-txt", x: gx(s.query[0]), y: gy(s.query[1]) - 10 }, "query (" + s.query[0] + "," + s.query[1] + ")"));
+    }
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < OPS.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (i < s.cur) cls += " hit";
+      else cls += " dim";
+      arr += '<div class="' + cls + '" style="font-size:0.7rem;padding:8px 2px 4px">' + OPS[i] + '<span class="idx">op ' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+    renderScatter(s);
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">empty</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        var isDiag = s.diag && e[0] === s.diag[0] && e[1] === s.diag[1];
+        d += '<span class="kv' + (isDiag ? " found" : (e[2] > 1 ? " new" : "")) + '">(' + e[0] + ", " + e[1] + ") → " + e[2] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

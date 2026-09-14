@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>House Robber II Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* ring additions: a small note under the cells for the wrap-around wire */
+  .array { flex-wrap: wrap; }
+  .ring-note { flex: 1 0 100%; text-align: center; font-size: 0.75rem; color: var(--muted); font-family: ui-monospace, Menlo, monospace; margin-top: 2px; }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Dynamic Programming · LeetCode #213</div>
+  <h1>House Robber II, narrated</h1>
+  <p>Scroll through the thinking, from the linear robber that quietly breaks on a ring to two passes that each leave one end house alone, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">rob the line twice, once without the first house and once without the last, keep the larger</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Houses stand in a <em>circle</em>. <code>nums[i]</code> is the money in house <code>i</code>, and every house is wired to both neighbours, so robbing two adjacent houses trips the alarm. Because of the circle, the first and last houses are neighbours too.</p>
+      <p>Return the most money you can take without ever robbing two houses that touch.</p>
+      <div class="callout">Running example: <code>nums = [2, 3, 2]</code>. The answer is <strong>3</strong>. On a straight street you would grab both 2s for 4, but house 0 and house 2 are next to each other on the ring, so the best legal haul is the single 3.</div>
+      <p>Everything about this problem is the ordinary House Robber except one extra wire: the one that joins house <code>n − 1</code> back to house <code>0</code>.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every subset of houses</h2>
+      <p>Enumerate every subset of houses, throw out the ones with two neighbours (including the wrap-around pair), and keep the richest survivor.</p>
+      <pre class="code"><span class="ln">best = 0</span><span class="ln">for mask in range(1 &lt;&lt; n):</span><span class="ln">    chosen = [i for i in range(n) if mask &gt;&gt; i &amp; 1]</span><span class="ln">    if all((i + 1) % n not in chosen for i in chosen):</span><span class="ln">        best = max(best, sum(nums[i] for i in chosen))</span></pre>
+      <p style="margin-top:14px">There are <code>2ⁿ</code> subsets, and checking each takes O(n): <strong>O(n · 2ⁿ)</strong>. At the constraint limit of 100 houses that is astronomically many masks. It does at least state the rule precisely: the neighbour of house <code>i</code> is <code>(i + 1) % n</code>, and the modulo is what makes house <code>n − 1</code> touch house <code>0</code>.</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: the ring only adds one rule</h2>
+      <p>Suppose you already know how to rob a straight line of houses. <code>skip</code> is the best loot so far if the previous house was <em>not</em> robbed; <code>take</code> is the best loot so far, full stop. Each new house either joins the plan (<code>skip + money</code>) or stays out (<code>take</code>), and the pair rolls forward.</p>
+      <p>The ring breaks that only at one seam. Run the linear robber on <code>[2, 3, 2]</code> and it happily takes house 0 and house 2 for <strong>4</strong>, never noticing that they touch.</p>
+      <div class="callout">The circle forbids exactly one thing the line allows: robbing house <code>0</code> and house <code>n − 1</code> together. Every other constraint is already handled by the line.</div>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: two lines, one answer</h2>
+      <p>Any legal plan on the ring either leaves house 0 alone or leaves house <code>n − 1</code> alone (it might leave both). So split into two cases:</p>
+      <ul>
+        <li>House 0 is not robbed. Then the remaining houses <code>nums[1:]</code> form a plain <em>line</em>: house 1 through house <code>n − 1</code>, with nothing wrapping around.</li>
+        <li>House <code>n − 1</code> is not robbed. Then <code>nums[:-1]</code> is a plain line from house 0 to house <code>n − 2</code>.</li>
+      </ul>
+      <p>Solve each line with the linear robber, <code>_rob_line</code>, and return <code>max(...)</code> of the two. A plan that leaves both ends alone is counted by both passes, which is harmless for a max.</p>
+      <p>The one input this split cannot handle is a single house: <code>nums[1:]</code> and <code>nums[:-1]</code> are both empty, so the guard <code>if len(nums) == 1: return nums[0]</code> comes first.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: pass 1, drop house 0, rob [3, 2]</h2>
+      <p>Start with <code>skip = 0</code>, <code>take = 0</code>. House 1 has 3: <code>take = max(0, 0 + 3) = 3</code>, and the old take, 0, becomes the new <code>skip</code>.</p>
+      <p>House 2 has 2: robbing it means the previous house was skipped, so it is worth <code>skip + 2 = 0 + 2 = 2</code>. Not robbing it keeps <code>take = 3</code>. <code>max(3, 2) = 3</code>, and <code>skip</code> becomes 3.</p>
+      <p>Pass 1 returns <strong>3</strong>: with house 0 off the table, the 3 alone beats the lone 2.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: pass 2, drop house 2, rob [2, 3]</h2>
+      <p>Fresh variables, <code>skip = 0</code>, <code>take = 0</code>. House 0 has 2: <code>take = max(0, 0 + 2) = 2</code>, <code>skip = 0</code>.</p>
+      <p>House 1 has 3: robbing it is worth <code>skip + 3 = 0 + 3 = 3</code>, keeping the plan is worth <code>take = 2</code>. <code>max(2, 3) = 3</code>, and <code>skip</code> becomes 2.</p>
+      <p>Pass 2 also returns <strong>3</strong>. Two different lines, two different plans (the 3 on its own in both, as it happens), but neither was ever allowed to pair the two 2s.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: combine</h2>
+      <p><code>max(3, 3) = 3</code>. That is the answer, and it is the value the panel shows in green.</p>
+      <p>Compare with the linear robber on the whole ring, which would have continued from pass 2's state: house 2 is worth <code>skip + 2 = 2 + 2 = 4</code>, beating <code>take = 3</code>. That 4 is the illegal plan that robs both end houses. Splitting into two lines is what makes that plan impossible to express.</p>
+      <div class="callout">The linear robber is called twice on <code>n − 1</code> houses each. Nothing about the recurrence changed; only the input did.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the seam and the single house</h2>
+      <p><strong>Running the line once over the whole ring.</strong> <code>return self._rob_line(nums)</code> on <code>[2, 3, 2]</code> returns <strong>4</strong>, not 3: it robs houses 0 and 2, which are neighbours across the seam. The panel shows that state, with both end houses lit and the alarm tripped.</p>
+      <p><strong>Forgetting the single-house guard.</strong> Without <code>if len(nums) == 1</code>, the input <code>[1]</code> produces two empty slices, each pass returns 0, and the function answers <strong>0</strong> instead of 1.</p>
+      <p><strong>Splitting the tuple assignment.</strong> Writing <code>skip = take</code> on one line and <code>take = max(take, skip + money)</code> on the next means the second line reads the freshly updated <code>skip</code>, so the robber is allowed to take neighbours. On the whole array <code>[2, 3, 2]</code> that yields 7.</p>
+      <div class="callout warn">The ring adds exactly one forbidden pair, house 0 with house <code>n − 1</code>. Handle it by never letting both into the same pass, and remember the one input where both passes are empty.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Two passes, each a single loop over <code>n − 1</code> houses with two integers of state: <strong>O(n) time</strong>. The slices copy the array, so as written it is O(n) extra space; pass index bounds into <code>_rob_line</code> instead and it is <strong>O(1)</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Every subset, filter neighbours</td><td>O(n · 2ⁿ)</td><td>O(n)</td></tr>
+        <tr><td>Full dp table per pass</td><td>O(n)</td><td>O(n)</td></tr>
+        <tr><td>Two rolling variables, two passes</td><td>O(n)</td><td>O(1) with index bounds</td></tr>
+      </table>
+      <p>The circle costs a constant factor of two, nothing more.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Ten lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>if len(nums) == 1: return nums[0]</code> handles the only input where both slices are empty.</li>
+        <li><code>max(self._rob_line(nums[1:]), self._rob_line(nums[:-1]))</code> tries the ring with house 0 excluded and with house <code>n − 1</code> excluded.</li>
+        <li><code>skip, take = 0, 0</code> seeds the linear robber before any house.</li>
+        <li><code>skip, take = take, max(take, skip + money)</code> is the recurrence and the slide in one statement: rob this house on top of the plan that skipped the previous one, or keep the previous plan.</li>
+        <li><code>return take</code> is the best loot for that line.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>a ring is two lines, one without the first house and one without the last; rob each and keep the larger.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>houses on the ring · nums = [2, 3, 2] · blue = current, green = in the plan, grey = left out of this pass</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>rolling variables</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="house_robber_ii.py">house_robber_ii.py</a> · <a href="house_robber_ii_annotated.py">house_robber_ii_annotated.py</a> · <a href="test_house_robber_ii.py">test_house_robber_ii.py</a> · <a href="../../md.html?f=medium/073-house-robber-ii/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def rob(self, nums: list[int]) -> int:",
+    "        if len(nums) == 1:",
+    "            return nums[0]",
+    "        return max(self._rob_line(nums[1:]), self._rob_line(nums[:-1]))",
+    "",
+    "    def _rob_line(self, houses: list[int]) -> int:",
+    "        skip, take = 0, 0",
+    "        for money in houses:",
+    "            skip, take = take, max(take, skip + money)",
+    "        return take"
+  ];
+
+  var NUMS = [2, 3, 2];
+
+  // Each state describes what the sticky panel shows for one step.
+  // cur = house being processed, hits = houses in the current plan, dim = houses excluded from this pass.
+  var STATES = {
+    problem: {
+      caption: "Rob houses on a ring without ever taking two neighbours. House 0 and house 2 touch.",
+      cur: -1, hits: [], dim: [], vars: [], meta: "Answer: <b>3</b>. Taking both 2s is illegal because they are neighbours across the seam.", hl: []
+    },
+    brute: {
+      caption: "Every subset of houses, filtered by the neighbour rule (i + 1) % n, keep the richest.",
+      cur: -1, hits: [1], dim: [], vars: [["subsets", "2³ = 8"], ["legal", "{}, {0}, {1}, {2}"]],
+      meta: "{0, 2} fails because (2 + 1) % 3 = 0 is in the set.", hl: [],
+      big: "O(n · 2ⁿ)", bigNote: "every subset, checked one by one"
+    },
+    reframe: {
+      caption: "The linear robber on the whole ring takes houses 0 and 2 for 4. It cannot see the wrap-around wire.",
+      cur: 2, hits: [0], dim: [], vars: [["skip", 2], ["take", 4]],
+      meta: "skip + 2 = 2 + 2 = <b>4</b> beats take = 3, so house 2 is taken next to house 0.", hl: [8, 9]
+    },
+    idea: {
+      caption: "Split into two lines: nums[1:] leaves house 0 out, nums[:-1] leaves house 2 out.",
+      cur: -1, hits: [], dim: [0], vars: [["pass 1", "rob [3, 2]", "new"], ["pass 2", "rob [2, 3]", "new"]],
+      meta: "Any legal plan skips at least one end house, so one of the two lines contains it.", hl: [2, 3, 4]
+    },
+    t1: {
+      caption: "Pass 1, houses [3, 2]: take = max(0, 0 + 3) = 3, then max(3, 0 + 2) = 3.",
+      cur: 2, hits: [1], dim: [0], vars: [["skip", 3], ["take", 3, "new"]],
+      meta: "House 2 is worth skip + 2 = 0 + 2 = 2, less than take = 3. Pass 1 returns <b>3</b>.", hl: [7, 8, 9, 10]
+    },
+    t2: {
+      caption: "Pass 2, houses [2, 3]: take = max(0, 0 + 2) = 2, then max(2, 0 + 3) = 3.",
+      cur: 1, hits: [1], dim: [2], vars: [["skip", 2], ["take", 3, "new"]],
+      meta: "House 1 is worth skip + 3 = 0 + 3 = 3, more than take = 2. Pass 2 returns <b>3</b>.", hl: [7, 8, 9, 10]
+    },
+    t3: {
+      caption: "max(3, 3) = 3. Neither pass could pair house 0 with house 2.",
+      cur: -1, hits: [1], dim: [], vars: [["pass 1", 3], ["pass 2", 3], ["answer", 3, "found"]],
+      meta: "The illegal 4 never appears because no single pass contains both end houses.", hl: [4],
+      big: "3", bigNote: "the lone 3 beats any legal pair"
+    },
+    pitfall: {
+      caption: "One pass over the whole ring robs houses 0 and 2 together: 2 + 2 = 4, an illegal plan.",
+      cur: -1, hits: [0, 2], dim: [], vars: [["skip", 2], ["take", 4]],
+      meta: "The alarm between house 2 and house 0 is the one wire the linear robber does not know about.", hl: [4],
+      big: "4, not 3", bigNote: "the seam pair is robbed together"
+    },
+    complexity: {
+      caption: "Two linear passes with two integers each.",
+      cur: -1, hits: [1], dim: [], vars: [["pass 1", 3], ["pass 2", 3]],
+      meta: "Each pass reads n − 1 houses once; the ring costs a factor of two.", hl: [4, 8, 9],
+      big: "O(n) time · O(1) space", bigNote: "versus O(n · 2ⁿ) for every subset"
+    },
+    final: {
+      caption: "The whole solution.",
+      cur: -1, hits: [1], dim: [], vars: [["answer", 3, "found"]], meta: "", hl: [1, 2, 3, 4, 6, 7, 8, 9, 10]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < NUMS.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.dim.indexOf(i) !== -1) cls += " dim";
+      arr += '<div class="' + cls + '">' + NUMS[i] + '<span class="idx">house ' + i + '</span></div>';
+    }
+    // the wrap-around wire that makes the last house touch the first
+    arr += '<div class="ring-note">⟲ house 2 touches house 0</div>';
+    $("array").innerHTML = arr;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

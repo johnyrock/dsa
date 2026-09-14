@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decode Ways Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Dynamic Programming · LeetCode #91</div>
+  <h1>Decode Ways, narrated</h1>
+  <p>Scroll through the thinking, from the exponential "one digit or two" recursion to a two-variable count with the zero rules, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">dp[i+1] = dp[i] if the digit is a code, plus dp[i−1] if the pair is a code; Climbing Stairs with switches</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Letters were encoded as numbers, <code>A = 1</code> through <code>Z = 26</code>, and the numbers were glued together into one digit string <code>s</code>. Count how many ways the string can be cut back into codes. Every piece must be a number from 1 to 26 with no leading zero, so <code>"0"</code>, <code>"06"</code> and <code>"27"</code> are all illegal pieces.</p>
+      <div class="callout">Running example: <code>s = "226"</code>. The answer is <strong>3</strong>: <code>2 | 26</code> (BZ), <code>22 | 6</code> (VF), and <code>2 | 2 | 6</code> (BBF).</div>
+      <p>We are asked for a <em>count</em>, not the decodings themselves. That is the hint that a table of counts will do, and that we never need to build a single decoded string.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: recurse on "one digit or two"</h2>
+      <p>The first code is either the first digit alone or the first two digits together. Try both, and recurse on whatever is left.</p>
+      <pre class="code"><span class="ln">def count(i):</span><span class="ln">    if i == len(s): return 1</span><span class="ln">    if s[i] == "0": return 0</span><span class="ln">    ways = count(i + 1)</span><span class="ln">    if i + 1 &lt; len(s) and int(s[i:i + 2]) &lt;= 26:</span><span class="ln">        ways += count(i + 2)</span><span class="ln">    return ways</span></pre>
+      <p style="margin-top:14px">This is correct and reads like the problem statement. It is also <strong>O(2ⁿ)</strong>: <code>count(0)</code> calls <code>count(1)</code> and <code>count(2)</code>, and <code>count(1)</code> calls <code>count(2)</code> again, so every suffix is recomputed once per path that reaches it. On a string of 100 ones that is on the order of 10<sup>20</sup> calls.</p>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: look at the last code, not the first</h2>
+      <p>Call <code>dp[k]</code> the number of decodings of the first <code>k</code> digits. Take any decoding of the prefix ending at digit <code>i</code> and look at its last code. It is one of two things:</p>
+      <ul>
+        <li>the single digit <code>s[i]</code>, in which case the rest is a decoding of <code>s[:i]</code>, and there are <code>dp[i]</code> of those, but only if <code>s[i] != "0"</code>;</li>
+        <li>the pair <code>s[i-1]s[i]</code>, in which case the rest is a decoding of <code>s[:i-1]</code>, and there are <code>dp[i-1]</code> of those, but only if the pair is 10 through 26.</li>
+      </ul>
+      <div class="callout">Exactly two numbers feed each new count, and each is gated by a condition on the digits. It is Climbing Stairs where the 1-step and the 2-step can each be switched off.</div>
+      <p>The recursion is the same recurrence walked downward. Walking upward from the empty prefix evaluates each <code>dp[k]</code> once.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: two rolling counts and two switches</h2>
+      <p>Seed with <code>dp[0] = 1</code>, the empty prefix, which has exactly one decoding (do nothing), and <code>dp[1] = 1</code>, the first digit as one code, after rejecting a leading zero up front with <code>if not s or s[0] == "0": return 0</code>.</p>
+      <ul>
+        <li><code>two_back, one_back = 1, 1</code> holds <code>dp[i-1]</code> and <code>dp[i]</code>.</li>
+        <li><code>for i in range(1, len(s))</code> fills <code>dp[2]</code> through <code>dp[n]</code>.</li>
+        <li><code>if s[i] != "0": ways += one_back</code> is the single-digit switch.</li>
+        <li><code>if 10 &lt;= int(s[i - 1:i + 1]) &lt;= 26: ways += two_back</code> is the pair switch; the lower bound is what rejects <code>"06"</code>.</li>
+        <li><code>two_back, one_back = one_back, ways</code> slides the window.</li>
+      </ul>
+      <p>The dp row in the panel is drawn so the shape is visible, but the code only ever holds the two most recent cells.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: i = 1, the second "2"</h2>
+      <p>Before the loop: <code>two_back = dp[0] = 1</code>, <code>one_back = dp[1] = 1</code>. The prefix <code>"2"</code> has one decoding, B.</p>
+      <p>Digit <code>s[1] = "2"</code> is not zero, so the prefix <code>"22"</code> can end with the code 2: <code>ways = 0 + 1 = 1</code>. The pair <code>s[0:2] = "22"</code> is between 10 and 26, so it can also end with the code 22: <code>ways = 1 + 1 = 2</code>.</p>
+      <p><code>dp[2] = 2</code>: B B and V. Slide: <code>two_back = 1</code>, <code>one_back = 2</code>.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: i = 2, the "6", the answer</h2>
+      <p>Digit <code>s[2] = "6"</code> is not zero, so every decoding of <code>"22"</code> extends with an F: <code>ways = 0 + one_back = 2</code>. The pair <code>s[1:3] = "26"</code> is Z, in range, so every decoding of <code>"2"</code> extends with a Z: <code>ways = 2 + two_back = 2 + 1 = 3</code>.</p>
+      <p><code>dp[3] = 3</code>, and the loop is done. <code>one_back</code> now holds 3, which is what <code>return one_back</code> gives back.</p>
+      <div class="callout">Check against the list: BBF and VF come from the single-digit switch (2 decodings of <code>"22"</code>, each plus F); BZ comes from the pair switch (1 decoding of <code>"2"</code>, plus Z). 2 + 1 = 3.</div>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: what a zero does</h2>
+      <p>Change the example to <code>s = "10"</code>. <code>s[0] = "1"</code> passes the guard, seeds are 1 and 1. At <code>i = 1</code>, digit <code>s[1] = "0"</code> is zero, so the single-digit switch is off: <code>ways</code> stays 0. The pair <code>"10"</code> is J, in range, so <code>ways = 0 + two_back = 1</code>.</p>
+      <p><code>dp[2] = 1</code>: the only decoding is J. A zero can never stand alone; it survives only by pairing with the 1 or 2 before it. With <code>s = "100"</code> the second zero has nothing to pair with (<code>"00"</code> is below 10), so <code>ways = 0</code> and the answer is 0.</p>
+      <p>The panel returns to <code>"226"</code> from here on.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the seed and the bounds</h2>
+      <p><strong>Seeding the empty prefix with 0.</strong> <code>two_back, one_back = 0, 1</code> feels natural ("no ways to decode nothing") but is wrong. On <code>"226"</code> the pair switch at <code>i = 1</code> adds <code>two_back = 0</code> instead of 1, so <code>dp[2] = 1</code> and then <code>dp[3] = 1 + 1 = </code><strong>2</strong>, not 3. The decoding <code>22 | 6</code> was thrown away. The empty prefix has exactly one decoding.</p>
+      <p><strong>Dropping the lower bound.</strong> <code>int(pair) &lt;= 26</code> alone accepts <code>"06"</code> as a code, so <code>"106"</code> returns 2 instead of 1.</p>
+      <p><strong>Counting a lone zero.</strong> Writing <code>ways += one_back</code> without the <code>s[i] != "0"</code> guard gives <code>"10"</code> an answer of 2 (J, and the illegal A | 0) instead of 1.</p>
+      <div class="callout warn">The two switches are the whole problem. Single digit: not zero. Pair: 10 to 26 inclusive. And <code>dp[0] = 1</code>, always.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>One pass over the digits with two comparisons and one two-character slice each: <strong>O(n) time</strong>. Two integers regardless of length: <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Plain recursion, one or two digits</td><td>O(2ⁿ)</td><td>O(n) call stack</td></tr>
+        <tr><td>Recursion + memoization</td><td>O(n)</td><td>O(n) cache + stack</td></tr>
+        <tr><td>Full dp table</td><td>O(n)</td><td>O(n)</td></tr>
+        <tr><td>Two rolling variables</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>Memoization fixes the exponential blow-up; going bottom-up with two variables removes the table and the stack.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Twelve lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>if not s or s[0] == "0": return 0</code> rejects the two inputs that cannot start a code.</li>
+        <li><code>two_back, one_back = 1, 1</code> seeds <code>dp[0]</code> (empty prefix) and <code>dp[1]</code> (first digit).</li>
+        <li><code>for i in range(1, len(s))</code> visits each digit after the first.</li>
+        <li><code>if s[i] != "0": ways += one_back</code> ends the prefix with a one-digit code.</li>
+        <li><code>if 10 &lt;= int(s[i - 1:i + 1]) &lt;= 26: ways += two_back</code> ends it with a two-digit code.</li>
+        <li><code>two_back, one_back = one_back, ways</code> slides the window without a temporary.</li>
+        <li><code>return one_back</code> is <code>dp[n]</code>.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>a decoding ends with one digit or two; add the count for each ending that is a legal code, keeping only the last two counts.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>digits · s = "<span id="target">226</span>" · blue = current digit, green = pair being tested</h3>
+        <div class="array" id="array"></div>
+        <h3 style="margin-top:10px">dp[k] = decodings of the first k digits</h3>
+        <div class="array" id="dp"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>rolling variables</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="decode_ways.py">decode_ways.py</a> · <a href="decode_ways_annotated.py">decode_ways_annotated.py</a> · <a href="test_decode_ways.py">test_decode_ways.py</a> · <a href="../../md.html?f=medium/075-decode-ways/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def num_decodings(self, s: str) -> int:",
+    "        if not s or s[0] == \"0\":",
+    "            return 0",
+    "        two_back, one_back = 1, 1",
+    "        for i in range(1, len(s)):",
+    "            ways = 0",
+    "            if s[i] != \"0\":",
+    "                ways += one_back",
+    "            if 10 <= int(s[i - 1:i + 1]) <= 26:",
+    "                ways += two_back",
+    "            two_back, one_back = one_back, ways",
+    "        return one_back"
+  ];
+
+  var S = "226".split("");
+
+  // Each state describes what the sticky panel shows for one step.
+  // digits = the string, cur = index of the digit being processed, pair = indices of the two-digit slice under test,
+  // dp = values for prefixes of length 0..n ("?" = not computed), dpCur = dp slot being filled, dpHits = dp slots read.
+  var STATES = {
+    problem: {
+      caption: "Cut \"226\" into codes 1..26. Three ways: 2|26, 22|6, 2|2|6.",
+      digits: S, cur: -1, pair: [], dp: [1, 1, "?", "?"], dpCur: 3, dpHits: [], dpDim: [0, 1], vars: [],
+      meta: "Answer: <b>3</b>. \"0\", \"06\" and \"27\" would never be legal pieces.", hl: []
+    },
+    brute: {
+      caption: "Recursion takes one digit or two at the front and recurses on the rest, recomputing every suffix.",
+      digits: S, cur: 0, pair: [0, 1], dp: ["?", "?", "?", "?"], dpCur: -1, dpHits: [], dpDim: [0, 1, 2, 3], vars: [],
+      meta: "count(0) = count(1) + count(2), and count(1) calls count(2) again from scratch.", hl: [],
+      big: "O(2ⁿ)", bigNote: "every suffix solved once per path that reaches it"
+    },
+    reframe: {
+      caption: "dp[i+1] = dp[i] if s[i] is a code, plus dp[i−1] if s[i−1]s[i] is a code.",
+      digits: S, cur: 2, pair: [1, 2], dp: [1, 1, 2, "?"], dpCur: 3, dpHits: [1, 2], dpDim: [], vars: [],
+      meta: "The last code of any decoding is one digit or two. Nothing further back is ever read.", hl: []
+    },
+    idea: {
+      caption: "Seed dp[0] = 1 (empty prefix) and dp[1] = 1 (the first digit), then roll two variables forward.",
+      digits: S, cur: 0, pair: [], dp: [1, 1, "?", "?"], dpCur: 1, dpHits: [0], dpDim: [2, 3],
+      vars: [["two_back", 1, "new"], ["one_back", 1, "new"]],
+      meta: "A leading \"0\" is rejected first: no code starts with it.", hl: [2, 3, 4]
+    },
+    t1: {
+      caption: "i = 1: digit \"2\" is a code (+ one_back = 1), pair \"22\" is a code (+ two_back = 1). dp[2] = 2.",
+      digits: S, cur: 1, pair: [0, 1], dp: [1, 1, 2, "?"], dpCur: 2, dpHits: [0, 1], dpDim: [3],
+      vars: [["two_back", 1], ["one_back", 2, "new"]],
+      meta: "ways = 0 + 1 + 1 = <b>2</b>: \"2|2\" and \"22\". Then slide.", hl: [6, 7, 8, 9, 10, 11]
+    },
+    t2: {
+      caption: "i = 2: digit \"6\" is a code (+ one_back = 2), pair \"26\" is a code (+ two_back = 1). dp[3] = 3.",
+      digits: S, cur: 2, pair: [1, 2], dp: [1, 1, 2, 3], dpCur: 3, dpHits: [1, 2], dpDim: [0],
+      vars: [["two_back", 2], ["one_back", 3, "found"]],
+      meta: "ways = 0 + 2 + 1 = <b>3</b>. The loop ends and one_back is returned.", hl: [6, 7, 8, 9, 10, 11, 12],
+      big: "3", bigNote: "2|26, 22|6, 2|2|6"
+    },
+    t3: {
+      caption: "s = \"10\": the digit \"0\" switches the single-digit branch off; the pair \"10\" keeps the count alive at 1.",
+      digits: "10".split(""), cur: 1, pair: [0, 1], dp: [1, 1, 1], dpCur: 2, dpHits: [0], dpDim: [],
+      vars: [["two_back", 1], ["one_back", 1, "new"]],
+      meta: "ways = 0 + two_back = <b>1</b>. A zero survives only by pairing with the 1 or 2 before it.", hl: [7, 9, 10]
+    },
+    pitfall: {
+      caption: "Seeding two_back = 0 for the empty prefix loses every two-digit code at the front: dp = [0, 1, 1, 2].",
+      digits: S, cur: 2, pair: [1, 2], dp: [0, 1, 1, 2], dpCur: 3, dpHits: [1, 2], dpDim: [],
+      vars: [["two_back", 1], ["one_back", 2]],
+      meta: "At i = 1 the pair \"22\" added dp[0] = 0, so \"22|6\" was never counted.", hl: [4],
+      big: "2, not 3", bigNote: "the empty prefix has one decoding, not zero"
+    },
+    complexity: {
+      caption: "One pass over the digits, two integers alive at a time.",
+      digits: S, cur: -1, pair: [], dp: [1, 1, 2, 3], dpCur: 3, dpHits: [], dpDim: [0, 1, 2],
+      vars: [["two_back", 2], ["one_back", 3]],
+      meta: "The dimmed dp cells were never stored; they were overwritten as the window slid.", hl: [5, 11],
+      big: "O(n) time · O(1) space", bigNote: "versus O(2ⁿ) for the plain recursion"
+    },
+    final: {
+      caption: "The whole solution.",
+      digits: S, cur: -1, pair: [], dp: [1, 1, 2, 3], dpCur: -1, dpHits: [], dpDim: [],
+      vars: [["one_back", 3, "found"]], meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.digits.join("");
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < s.digits.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.pair.indexOf(i) !== -1) cls += " hit";
+      arr += '<div class="' + cls + '">' + s.digits[i] + '<span class="idx">s[' + i + ']</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    var row = "";
+    for (var j = 0; j < s.dp.length; j++) {
+      var dcls = "cell";
+      if (j === s.dpCur) dcls += " cur";
+      else if (s.dpHits.indexOf(j) !== -1) dcls += " hit";
+      else if (s.dpDim.indexOf(j) !== -1) dcls += " dim";
+      row += '<div class="' + dcls + '">' + s.dp[j] + '<span class="idx">dp[' + j + ']</span></div>';
+    }
+    $("dp").innerHTML = row;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not seeded yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

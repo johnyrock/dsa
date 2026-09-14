@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Remove Nth Node From End of List Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+  .list { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .list .edge { stroke: var(--muted); stroke-width: 2.5; fill: none; transition: stroke 0.25s, opacity 0.25s; }
+  .list .edge.dead { stroke: var(--line); }
+  .list .edge.cut { stroke: var(--warn); stroke-dasharray: 5 4; opacity: 0.6; }
+  .list .edge.skip { stroke: var(--ok); stroke-width: 2.5; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .list .head { fill: var(--muted); }
+  .list .head.ok { fill: var(--ok); }
+  .list .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .list .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 16px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
+  .list .node.dummy circle { stroke-dasharray: 4 3; }
+  .list .node.dummy text { fill: var(--muted); font-size: 11px; }
+  .list .node.slow circle { fill: var(--accent-soft); stroke: var(--accent); }
+  .list .node.fast circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .list .node.meet circle { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 4; }
+  .list .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .list .node.dim circle, .list .node.dim text { opacity: 0.4; }
+  .list .nil { fill: var(--muted); font-family: ui-monospace, Menlo, monospace; font-size: 13px; text-anchor: middle; dominant-baseline: central; }
+  .list .tag { font-family: ui-monospace, Menlo, monospace; font-size: 11px; font-weight: 700; text-anchor: middle; }
+  .list .tag.slow { fill: var(--accent); }
+  .list .tag.fast { fill: var(--ok); }
+  .list .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .list .lbl.warn { fill: var(--warn); }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Two Pointers · LeetCode #19</div>
+  <h1>Remove Nth Node From End of List, narrated</h1>
+  <p>Scroll through the thinking, from counting the list twice to one walk with two pointers held exactly n apart, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/two-pointers.html">Two Pointers</a> <span class="how">open a gap of n, then walk both pointers until the leader hits the tail</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You are given the <code>head</code> of a singly linked list and an integer <code>n</code>. Delete the <code>n</code>-th node counting from the <em>end</em> of the list, and return the head of what is left.</p>
+      <div class="callout">Running example: <code>head = [1,2,3,4,5]</code>, <code>n = 2</code>. Counting from the back, 5 is 1st and 4 is 2nd, so node 4 goes and the answer is <strong>[1,2,3,5]</strong>.</div>
+      <p>The catch is the direction. A singly linked list only has <code>next</code> pointers, so you can walk forward from the head but never backward from the tail. "Second from the end" is easy to say and awkward to find.</p>
+      <p>Deleting a node in a linked list also never touches the node itself. You find the node <em>before</em> it and rewire that node's <code>next</code> to skip over the victim. So the real job is: land a pointer on the predecessor of the target.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: count, then walk again</h2>
+      <p>If you knew the length <code>L</code>, "n-th from the end" becomes "position <code>L - n</code> from the front" (0-based). So walk the list once to count, then walk a second time to that position's predecessor and splice.</p>
+      <pre class="code"><span class="ln">length = 0</span><span class="ln">node = head</span><span class="ln">while node:</span><span class="ln">    length += 1</span><span class="ln">    node = node.next</span><span class="ln">prev = dummy</span><span class="ln">for _ in range(length - n):</span><span class="ln">    prev = prev.next</span><span class="ln">prev.next = prev.next.next</span></pre>
+      <p style="margin-top:14px">On the example, <code>length = 5</code>, <code>5 - 2 = 3</code>, so <code>prev</code> moves three steps from the dummy and stops on node 3, whose <code>next</code> is then pointed at 5. That is correct and already <strong>O(L) time, O(1) space</strong>.</p>
+      <p>It is a perfectly good answer. The only thing wrong with it is the second pass: the list is walked twice, and the classic follow-up asks for one pass. The two-pointer version below is the same idea with the counting folded into the walk.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: two pointers held n apart</h2>
+      <p>Put two pointers on the list and separate them by exactly <code>n</code> nodes. Then move both forward one step at a time. The gap never changes, so when the leading pointer reaches the last node, the trailing pointer is exactly <code>n</code> nodes behind the last node — which is <code>n + 1</code> from the end, the predecessor of the target.</p>
+      <p>The one subtlety is where the pointers <em>start</em>. If both start on <code>head</code>, the trailing pointer lands on the target itself, not on its predecessor, and if <code>n</code> equals the length there is no predecessor to land on at all.</p>
+      <div class="callout">Fix both problems with one node: <code>dummy = ListNode(0, head)</code>. Start <code>fast</code> and <code>slow</code> on the dummy. Now every real node, including the head, has something before it, and <code>slow</code> stops one node before the victim.</div>
+      <p>At the end, return <code>dummy.next</code> rather than <code>head</code>: if the head was the node deleted, <code>dummy.next</code> already points past it.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>dummy = ListNode(0, head)</code> — a throwaway node in front of the list.</li>
+        <li><code>fast = slow = dummy</code> — both pointers start on it, not on <code>head</code>.</li>
+        <li><code>for _ in range(n): fast = fast.next</code> — open the gap: <code>fast</code> is now <code>n</code> nodes ahead of <code>slow</code>.</li>
+        <li><code>while fast.next is not None:</code> move both pointers one step. Stop when <code>fast</code> is on the last node.</li>
+        <li><code>slow.next = slow.next.next</code> — <code>slow</code> is on the predecessor; skip the target.</li>
+        <li><code>return dummy.next</code> — the real head, whatever it is now.</li>
+      </ul>
+      <p>Two loops, but they do not overlap in work: the first moves only <code>fast</code> through <code>n</code> nodes, the second moves it through the remaining <code>L - n</code>. Together <code>fast</code> touches each node once.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: opening the gap</h2>
+      <p>With <code>n = 2</code>, the gap loop runs twice. <code>fast</code> moves from the dummy to node 1, then to node 2. <code>slow</code> has not moved: it is still on the dummy.</p>
+      <p>Count the distance: dummy → 1 → 2 is two steps, so <code>fast</code> is exactly <code>n = 2</code> nodes ahead of <code>slow</code>. That gap is the whole invariant. Nothing after this line changes it.</p>
+      <p>Note that <code>fast</code> cannot fall off the end here. The constraints guarantee <code>n &lt;= sz</code>, so after <code>n</code> steps from the dummy <code>fast</code> is on a real node — at worst the tail, when <code>n == sz</code>.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: walking together</h2>
+      <p>Now the main loop. The test is <code>fast.next is not None</code>: keep going while there is a node after <code>fast</code>.</p>
+      <p>Iteration 1: <code>fast.next</code> is 3, so move. <code>fast = 3</code>, <code>slow = 1</code>. Iteration 2: <code>fast.next</code> is 4, so move. <code>fast = 4</code>, <code>slow = 2</code>. Iteration 3: <code>fast.next</code> is 5, so move. <code>fast = 5</code>, <code>slow = 3</code>.</p>
+      <p>Now <code>fast.next</code> is <code>None</code>: <code>fast</code> is on the tail and the loop stops. Check the gap: 3 → 4 → 5 is two steps, still <code>n</code>. And <code>slow</code> is on node 3, whose next node, 4, is exactly the 2nd from the end.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the splice</h2>
+      <p><code>slow.next = slow.next.next</code>. Read the right side first: <code>slow.next</code> is 4, and <code>4.next</code> is 5. So node 3's <code>next</code> becomes 5, and node 4 is no longer reachable from the head.</p>
+      <p>Node 4 still exists in memory with its own <code>next</code> pointing at 5, but nothing points at it, so as far as the list is concerned it is gone. Python's garbage collector reclaims it.</p>
+      <div class="callout"><code>return dummy.next</code> gives node 1, and walking from it reads <strong>1 → 2 → 3 → 5</strong>. That is the answer, found in one pass with no length computed.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: one step too far, or no dummy</h2>
+      <p><strong>Looping on <code>fast</code> instead of <code>fast.next</code>.</strong> Write <code>while fast is not None</code> and both pointers take one extra step. On the example <code>fast</code> runs off the end to <code>None</code> and <code>slow</code> ends on node 4 — the target itself, not its predecessor. <code>slow.next = slow.next.next</code> then deletes node 5 and returns <strong>[1,2,3,4]</strong>. The list is one node shorter, so a lazy length check passes.</p>
+      <p><strong>Starting on <code>head</code> instead of the dummy.</strong> Then <code>slow</code> lands on the target rather than before it, and there is no predecessor at all when the head is the target: for <code>[1,2], n = 2</code> the gap loop leaves <code>fast = None</code> and the main loop's <code>fast.next</code> raises <code>AttributeError</code>. People patch this with an <code>if fast is None: return head.next</code> branch; the dummy makes the branch unnecessary.</p>
+      <p><strong>Returning <code>head</code>.</strong> Correct for every case except deleting the head, where the old head is returned intact: <code>[1,2], n = 2</code> gives <strong>[1,2]</strong>. Always return <code>dummy.next</code>.</p>
+      <div class="callout warn">The loop stops when <code>fast</code> is <em>on</em> the last node, not past it. Then <code>slow</code> is on the node before the victim, which is the only place a delete can happen from.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>The gap loop moves <code>fast</code> <code>n</code> times; the main loop moves it <code>L - n</code> more. That is one full walk: <strong>O(L) time</strong>. There are two pointers and one dummy node, so <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th><th>Passes</th></tr>
+        <tr><td>Count, then walk to L − n</td><td>O(L)</td><td>O(1)</td><td>2</td></tr>
+        <tr><td>Copy to array, index L − n</td><td>O(L)</td><td>O(L)</td><td>1 + array</td></tr>
+        <tr><td>Two pointers, gap of n</td><td>O(L)</td><td>O(1)</td><td>1</td></tr>
+      </table>
+      <p>Big-O does not separate the first and last rows. The two-pointer version wins on the "one pass" follow-up and on not needing to know <code>L</code> — which matters when the list is a stream you cannot rewind.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Eight lines, each doing one thing.</p>
+      <ul>
+        <li><code>dummy = ListNode(0, head)</code> — guarantees every real node has a predecessor.</li>
+        <li><code>fast = slow = dummy</code> — both start before the list.</li>
+        <li><code>for _ in range(n): fast = fast.next</code> — open a gap of exactly <code>n</code>.</li>
+        <li><code>while fast.next is not None:</code> — walk until <code>fast</code> sits on the tail.</li>
+        <li><code>fast = fast.next</code> / <code>slow = slow.next</code> — both advance; the gap is preserved.</li>
+        <li><code>slow.next = slow.next.next</code> — unlink the target.</li>
+        <li><code>return dummy.next</code> — the head, even if the old head was the one removed.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>two pointers n apart, started on a dummy, walked until the leader is on the tail — the trailer is then the node before the one to delete.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>list · head = [1,2,3,4,5], n = <span id="target">2</span></h3>
+        <svg class="list" id="list" viewBox="0 0 400 150" aria-label="linked list"></svg>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>pointers</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="remove_nth_node_from_end_of_list.py">remove_nth_node_from_end_of_list.py</a> · <a href="remove_nth_node_from_end_of_list_annotated.py">remove_nth_node_from_end_of_list_annotated.py</a> · <a href="test_remove_nth_node_from_end_of_list.py">test_remove_nth_node_from_end_of_list.py</a> · <a href="../../md.html?f=medium/041-remove-nth-node-from-end-of-list/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def remove_nth_from_end(self, head: ListNode | None, n: int) -> ListNode | None:",
+    "        dummy = ListNode(0, head)",
+    "        fast = slow = dummy",
+    "        for _ in range(n):",
+    "            fast = fast.next",
+    "        while fast.next is not None:",
+    "            fast = fast.next",
+    "            slow = slow.next",
+    "        slow.next = slow.next.next",
+    "        return dummy.next"
+  ];
+
+  // nodes[0] is the dummy; indices 1..5 are the real nodes 1..5.
+  var NODES = ["dummy", 1, 2, 3, 4, 5];
+
+  var STATES = {
+    problem: {
+      caption: "Delete the 2nd node from the end: that is node 4.",
+      nodes: NODES, showDummy: false, slow: -1, fast: -1, target: 4, removed: -1, dim: [],
+      vars: [], meta: "Counting from the back: 5 is 1st, <b>4 is 2nd</b>. Expected output [1,2,3,5].", hl: []
+    },
+    brute: {
+      caption: "Count the length (5), then walk 5 − 2 = 3 steps to the predecessor.",
+      nodes: NODES, showDummy: true, slow: 3, fast: -1, target: 4, removed: -1, dim: [],
+      vars: [["length", 5], ["length - n", 3], ["prev", "node 3", "new"]],
+      meta: "Two passes: one to count, one to walk. Correct, but the list is read twice.", hl: [],
+      big: "2 passes", bigNote: "the follow-up asks for one"
+    },
+    idea: {
+      caption: "Start both pointers on a dummy node in front of head.",
+      nodes: NODES, showDummy: true, slow: 0, fast: 0, target: -1, removed: -1, dim: [],
+      vars: [["slow", "dummy", "new"], ["fast", "dummy", "new"]],
+      meta: "The dummy guarantees every real node, including 1, has a predecessor.", hl: [2, 3]
+    },
+    approach: {
+      caption: "Open a gap of n, walk together, splice, return dummy.next.",
+      nodes: NODES, showDummy: true, slow: 0, fast: 0, target: -1, removed: -1, dim: [],
+      vars: [["slow", "dummy"], ["fast", "dummy"], ["gap", 0]],
+      meta: "The gap between fast and slow, once opened, never changes.", hl: [4, 5, 6, 7, 8, 9, 10]
+    },
+    t1: {
+      caption: "Gap loop, n = 2 steps: fast moves dummy → 1 → 2. slow stays.",
+      nodes: NODES, showDummy: true, slow: 0, fast: 2, target: -1, removed: -1, dim: [3, 4, 5],
+      vars: [["slow", "dummy"], ["fast", "node 2", "new"], ["gap", 2]],
+      meta: "fast is exactly <b>n = 2</b> nodes ahead of slow.", hl: [4, 5]
+    },
+    t2: {
+      caption: "Walk together until fast.next is None: fast = 5, slow = 3.",
+      nodes: NODES, showDummy: true, slow: 3, fast: 5, target: 4, removed: -1, dim: [],
+      vars: [["slow", "node 3", "new"], ["fast", "node 5", "new"], ["gap", 2]],
+      meta: "(fast, slow) went (3, 1) → (4, 2) → (5, 3). fast.next is None, so stop.", hl: [6, 7, 8]
+    },
+    t3: {
+      caption: "slow.next = slow.next.next: node 3 now points at 5. Node 4 is unlinked.",
+      nodes: NODES, showDummy: true, slow: 3, fast: 5, target: -1, removed: 4, dim: [],
+      vars: [["slow", "node 3"], ["slow.next", "node 5", "found"]],
+      meta: "Walking from dummy.next reads <b>1 → 2 → 3 → 5</b>.", hl: [9, 10],
+      big: "[1,2,3,5]", bigNote: "one pass, no length computed"
+    },
+    pitfall: {
+      caption: "while fast is not None: one step too far. slow lands ON node 4 and deletes 5.",
+      nodes: NODES, showDummy: true, slow: 4, fast: 6, target: -1, removed: 5, dim: [],
+      vars: [["slow", "node 4"], ["fast", "None"]],
+      meta: "The predecessor of 4 is 3, but slow overshot to 4, so 4.next = None.", hl: [6, 9],
+      big: "[1,2,3,4], not [1,2,3,5]", bigNote: "wrong node removed, same length"
+    },
+    complexity: {
+      caption: "fast visits each node once across both loops; slow trails it.",
+      nodes: NODES, showDummy: true, slow: 3, fast: 5, target: -1, removed: 4, dim: [],
+      vars: [["pointers", 2], ["extra nodes", 1]],
+      meta: "n steps in the gap loop + (L − n) in the main loop = L steps.", hl: [4, 6],
+      big: "O(L) time · O(1) space", bigNote: "one pass, two pointers"
+    },
+    final: {
+      caption: "The whole solution.",
+      nodes: NODES, showDummy: true, slow: -1, fast: -1, target: -1, removed: 4, dim: [],
+      vars: [], meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var listSvg = document.getElementById("list");
+  var R = 18, Y = 72;
+
+  // Renders dummy (optional) + real nodes + None. slow / fast / target / removed are indices into s.nodes;
+  // index nodes.length means "None". A removed node is drawn faded with a green skip arc over it.
+  function renderList(s) {
+    while (listSvg.firstChild) listSvg.removeChild(listSvg.firstChild);
+    var defs = el("defs", {});
+    [["arrow", "head"], ["arrow-ok", "head ok"]].forEach(function (m) {
+      var mk = el("marker", { id: m[0], viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "6", markerHeight: "6", orient: "auto" });
+      mk.appendChild(el("path", { d: "M0,0 L10,5 L0,10 z", "class": m[1] }));
+      defs.appendChild(mk);
+    });
+    listSvg.appendChild(defs);
+
+    var first = s.showDummy ? 0 : 1;
+    var n = s.nodes.length;
+    var slots = n - first + 1;                 // nodes shown + None
+    var step = Math.min(66, (400 - 70) / (slots - 1));
+    var x0 = (400 - step * (slots - 1)) / 2;
+    var xs = [];
+    for (var i = 0; i < n + 1; i++) xs[i] = x0 + (i - first) * step;
+
+    // forward edges
+    for (var i = first; i < n; i++) {
+      var cls = "edge";
+      var toNil = i === n - 1;
+      if (s.removed === i || s.removed === i + 1) cls += " cut";
+      if (toNil && s.removed !== i) cls += " dead";
+      listSvg.appendChild(el("line", { "class": cls, x1: xs[i] + R + 2, y1: Y, x2: xs[i + 1] - (toNil ? 22 : R + 2), y2: Y, "marker-end": "url(#arrow)" }));
+    }
+    // skip arc: predecessor of the removed node jumps over it
+    if (s.removed > 0) {
+      var a = xs[s.removed - 1], b = xs[s.removed + 1], dip = Y + R + 26;
+      var bx = s.removed + 1 === n ? b - 20 : b - R - 2;
+      var d = "M" + a + "," + (Y + R + 1) + " C" + a + "," + dip + " " + bx + "," + dip + " " + bx + "," + (Y + R - 8);
+      listSvg.appendChild(el("path", { "class": "edge skip", d: d, "marker-end": "url(#arrow-ok)" }));
+      listSvg.appendChild(el("text", { "class": "lbl", x: (a + b) / 2, y: dip + 12 }, "slow.next = slow.next.next"));
+    }
+    // nodes
+    for (var i = first; i < n; i++) {
+      var cls = "node";
+      if (i === 0) cls += " dummy";
+      if (s.slow === i && s.fast === i) cls += " meet";
+      else if (s.slow === i) cls += " slow";
+      else if (s.fast === i) cls += " fast";
+      else if (s.target === i || s.removed === i) cls += " bad";
+      if (s.dim.indexOf(i) !== -1 || s.removed === i) cls += " dim";
+      var g = el("g", { "class": cls });
+      g.appendChild(el("circle", { cx: xs[i], cy: Y, r: R }));
+      g.appendChild(el("text", { x: xs[i], y: Y }, String(s.nodes[i])));
+      listSvg.appendChild(g);
+    }
+    listSvg.appendChild(el("text", { "class": "nil", x: xs[n], y: Y }, "None"));
+    if (s.target > 0 && s.removed < 0) {
+      listSvg.appendChild(el("text", { "class": "lbl warn", x: xs[s.target], y: Y + R + 16 }, "2nd from end"));
+    }
+    // pointer tags above the slot each pointer sits on
+    var tags = {};
+    function addTag(v, name) { if (v < 0) return; tags[v] = (tags[v] || []).concat(name); }
+    addTag(s.slow, "slow"); addTag(s.fast, "fast");
+    for (var k in tags) {
+      var names = tags[k], y = Y - R - 10;
+      for (var t = 0; t < names.length; t++) {
+        listSvg.appendChild(el("text", { "class": "tag " + names[t], x: xs[+k], y: y - (names.length - 1 - t) * 13 }, names[t] + " ▼"));
+      }
+    }
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+    renderList(s);
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">no pointers yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l.replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

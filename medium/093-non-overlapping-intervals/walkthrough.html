@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Non-overlapping Intervals Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  /* non-overlapping-intervals additions (easy/021 renderer): intervals drawn as bars on a shared number line (medium/009) */
+  .timeline { position: relative; margin: 6px 0 4px; }
+  .tl-row { position: relative; height: 26px; margin-bottom: 4px; }
+  .tl-bar {
+    position: absolute; top: 3px; height: 20px; border-radius: 5px;
+    background: var(--panel); border: 2px solid var(--line);
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; line-height: 16px; text-align: center;
+    color: var(--ink); white-space: nowrap; overflow: visible; transition: all 0.25s;
+  }
+  .tl-bar.cur { border-color: var(--accent); background: var(--accent-soft); }
+  .tl-bar.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .tl-bar.bad { border-color: var(--warn); background: var(--warn-soft); }
+  .tl-bar.dim { opacity: 0.4; }
+  .tl-axis { position: relative; height: 16px; border-top: 1px solid var(--line); margin-top: 4px; }
+  .tl-axis span { position: absolute; top: 1px; transform: translateX(-50%); font-size: 0.65rem; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+  .tl-mark { position: absolute; top: 0; bottom: 20px; width: 0; border-left: 2px dashed var(--ok); opacity: 0.8; }
+  .dict .kv.bad { border-color: var(--warn); background: var(--warn-soft); }
+  .tl-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 6px 0 2px; }
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Intervals · LeetCode #435</div>
+  <h1>Non-overlapping Intervals, narrated</h1>
+  <p>Scroll through the thinking, from trying every subset of intervals to sorting by end time and keeping whichever one finishes first, with the intervals drawn on a timeline alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/intervals.html">Intervals</a> <span class="how">sort by end; keep an interval if it starts at or after the last kept end, otherwise count it removed</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You are given intervals as <code>[start, end]</code> pairs. Remove as few of them as possible so that none of the survivors overlap, and return how many you removed. Two intervals that merely touch, like <code>[1, 2]</code> and <code>[2, 3]</code>, are not overlapping.</p>
+      <div class="callout">Running example: <code>intervals = [[1, 2], [2, 3], [3, 4], [1, 3]]</code>. Remove <code>[1, 3]</code> and the other three sit back to back. Answer <strong>1</strong>.</div>
+      <p>Note that the output is a count, not a list. That frees the algorithm from tracking which intervals survive; it only has to decide, for each one, whether it stays or goes.</p>
+      <p>Also note the equivalence that drives the solution: removing the <em>fewest</em> intervals is the same as keeping the <em>most</em> non-overlapping intervals. Every scheduling problem of the form "pick the most compatible activities" is this problem in disguise.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every subset of survivors</h2>
+      <p>Enumerate every subset of the intervals, test whether it is pairwise non-overlapping, and remember the largest one that is:</p>
+      <pre class="code"><span class="ln">best = 0</span><span class="ln">for mask in range(1 &lt;&lt; n):</span><span class="ln">    chosen = [iv for i, iv in enumerate(intervals) if mask &gt;&gt; i &amp; 1]</span><span class="ln">    chosen.sort()</span><span class="ln">    if all(chosen[k][0] &gt;= chosen[k - 1][1] for k in range(1, len(chosen))):</span><span class="ln">        best = max(best, len(chosen))</span><span class="ln">return n - best</span></pre>
+      <p style="margin-top:14px">For four intervals that is 16 subsets. The constraint allows <code>10^5</code> intervals, and <code>2^100000</code> subsets will not finish. This is <strong>O(2ⁿ · n log n)</strong>, and it ignores structure that is sitting in plain sight: intervals live on a line, and the ones that end early leave room for the ones that come after.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: the interval that ends earliest is always safe to keep</h2>
+      <p>Among all intervals, consider the one with the smallest <code>end</code>. Any optimal set of survivors either contains it or contains some other interval that overlaps it. In the second case, swap that other interval out and the earliest-ending one in: the new set is the same size, and because its new member ends <em>no later</em> than the one it replaced, it cannot collide with anything the old member did not already collide with.</p>
+      <div class="callout">So there is always an optimal answer that keeps the earliest-ending interval. Keep it, discard everything that overlaps it, and repeat on what is left. That is a sort by <code>end</code> followed by a single sweep.</div>
+      <p>In the panel the intervals are now in end order: <code>[1, 2]</code>, <code>[2, 3]</code>, <code>[1, 3]</code>, <code>[3, 4]</code>. Line 3, <code>intervals.sort(key=lambda interval: interval[1])</code>, is that reordering. Notice that <code>[1, 3]</code> has moved after <code>[2, 3]</code>; they share an end, and the stable sort keeps their input order, which does not matter for the count.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: sweep in end order with <code>prev_end</code></h2>
+      <ul>
+        <li><code>intervals.sort(key=lambda interval: interval[1])</code> puts the earliest-ending interval first.</li>
+        <li><code>prev_end = intervals[0][1]</code>: the first interval is always kept; its end is the boundary the next kept one must clear.</li>
+        <li><code>for start, end in intervals[1:]</code>: walk the rest in end order.</li>
+        <li><code>if start &gt;= prev_end: prev_end = end</code>: no conflict with what is kept, so keep it and advance the boundary.</li>
+        <li><code>else: removed += 1</code>: it starts before the last kept interval ends, so it overlaps and must go.</li>
+        <li><code>return removed</code>.</li>
+      </ul>
+      <p>The dashed green line in the panel is <code>prev_end</code>. A bar that starts at or to the right of it is kept (green); one that starts to the left is removed (amber).</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: keep <code>[1, 2]</code>, then keep <code>[2, 3]</code></h2>
+      <p>After the sort, <code>intervals[0] = [1, 2]</code>, so <code>prev_end = 2</code>. It is kept without a comparison; nothing ends before it, so nothing can be a better first choice.</p>
+      <p>Next is <code>[2, 3]</code>: <code>start = 2</code>, and <code>2 &gt;= 2</code> is true. The intervals touch at 2, which is allowed, so keep it and set <code>prev_end = 3</code>. <code>removed</code> is still 0.</p>
+      <p>The boundary moved from 2 to 3. Everything kept so far ends at or before 3, and any future survivor must start at or after it.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: <code>[1, 3]</code> starts before the boundary, remove it</h2>
+      <p>Next is <code>[1, 3]</code>: <code>start = 1</code>, and <code>1 &gt;= 3</code> is false. It overlaps the kept <code>[2, 3]</code> (and <code>[1, 2]</code> too), so <code>removed = 1</code>. <code>prev_end</code> stays at 3.</p>
+      <p>Why is removing <em>this</em> one right, rather than removing <code>[2, 3]</code> to make room for it? Because they end at the same time, and <code>[2, 3]</code> was reached first, so keeping it already leaves at least as much room to the right. In general the interval we are looking at ends no earlier than the last kept one, so dropping it never costs anything the alternative would have gained.</p>
+      <div class="callout">The removed bar is amber. The boundary does not move on a removal; only kept intervals push it.</div>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: keep <code>[3, 4]</code> and finish</h2>
+      <p>Last is <code>[3, 4]</code>: <code>start = 3</code>, and <code>3 &gt;= 3</code> is true. Touching again, so keep it and set <code>prev_end = 4</code>.</p>
+      <p>The loop ends and the function returns <code>removed = 1</code>. Three intervals survived, <code>[1, 2]</code>, <code>[2, 3]</code>, <code>[3, 4]</code>, which is the most that can fit in <code>[1, 4]</code> when each has length one, so no better answer exists.</p>
+      <p>Four intervals, one sort, three comparisons.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: sorting by start</h2>
+      <p><strong>Sorting by <code>start</code> and keeping whichever comes first.</strong> Take <code>[[1, 100], [2, 3], [4, 5]]</code>, which the panel now shows. In start order <code>[1, 100]</code> comes first and is kept, <code>prev_end = 100</code>, and both <code>[2, 3]</code> and <code>[4, 5]</code> start before 100, so the code reports <strong>2</strong> removals. The answer is <strong>1</strong>: drop the long interval and the two short ones coexist. In end order, <code>[2, 3]</code> and <code>[4, 5]</code> come first, are kept, and <code>[1, 100]</code> is the one removed. A start-sorted sweep can be rescued by keeping the interval with the smaller <code>end</code> on each conflict, but sorting by end makes that the default.</p>
+      <p><strong>Using <code>&gt;</code> instead of <code>&gt;=</code>.</strong> Then <code>2 &gt; 2</code> is false at <code>[2, 3]</code>, and touching intervals are treated as overlapping. The running example returns <strong>2</strong> instead of 1, and <code>[[1, 2], [2, 3]]</code> returns 1 instead of 0.</p>
+      <p><strong>Seeding <code>prev_end = 0</code> and looping over every interval.</strong> With negative coordinates such as <code>[[-5, -1], [-2, 0]]</code>, neither start clears 0, both are counted removed, and the function returns 2 for an input whose answer is 1. Seed from <code>intervals[0][1]</code> instead.</p>
+      <div class="callout warn">Sort by <code>end</code>. The earliest finisher leaves the most room, and "starts first" says nothing about how much room it leaves.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>The sort is <strong>O(n log n)</strong>. The sweep does one comparison and at most one assignment per interval, <strong>O(n)</strong>, so the sort dominates. The sort is in place and the sweep keeps two integers: <strong>O(1) extra space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Try every subset</td><td>O(2ⁿ · n log n)</td><td>O(n)</td></tr>
+        <tr><td>Sort by end, greedy sweep</td><td>O(n log n)</td><td>O(1) extra</td></tr>
+      </table>
+      <p>The exchange argument in step 3 is what lets a single pass replace an exponential search: at every step there is a choice that is provably never worse.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Ten lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>intervals.sort(key=lambda interval: interval[1])</code> orders by end so the earliest finisher is always next.</li>
+        <li><code>prev_end = intervals[0][1]</code> keeps the first interval and records its end as the boundary.</li>
+        <li><code>for start, end in intervals[1:]</code> sweeps the rest.</li>
+        <li><code>if start &gt;= prev_end: prev_end = end</code> keeps a compatible interval; touching counts as compatible.</li>
+        <li><code>else: removed += 1</code> drops an overlapping one without moving the boundary.</li>
+        <li><code>return removed</code>.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>sort by end, keep whatever starts at or after the last kept end, and count everything else as removed.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>intervals on a timeline · <span id="target">sorted by end</span></h3>
+        <div class="timeline" id="tl"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>running variables</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="non_overlapping_intervals.py">non_overlapping_intervals.py</a> · <a href="non_overlapping_intervals_annotated.py">non_overlapping_intervals_annotated.py</a> · <a href="test_non_overlapping_intervals.py">test_non_overlapping_intervals.py</a> · <a href="../../md.html?f=medium/093-non-overlapping-intervals/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def erase_overlap_intervals(self, intervals: list[list[int]]) -> int:",
+    "        intervals.sort(key=lambda interval: interval[1])",
+    "        removed = 0",
+    "        prev_end = intervals[0][1]",
+    "        for start, end in intervals[1:]:",
+    "            if start >= prev_end:",
+    "                prev_end = end",
+    "            else:",
+    "                removed += 1",
+    "        return removed"
+  ];
+
+  var RAW = [[1, 2], [2, 3], [3, 4], [1, 3]];
+  var SORTED = [[1, 2], [2, 3], [1, 3], [3, 4]];
+
+  // inp = bars in display order; cur = the one being tested (blue); kept = green; bad = removed (amber);
+  // mark = prev_end as a dashed line; lo/hi = axis range; vars = dict entries.
+  var STATES = {
+    problem: {
+      caption: "Remove the fewest intervals so that none of the rest overlap.",
+      phase: "input order", inp: RAW, cur: -1, kept: [], bad: [], mark: null, lo: 0, hi: 5, vars: [],
+      meta: "Drop [1, 3] and the other three sit back to back. Answer: <b>1</b>.", hl: []
+    },
+    brute: {
+      caption: "Brute force tests all 2ⁿ subsets for pairwise overlap and keeps the largest clean one.",
+      phase: "every subset", inp: RAW, cur: -1, kept: [], bad: [], mark: null, lo: 0, hi: 5, vars: [["subsets", "16 for n = 4", ""]],
+      meta: "At n = 10⁵ that is 2¹⁰⁰⁰⁰⁰ subsets.", hl: [],
+      big: "O(2ⁿ · n log n)", bigNote: "every subset, sorted and checked"
+    },
+    insight: {
+      caption: "Sorted by end. The earliest finisher, [1, 2], can always be part of an optimal answer.",
+      phase: "sorted by end", inp: SORTED, cur: 0, kept: [], bad: [], mark: null, lo: 0, hi: 5, vars: [["order", "[1,2] · [2,3] · [1,3] · [3,4]", "new"]],
+      meta: "Swapping it in for any interval it overlaps never creates a new conflict.", hl: [2]
+    },
+    approach: {
+      caption: "Keep the first; then keep any interval that starts at or after prev_end, else count it removed.",
+      phase: "sorted by end", inp: SORTED, cur: -1, kept: [0], bad: [], mark: 2, lo: 0, hi: 5, vars: [["prev_end", 2, "new"], ["removed", 0, ""]],
+      meta: "The dashed line is prev_end. Green = kept, amber = removed.", hl: [4, 5, 6, 7, 8, 9]
+    },
+    t1: {
+      caption: "[1, 2] is kept, prev_end = 2. [2, 3]: 2 ≥ 2, touching is fine. Keep it, prev_end = 3.",
+      phase: "[2, 3] kept", inp: SORTED, cur: 1, kept: [0], bad: [], mark: 3, lo: 0, hi: 5, vars: [["start ≥ prev_end", "2 ≥ 2, True", "found"], ["prev_end", 3, "new"], ["removed", 0, ""]],
+      meta: "The boundary moved from 2 to 3.", hl: [6, 7]
+    },
+    t2: {
+      caption: "[1, 3]: 1 ≥ 3 is false. It overlaps the kept [2, 3], so removed = 1. prev_end stays 3.",
+      phase: "[1, 3] removed", inp: SORTED, cur: 2, kept: [0, 1], bad: [2], mark: 3, lo: 0, hi: 5, vars: [["start ≥ prev_end", "1 ≥ 3, False", "bad"], ["prev_end", 3, ""], ["removed", 1, "bad"]],
+      meta: "It ends no earlier than [2, 3], so dropping it costs nothing.", hl: [6, 8, 9]
+    },
+    t3: {
+      caption: "[3, 4]: 3 ≥ 3, keep it, prev_end = 4. Done: removed = 1.",
+      phase: "[3, 4] kept", inp: SORTED, cur: 3, kept: [0, 1], bad: [2], mark: 4, lo: 0, hi: 5, vars: [["start ≥ prev_end", "3 ≥ 3, True", "found"], ["prev_end", 4, "new"], ["removed", 1, "found"]],
+      meta: "Three survivors of length one fill [1, 4] exactly; no better answer exists.", hl: [6, 7, 10],
+      big: "1", bigNote: "remove [1, 3]"
+    },
+    pitfall: {
+      caption: "Sorted by start, [1, 100] is kept first and both short intervals are removed: 2, not 1.",
+      phase: "sorted by START (bug)", inp: [[1, 100], [2, 3], [4, 5]], cur: -1, kept: [0], bad: [1, 2], mark: 100, lo: 0, hi: 100, vars: [["prev_end", 100, "bad"], ["removed (buggy)", 2, "bad"], ["removed (correct)", 1, ""]],
+      meta: "In end order [2, 3] and [4, 5] are kept and [1, 100] is the one dropped.", hl: [2],
+      big: "2, not 1", bigNote: "\"starts first\" says nothing about how much room it leaves"
+    },
+    complexity: {
+      caption: "One sort, then one linear sweep with a single comparison per interval.",
+      phase: "sorted by end", inp: SORTED, cur: -1, kept: [0, 1, 3], bad: [2], mark: 4, lo: 0, hi: 5, vars: [["sort", "O(n log n)", ""], ["sweep", "O(n)", ""]],
+      meta: "The sort is in place; the sweep keeps two integers.", hl: [2, 5],
+      big: "O(n log n) time · O(1) extra space", bigNote: "versus O(2ⁿ · n log n) for all subsets"
+    },
+    final: {
+      caption: "The whole solution.",
+      phase: "sorted by end", inp: SORTED, cur: -1, kept: [0, 1, 3], bad: [2], mark: null, lo: 0, hi: 5, vars: [["answer", 1, "found"]],
+      meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function bar(iv, cls, lo, hi) {
+    var span = hi - lo;
+    var left = ((iv[0] - lo) / span) * 100;
+    var width = Math.max(((iv[1] - iv[0]) / span) * 100, 3);
+    return '<div class="tl-bar ' + cls + '" style="left:' + left + '%;width:' + width + '%">' + iv[0] + '–' + iv[1] + '</div>';
+  }
+
+  function axis(lo, hi) {
+    var html = '<div class="tl-axis">';
+    var step = hi - lo > 20 ? 20 : hi - lo > 10 ? 5 : 1;
+    for (var t = lo; t <= hi; t += step) {
+      html += '<span style="left:' + (((t - lo) / (hi - lo)) * 100) + '%">' + t + '</span>';
+    }
+    return html + '</div>';
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.phase;
+    $("meta").innerHTML = s.meta;
+
+    var html = "";
+    for (var i = 0; i < s.inp.length; i++) {
+      var cls = i === s.cur ? "cur" : s.bad.indexOf(i) !== -1 ? "bad" : s.kept.indexOf(i) !== -1 ? "hit" : "";
+      html += '<div class="tl-row">' + bar(s.inp[i], cls, s.lo, s.hi) + '</div>';
+    }
+    if (s.mark !== null) {
+      html += '<div class="tl-mark" style="left:' + (((s.mark - s.lo) / (s.hi - s.lo)) * 100) + '%"></div>';
+    }
+    $("tl").innerHTML = html + axis(s.lo, s.hi);
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">nothing decided yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

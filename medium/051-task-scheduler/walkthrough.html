@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task Scheduler Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* heap additions: the heap array drawn as a complete binary tree (easy/011 renderer) */
+  .tree { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .tree .edge { stroke: var(--line); stroke-width: 2.5; fill: none; transition: stroke 0.25s; }
+  .tree .edge.hit { stroke: var(--ok); }
+  .tree .edge.bad { stroke: var(--warn); stroke-dasharray: 5 4; }
+  .tree .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .tree .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 17px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .tree .node.cur circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3.5; }
+  .tree .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .tree .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .tree .node.dim circle, .tree .node.dim text { opacity: 0.4; }
+  .tree .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .tree .lbl.cur { fill: var(--accent); font-weight: 700; }
+  .tree .lbl.bad { fill: var(--warn); font-weight: 700; }
+  .tree .lbl.hit { fill: var(--ok); font-weight: 700; }
+  .array.compact { gap: 4px; margin-top: 2px; }
+  .array.compact .cell { min-width: 28px; padding: 3px 0 2px; font-size: 0.9rem; border-width: 1.5px; border-radius: 6px; }
+  .array.compact .cell.cur { transform: none; }
+  .cell.bad { border-color: var(--warn); background: var(--warn-soft); }
+  .meta b { color: var(--ink); }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Heap · LeetCode #621</div>
+  <h1>Task Scheduler, narrated</h1>
+  <p>Scroll from trying every ordering to a max-heap of remaining counts plus a cooldown queue that simulates the CPU tick by tick, with the heap, the queue and the growing timeline shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/heap.html">Heap</a> <span class="how">At every tick run the available task with the most copies left; a max-heap on counts finds it, and a FIFO cooldown queue holds tasks until n ticks have passed.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>A CPU is given a list of tasks, each an uppercase letter, and a cooldown <code>n</code>. Every tick it runs one task or idles. Two runs of the <em>same</em> letter must be at least <code>n</code> ticks apart, meaning <code>n</code> other ticks (other letters or idles) sit between them. The order is up to you. Return the fewest ticks needed to finish everything.</p>
+      <div class="callout">Running example: <code>tasks = ["A","A","A","B","B","B"]</code>, <code>n = 2</code>. The best schedule is <code>A B idle A B idle A B</code>: <strong>8</strong> ticks. Each A needs two ticks before the next A, and there is only one other letter to fill the gap, so one idle per gap is unavoidable.</div>
+      <p>The answer is a single number, the length of the schedule, not the schedule itself. Idles count as ticks. Notice also that the letters themselves are irrelevant: only <em>how many copies</em> of each letter exist matters, and there are at most 26 distinct letters.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every ordering</h2>
+      <p>Generate every permutation of the tasks, insert the minimum idles each one forces, and keep the shortest:</p>
+      <pre class="code"><span class="ln">best = inf</span><span class="ln">for order in permutations(tasks):</span><span class="ln">    last = {}; t = 0</span><span class="ln">    for task in order:</span><span class="ln">        t = max(t + 1, last.get(task, -inf) + n + 1)</span><span class="ln">        last[task] = t</span><span class="ln">    best = min(best, t)</span></pre>
+      <p style="margin-top:14px">Six tasks have 720 orderings, which is fine. Ten thousand tasks have <code>10⁴!</code>, which is not: <strong>O(T! · T)</strong>. Even collapsing duplicate letters leaves an astronomical number of distinct schedules.</p>
+      <p>The waste is that almost every ordering makes the same avoidable mistake somewhere: it runs a rare letter while a common letter is available, and pays for it later with idles the common letter forces at the end. A schedule is only good when it keeps the biggest pile shrinking.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: always run the most-remaining available task</h2>
+      <p>The letter with the most copies left is the one that will force idles at the end if it falls behind, so at every tick it should run <em>if it is allowed to</em>. That is a greedy rule with two halves:</p>
+      <ul>
+        <li><strong>Which task has the most copies left?</strong> A max-heap of counts answers that in O(log 26). <code>heapq</code> is a min-heap, so store <code>-count</code>; the root is then the largest pile.</li>
+        <li><strong>Which tasks are allowed right now?</strong> A task that ran at tick <code>t</code> may not run again until tick <code>t + n + 1</code>. Between those ticks it must be <em>out</em> of the heap, otherwise the greedy would pick it again immediately. Park it in a queue tagged with the tick it becomes ready: <code>(time + n, remaining)</code>.</li>
+      </ul>
+      <div class="callout">Every parked task waits exactly <code>n</code> ticks, so the queue is sorted by ready time for free. Only its front ever needs checking: <code>cooldown[0][0] == time</code>.</div>
+      <p>The panel shows the starting heap: <code>Counter</code> gives <code>{A: 3, B: 3}</code>, negated to <code>[-3, -3]</code>. Both roots are equal, so which letter goes first does not matter.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: one loop iteration per tick</h2>
+      <ul>
+        <li><code>heap = [-count for count in Counter(tasks).values()]</code>, then <code>heapq.heapify(heap)</code>: the negated counts, largest pile at the root.</li>
+        <li><code>cooldown = deque()</code>, <code>time = 0</code>: an empty parking queue and the clock.</li>
+        <li><code>while heap or cooldown</code>: keep ticking while anything is runnable <em>or</em> still cooling down.</li>
+        <li><code>time += 1</code>: a tick passes whether or not a task runs.</li>
+        <li><code>if heap: remaining = heapq.heappop(heap) + 1</code>: run the biggest pile. <code>-3 + 1 = -2</code> means one copy done, two left.</li>
+        <li><code>if remaining: cooldown.append((time + n, remaining))</code>: unless that letter is finished, park it until <code>time + n</code>.</li>
+        <li><code>if cooldown and cooldown[0][0] == time: heapq.heappush(heap, cooldown.popleft()[1])</code>: the oldest parked task, if its ready tick is now, goes back into the heap.</li>
+        <li><code>return time</code>: when both are empty, the clock is the answer.</li>
+      </ul>
+      <p>If the heap is empty at the top of an iteration the CPU idles: nothing is popped, but <code>time</code> still advanced, and the cooldown check may release a task for the <em>next</em> tick.</p>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: ticks 1 and 2, A then B</h2>
+      <p><strong>Tick 1.</strong> Pop <code>-3</code> (call it A): <code>remaining = -3 + 1 = -2</code>, nonzero, so append <code>(1 + 2, -2) = (3, -2)</code> to <code>cooldown</code>. The heap is <code>[-3]</code>, B only. Nothing in the queue is ready at tick 1.</p>
+      <p><strong>Tick 2.</strong> Pop <code>-3</code> (B): <code>remaining = -2</code>, append <code>(4, -2)</code>. The heap is now <strong>empty</strong>: both letters are cooling down. The queue is <code>[(3, A:-2), (4, B:-2)]</code>. The front is ready at 3, not 2, so nothing comes back yet.</p>
+      <p>Timeline so far: <code>A B</code>. Two ticks, two tasks run, and the CPU is about to have nothing to do.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: tick 3 idles, tick 4 runs A again</h2>
+      <p><strong>Tick 3.</strong> The heap is empty, so <code>if heap</code> is false and nothing runs: an <em>idle</em>. But the tick still counted, and now <code>cooldown[0][0] == 3 == time</code>, so A's <code>-2</code> is popped from the front of the queue and pushed back into the heap. Heap <code>[-2]</code>, queue <code>[(4, B:-2)]</code>.</p>
+      <p><strong>Tick 4.</strong> Pop A's <code>-2</code>: <code>remaining = -1</code>, append <code>(4 + 2, -1) = (6, -1)</code>. Then the front of the queue is B with ready tick 4, which equals <code>time</code>, so B's <code>-2</code> re-enters the heap. Heap <code>[-2]</code> (B), queue <code>[(6, A:-1)]</code>.</p>
+      <p>Timeline: <code>A B idle A</code>. The idle at tick 3 was forced: A ran at tick 1 and could not run before tick 4, and B ran at tick 2 and could not run before tick 5. The heap being empty <em>is</em> the signal that an idle is unavoidable.</p>
+    </section>
+
+    <section class="step" data-state="trace3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: ticks 5 to 8, the last copies</h2>
+      <p><strong>Tick 5.</strong> Pop B's <code>-2</code>, <code>remaining = -1</code>, append <code>(7, -1)</code>. Heap empty, queue <code>[(6, A:-1), (7, B:-1)]</code>. <strong>Tick 6.</strong> Idle; A's <code>-1</code> is released at exactly 6. <strong>Tick 7.</strong> Pop A's <code>-1</code>: <code>remaining = -1 + 1 = 0</code>, which is falsy, so A is <em>finished</em> and nothing is appended. B's <code>-1</code> is released. <strong>Tick 8.</strong> Pop B's <code>-1</code>, <code>remaining = 0</code>, finished.</p>
+      <p>Now <code>heap</code> is empty and <code>cooldown</code> is empty, so <code>while heap or cooldown</code> ends. <code>return time</code> gives <strong>8</strong>, and the timeline reads <code>A B idle A B idle A B</code>.</p>
+      <div class="callout">Notice the last B did not pay a trailing cooldown. Once a letter's count hits zero it is simply dropped, so the clock stops the moment the last task runs.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the loop condition, and the ready tick</h2>
+      <p><strong>Looping only while the heap is nonempty.</strong> Write <code>while heap:</code> instead of <code>while heap or cooldown:</code>. On the example, after tick 2 the heap is empty while both A and B sit in the queue. The loop exits and returns <strong>2</strong>. The heap being empty means "idle this tick", not "done"; done is when the queue is empty too.</p>
+      <p><strong>Off by one on the ready tick.</strong> Append <code>(time + n - 1, remaining)</code> and A that ran at tick 1 is released at tick 2 and runs again at tick 3, with only one tick between: the schedule <code>A B A B A B</code> is produced and 6 is returned, which violates the cooldown. The rule is <code>n</code> ticks <em>between</em> runs, so a task that runs at <code>t</code> is ready at <code>t + n</code> and runs at <code>t + n + 1</code>.</p>
+      <p><strong>Skipping the queue.</strong> Pushing <code>remaining</code> straight back into the heap in the same tick makes every letter eligible every tick; the answer collapses to <code>len(tasks) = 6</code>.</p>
+      <div class="callout warn">The loop runs while <em>anything</em> is left, in the heap or in the queue. An empty heap is an idle tick, not the end.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Each loop iteration is one tick of the answer <code>T</code>, and each does at most one pop and one push on a heap of at most 26 entries. That is <strong>O(T · log 26)</strong>, effectively <strong>O(T)</strong>, where <code>T</code> is at most <code>len(tasks) · (n + 1)</code>. Space is the counter, heap and queue, all bounded by 26: <strong>O(1)</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Try every ordering</td><td>O(T! · T)</td><td>O(T)</td></tr>
+        <tr><td>Heap + cooldown simulation</td><td>O(T · log 26) ≈ O(T)</td><td>O(26)</td></tr>
+        <tr><td>Closed form on counts</td><td>O(len(tasks))</td><td>O(26)</td></tr>
+      </table>
+      <p>The closed form <code>max(len(tasks), (max_count - 1) * (n + 1) + count_of_max)</code> is what the simulation computes implicitly: the most frequent letter fixes a frame of <code>max_count - 1</code> gaps of width <code>n + 1</code>, the other letters fill the gaps, and if there are more tasks than the frame has room for, no idles happen at all. The simulation is the version you can derive live in an interview; the formula is the one to mention afterwards.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Thirteen lines, one clock.</p>
+      <ul>
+        <li><code>heap = [-count for count in Counter(tasks).values()]</code> and <code>heapq.heapify(heap)</code>: the piles, largest at the root.</li>
+        <li><code>cooldown = deque()</code>: parked tasks, oldest first, tagged with their ready tick.</li>
+        <li><code>while heap or cooldown</code>: tick until nothing is runnable or waiting.</li>
+        <li><code>time += 1</code> then <code>if heap:</code> run the biggest pile; <code>remaining = heapq.heappop(heap) + 1</code>.</li>
+        <li><code>if remaining: cooldown.append((time + n, remaining))</code>: park it unless finished.</li>
+        <li><code>if cooldown and cooldown[0][0] == time:</code> release the front back into the heap.</li>
+        <li><code>return time</code>: the clock when everything is done.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>each tick, run the available letter with the most copies left; park it for n ticks; the clock when both containers empty is the answer.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>max-heap of remaining counts · <span id="target">tasks = AAABBB, n = 2</span></h3>
+        <svg class="tree" id="tree" viewBox="0 0 400 130" aria-label="heap as a binary tree"></svg>
+        <div class="meta" id="heapmeta"></div>
+      </div>
+
+      <div class="block">
+        <h3>timeline · tick by tick</h3>
+        <div class="array compact" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>cooldown queue and clock</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="task_scheduler.py">task_scheduler.py</a> · <a href="task_scheduler_annotated.py">task_scheduler_annotated.py</a> · <a href="test_task_scheduler.py">test_task_scheduler.py</a> · <a href="../../md.html?f=medium/051-task-scheduler/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def least_interval(self, tasks: list[str], n: int) -> int:",
+    "        heap = [-count for count in Counter(tasks).values()]",
+    "        heapq.heapify(heap)",
+    "        cooldown = deque()",
+    "        time = 0",
+    "        while heap or cooldown:",
+    "            time += 1",
+    "            if heap:",
+    "                remaining = heapq.heappop(heap) + 1",
+    "                if remaining:",
+    "                    cooldown.append((time + n, remaining))",
+    "            if cooldown and cooldown[0][0] == time:",
+    "                heapq.heappush(heap, cooldown.popleft()[1])",
+    "        return time"
+  ];
+
+  // heap: entries exactly as heapq lays them out, each [negated count, letter].
+  // timeline: what ran at each tick so far ("A", "B", "idle"); tcur = tick highlighted.
+  // vars: cooldown queue entries and the clock. bad/cur/hits index into the heap.
+  var STATES = {
+    problem: {
+      caption: "Schedule AAABBB with at least 2 ticks between repeats of a letter, in as few ticks as possible.",
+      phase: "tasks = AAABBB, n = 2", heap: [[3, "A"], [3, "B"]], cur: -1, hits: [], bad: [], dim: [], tags: {},
+      heapmeta: "Only the counts matter: A × 3, B × 3.",
+      timeline: ["A", "B", "idle", "A", "B", "idle", "A", "B"], tcur: -1, thits: [2, 5],
+      meta: "The best schedule has two forced idles: <b>8</b> ticks.", vars: [], hl: []
+    },
+    brute: {
+      caption: "Try every ordering of the six tasks and insert the idles each one forces.",
+      phase: "every permutation", heap: [[3, "A"], [3, "B"]], cur: -1, hits: [], bad: [], dim: [0, 1], tags: {},
+      heapmeta: "720 orderings for 6 tasks; 10⁴! for the largest input.",
+      timeline: ["A", "A", "A", "B", "B", "B"], tcur: -1, thits: [],
+      meta: "A bad ordering: A A A B B B forces two idles after each A and two after each B, for 14 ticks.", vars: [["orderings", "T!", ""], ["per ordering", "O(T)", ""]], hl: [],
+      big: "O(T! · T)", bigNote: "and most orderings are obviously bad"
+    },
+    insight: {
+      caption: "Run the letter with the most copies left, but only if it is not cooling down.",
+      phase: "heapify([-3, -3])", heap: [[-3, "A"], [-3, "B"]], cur: -1, hits: [0], bad: [], dim: [], tags: { 0: "biggest pile" },
+      heapmeta: "Negated counts: the most negative value, the biggest pile, sits at the root.",
+      timeline: [], tcur: -1, thits: [],
+      meta: "A task that just ran leaves the heap and waits in a queue until its ready tick.", vars: [["parked as", "(time + n, remaining)", ""], ["release when", "cooldown[0][0] == time", ""]], hl: [2, 3, 11, 12]
+    },
+    approach: {
+      caption: "One loop iteration per tick: pop the biggest pile, park it, release the front of the queue.",
+      phase: "time = 0", heap: [[-3, "A"], [-3, "B"]], cur: -1, hits: [], bad: [], dim: [], tags: {},
+      heapmeta: "Both piles are 3, so either letter may go first.",
+      timeline: [], tcur: -1, thits: [],
+      meta: "If the heap is empty at the top of a tick the CPU idles, but the clock still advances.", vars: [["cooldown", "[]", ""], ["time", "0", ""]], hl: [6, 7, 8, 9, 10, 11, 12, 13]
+    },
+    trace1: {
+      caption: "Tick 1 runs A, tick 2 runs B. Both are parked; the heap is now empty.",
+      phase: "after tick 2", heap: [], cur: -1, hits: [], bad: [], dim: [], tags: {},
+      heapmeta: "Popped -3 (A) → -2, parked until 3. Popped -3 (B) → -2, parked until 4.",
+      timeline: ["A", "B"], tcur: 1, thits: [],
+      meta: "Neither parked task is ready at tick 2.", vars: [["cooldown", "[(3, A:-2), (4, B:-2)]", "new"], ["time", "2", ""]], hl: [7, 8, 9, 10, 11]
+    },
+    trace2: {
+      caption: "Tick 3: heap empty, idle; A is released at 3. Tick 4: run A, park it until 6; B is released at 4.",
+      phase: "after tick 4", heap: [[-2, "B"]], cur: 0, hits: [], bad: [], dim: [], tags: { 0: "released" },
+      heapmeta: "A ran again: -2 + 1 = -1, parked as (6, -1). B came back from the queue.",
+      timeline: ["A", "B", "idle", "A"], tcur: 3, thits: [2],
+      meta: "The idle at tick 3 was forced: nothing was runnable, but the clock ticked.", vars: [["cooldown", "[(6, A:-1)]", ""], ["time", "4", ""]], hl: [8, 12, 13]
+    },
+    trace3: {
+      caption: "Ticks 5–8: B, idle, A, B. The last copies return remaining = 0 and are dropped. Answer: 8.",
+      phase: "after tick 8", heap: [], cur: -1, hits: [], bad: [], dim: [], tags: {},
+      heapmeta: "Tick 7 popped A's -1 → 0: finished, not parked. Tick 8 did the same for B.",
+      timeline: ["A", "B", "idle", "A", "B", "idle", "A", "B"], tcur: 7, thits: [2, 5],
+      meta: "Heap and queue are both empty, so the loop ends and <b>time = 8</b> is returned.", vars: [["cooldown", "[]", ""], ["time", "8", "found"]], hl: [6, 9, 10, 14],
+      big: "8", bigNote: "A B idle A B idle A B"
+    },
+    pitfall: {
+      caption: "while heap: exits at tick 2, when the heap is empty but both letters are still parked.",
+      phase: "after tick 2 (bug)", heap: [], cur: -1, hits: [], bad: [], dim: [], tags: {},
+      heapmeta: "An empty heap means 'idle this tick', not 'done'.",
+      timeline: ["A", "B"], tcur: 1, thits: [],
+      meta: "Two tasks ran; four are still waiting in the queue.", vars: [["cooldown", "[(3, A:-2), (4, B:-2)]", ""], ["returns", "2", ""]], hl: [6],
+      big: "2, not 8", bigNote: "the loop must also wait for the cooldown queue"
+    },
+    complexity: {
+      caption: "One iteration per tick of the answer, each O(log 26) on a heap of at most 26 letters.",
+      phase: "tasks = AAABBB, n = 2", heap: [[-3, "A"], [-3, "B"]], cur: -1, hits: [], bad: [], dim: [], tags: {},
+      heapmeta: "At most 26 distinct letters, so the heap and the queue are constant size.",
+      timeline: ["A", "B", "idle", "A", "B", "idle", "A", "B"], tcur: -1, thits: [],
+      meta: "T ≤ len(tasks) · (n + 1) in the worst case of a single dominant letter.", vars: [["per tick", "O(log 26)", ""], ["ticks", "T", ""]], hl: [6, 9, 13],
+      big: "O(T · log 26) time · O(26) space", bigNote: "versus O(T! · T) for trying every ordering"
+    },
+    final: {
+      caption: "The whole solution.",
+      phase: "tasks = AAABBB, n = 2", heap: [], cur: -1, hits: [], bad: [], dim: [], tags: {},
+      heapmeta: "",
+      timeline: ["A", "B", "idle", "A", "B", "idle", "A", "B"], tcur: -1, thits: [],
+      meta: "", vars: [["answer", "8", "found"]], hl: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    }
+  };
+
+  // Fixed layout for a 2-level tree (at most 3 letters are ever shown), indexed in heap (level) order.
+  var POS = [[200, 32], [105, 102], [295, 102]];
+  var R = 21;
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var treeSvg = document.getElementById("tree");
+
+  function nodeClass(s, i) {
+    if (i === s.cur) return "cur";
+    if (s.bad.indexOf(i) !== -1) return "bad";
+    if (s.hits.indexOf(i) !== -1) return "hit";
+    if (s.dim.indexOf(i) !== -1) return "dim";
+    return "";
+  }
+
+  function renderHeap(s) {
+    while (treeSvg.firstChild) treeSvg.removeChild(treeSvg.firstChild);
+    var n = Math.min(s.heap.length, POS.length);
+    for (var i = 1; i < n; i++) {
+      var p = POS[(i - 1) >> 1], c = nodeClass(s, i);
+      treeSvg.appendChild(el("line", { "class": "edge" + (c === "bad" || c === "hit" ? " " + c : ""), x1: p[0], y1: p[1], x2: POS[i][0], y2: POS[i][1] }));
+    }
+    for (var j = 0; j < n; j++) {
+      var cls = nodeClass(s, j);
+      var g = el("g", { "class": "node" + (cls ? " " + cls : "") });
+      g.appendChild(el("circle", { cx: POS[j][0], cy: POS[j][1], r: R }));
+      g.appendChild(el("text", { x: POS[j][0], y: POS[j][1] }, String(s.heap[j][0])));
+      treeSvg.appendChild(g);
+      // the letter this count belongs to, under the node
+      treeSvg.appendChild(el("text", { "class": "lbl", x: POS[j][0], y: POS[j][1] + R + 14 }, s.heap[j][1]));
+      if (s.tags[j] !== undefined) {
+        treeSvg.appendChild(el("text", { "class": "lbl" + (cls ? " " + cls : ""), x: POS[j][0] + (j === 0 ? R + 44 : 0), y: POS[j][1] + (j === 0 ? 0 : R + 28) }, s.tags[j]));
+      }
+    }
+    if (n === 0) treeSvg.appendChild(el("text", { "class": "lbl", x: 200, y: 70 }, "heap is empty: nothing runnable"));
+  }
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.phase;
+    $("heapmeta").innerHTML = s.heapmeta;
+    $("meta").innerHTML = s.meta;
+
+    renderHeap(s);
+
+    var arr = "";
+    for (var i = 0; i < s.timeline.length; i++) {
+      var cls = "cell";
+      if (i === s.tcur) cls += " cur";
+      else if (s.thits.indexOf(i) !== -1) cls += " bad";
+      arr += '<div class="' + cls + '">' + (s.timeline[i] === "idle" ? "·" : s.timeline[i]) + '<span class="idx">' + (i + 1) + '</span></div>';
+    }
+    $("array").innerHTML = arr || '<span class="empty">no ticks yet</span>';
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">clock not started</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

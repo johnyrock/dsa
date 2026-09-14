@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reverse Bits Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  .fig .bit { fill: var(--bg); stroke: var(--line); stroke-width: 1.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .bit.one { fill: var(--panel); stroke: var(--muted); }
+  .fig .bit.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2.5; }
+  .fig .bit.hit { fill: var(--ok-soft); stroke: var(--ok); stroke-width: 2.5; }
+  .fig .bit.dim { opacity: 0.35; }
+  .fig .val.zero { fill: var(--muted); font-weight: 400; }
+  .fig .rlbl { fill: var(--muted); font-size: 11px; text-anchor: start; font-family: ui-monospace, Menlo, monospace; }
+  .fig .rlbl.acc { fill: var(--ink); font-weight: 600; }
+  .fig .rlbl.cur { fill: var(--accent); font-weight: 600; }
+  .fig .rlbl.ok { fill: var(--ok); font-weight: 600; }
+  .fig .hdr { fill: var(--muted); font-size: 9px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .box.dim { opacity: 0.4; }
+  .fig .dig { fill: var(--ink); font-size: 22px; font-weight: 700; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .tag-txt { fill: var(--accent); font-size: 11px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .arrow { stroke: var(--accent); stroke-width: 2; fill: none; }
+  .fig .arrow-head { fill: var(--accent); }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#easy">← All walkthroughs</a>
+  <div class="tag">Easy · Bit Manipulation · LeetCode #190</div>
+  <h1>Reverse Bits, narrated</h1>
+  <p>Scroll through the string-reverse shortcut, the shift-and-append loop that must run exactly 32 times, and a byte-by-byte trace of the running example, with the low bits of input and output shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/bit-manipulation.html">Bit Manipulation</a> <span class="how">The first bit read from the input belongs at the far end of the output. Shift the output left, append the current low bit, and shift the input right.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You are given a 32-bit unsigned integer <code>n</code>. Reverse the order of its bits, so bit 0 becomes bit 31, bit 1 becomes bit 30, and so on, and return the resulting integer.</p>
+      <div class="callout">Running example: <code>n = 0000 0010 1001 0100 0001 1110 1001 1100</code> (decimal 43261596). Read the bits back to front and you get <code>0011 1001 0111 1000 0010 1001 0100 0000</code>, which is <strong>964176192</strong>.</div>
+      <p>The width is fixed at 32 even when the number has leading zeros. That single fact drives the whole solution, and it is the thing the pitfall step comes back to. The panel tracks only the lowest 8 bits of <code>n</code>, <code>10011100</code>, and the lowest 8 bits of <code>result</code>, because 32 columns do not fit; the reasoning is identical for the other three bytes.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: reverse a string</h2>
+      <p>Python makes this a one-liner: render the number as a zero-padded 32-character binary string, reverse it, and parse it back.</p>
+      <pre class="code"><span class="ln">return int(format(n, "032b")[::-1], 2)</span></pre>
+      <p style="margin-top:14px">It is correct, and the <code>032b</code> padding even handles leading zeros. The panel shows the low byte <code>10011100</code> becoming <code>00111001</code> in the reversed string, which is what will end up as the top byte of the answer.</p>
+      <p>The cost is allocation: a 32-character string, a second reversed copy, and a parse. In a language without a slice-reverse idiom the same approach is a loop over characters, which is just the bit loop with extra steps. Interviewers ask this question to see the bit loop, and the string version does not demonstrate that you understand how the shifts move data.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: read low, write high</h2>
+      <p>The first bit you read from the input, its bit 0, has to end up at bit 31 of the output. You do not have to place it there directly. Put it at bit 0 of <code>result</code> and then, on each of the 31 later rounds, shift <code>result</code> left by one. After 31 shifts it is sitting at bit 31.</p>
+      <p>So each round is three moves: shift <code>result</code> left to make room, drop <code>n</code>'s current low bit into the empty slot, then shift <code>n</code> right so its next bit is in position 0. In code that is <code>result = (result &lt;&lt; 1) | (n &amp; 1)</code> followed by <code>n &gt;&gt;= 1</code>.</p>
+      <div class="callout">The bits leave <code>n</code> from the low end in order 0, 1, 2 … and enter <code>result</code> at its low end in that same order. Because every earlier bit gets pushed one place left on every later round, the order comes out reversed for free.</div>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: exactly 32 rounds</h2>
+      <p>Start with <code>result = 0</code>. Then <code>for _ in range(32):</code> do the shift-append-shift from the previous step. After the loop, <code>return result</code>.</p>
+      <p>The loop bound is a fixed 32, not <code>while n</code>. The example input has five leading zeros (bits 31 down to 27 are 0), and those must become five trailing zeros in the output. Once <code>n</code> has been shifted down to 0 there are no more 1s to read, but <code>result</code> still needs to be shifted left for each remaining position. A loop that stops when <code>n</code> is empty would leave the answer too small by exactly that many shifts.</p>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: rounds 1 to 3, the first 1 arrives</h2>
+      <p>The low byte of <code>n</code> is <code>10011100</code>, so reading from bit 0 upward the first bits are 0, 0, 1. Rounds 1 and 2 each compute <code>(result &lt;&lt; 1) | 0</code>, which leaves <code>result</code> at 0, and shift <code>n</code> right; after them the low byte of <code>n &gt;&gt; 2</code> is <code>10100111</code>, as the panel shows.</p>
+      <p>Round 3 reads <code>n &amp; 1 = 1</code>. <code>result = (0 &lt;&lt; 1) | 1 = 1</code>, or <code>00000001</code>. That single bit is the original bit 2 of the input, and it now has 29 more left-shifts ahead of it, which will carry it to bit 29 of the answer.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: rounds 4 to 8, the prefix grows</h2>
+      <p>After round 3, <code>n &gt;&gt;= 1</code> exposes the next bit; the panel shows the low byte of <code>n &gt;&gt; 3</code> as <code>11010011</code>, with <code>result = 1</code> holding the reversed prefix so far.</p>
+      <p>Rounds 4 and 5 read 1, 1: <code>result</code> goes to <code>11</code> then <code>111</code>. Rounds 6 and 7 read 0, 0: <code>1110</code> then <code>11100</code>. Round 8 reads 1: <code>111001</code>, which written as a byte is <code>00111001</code>.</p>
+      <p>Read the original low byte <code>10011100</code> from its low end: 0, 0, 1, 1, 1, 0, 0, 1. Read the accumulated result <code>00111001</code> from its low end: 1, 0, 0, 1, 1, 1, 0, 0. Each is the other backwards, which is what eight rounds of shift-append should produce.</p>
+    </section>
+
+    <section class="step" data-state="trace3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the remaining 24 rounds and the answer</h2>
+      <p>After 8 rounds the input's low byte is used up. The panel now shows the low byte of <code>n &gt;&gt; 8</code>, <code>00011110</code>, which is the input's second byte, and <code>result</code> holding <code>00111001</code> (decimal 57).</p>
+      <p>Rounds 9 to 32 process the three remaining bytes of <code>n</code> the same way. Each of those 24 rounds shifts the existing 8 bits of <code>result</code> one place further left, so by the end they occupy bits 24 to 31 of the answer: the input's low byte, reversed, has become the output's top byte.</p>
+      <p>The final value is <code>0011 1001 0111 1000 0010 1001 0100 0000</code>, and <code>return result</code> gives <strong>964176192</strong>. The input's five leading zeros are the answer's five trailing zeros.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: stopping early, or shifting the wrong way</h2>
+      <p><strong>Looping <code>while n:</code> instead of 32 times.</strong> The panel shows <code>n = 1</code>. A while-n loop reads the single 1, appends it, shifts <code>n</code> to 0 and stops after one round, returning <strong>1</strong>. The correct answer moves that bit to position 31, giving <strong>2147483648</strong> (<code>10000000</code> in the top byte). Only a fixed 32-round loop keeps shifting <code>result</code> after <code>n</code> has run out of bits. Leading zeros of the input are real data.</p>
+      <p><strong>Placing each bit at its own index.</strong> A tempting rewrite is <code>result |= (n &gt;&gt; i &amp; 1) &lt;&lt; i</code> for <code>i in range(32)</code>. That reads bit <code>i</code> and writes it back to bit <code>i</code>, which reconstructs <code>n</code> exactly: the running example returns <strong>43261596</strong>, its own input. If you want the direct-placement form, the target is <code>&lt;&lt; (31 - i)</code>; the shift-append form avoids having to get that subtraction right.</p>
+      <div class="callout warn">Test with <code>n = 1</code> (expect 2147483648) and <code>n = 0</code> (expect 0). The first catches any loop that stops early; the second confirms the loop is harmless on an empty input.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>The loop runs exactly 32 times regardless of the input, and each round is two shifts, one AND and one OR. That is <strong>O(1) time</strong>. The state is two integers, <code>result</code> and <code>n</code>, so <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Format, reverse string, parse</td><td>O(32), three passes</td><td>O(32) for two strings</td></tr>
+        <tr><td>Shift-append loop</td><td>O(32), one pass, no allocation</td><td>O(1)</td></tr>
+      </table>
+      <p>Both are constant because the width is fixed. If the function is called millions of times, the follow-up in the original problem, the loop's lack of allocation matters, and a byte-wise lookup table (reverse each of the four bytes via a 256-entry table and swap their order) cuts the 32 rounds to 4.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Five lines of body.</p>
+      <ul>
+        <li><code>result = 0</code> — an empty output with room for 32 bits.</li>
+        <li><code>for _ in range(32):</code> runs a fixed number of rounds, one per output bit, and does not care whether <code>n</code> still has 1s.</li>
+        <li><code>result &lt;&lt; 1</code> pushes everything already collected one place left, making room at bit 0.</li>
+        <li><code>| (n &amp; 1)</code> drops the input's current lowest bit into that room.</li>
+        <li><code>n &gt;&gt;= 1</code> discards the bit just consumed so the next one is in position 0.</li>
+        <li><code>return result</code> — after 32 rounds the first bit read has been shifted 31 times and sits at the top.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>32 times, shift the result left, append the input's low bit, shift the input right.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>bits · showing 8 of the 32</h3>
+        <svg class="fig" id="fig" viewBox="0 0 400 160" aria-label="bit rows"></svg>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>accumulator</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="reverse_bits.py">reverse_bits.py</a> · <a href="reverse_bits_annotated.py">reverse_bits_annotated.py</a> · <a href="test_reverse_bits.py">test_reverse_bits.py</a> · <a href="../../md.html?f=easy/027-reverse-bits/notes.md">notes.md</a> · <a href="../../index.html#easy">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def reverse_bits(self, n: int) -> int:",
+    "        result = 0",
+    "        for _ in range(32):",
+    "            result = (result << 1) | (n & 1)",
+    "            n >>= 1",
+    "        return result"
+  ];
+
+  // Each state describes what the sticky panel shows for one step.
+  var STATES = {
+    problem: {"caption": "A 32-bit input; the figure follows its lowest 8 bits and the lowest 8 bits of the result.", "rows": [{"l": "n, low byte", "b": "10011100", "c": "acc"}, {"l": "result", "b": "00000000", "c": ""}], "meta": "<b>n = 0000 0010 1001 0100 0001 1110 1001 1100</b>. Reversing all 32 bits gives 0011 1001 0111 1000 0010 1001 0100 0000 = 964176192.", "vars": [], "hl": []},
+    brute: {"caption": "Brute force: format as a 32-character string, reverse it, parse it back.", "rows": [{"l": "n, low byte", "b": "10011100", "c": "acc"}, {"l": "reversed", "b": "00111001", "c": "", "dim": true}], "meta": "int(format(n, '032b')[::-1], 2) is fine in Python but builds two strings; the bit loop needs no allocation.", "vars": [], "hl": []},
+    insight: {"caption": "The bit read first from the input must end up furthest left in the output.", "rows": [{"l": "n, low byte", "b": "10011100", "c": "acc", "hi": [0], "hc": "cur"}, {"l": "result", "b": "00000000", "c": "", "hi": [0], "hc": "hit"}], "meta": "Each round: shift result left to make room, drop n's low bit into the new slot, then shift n right. After 32 rounds the first bit read has moved 31 places left.", "vars": [], "hl": [4]},
+    approach: {"caption": "Exactly 32 rounds, whether or not n has bits left.", "rows": [{"l": "n, low byte", "b": "10011100", "c": "acc", "hi": [0], "hc": "cur"}, {"l": "result = 0", "b": "00000000", "c": ""}], "meta": "Leading zeros of the input must become trailing zeros of the output, so the loop cannot stop early.", "vars": [["result", "0", "new"], ["rounds", "32"]], "hl": [2, 3, 4, 5, 6]},
+    trace1: {"caption": "Round 3: n & 1 = 1, so result = (0 << 1) | 1 = 1.", "rows": [{"l": "n >> 2, low byte", "b": "10100111", "c": "acc", "hi": [0], "hc": "cur"}, {"l": "n & 1", "b": "00000001", "c": "", "hi": [0], "hc": "cur"}, {"l": "result = 1", "b": "00000001", "c": "ok", "hi": [0], "hc": "hit"}], "meta": "Rounds 1 and 2 read the two trailing zeros (…100) and appended 0s, leaving result at 0. Round 3 reads the first 1.", "vars": [["n & 1", "1", "new"], ["result", "1 (00000001)", "new"]], "hl": [4]},
+    trace2: {"caption": "Then n >>= 1 exposes the next bit; result keeps the reversed prefix.", "rows": [{"l": "n >> 3, low byte", "b": "11010011", "c": "acc", "hi": [0], "hc": "cur"}, {"l": "result = 1", "b": "00000001", "c": "ok", "hi": [0], "hc": "hit"}], "meta": "Rounds 4 and 5 read 1, 1: result becomes 11 then 111. Rounds 6 and 7 read 0, 0: 1110, 11100. Round 8 reads 1: 00111001.", "vars": [["n >> 3", "…11010011", "new"], ["result", "1 (00000001)"]], "hl": [5]},
+    trace3: {"caption": "After 8 rounds the low byte of n is used up and result's low byte is 00111001, the top byte of the answer.", "rows": [{"l": "n >> 8, low byte", "b": "00011110", "c": "acc"}, {"l": "result so far", "b": "00111001", "c": "ok", "hi": [0, 1, 2, 3, 4, 5, 6, 7], "hc": "hit"}], "meta": "24 rounds remain for the upper three bytes; each shifts these 8 bits further left. Final result: 0011 1001 0111 1000 0010 1001 0100 0000.", "vars": [["result after 8", "57 (00111001)"], ["result after 32", "964176192", "found"]], "hl": [4, 5, 6], "big": "964176192", "bigNote": "00111001011110000010100101000000"},
+    pitfall: {"caption": "n = 1: a while-n loop stops after one round and returns 1.", "rows": [{"l": "n = 1", "b": "00000001", "c": "acc", "hi": [0], "hc": "cur"}, {"l": "while n: result", "b": "00000001", "c": "", "hi": [0], "hc": "cur"}, {"l": "32 rounds: top byte", "b": "10000000", "c": "ok", "hi": [7], "hc": "hit"}], "meta": "The single 1 must travel to bit 31, giving 2147483648. Only a fixed 32-round loop keeps shifting after n is empty.", "vars": [["wrong", "1"], ["correct", "2147483648", "found"]], "hl": [3]},
+    complexity: {"caption": "Fixed width means fixed work.", "rows": [{"l": "result", "b": "01000000", "c": "ok"}], "meta": "32 rounds of two shifts, an AND and an OR, regardless of the input.", "vars": [["time", "O(1)"], ["space", "O(1)", "found"]], "hl": [3, 4, 5], "big": "O(1) time · O(1) space", "bigNote": "always exactly 32 rounds"},
+    final: {"caption": "Shift result left, append n's low bit, shift n right; 32 times.", "rows": [{"l": "n, low byte", "b": "10011100", "c": "acc"}, {"l": "result, top byte", "b": "00111001", "c": "ok"}], "meta": "The low byte of the input, read low bit first, becomes the top byte of the output.", "vars": [["result", "964176192", "found"]], "hl": [0, 1, 2, 3, 4, 5, 6], "big": "964176192", "bigNote": "running example"}
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var figSvg = document.getElementById("fig");
+  function clearFig(h) { while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild); figSvg.setAttribute("viewBox", "0 0 400 " + h); }
+
+  // Rows of bit cells. Each row: { l: label, b: "0101", c: label class, hi: [bit positions, 0 = lowest], hc: "cur"|"hit", dim: bool }
+  // Returns the y coordinate just below the last row.
+  function drawRows(rows, y0) {
+    if (!rows.length) return y0;
+    var n = rows[0].b.length, pitch = 33, w = pitch - 3, x0 = 396 - n * pitch;
+    for (var p = 0; p < n; p++) {
+      figSvg.appendChild(el("text", { "class": "hdr", x: x0 + p * pitch + w / 2, y: y0 + 10 }, "bit " + (n - 1 - p)));
+    }
+    var y = y0 + 16;
+    rows.forEach(function (r) {
+      figSvg.appendChild(el("text", { "class": "rlbl" + (r.c ? " " + r.c : ""), x: 8, y: y + 16 }, r.l));
+      for (var p = 0; p < n; p++) {
+        var ch = r.b.charAt(p), cls = "bit" + (ch === "1" ? " one" : "");
+        if (r.hi && r.hi.indexOf(n - 1 - p) !== -1) cls += " " + (r.hc || "cur");
+        if (r.dim) cls += " dim";
+        figSvg.appendChild(el("rect", { "class": cls, x: x0 + p * pitch, y: y, width: w, height: 24, rx: 4 }));
+        figSvg.appendChild(el("text", { "class": "val" + (ch === "1" ? "" : " zero"), x: x0 + p * pitch + w / 2, y: y + 17 }, ch));
+      }
+      y += 32;
+    });
+    return y;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arrEl = $("array");
+    if (arrEl) {
+      var arr = "";
+      for (var i = 0; i < s.arr.length; i++) {
+        var cls = "cell";
+        if (i === s.cur) cls += " cur";
+        else if (s.hits.indexOf(i) !== -1) cls += " hit";
+        else if (s.dim.indexOf(i) !== -1) cls += " dim";
+        arr += '<div class="' + cls + '">' + s.arr[i] + '<span class="idx">i = ' + i + '</span></div>';
+      }
+      arrEl.innerHTML = arr;
+    }
+
+    clearFig(s.rows.length ? 16 + s.rows.length * 32 + 2 : 30);
+    if (s.rows.length) drawRows(s.rows, 0);
+    else figSvg.appendChild(el("text", { "class": "lbl", x: 200, y: 20 }, s.figNote || ""));
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">nothing yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

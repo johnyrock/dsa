@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Partition Equal Subset Sum Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+
+  /* partition-equal-subset-sum additions: twelve narrow sum cells, unreachable sums muted */
+  .array { gap: 4px; }
+  .cell { font-size: 0.95rem; padding: 7px 0 4px; min-width: 0; }
+  .cell.unk { color: var(--muted); }</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Dynamic Programming · LeetCode #416</div>
+  <h1>Partition Equal Subset Sum, narrated</h1>
+  <p>Scroll through the thinking, from trying every subset to a one-row table of reachable sums filled from the top down, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">0/1 knapsack on sums: dp[s] |= dp[s − num], sums descending</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Split <code>nums</code> into two groups so that both groups have the same sum. Every element goes into exactly one group. Return whether it can be done.</p>
+      <div class="callout">Running example: <code>nums = [1, 5, 11, 5]</code>. The total is 22, so each half must sum to 11. <code>{1, 5, 5}</code> and <code>{11}</code> both do — the answer is <strong>True</strong>.</div>
+      <p>The first simplification is free: if the total is odd there is no way to halve it, so return <code>False</code> at once. <code>[1, 2, 3, 5]</code> totals 11 and is out immediately.</p>
+      <p>The second is the reframing. You do not need to build two groups. Find <em>one</em> subset that sums to <code>total // 2</code>; everything you left out is the other group, and it sums to the other half automatically.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every subset</h2>
+      <p>Each element is either in the subset or not, so recurse index by index with the remaining sum still needed.</p>
+      <pre class="code"><span class="ln">def reach(i, remaining):</span><span class="ln">    if remaining == 0:</span><span class="ln">        return True</span><span class="ln">    if i == len(nums) or remaining &lt; 0:</span><span class="ln">        return False</span><span class="ln">    return reach(i + 1, remaining - nums[i]) or reach(i + 1, remaining)</span></pre>
+      <p style="margin-top:14px">Two branches per element means <strong>O(2ⁿ)</strong> calls. At <code>n = 200</code> that is beyond astronomical. The waste is the usual one: <code>reach(3, 6)</code> — "from index 3, still need 6" — is the same question no matter which of the earlier elements produced the 6, yet the recursion answers it afresh every time.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: track which sums are reachable</h2>
+      <p>The sums are small: at most <code>200 × 100 / 2 = 10,000</code>. So keep one boolean per sum. <code>dp[s]</code> means "some subset of the numbers processed so far adds up to exactly <code>s</code>".</p>
+      <p>Before any number, only the empty subset exists, so <code>dp[0] = True</code>. Processing a number <code>num</code> creates new reachable sums: every already-reachable <code>s − num</code> now also reaches <code>s</code>.</p>
+      <div class="callout">For each <code>num</code>, for each sum <code>s</code>: <code>if dp[s − num]: dp[s] = True</code>. After all numbers, return <code>dp[target]</code>.</div>
+      <p>The subtle part is the direction of the inner loop. Walking <code>s</code> <em>downward</em> from <code>target</code> means <code>dp[s − num]</code> is always read before this same <code>num</code> could have written it. Walk upward and the number gets used twice — which is fine for coins with unlimited supply, and wrong here.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>total = sum(nums)</code>; <code>if total % 2: return False</code> — odd totals cannot split.</li>
+        <li><code>target = total // 2</code> — the sum one subset must hit.</li>
+        <li><code>dp = [False] * (target + 1)</code>; <code>dp[0] = True</code> — reachable sums, seeded with the empty subset.</li>
+        <li><code>for num in nums</code> — each element is offered once.</li>
+        <li><code>for s in range(target, num - 1, -1)</code> — sums from high to low, stopping where <code>s − num</code> would go negative.</li>
+        <li><code>if dp[s - num]: dp[s] = True</code> — extend every reachable sum by <code>num</code>.</li>
+        <li><code>return dp[target]</code>.</li>
+      </ul>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: after 1 and after 5</h2>
+      <p><code>total = 22</code>, even, <code>target = 11</code>. The table has 12 slots and only <code>dp[0]</code> is True.</p>
+      <p><code>num = 1</code>: <code>s</code> runs 11 down to 1. Only <code>s = 1</code> finds <code>dp[0]</code> True, so <code>dp[1] = True</code>. Reachable: <code>{0, 1}</code>.</p>
+      <p><code>num = 5</code>: <code>s</code> runs 11 down to 5. <code>s = 6</code> reads <code>dp[1]</code> True → <code>dp[6] = True</code>. <code>s = 5</code> reads <code>dp[0]</code> True → <code>dp[5] = True</code>. Reachable: <code>{0, 1, 5, 6}</code>.</p>
+      <p>Notice the order at <code>num = 5</code>: 6 was marked before 5. Had we gone upward, marking 5 first, then <code>s = 10</code> would read <code>dp[5]</code> and mark 10 — using the single 5 twice.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: after 11</h2>
+      <p><code>num = 11</code>: <code>s</code> runs 11 down to 11 — a single iteration. <code>dp[11 − 11] = dp[0]</code> is True, so <code>dp[11] = True</code>.</p>
+      <p>Reachable: <code>{0, 1, 5, 6, 11}</code>. The target is already hit — <code>{11}</code> alone is one half — but the loop does not know to stop, and running to completion costs nothing extra in the big-O.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the second 5, then the answer</h2>
+      <p><code>num = 5</code> again: <code>s</code> runs 11 down to 5. <code>s = 11</code> reads <code>dp[6]</code> True → already True. <code>s = 10</code> reads <code>dp[5]</code> True → <code>dp[10] = True</code>. <code>s = 6</code> reads <code>dp[1]</code> → already True. <code>s = 5</code> reads <code>dp[0]</code> → already True.</p>
+      <p>Final reachable sums: <code>{0, 1, 5, 6, 10, 11}</code>. <code>dp[11]</code> is True, so return <strong>True</strong>. Reading the chain back: 11 ← 6 (via the first 5) ← 1 (via the 1) ← 0, giving <code>{1, 5, 5}</code>; or simply 11 ← 0 via the 11.</p>
+      <div class="callout">Sixteen subsets were possible; the table marked six sums with four short passes.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the seed and the loop direction</h2>
+      <p><strong>Forgetting <code>dp[0] = True</code>.</strong> The condition <code>if dp[s - num]</code> can then never fire, because nothing is reachable to begin with. Every slot stays False and <code>[1, 5, 11, 5]</code> returns <strong>False</strong> instead of True.</p>
+      <p><strong>Ascending inner loop.</strong> Write <code>range(num, target + 1)</code> and each number can be used more than once. <code>[1, 2, 5]</code> has total 8, target 4, and no subset sums to 4 — but ascending, the 1 marks <code>dp[1]</code>, then <code>dp[2]</code> from <code>dp[1]</code>, then <code>dp[3]</code>, then <code>dp[4]</code>, so it returns <strong>True</strong>. That is the unbounded knapsack of <code>medium/008-coin-change</code>, not this problem.</p>
+      <p><strong>Looping all the way to 0.</strong> <code>range(target, -1, -1)</code> reads <code>dp[s - num]</code> with a negative index for <code>s &lt; num</code>. Python wraps that to the end of the list, so a reachable high sum can leak into a low slot.</p>
+      <div class="callout warn">Descending sums = each element used at most once. Ascending sums = unlimited copies. Pick the direction to match the problem.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>One pass over up to <code>target</code> sums for each of <code>n</code> numbers: <strong>O(n × target) time</strong>. One row of booleans: <strong>O(target) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Enumerate subsets</td><td>O(2ⁿ)</td><td>O(n) stack</td></tr>
+        <tr><td>2-D table, rows per element</td><td>O(n × target)</td><td>O(n × target)</td></tr>
+        <tr><td>1-D table, sums descending</td><td>O(n × target)</td><td>O(target)</td></tr>
+      </table>
+      <p>At the limits, 200 numbers up to 100 give a target of at most 10,000: two million boolean checks. The 2-D version keeps a row per element so that each row reads the previous one; the descending loop makes the single row behave the same way.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Twelve lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>total = sum(nums)</code> and <code>if total % 2: return False</code> — odd totals cannot halve.</li>
+        <li><code>target = total // 2</code> — the subset sum we need, as an int.</li>
+        <li><code>dp = [False] * (target + 1)</code> and <code>dp[0] = True</code> — reachable sums, seeded with the empty subset.</li>
+        <li><code>for num in nums</code> — offer each element once.</li>
+        <li><code>for s in range(target, num - 1, -1)</code> — descending, and never below <code>num</code>.</li>
+        <li><code>if dp[s - num]: dp[s] = True</code> — a reachable sum plus this element is reachable.</li>
+        <li><code>return dp[target]</code> — half the total reachable means the other half is the rest.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>find a subset summing to half the total; walk the reachable-sums row from the top down so each element is used once.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>nums · blue = num being offered · target = <span id="target">11</span></h3>
+        <div class="array" id="nums"></div>
+      </div>
+
+      <div class="block">
+        <h3>dp[s] = sum s reachable · green = reachable, blue = just marked</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>reachable sums</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="partition_equal_subset_sum.py">partition_equal_subset_sum.py</a> · <a href="partition_equal_subset_sum_annotated.py">partition_equal_subset_sum_annotated.py</a> · <a href="test_partition_equal_subset_sum.py">test_partition_equal_subset_sum.py</a> · <a href="../../md.html?f=medium/079-partition-equal-subset-sum/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def can_partition(self, nums: list[int]) -> bool:",
+    "        total = sum(nums)",
+    "        if total % 2:",
+    "            return False",
+    "        target = total // 2",
+    "        dp = [False] * (target + 1)",
+    "        dp[0] = True",
+    "        for num in nums:",
+    "            for s in range(target, num - 1, -1):",
+    "                if dp[s - num]:",
+    "                    dp[s] = True",
+    "        return dp[target]"
+  ];
+
+  var NUMS = [1, 5, 11, 5];
+  var T = 11;
+
+  // Each state describes what the sticky panel shows for one step.
+  // reach = sums that are True, fresh = sums marked during this pass, cur = index in NUMS being offered (or -1).
+  var STATES = {
+    problem: {
+      caption: "Can [1, 5, 11, 5] be split into two groups of equal sum?",
+      reach: [], fresh: [], cur: -1, done: [], chips: [["total", "22"], ["target", "11"]],
+      meta: "Answer: <b>True</b> — {1, 5, 5} and {11}.", hl: []
+    },
+    brute: {
+      caption: "Take-or-skip recursion over every subset: 2ⁿ branches.",
+      reach: [], fresh: [], cur: -1, done: [], chips: [["reach(3, 6)", "asked once per way of reaching 6"]],
+      meta: "\"Still need 6 from index 3\" is the same question however you got there.", hl: [],
+      big: "O(2ⁿ)", bigNote: "2²⁰⁰ subsets at the limit"
+    },
+    idea: {
+      caption: "Keep one boolean per sum. Seed dp[0]; each num turns every reachable s − num into a reachable s.",
+      reach: [0], fresh: [0], cur: -1, done: [], chips: [["dp[0]", "True", "new"], ["rule", "if dp[s − num]: dp[s] = True"]],
+      meta: "Walk s downward so each num is used at most once.", hl: [6, 7, 10, 11]
+    },
+    approach: {
+      caption: "Odd check, target = total // 2, then for each num sweep sums from target down to num.",
+      reach: [0], fresh: [], cur: -1, done: [], chips: [["total", "22"], ["target", "11", "new"], ["dp", "12 slots", "new"]],
+      meta: "range(target, num − 1, −1) never lets s − num go negative.", hl: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    },
+    t1: {
+      caption: "num = 1 marks 1. num = 5, sweeping 11 → 5, marks 6 (from dp[1]) then 5 (from dp[0]).",
+      reach: [0, 1, 5, 6], fresh: [5, 6], cur: 1, done: [0], chips: [["after 1", "{0, 1}"], ["after 5", "{0, 1, 5, 6}", "found"]],
+      meta: "6 is marked before 5, so the single 5 cannot feed dp[10].", hl: [8, 9, 10, 11]
+    },
+    t2: {
+      caption: "num = 11: the sweep is the single s = 11, and dp[0] is True, so dp[11] = True.",
+      reach: [0, 1, 5, 6, 11], fresh: [11], cur: 2, done: [0, 1], chips: [["after 11", "{0, 1, 5, 6, 11}", "found"]],
+      meta: "The target is already reachable — {11} alone — but the loop runs on.", hl: [9, 10, 11]
+    },
+    t3: {
+      caption: "Second 5: s = 10 reads dp[5] and marks 10; 11, 6, 5 were already True. Return dp[11].",
+      reach: [0, 1, 5, 6, 10, 11], fresh: [10], cur: 3, done: [0, 1, 2], chips: [["after 5", "{0, 1, 5, 6, 10, 11}"], ["dp[11]", "True", "found"]],
+      meta: "11 ← 6 ← 1 ← 0 gives {1, 5, 5}; 11 ← 0 gives {11}.", hl: [10, 11, 12],
+      big: "True", bigNote: "{1, 5, 5} = 11 = {11}"
+    },
+    pitfall: {
+      caption: "Without dp[0] = True nothing is ever reachable: every dp[s − num] read is False.",
+      reach: [], fresh: [], cur: 3, done: [0, 1, 2], chips: [["dp[0]", "False"], ["dp[11]", "False"]],
+      meta: "Also: an ascending sweep reuses elements and says True for [1, 2, 5].", hl: [7, 10],
+      big: "False, not True", bigNote: "the empty subset is the seed of every reachable sum"
+    },
+    complexity: {
+      caption: "n numbers × target sums: 4 × 11 = 44 checks here, at most 200 × 10,000 at the limit.",
+      reach: [0, 1, 5, 6, 10, 11], fresh: [], cur: -1, done: [0, 1, 2, 3], chips: [["n", "4"], ["target", "11"]],
+      meta: "One boolean row, reused across every element.", hl: [8, 9],
+      big: "O(n × target) time · O(target) space", bigNote: "versus O(2ⁿ) for enumeration"
+    },
+    final: {
+      caption: "The whole solution.",
+      reach: [0, 1, 5, 6, 10, 11], fresh: [11], cur: -1, done: [0, 1, 2, 3], chips: [["dp[11]", "True", "found"]], meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+    $("target").textContent = T;
+
+    var nh = "";
+    for (var k = 0; k < NUMS.length; k++) {
+      var ncls = "cell";
+      if (k === s.cur) ncls += " cur";
+      else if (s.done.indexOf(k) !== -1) ncls += " dim";
+      nh += '<div class="' + ncls + '">' + NUMS[k] + '<span class="idx">' + k + '</span></div>';
+    }
+    $("nums").innerHTML = nh;
+
+    var arr = "";
+    for (var i = 0; i <= T; i++) {
+      var cls = "cell";
+      var on = s.reach.indexOf(i) !== -1;
+      if (s.fresh.indexOf(i) !== -1) cls += " cur";
+      else if (on) cls += " hit";
+      else cls += " unk";
+      arr += '<div class="' + cls + '">' + (on ? "T" : "F") + '<span class="idx">' + i + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var c = 0; c < s.chips.length; c++) {
+        var e = s.chips[c];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var code = "";
+    for (var l = 0; l < CODE.length; l++) {
+      code += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = code;
+  }
+
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

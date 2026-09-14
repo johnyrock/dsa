@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Time Based Key-Value Store Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Binary Search · LeetCode #981</div>
+  <h1>Time Based Key-Value Store, narrated</h1>
+  <p>Scroll through the thinking, from scanning a key's whole history on every read to a per-key sorted list searched in logarithmic time, with the contents of the store shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/binary-search.html">Binary Search</a> <span class="how">rightmost timestamp ≤ t in a list that is sorted because writes arrive in order</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Build a key-value store with a memory. <code>set(key, value, timestamp)</code> records that <code>key</code> took on <code>value</code> at that moment. <code>get(key, timestamp)</code> asks what the key's value <em>was</em> at that moment: the value from the most recent write at or before <code>timestamp</code>. If nothing that old exists, or the key was never set, return <code>""</code>.</p>
+      <p>The guarantee that makes this tractable: for any one key, the timestamps passed to <code>set</code> are strictly increasing. History is written in order.</p>
+      <div class="callout">Running example: <code>set("foo", "bar", 1)</code>, <code>set("foo", "bar2", 4)</code>, <code>set("foo", "bar3", 7)</code>. Then <code>get("foo", 4)</code> is <strong>"bar2"</strong> (exact hit), <code>get("foo", 5)</code> is <strong>"bar2"</strong> (nothing written at 5, so fall back to 4), <code>get("foo", 0)</code> is <strong>""</strong> (everything is newer), and <code>get("foo", 9)</code> is <strong>"bar3"</strong>.</div>
+      <p>Two things the wording hides. A read at an exact timestamp must return that write, so "at or before" is a <code>&lt;=</code>, not a <code>&lt;</code>. And a read older than the first write is not an error — it is the empty string.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: keep every write and scan on read</h2>
+      <p>Store, per key, a list of <code>(timestamp, value)</code> pairs. <code>set</code> appends. <code>get</code> walks the list and remembers the last pair whose timestamp fits:</p>
+      <pre class="code"><span class="ln">def get(self, key, timestamp):</span><span class="ln">    best = ""</span><span class="ln">    for t, v in self.store.get(key, []):</span><span class="ln">        if t &lt;= timestamp:</span><span class="ln">            best = v</span><span class="ln">    return best</span></pre>
+      <p style="margin-top:14px">This is correct, and it already exploits the ordering guarantee a little (the last fit wins, no sorting needed). But each <code>get</code> is <strong>O(k)</strong> in the number of writes to that key. With 2 × 10⁵ operations, a hot key that is written 10⁵ times and then read 10⁵ times costs on the order of 10¹⁰ comparisons.</p>
+      <p>On the running example, <code>get("foo", 5)</code> checks <code>1 &lt;= 5</code> (best = "bar"), <code>4 &lt;= 5</code> (best = "bar2"), <code>7 &lt;= 5</code> (no), and returns "bar2". Three checks for three writes — fine here, hopeless at scale.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: the history is already sorted, so binary search it</h2>
+      <p>The scan looks at every timestamp to find the last one <code>&lt;= timestamp</code>. But the list is sorted — the problem promised increasing timestamps, and we only ever append — so the predicate "<code>times[i] &lt;= timestamp</code>" reads <code>[yes, yes, …, yes, no, no, …, no]</code> across the list. We want the position of the last <em>yes</em>. That is a boundary, and binary search finds boundaries in <strong>O(log k)</strong>.</p>
+      <div class="callout">Keep two parallel lists per key: <code>self.times[key]</code> and <code>self.values[key]</code>. <code>set</code> appends to both. <code>get</code> binary searches <code>times</code> for the insertion point of <code>timestamp</code> — the index just past every timestamp <code>&lt;= timestamp</code> — and returns <code>values[lo - 1]</code>.</div>
+      <p>This is exactly what <code>bisect.bisect_right(times, timestamp)</code> computes. Writing the loop by hand is worth doing once, because the two decisions inside it — <code>&lt;=</code> versus <code>&lt;</code>, and <code>lo - 1</code> versus <code>lo</code> — are where every bug in this problem lives.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>self.times = {}</code>, <code>self.values = {}</code> — a dict from key to its sorted timestamps, and a parallel dict of values.</li>
+        <li><code>set</code>: <code>self.times.setdefault(key, []).append(timestamp)</code> and the same for the value. O(1); the order guarantee means no sorting.</li>
+        <li><code>get</code>: <code>if key not in self.times: return ""</code> — unknown key, no history.</li>
+        <li><code>lo, hi = 0, len(times)</code> — <code>hi</code> is <em>exclusive</em> so that <code>lo</code> can end at <code>len(times)</code> when every write qualifies.</li>
+        <li><code>while lo &lt; hi: mid = (lo + hi) // 2</code> — the standard boundary loop.</li>
+        <li><code>if times[mid] &lt;= timestamp: lo = mid + 1</code> — this write is old enough, and so is everything before it; the boundary is to the right.</li>
+        <li><code>else: hi = mid</code> — this write is too new; the boundary is at <code>mid</code> or to the left.</li>
+        <li><code>if lo == 0: return ""</code> — no write is old enough.</li>
+        <li><code>return self.values[key][lo - 1]</code> — the last write that qualified.</li>
+      </ul>
+      <p>The invariant: <strong>everything before <code>lo</code> is <code>&lt;= timestamp</code>, everything from <code>hi</code> on is <code>&gt; timestamp</code>.</strong> When they meet, <code>lo</code> is the count of qualifying writes.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: three sets, then get("foo", 4)</h2>
+      <p>After the three writes, <code>times["foo"]</code> is <code>[1, 4, 7]</code> and <code>values["foo"]</code> is <code>["bar", "bar2", "bar3"]</code>. Each <code>set</code> was a pair of appends; nothing was searched or shifted.</p>
+      <p>Now <code>get("foo", 4)</code>. Start with <code>lo = 0</code>, <code>hi = 3</code>. First probe: <code>mid = (0 + 3) // 2 = 1</code>, <code>times[1] = 4</code>, and <code>4 &lt;= 4</code> is true — the exact hit counts as old enough, so <code>lo = 2</code>. Second probe: <code>mid = (2 + 3) // 2 = 2</code>, <code>times[2] = 7</code>, and <code>7 &lt;= 4</code> is false, so <code>hi = 2</code>.</p>
+      <p>Now <code>lo == hi == 2</code>: two timestamps are <code>&lt;= 4</code>. The answer is <code>values[2 - 1] = values[1]</code>, which is <strong>"bar2"</strong>.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: get("foo", 5), a timestamp nobody wrote</h2>
+      <p><code>get("foo", 5)</code> runs the identical probes. <code>mid = 1</code>: <code>times[1] = 4 &lt;= 5</code>, so <code>lo = 2</code>. <code>mid = 2</code>: <code>times[2] = 7 &lt;= 5</code> is false, so <code>hi = 2</code>. Again <code>lo = 2</code> and the answer is <code>values[1]</code> = <strong>"bar2"</strong>.</p>
+      <p>This is the case the problem is really about: no write happened at 5, so the reader wants whatever was true <em>at</em> 5, which is the value set at 4 and not yet replaced by the one set at 7. The search does not care whether the timestamp is an exact hit — it only asks "how many writes are at or before this moment?" and takes the last of them.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: get("foo", 0) and get("foo", 9), the two edges</h2>
+      <p><code>get("foo", 0)</code>: <code>mid = 1</code>, <code>times[1] = 4 &lt;= 0</code> is false, so <code>hi = 1</code>. <code>mid = 0</code>, <code>times[0] = 1 &lt;= 0</code> is false, so <code>hi = 0</code>. The loop ends with <code>lo = 0</code>: zero writes qualify. The guard <code>if lo == 0: return ""</code> fires and the answer is <strong>""</strong>. Without that guard the code would compute <code>values[-1]</code>, which Python happily resolves to the <em>newest</em> value.</p>
+      <p><code>get("foo", 9)</code>: <code>mid = 1</code>, <code>4 &lt;= 9</code>, <code>lo = 2</code>. <code>mid = 2</code>, <code>7 &lt;= 9</code>, <code>lo = 3</code>. Now <code>lo == hi == 3</code> — all three writes qualify — and the answer is <code>values[3 - 1] = values[2]</code>, which is <strong>"bar3"</strong>. This is why <code>hi</code> starts at <code>len(times)</code> rather than <code>len(times) - 1</code>: <code>lo</code> has to be able to reach 3.</p>
+      <div class="callout">Every <code>get</code> did two probes on a three-element history. A history of a hundred thousand writes needs seventeen.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the comparison and the offset</h2>
+      <p><strong>Strict less-than.</strong> Write <code>if times[mid] &lt; timestamp</code> and the search computes the <em>left</em> insertion point instead of the right one: an exact hit is treated as "too new". On <code>get("foo", 4)</code>, <code>mid = 1</code> gives <code>4 &lt; 4</code> false, so <code>hi = 1</code>; then <code>mid = 0</code>, <code>1 &lt; 4</code>, <code>lo = 1</code>. The result is <code>values[0]</code> = <strong>"bar"</strong>, the value from <em>before</em> the write at 4. The problem says "at or before", so the comparison must be <code>&lt;=</code>.</p>
+      <p><strong>Returning <code>values[lo]</code>.</strong> <code>lo</code> is the insertion point, one past the last qualifying write. <code>get("foo", 5)</code> ends with <code>lo = 2</code> and would return <code>values[2]</code> = <strong>"bar3"</strong>, a value from the future; <code>get("foo", 9)</code> ends with <code>lo = 3</code> and raises <code>IndexError</code>.</p>
+      <p><strong>Dropping the <code>lo == 0</code> guard.</strong> <code>values[0 - 1]</code> is <code>values[-1]</code>, so <code>get("foo", 0)</code> returns <strong>"bar3"</strong> instead of <code>""</code>. Python's negative indexing turns an off-by-one into a silently wrong answer rather than a crash.</p>
+      <div class="callout warn">Search with <code>&lt;=</code>, treat <code>lo</code> as a count, and answer with <code>values[lo - 1]</code> — after checking that the count is not zero.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p><code>set</code> is two list appends: <strong>O(1)</strong> amortized. <code>get</code> is a dict lookup plus a binary search over that key's k writes: <strong>O(log k)</strong>. The store keeps every write, so space is <strong>O(n)</strong> in the total number of <code>set</code> calls — which is unavoidable, since any of them might be asked about later.</p>
+      <table>
+        <tr><th>Approach</th><th>set</th><th>get</th><th>Space</th></tr>
+        <tr><td>Per-key list, scan on read</td><td>O(1)</td><td>O(k)</td><td>O(n)</td></tr>
+        <tr><td>Per-key dict timestamp → value, walk back from t</td><td>O(1)</td><td>O(t) worst case</td><td>O(n)</td></tr>
+        <tr><td>Per-key sorted list, binary search</td><td>O(1)</td><td>O(log k)</td><td>O(n)</td></tr>
+      </table>
+      <p>The middle row is a tempting wrong turn: a plain dict answers exact-timestamp reads in O(1), but a read at a timestamp nobody wrote has to count downward until it finds one, and timestamps go up to 10⁷.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>The whole class. Every line maps to a step above.</p>
+      <ul>
+        <li><code>self.times</code> and <code>self.values</code> — parallel per-key lists, so the search reads plain integers.</li>
+        <li><code>setdefault(key, []).append(...)</code> — <code>set</code> is an append; the order guarantee keeps the list sorted.</li>
+        <li><code>if key not in self.times: return ""</code> — unknown key.</li>
+        <li><code>lo, hi = 0, len(times)</code> — exclusive <code>hi</code> so <code>lo</code> can reach the end.</li>
+        <li><code>if times[mid] &lt;= timestamp: lo = mid + 1</code> — an exact hit counts as old enough.</li>
+        <li><code>else: hi = mid</code> — too new, keep <code>mid</code> as a possible boundary.</li>
+        <li><code>if lo == 0: return ""</code> — nothing is old enough.</li>
+        <li><code>return self.values[key][lo - 1]</code> — the last qualifying write.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>writes arrive in order, so append them and answer reads with a rightmost-<code>&lt;=</code> binary search (bisect_right minus one).</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>history of "foo" · value over timestamp · <span id="target">empty</span></h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>search variables</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="time_based_key_value_store.py">time_based_key_value_store.py</a> · <a href="time_based_key_value_store_annotated.py">time_based_key_value_store_annotated.py</a> · <a href="test_time_based_key_value_store.py">test_time_based_key_value_store.py</a> · <a href="../../md.html?f=medium/039-time-based-key-value-store/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class TimeMap:",
+    "    def __init__(self) -> None:",
+    "        self.times: dict[str, list[int]] = {}",
+    "        self.values: dict[str, list[str]] = {}",
+    "",
+    "    def set(self, key: str, value: str, timestamp: int) -> None:",
+    "        self.times.setdefault(key, []).append(timestamp)",
+    "        self.values.setdefault(key, []).append(value)",
+    "",
+    "    def get(self, key: str, timestamp: int) -> str:",
+    "        if key not in self.times:",
+    "            return \"\"",
+    "        times = self.times[key]",
+    "        lo, hi = 0, len(times)",
+    "        while lo < hi:",
+    "            mid = (lo + hi) // 2",
+    "            if times[mid] <= timestamp:",
+    "                lo = mid + 1",
+    "            else:",
+    "                hi = mid",
+    "        if lo == 0:",
+    "            return \"\"",
+    "        return self.values[key][lo - 1]"
+  ];
+
+  // The history of "foo" after all three sets: parallel times / values lists.
+  var HIST = [[1, "bar"], [4, "bar2"], [7, "bar3"]];
+
+  // Each state describes what the sticky panel shows for one step.
+  // hist: the [timestamp, value] pairs stored so far; op: the operation being shown;
+  // lo/hi/mid: the search range at that moment (hi exclusive); found: the index returned (-1 = none).
+  // Values verified by running the Python.
+  var STATES = {
+    problem: {
+      caption: "Remember every write to a key, and answer \"what was the value at time t?\".",
+      hist: HIST, op: "3 sets done", lo: 0, hi: 3, mid: -1, found: -1, vars: [],
+      meta: "get(\"foo\", 5) must return \"bar2\": the write at 4 is the latest one at or before 5.", hl: []
+    },
+    brute: {
+      caption: "Scan the whole history on every get, keeping the last write that is old enough.",
+      hist: HIST, op: "get(\"foo\", 5)", lo: 0, hi: 3, mid: -1, found: 1,
+      vars: [["t", 5], ["best", "\"bar2\"", "new"]],
+      meta: "1 ≤ 5 (best = bar), 4 ≤ 5 (best = bar2), 7 ≤ 5 no. Three checks for three writes.", hl: [],
+      big: "O(k) per get", bigNote: "k writes to the key, all inspected every read"
+    },
+    idea: {
+      caption: "times = [1, 4, 7] is sorted, so \"times[i] <= t\" is yes, yes, no — a boundary to binary search.",
+      hist: HIST, op: "get(\"foo\", 5)", lo: 0, hi: 3, mid: -1, found: 1, vars: [],
+      meta: "<b>yes</b>, <b>yes</b>, no — return the last yes, which is index lo − 1.", hl: [13, 16]
+    },
+    approach: {
+      caption: "set appends to two parallel lists; get searches times with hi = len(times), exclusive.",
+      hist: HIST, op: "get(\"foo\", 4)", lo: 0, hi: 3, mid: -1, found: -1,
+      vars: [["lo", 0, "new"], ["hi", 3, "new"], ["t", 4]],
+      meta: "Invariant: everything before <b>lo</b> is ≤ t, everything from <b>hi</b> on is &gt; t.", hl: [6, 7, 13, 14]
+    },
+    t1: {
+      caption: "get(\"foo\", 4): mid = 1, times[1] = 4 <= 4 so lo = 2; mid = 2, 7 <= 4 false so hi = 2. Return values[1].",
+      hist: HIST, op: "get(\"foo\", 4)", lo: 2, hi: 2, mid: 2, found: 1,
+      vars: [["lo", 2, "found"], ["hi", 2, "found"], ["mid", 2], ["t", 4], ["values[lo-1]", "\"bar2\"", "found"]],
+      meta: "The exact hit at 4 counted as old enough (≤, not &lt;). Two timestamps qualify, so answer index 1.", hl: [15, 16, 17, 19, 22],
+      big: "\"bar2\"", bigNote: "get(\"foo\", 4)"
+    },
+    t2: {
+      caption: "get(\"foo\", 5): the same two probes, lo ends at 2 again, so values[1] = \"bar2\".",
+      hist: HIST, op: "get(\"foo\", 5)", lo: 2, hi: 2, mid: 2, found: 1,
+      vars: [["lo", 2, "found"], ["hi", 2, "found"], ["mid", 2], ["t", 5], ["values[lo-1]", "\"bar2\"", "found"]],
+      meta: "Nobody wrote at 5. The search just counts writes at or before 5: there are 2, so take the second.", hl: [15, 16, 17, 19, 22],
+      big: "\"bar2\"", bigNote: "get(\"foo\", 5) — falls back to the write at 4"
+    },
+    t3: {
+      caption: "get(\"foo\", 0) ends with lo = 0 → \"\". get(\"foo\", 9) ends with lo = 3 → values[2] = \"bar3\".",
+      hist: HIST, op: "get(\"foo\", 9)", lo: 3, hi: 3, mid: 2, found: 2,
+      vars: [["lo", 3, "found"], ["hi", 3, "found"], ["t", 9], ["values[lo-1]", "\"bar3\"", "found"]],
+      meta: "For t = 0 both probes fail and lo stays 0: the guard returns \"\" instead of values[-1].", hl: [17, 20, 21, 22],
+      big: "\"bar3\"", bigNote: "get(\"foo\", 9); and get(\"foo\", 0) is \"\""
+    },
+    pitfall: {
+      caption: "times[mid] < timestamp treats the exact hit at 4 as too new: get(\"foo\", 4) returns \"bar\".",
+      hist: HIST, op: "get(\"foo\", 4) with <", lo: 1, hi: 1, mid: 0, found: 0,
+      vars: [["lo", 1], ["hi", 1], ["t", 4], ["values[lo-1]", "\"bar\"", "new"]],
+      meta: "4 &lt; 4 is false, so hi = 1; then 1 &lt; 4, lo = 1. One write \"qualifies\" instead of two.", hl: [16],
+      big: "\"bar\", not \"bar2\"", bigNote: "a strict < computes bisect_left and misses the exact write"
+    },
+    complexity: {
+      caption: "set is an append; get is a dict lookup plus log k probes over that key's history.",
+      hist: HIST, op: "any get", lo: 0, hi: 3, mid: -1, found: -1, vars: [],
+      meta: "Two probes for three writes; seventeen for a hundred thousand.", hl: [6, 7, 14, 15],
+      big: "set O(1) · get O(log k)", bigNote: "versus O(k) per get for the scan"
+    },
+    final: {
+      caption: "The whole class.",
+      hist: HIST, op: "3 sets done", lo: 0, hi: 3, mid: -1, found: -1, vars: [],
+      meta: "", hl: [1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.op;
+    $("meta").innerHTML = s.meta;
+
+    // one cell per stored write: value on top, timestamp underneath; dim outside [lo, hi)
+    var arr = "";
+    for (var i = 0; i < s.hist.length; i++) {
+      var cls = "cell";
+      if (i === s.found) cls += " hit";
+      else if (i === s.mid) cls += " cur";
+      else if (s.mid !== -1 && (i < s.lo || i >= s.hi)) cls += " dim";
+      var tag = [];
+      if (s.mid !== -1 && i === s.lo) tag.push("lo");
+      if (s.mid !== -1 && i === s.hi) tag.push("hi");
+      arr += '<div class="' + cls + '" style="font-size:1rem">' + s.hist[i][1] + '<span class="idx">t = ' + s.hist[i][0] + (tag.length ? " · " + tag.join("=") : "") + '</span></div>';
+    }
+    // an extra slot for the exclusive hi = len(times) position
+    if (s.mid !== -1 && s.hi === s.hist.length) {
+      arr += '<div class="cell dim" style="font-size:1rem;flex:0 0 64px">·<span class="idx">' + (s.lo === s.hi ? "lo=hi" : "hi") + ' = ' + s.hi + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">no search in progress</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

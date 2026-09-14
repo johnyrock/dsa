@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Balanced Binary Tree Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  .tree { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .tree .edge { stroke: var(--line); stroke-width: 2.5; fill: none; transition: stroke 0.25s, opacity 0.25s; }
+  .tree .edge.hit { stroke: var(--ok); }
+  .tree .edge.bad { stroke: var(--warn); stroke-dasharray: 5 4; }
+  .tree .edge.dim { opacity: 0.35; }
+  .tree .edge.off { display: none; }
+  .tree .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2.5; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .tree .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 17px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .tree .node.cur circle { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3.5; }
+  .tree .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .tree .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .tree .node.dim circle, .tree .node.dim text { opacity: 0.4; }
+  .tree .node.off { display: none; }
+  .tree .badge { fill: var(--accent); font-size: 11px; font-weight: 700; text-anchor: start; font-family: ui-monospace, Menlo, monospace; }
+  .tree .node text.badge { text-anchor: start; font-size: 11px; font-weight: 700; }
+  .tree .node.hit .badge { fill: var(--ok); }
+  .tree .node.bad .badge { fill: var(--warn); }
+  .tree .ghost { fill: none; stroke: var(--warn); stroke-width: 2; stroke-dasharray: 4 3; }
+  .tree .ghost-lbl { fill: var(--warn); font-size: 11px; text-anchor: middle; dominant-baseline: central; font-family: ui-monospace, Menlo, monospace; }
+  .tree .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .tree .title { fill: var(--muted); font-size: 12px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; letter-spacing: 0.05em; }
+  .array.compact { gap: 4px; margin-top: 2px; }
+  .array.compact .cell { min-width: 28px; padding: 3px 0 2px; font-size: 0.9rem; border-width: 1.5px; border-radius: 6px; }
+  .array.compact .cell.cur { transform: none; }
+  .cell.bad { border-color: var(--warn); background: var(--warn-soft); }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#easy">← All walkthroughs</a>
+  <div class="tag">Easy · Tree · LeetCode #110</div>
+  <h1>Balanced Binary Tree, narrated</h1>
+  <p>Scroll from the O(n²) height-at-every-node check to a single post-order pass that returns -1 as an imbalance sentinel, with each node's returned height shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/tree-traversal.html">Tree</a> <span class="how">A tree is balanced only when every node's child heights differ by at most one. Return a height, but use -1 to carry an unbalanced result upward.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Given the root of a binary tree, decide whether it is <em>height-balanced</em>: at <strong>every</strong> node, the height of the left subtree and the height of the right subtree differ by at most 1. The height of an empty subtree is 0, and a leaf has height 1.</p>
+      <div class="callout">Running example: <code>root = [3,9,20,null,null,15,7]</code> in level order. Node 3 has children 9 and 20; node 20 has children 15 and 7. The answer is <strong>true</strong>.</div>
+      <p>The word "every" is what makes this problem interesting. It is not enough to compare the two subtrees under the root; a tree can look balanced at the top and still hide a lopsided subtree three levels down. The answer is a single boolean, but earning it means checking the gap at each of the <code>n</code> nodes.</p>
+      <p>The README's second example, <code>[1,2,2,3,3,null,null,4,4]</code>, is the counterexample: its left arm is two levels deeper than its right arm, so the answer there is <strong>false</strong>. We will come back to it in the pitfalls step.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: a height function plus a check at every node</h2>
+      <p>Write the definition straight into code. First a helper that computes the height of a subtree:</p>
+      <pre class="code"><span class="ln">def height(node):</span><span class="ln">    if node is None:</span><span class="ln">        return 0</span><span class="ln">    return 1 + max(height(node.left), height(node.right))</span></pre>
+      <p style="margin-top:14px">Then a second recursive function that, at each node, computes <code>abs(height(node.left) - height(node.right))</code>, rejects if it is greater than 1, and otherwise recurses into both children to check them too.</p>
+      <p>This is correct, and it is the version most people write first. The problem is that <code>height</code> is called from scratch at every node. On the running example the root calls <code>height</code> on the whole 20-subtree, and then when the check moves down to node 20, it walks that same subtree again. The panel's <code>h?</code> badges on 9 and 20 mark those two full height walks the root alone triggers.</p>
+      <p>On a bushy tree the repeated work is tolerable, but on a chain (every node has only one child) the node at depth <code>k</code> re-walks the <code>n - k</code> nodes below it, and the total is 1 + 2 + … + n, which is <strong>O(n²)</strong>. With up to 5000 nodes, that is around 12 million visits for a job that needs 5000.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: one return value can carry two facts</h2>
+      <p>The waste in the brute force comes from separating two questions that are answered by the same walk. Computing a node's height already visits both children; the balance check at that node needs exactly the two numbers that walk produces. So compute them <em>once</em>, and let the height function report imbalance as well.</p>
+      <div class="callout">Heights are never negative, so <code>-1</code> is free to mean "something below here is unbalanced". <code>height</code> returns a real height (0 or more) when the subtree is balanced, and the sentinel <code>-1</code> the moment it is not.</div>
+      <p>The panel shows the two possible outcomes for the root: a normal height, or <code>-1</code>. The highlighted lines are the decision: <code>if right_height == -1 or abs(left_height - right_height) &gt; 1: return -1</code>, and otherwise <code>return 1 + max(left_height, right_height)</code>.</p>
+      <p>Once a <code>-1</code> appears anywhere, every ancestor sees it and passes it up without doing any more work, so the final answer at the top is just <code>height(root) != -1</code>.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: post-order, bail out early</h2>
+      <p>The recursion is post-order: a node's own result is computed <em>after</em> both children have reported. At node 3 the panel shows <code>left = ?</code> and <code>right = ?</code>, because nothing is known until the calls return.</p>
+      <ul>
+        <li><code>left_height = height(node.left)</code> — recurse into the left child first.</li>
+        <li><code>if left_height == -1: return -1</code> — if the left subtree is already unbalanced, do not bother walking the right one.</li>
+        <li><code>right_height = height(node.right)</code> — otherwise recurse into the right child.</li>
+        <li><code>if right_height == -1 or abs(left_height - right_height) &gt; 1: return -1</code> — reject if the right side is unbalanced, or if this node's own gap is 2 or more.</li>
+        <li><code>return 1 + max(left_height, right_height)</code> — this node is fine; report its height like any ordinary height function.</li>
+      </ul>
+      <p>Every parent receives each child's height exactly once, so every node is visited exactly once. The early return after the left call is what turns an unbalanced left subtree into a genuine short-circuit rather than just a flag.</p>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the leaves</h2>
+      <p>Start at the root, node 3. It calls <code>height(node.left)</code>, which is node 9. Node 9 in turn calls <code>height</code> on its left child, which is <code>None</code>, and gets <code>0</code> back from the base case; the same happens on the right. So at node 9, <code>left = 0</code>, <code>right = 0</code>, the gap <code>abs(0 - 0)</code> is 0, and it returns <code>1 + max(0, 0) = 1</code>.</p>
+      <p>The panel marks that with <code>→1</code> next to node 9, and draws the ghost <code>0</code> below it to show where the base-case value came from. Leaves 15 and 7 go through exactly the same steps later in the walk and each return height 1, which is why they carry <code>→1</code> badges too.</p>
+      <p>Back at the root, <code>left_height</code> is now <code>1</code>. It is not <code>-1</code>, so the root proceeds to <code>right_height = height(node.right)</code> and the walk moves to node 20.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: node 20</h2>
+      <p>Node 20 calls <code>height</code> on 15, gets <code>1</code>, checks that it is not <code>-1</code>, then calls <code>height</code> on 7 and gets <code>1</code>. So <code>left = 1</code>, <code>right = 1</code>, and <code>abs(1 - 1) = 0</code>.</p>
+      <p>Neither child returned the sentinel and the gap is within 1, so the rejection line does not fire. Node 20 returns <code>1 + max(1, 1) = 2</code>: the badge <code>→2</code> in the panel.</p>
+      <p>This is the normal case. A balanced node behaves exactly like a plain height function; the sentinel logic only costs two comparisons and never changes the value flowing upward.</p>
+    </section>
+
+    <section class="step" data-state="trace3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the root, and the answer</h2>
+      <p>The root now has both numbers: <code>left = 1</code> from node 9 and <code>right = 2</code> from node 20. The gap is <code>abs(1 - 2) = 1</code>. The check is <code>&gt; 1</code>, and 1 is not greater than 1, so a gap of exactly one is allowed.</p>
+      <p>The root returns <code>1 + max(1, 2) = 3</code>, which is the height of the whole tree. The outer function then evaluates <code>height(root) != -1</code>: <code>3 != -1</code> is <strong>true</strong>, and that is the answer.</p>
+      <div class="callout">Five nodes, five calls to <code>height</code> (plus the trivial <code>None</code> base cases). The brute force would have called its height helper on the 20-subtree twice, visiting leaves 15 and 7 once from the root and again from node 20.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong</h2>
+      <p>The panel switches to the README's second example, <code>[1,2,2,3,3,null,null,4,4]</code>. The two 4s hang below the left-hand 3s and are not drawn, but they are why the left 2 has height 3 while the right 2 has height 1. Only the root has a gap of 2; every other node in that tree is individually balanced.</p>
+      <p><strong>Checking the gap only at the root.</strong> Writing <code>abs(height(root.left) - height(root.right)) &lt;= 1</code> and returning happens to give the right answer here (3 − 1 = 2, so <strong>false</strong>), which is what makes it dangerous: it passes this test and fails any tree whose imbalance sits below a root with two equally tall arms. The check must run at every node, which is why it lives inside the recursive <code>height</code> rather than in <code>is_balanced</code>.</p>
+      <p><strong>Dropping the gap test from the sentinel version.</strong> If the rejection line is shortened to <code>if right_height == -1: return -1</code>, no node ever produces a <code>-1</code> in the first place. The root computes <code>1 + max(3, 1) = 4</code>, <code>4 != -1</code> is true, and the function returns <strong>true</strong> for a tree that is plainly unbalanced. Both halves of that <code>or</code> are needed: one forwards a child's verdict, the other makes this node's own verdict.</p>
+      <p><strong>Forgetting to forward the sentinel.</strong> Skip the <code>if left_height == -1: return -1</code> guard and a <code>-1</code> from below gets fed into <code>abs(-1 - 0) = 1</code>, which passes, and then into <code>1 + max(-1, 0) = 1</code>, which looks like a perfectly healthy leaf. The imbalance is laundered into a valid height and the final answer is wrongly <strong>true</strong>.</p>
+      <div class="callout warn">And the brute force from step 2 is not <em>wrong</em>, only slow: recomputing heights at every node still returns false here, but on a 5000-node chain it does roughly 12 million node visits where the sentinel version does 5000.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Each node is entered by <code>height</code> exactly once and does constant work of its own (two comparisons, an <code>abs</code>, a <code>max</code>), so the time is <strong>O(n)</strong>. The badges in the panel are the five heights computed for the five nodes, each computed once.</p>
+      <p>The only extra memory is the recursion stack, which is as deep as the tree is tall: <strong>O(h)</strong>. For a balanced tree that is about <code>log n</code>; for a chain it degrades to <code>n</code>, and Python's default recursion limit of 1000 is worth remembering for chains near the 5000-node constraint.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Height helper + check at every node</td><td>O(n²) on a chain, O(n log n) when balanced</td><td>O(h) call stack</td></tr>
+        <tr><td>Height with <code>-1</code> sentinel</td><td>O(n)</td><td>O(h) call stack</td></tr>
+      </table>
+      <p>The sentinel also short-circuits: once a <code>-1</code> is found, every remaining ancestor returns immediately and any unvisited right subtrees on the path are never walked at all.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>One nested helper and one comparison. Line by line:</p>
+      <ul>
+        <li><code>def height(node):</code> — a height function that doubles as the balance checker, via its return value.</li>
+        <li><code>if node is None: return 0</code> — an empty subtree has height 0 and is trivially balanced.</li>
+        <li><code>left_height = height(node.left)</code> — post-order: ask the left child first.</li>
+        <li><code>if left_height == -1: return -1</code> — forward an unbalanced verdict immediately, without touching the right side.</li>
+        <li><code>right_height = height(node.right)</code> — now ask the right child.</li>
+        <li><code>if right_height == -1 or abs(left_height - right_height) &gt; 1: return -1</code> — reject if the right side is unbalanced, or if this node's own gap is 2 or more.</li>
+        <li><code>return 1 + max(left_height, right_height)</code> — otherwise this node is balanced; report its real height.</li>
+        <li><code>return height(root) != -1</code> — the tree is balanced exactly when the root's result is a real height.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>compute heights bottom-up, and return −1 instead of a height the moment any node's children differ by more than one.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>tree · root = [3,9,20,null,null,15,7]</h3>
+        <svg class="tree" id="tree" viewBox="0 0 400 210" aria-label="binary tree"></svg>
+        <div class="array compact" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>current call · child heights · sentinel</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="balanced_binary_tree.py">balanced_binary_tree.py</a> · <a href="balanced_binary_tree_annotated.py">balanced_binary_tree_annotated.py</a> · <a href="test_balanced_binary_tree.py">test_balanced_binary_tree.py</a> · <a href="../../md.html?f=easy/015-balanced-binary-tree/notes.md">notes.md</a> · <a href="../../index.html#easy">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = ["class Solution:", "    def is_balanced(self, root):", "        def height(node):", "            if node is None:", "                return 0", "            left_height = height(node.left)", "            if left_height == -1:", "                return -1", "            right_height = height(node.right)", "            if right_height == -1 or abs(left_height - right_height) > 1:", "                return -1", "            return 1 + max(left_height, right_height)", "", "        return height(root) != -1"];
+
+  // tree: level-order values (null = absent). cur/hits/dim/bad: level-order indices. badges: height returned by that node (-1 = unbalanced).
+  var STATES = {
+    problem: {"caption": "Balanced means every node's two child heights differ by at most 1.", "tree": [3, 9, 20, null, null, 15, 7], "cur": -1, "hits": [], "dim": [], "bad": [], "badges": {}, "vars": [], "meta": "Level order: 3, 9, 20, ·, ·, 15, 7. Expected: true.", "hl": []},
+    brute: {"caption": "Check abs(height(left) - height(right)) at every node with a separate height function.", "tree": [3, 9, 20, null, null, 15, 7], "cur": 0, "hits": [], "dim": [], "bad": [], "badges": {"1": "h?", "2": "h?"}, "vars": [["per node", "2 full height walks"]], "meta": "Root walks the 20-subtree; then 20 walks it again. On a chain the re-walks make it O(n²).", "hl": [], "big": "O(n²)", "bigNote": "heights recomputed for every ancestor"},
+    insight: {"caption": "Return the height, but return -1 as a sentinel the moment any subtree is unbalanced.", "tree": [3, 9, 20, null, null, 15, 7], "cur": 0, "hits": [], "dim": [], "bad": [], "badges": {"0": "h or -1"}, "vars": [["balanced", "height ≥ 0", "new"], ["unbalanced", "-1", "bad"]], "meta": "One return value carries both facts: the height, and whether to give up.", "hl": [9, 10, 11]},
+    approach: {"caption": "Post-order: left height first, bail if -1; right height, bail if -1 or gap > 1.", "tree": [3, 9, 20, null, null, 15, 7], "cur": 0, "hits": [], "dim": [3, 4, 5, 6], "bad": [], "badges": {"1": "?", "2": "?"}, "vars": [["node", "3", "new"], ["left", "?"], ["right", "?"]], "meta": "Every parent gets both child heights once.", "hl": [5, 6, 7, 8, 9, 10, 11]},
+    trace1: {"caption": "Leaves 9, 15, 7: children are None (0 and 0), gap 0 → each returns height 1.", "tree": [3, 9, 20, null, null, 15, 7], "cur": 1, "hits": [5, 6], "dim": [2], "bad": [], "badges": {"1": "→1", "5": "→1", "6": "→1"}, "ghost": [3, "0"], "vars": [["node", "9", "new"], ["left", "0"], ["right", "0"], ["abs gap", "0"], ["return", "1", "found"]], "meta": "Root now holds left = 1 and moves to node 20.", "hl": [5, 8, 9, 11]},
+    trace2: {"caption": "Node 20: left = 1, right = 1, gap 0 → balanced, returns 1 + max(1, 1) = 2.", "tree": [3, 9, 20, null, null, 15, 7], "cur": 2, "hits": [5, 6], "dim": [1], "bad": [], "badges": {"1": "1", "5": "1", "6": "1", "2": "→2"}, "vars": [["node", "20", "new"], ["left", "1"], ["right", "1"], ["abs gap", "0"], ["return", "2", "found"]], "meta": "Neither child returned -1, so the normal height flows up.", "hl": [9, 11]},
+    trace3: {"caption": "Root 3: left = 1, right = 2, gap 1 → returns 3, which is not -1 → true.", "tree": [3, 9, 20, null, null, 15, 7], "cur": 0, "hits": [1, 2, 5, 6], "dim": [], "bad": [], "badges": {"1": "1", "2": "2", "5": "1", "6": "1", "0": "→3"}, "vars": [["node", "3", "new"], ["left", "1"], ["right", "2"], ["abs gap", "1"], ["height(root)", "3 ≠ -1", "found"]], "meta": "A gap of exactly 1 is allowed.", "hl": [9, 11, 13], "big": "true", "bigNote": "is_balanced([3,9,20,null,null,15,7])"},
+    pitfall: {"caption": "Without the sentinel, a deep imbalance only shows up at the node where the gap is 2.", "tree": [1, 2, 2, 3, 3, null, null], "cur": 0, "hits": [], "dim": [], "bad": [2, 0], "badges": {"3": "2", "4": "2", "1": "3", "2": "1", "0": "3−1=2"}, "vars": [["tree", "[1,2,2,3,3,null,null,4,4]"], ["at root", "left 3, right 1 → gap 2", "bad"]], "meta": "Below the left 3s sit two more leaves (4, 4, not drawn), so the left arm is height 3 and the root's gap is 2. Recomputing heights per node still finds it, but pays O(n²); the -1 sentinel finds it in one pass.", "hl": [6, 7, 9, 10], "big": "false", "bigNote": "[1,2,2,3,3,null,null,4,4] is unbalanced"},
+    complexity: {"caption": "Each node visited once; the sentinel short-circuits the rest.", "tree": [3, 9, 20, null, null, 15, 7], "cur": -1, "hits": [0, 1, 2, 5, 6], "dim": [], "bad": [], "badges": {"0": "3", "1": "1", "2": "2", "5": "1", "6": "1"}, "vars": [["n", "5"], ["h", "3"]], "meta": "Height and balance check share a single post-order pass.", "hl": [], "big": "O(n) time · O(h) space", "bigNote": "h = log n balanced, n for a chain"},
+    final: {"caption": "Height with a -1 sentinel for imbalance.", "tree": [3, 9, 20, null, null, 15, 7], "cur": -1, "hits": [], "dim": [], "bad": [], "badges": {"0": "3", "1": "1", "2": "2", "5": "1", "6": "1"}, "vars": [["is_balanced(root)", "true", "found"]], "meta": "", "hl": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13]}
+  };
+
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function makeTree(svg, POS, R, dx, title) {
+    var g0 = el("g", {}); svg.appendChild(g0);
+    if (title) g0.appendChild(el("text", { x: dx + POS[0][0], y: 12, "class": "title" }, title));
+    var edges = [], nodes = [], texts = [], badges = [];
+    for (var i = 1; i < POS.length; i++) {
+      var p = POS[(i - 1) >> 1];
+      var e = el("line", { "class": "edge", x1: dx + p[0], y1: p[1], x2: dx + POS[i][0], y2: POS[i][1] });
+      g0.appendChild(e); edges[i] = e;
+    }
+    var ghostLayer = el("g", {}); g0.appendChild(ghostLayer);
+    for (var j = 0; j < POS.length; j++) {
+      var g = el("g", { "class": "node" });
+      g.appendChild(el("circle", { cx: dx + POS[j][0], cy: POS[j][1], r: R }));
+      var t = el("text", { x: dx + POS[j][0], y: POS[j][1] });
+      g.appendChild(t);
+      var b = el("text", { x: dx + POS[j][0] + R + 3, y: POS[j][1] + 4, "class": "badge" });
+      g.appendChild(b);
+      g0.appendChild(g); nodes[j] = g; texts[j] = t; badges[j] = b;
+    }
+    function has(arr, i) { return arr && arr.indexOf(i) !== -1; }
+    return function draw(s) {
+      var tree = s.tree, badgeMap = s.badges || {};
+      for (var i = 0; i < POS.length; i++) {
+        var v = i < tree.length ? tree[i] : null;
+        var parentOff = i > 0 && (((i - 1) >> 1) >= tree.length || tree[(i - 1) >> 1] === null);
+        var off = v === null || parentOff;
+        var cls = "node";
+        if (off) cls += " off";
+        else if (i === s.cur) cls += " cur";
+        else if (has(s.bad, i)) cls += " bad";
+        else if (has(s.hits, i)) cls += " hit";
+        else if (has(s.dim, i)) cls += " dim";
+        nodes[i].setAttribute("class", cls);
+        texts[i].textContent = off ? "" : v;
+        badges[i].textContent = off ? "" : (badgeMap[i] !== undefined ? badgeMap[i] : "");
+        if (i > 0) {
+          var ec = "edge";
+          if (off) ec += " off";
+          else if (has(s.bad, i)) ec += " bad";
+          else if (has(s.hits, i)) ec += " hit";
+          else if (has(s.dim, i)) ec += " dim";
+          edges[i].setAttribute("class", ec);
+        }
+      }
+      while (ghostLayer.firstChild) ghostLayer.removeChild(ghostLayer.firstChild);
+      if (s.ghost) {
+        var gp = POS[s.ghost[0]];
+        var pp = POS[(s.ghost[0] - 1) >> 1];
+        ghostLayer.appendChild(el("line", { "class": "edge bad", x1: dx + pp[0], y1: pp[1], x2: dx + gp[0], y2: gp[1] }));
+        ghostLayer.appendChild(el("circle", { cx: dx + gp[0], cy: gp[1], r: R, "class": "ghost" }));
+        ghostLayer.appendChild(el("text", { x: dx + gp[0], y: gp[1], "class": "ghost-lbl" }, s.ghost[1]));
+      }
+    };
+  }
+  var POS7 = [[200, 32], [105, 102], [295, 102], [55, 172], [155, 172], [245, 172], [345, 172]];
+  var POS7S = [[100, 46], [55, 112], [145, 112], [30, 178], [80, 178], [120, 178], [170, 178]];
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function renderVars(vars) {
+    if (!vars || vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">nothing returned yet</span>';
+      return;
+    }
+    var d = "";
+    for (var k = 0; k < vars.length; k++) {
+      var e = vars[k];
+      d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+    }
+    $("dict").innerHTML = d;
+  }
+  function renderBig(s) {
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+  }
+  function renderCode(hl) {
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  var drawTree = makeTree(document.getElementById("tree"), POS7, 21, 0, "");
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+    drawTree(s);
+    var arr = "";
+    for (var i = 0; i < s.tree.length; i++) {
+      var v = s.tree[i];
+      var cls = "cell";
+      if (v === null) cls += " dim";
+      else if (i === s.cur) cls += " cur";
+      else if (s.bad.indexOf(i) !== -1) cls += " bad";
+      else if (s.hits.indexOf(i) !== -1) cls += " hit";
+      else if (s.dim.indexOf(i) !== -1) cls += " dim";
+      arr += '<div class="' + cls + '">' + (v === null ? "·" : v) + '</div>';
+    }
+    $("array").innerHTML = arr;
+    renderVars(s.vars);
+    renderBig(s);
+    renderCode(s.hl);
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

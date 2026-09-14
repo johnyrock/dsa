@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Merge Triplets to Form Target Triplet Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  /* merge-triplets additions: one compact row of three cells per triplet */
+  .array.compact { gap: 4px; margin: 2px 0; }
+  .array.compact .cell { min-width: 28px; padding: 3px 0 2px; font-size: 0.95rem; border-width: 1.5px; border-radius: 6px; }
+  .array.compact .cell.cur { transform: none; }
+  .cell.bad { border-color: var(--warn); background: var(--warn-soft); }
+  .rows { display: flex; flex-direction: column; gap: 4px; margin: 6px 0 4px; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .row .rl { width: 92px; flex: none; font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; color: var(--muted); text-align: right; }
+  .row .rl.cur { color: var(--accent); font-weight: 700; }
+  .row .rl.bad { color: var(--warn); font-weight: 700; }
+  .row .rl.hit { color: var(--ok); font-weight: 700; }
+  .row .array { flex: 1; }
+  .row.target { padding-bottom: 6px; margin-bottom: 4px; border-bottom: 1px dashed var(--line); }
+  .dict .kv.bad { border-color: var(--warn); background: var(--warn-soft); }
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Greedy · LeetCode #1899</div>
+  <h1>Merge Triplets to Form Target Triplet, narrated</h1>
+  <p>Scroll through the thinking, from trying every subset of triplets to a single pass that throws out anything too big and merges everything else, with the triplets shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/greedy.html">Greedy</a> <span class="how">max only goes up, so skip any triplet that exceeds target and merge all the rest</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You have a list of <code>triplets</code>, each three integers, and one <code>target</code> triplet. One operation picks two triplets and replaces the second with their element-wise maximum: position by position, keep the larger value. You may do this as many times as you like.</p>
+      <p>The question is whether some sequence of operations can make one of the triplets equal <code>target</code> exactly, in all three positions.</p>
+      <div class="callout">Running example: <code>triplets = [[2, 5, 3], [1, 8, 4], [1, 7, 5]]</code>, <code>target = [2, 7, 5]</code>. Merging <code>[2, 5, 3]</code> with <code>[1, 7, 5]</code> gives <code>[max(2, 1), max(5, 7), max(3, 5)] = [2, 7, 5]</code>, so the answer is <strong>true</strong>.</div>
+      <p>Note what the operation cannot do. It never lowers a value. Once a position holds a number, every later merge leaves it the same or larger. That single fact is the whole solution.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every subset of triplets</h2>
+      <p>The merge is commutative and associative, so the result of merging a set of triplets does not depend on the order. That means the search space is "which triplets do I include?", and a brute force simply tries every non-empty subset, merges it, and compares against <code>target</code>:</p>
+      <pre class="code"><span class="ln">for mask in range(1, 1 &lt;&lt; len(triplets)):</span><span class="ln">    merged = [0, 0, 0]</span><span class="ln">    for i, t in enumerate(triplets):</span><span class="ln">        if mask &gt;&gt; i &amp; 1:</span><span class="ln">            merged = [max(a, b) for a, b in zip(merged, t)]</span><span class="ln">    if merged == target:</span><span class="ln">        return True</span><span class="ln">return False</span></pre>
+      <p style="margin-top:14px">For three triplets that is seven subsets, fine. The constraint allows <code>10^5</code> triplets, and <code>2^100000</code> subsets is not a number a computer will ever finish counting to. This is <strong>O(2ⁿ · n)</strong>, and the wasted work is obvious once you look at it: most subsets contain a triplet that has already ruined the result.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: a value above target is poison, everything else is free</h2>
+      <p>Look at <code>[1, 8, 4]</code> in the panel. Its middle value is 8 and the target's middle value is 7. If this triplet is ever merged in, the middle position becomes at least 8, and since <code>max</code> never goes down, it stays at least 8 forever. No subset containing <code>[1, 8, 4]</code> can work, so it should be skipped outright.</p>
+      <p>Now the flip side. Take a triplet where every value is <code>&lt;= target</code> in its position, like <code>[2, 5, 3]</code>. Merging it in can never push any position past the target, so including it is harmless. And if it is harmless, why be selective? Merge <em>every</em> safe triplet.</p>
+      <div class="callout">The greedy rule: discard any triplet with a value above <code>target</code> in some position, merge all the others, and see whether the result equals <code>target</code>. That is line 3's <code>all(triplet[i] &lt;= target[i] for i in range(3))</code> test, and the merge is what the <code>found</code> set stands in for.</div>
+      <p>Merging all safe triplets gives, in each position, the largest safe value seen there. That equals <code>target[i]</code> precisely when some safe triplet has <code>triplet[i] == target[i]</code>. So we do not even need to compute the merged triplet; we only need to know which positions got matched.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: one pass, a set of matched positions</h2>
+      <ul>
+        <li><code>found = set()</code> collects the positions (0, 1, 2) where some safe triplet equals the target.</li>
+        <li><code>for triplet in triplets</code>: look at each triplet exactly once, in any order.</li>
+        <li><code>if all(triplet[i] &lt;= target[i] for i in range(3))</code>: the safety check. A triplet fails it if any position is above the target.</li>
+        <li><code>if triplet[i] == target[i]: found.add(i)</code>: for a safe triplet, record every position it already matches.</li>
+        <li><code>return len(found) == 3</code>: all three positions were matched by safe triplets, so merging all of them is exactly <code>target</code>.</li>
+      </ul>
+      <p>The panel shows the target row on top, the three input rows below it, and the <code>found</code> set as the running variable. Green cells are positions that match the target; an amber cell is the value that disqualifies a triplet.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: <code>[2, 5, 3]</code> is safe and matches position 0</h2>
+      <p>Safety check against <code>[2, 7, 5]</code>: <code>2 &lt;= 2</code>, <code>5 &lt;= 7</code>, <code>3 &lt;= 5</code>. All three hold, so this triplet may be merged.</p>
+      <p>Now the equality check position by position. <code>2 == 2</code> at position 0, so <code>found.add(0)</code>. <code>5 == 7</code> is false and <code>3 == 5</code> is false, so nothing else is added. After the first triplet, <code>found = {0}</code>.</p>
+      <p>Notice that we did not build a merged triplet anywhere. The set is enough, because the only thing that matters about the eventual merge is whether each position reaches the target.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: <code>[1, 8, 4]</code> fails the safety check</h2>
+      <p>Safety check: <code>1 &lt;= 2</code> holds, but <code>8 &lt;= 7</code> is false. <code>all(...)</code> short-circuits to <code>False</code> on the second position, so the inner loop never runs and the triplet is skipped.</p>
+      <p>It is worth seeing why this is correct rather than merely convenient. If this triplet were merged in, the middle value would become <code>max(5, 8) = 8</code>, and no later merge could bring it back down to 7. The triplet does happen to have nothing useful anyway, since its <code>1</code> and <code>4</code> match nothing, but even a triplet like <code>[2, 8, 5]</code> with two exact matches would have to be thrown away.</p>
+      <div class="callout"><code>found</code> is still <code>{0}</code>. Skipping never changes it.</div>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: <code>[1, 7, 5]</code> completes the set</h2>
+      <p>Safety check: <code>1 &lt;= 2</code>, <code>7 &lt;= 7</code>, <code>5 &lt;= 5</code>. Safe. Equality: <code>1 == 2</code> is false, <code>7 == 7</code> adds 1, <code>5 == 5</code> adds 2. Now <code>found = {0, 1, 2}</code>.</p>
+      <p>The loop ends. <code>len(found) == 3</code>, so the function returns <strong>true</strong>. Cross-check with the actual merge: <code>[2, 5, 3]</code> and <code>[1, 7, 5]</code> combine to <code>[max(2, 1), max(5, 7), max(3, 5)] = [2, 7, 5]</code>, the target.</p>
+      <p>The answer took three safety checks and nine comparisons. The brute force would have merged seven subsets, and on a large input would never finish.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: matching before checking safety</h2>
+      <p><strong>Recording matches from an unsafe triplet.</strong> It is tempting to fold the two loops into one: for each position, <code>if triplet[i] == target[i]: found.add(i)</code>, with no safety gate. Run that on the panel's input, <code>[[2, 8, 4], [1, 7, 5]]</code> with target <code>[2, 7, 5]</code>. The first triplet's <code>2</code> matches position 0 and gets recorded, even though its <code>8</code> makes the triplet unusable. The second adds positions 1 and 2, <code>len(found) == 3</code>, and the code says <strong>true</strong>. The real answer is <strong>false</strong>: the only triplet with a 2 in front also carries an 8, and nothing can reach <code>[2, 7, 5]</code>.</p>
+      <p><strong>Using <code>&lt;</code> instead of <code>&lt;=</code> in the safety check.</strong> Then a triplet that equals the target in some position, which is exactly the one you need, is thrown out. With <code>triplets = [[2, 7, 5]]</code> and the same target, the strict test fails on every position, <code>found</code> stays empty, and the function returns <strong>false</strong> for an input that is literally the target.</p>
+      <p><strong>Counting matches instead of collecting positions.</strong> A counter <code>matched += 1</code> reaches 3 on <code>[[2, 1, 1], [2, 1, 1], [2, 1, 1]]</code>, three matches all at position 0, and wrongly returns <strong>true</strong>. The set deduplicates for free.</p>
+      <div class="callout warn">Safety first, then equality. A triplet is either entirely usable or entirely discarded; it cannot contribute one good position while carrying one bad one.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Each triplet costs at most three comparisons for the safety check and three for the equality check, so the pass is <strong>O(n) time</strong>. <code>found</code> never holds more than three integers: <strong>O(1) space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Try every subset</td><td>O(2ⁿ · n)</td><td>O(1)</td></tr>
+        <tr><td>Merge every safe triplet, compare</td><td>O(n)</td><td>O(1)</td></tr>
+        <tr><td>Track matched positions only</td><td>O(n)</td><td>O(1)</td></tr>
+      </table>
+      <p>Merging every safe triplet into an explicit <code>[a, b, c]</code> and comparing at the end is just as fast; the set version simply skips building a value nobody reads.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Eight lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>found = set()</code> starts with no position matched.</li>
+        <li><code>for triplet in triplets</code> visits each triplet once; order is irrelevant.</li>
+        <li><code>if all(triplet[i] &lt;= target[i] for i in range(3))</code> discards any triplet that would overshoot.</li>
+        <li><code>if triplet[i] == target[i]: found.add(i)</code> records which positions this safe triplet already hits.</li>
+        <li><code>return len(found) == 3</code> is true exactly when merging all safe triplets yields the target.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>max never goes down, so throw away any triplet above the target and check that the rest cover all three positions.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>triplets vs target · <span id="target">target = [2, 7, 5]</span></h3>
+        <div class="rows" id="rows"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>matched positions</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="merge_triplets_to_form_target_triplet.py">merge_triplets_to_form_target_triplet.py</a> · <a href="merge_triplets_to_form_target_triplet_annotated.py">merge_triplets_to_form_target_triplet_annotated.py</a> · <a href="test_merge_triplets_to_form_target_triplet.py">test_merge_triplets_to_form_target_triplet.py</a> · <a href="../../md.html?f=medium/090-merge-triplets-to-form-target-triplet/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def merge_triplets(self, triplets: list[list[int]], target: list[int]) -> bool:",
+    "        found = set()",
+    "        for triplet in triplets:",
+    "            if all(triplet[i] <= target[i] for i in range(3)):",
+    "                for i in range(3):",
+    "                    if triplet[i] == target[i]:",
+    "                        found.add(i)",
+    "        return len(found) == 3"
+  ];
+
+  var T = [2, 7, 5];
+  var IN = [[2, 5, 3], [1, 8, 4], [1, 7, 5]];
+
+  // target = the target row; inp = triplet rows; cur = row being examined (blue label);
+  // bad = rows disqualified (amber cell where value > target); done = rows already processed (dimmed);
+  // hits = [row, pos] pairs that matched the target (green); vars = the found set.
+  var STATES = {
+    problem: {
+      caption: "Can some triplets be merged (element-wise max) into exactly [2, 7, 5]?",
+      phase: "target = [2, 7, 5]", target: T, inp: IN, cur: -1, bad: [], done: [], hits: [], vars: [],
+      meta: "Merging never lowers a value: every position only goes up.", hl: []
+    },
+    brute: {
+      caption: "Brute force merges every one of the 2ⁿ − 1 non-empty subsets and compares each to target.",
+      phase: "every subset", target: T, inp: IN, cur: -1, bad: [], done: [], hits: [], vars: [["subsets", "7 for n = 3", ""]],
+      meta: "At n = 10⁵ that is 2¹⁰⁰⁰⁰⁰ subsets, most containing a triplet that already overshoots.", hl: [],
+      big: "O(2ⁿ · n)", bigNote: "every subset, merged from scratch"
+    },
+    insight: {
+      caption: "[1, 8, 4] has 8 > 7 in the middle. Merge it in and that position can never come back down.",
+      phase: "target = [2, 7, 5]", target: T, inp: IN, cur: -1, bad: [1], done: [], hits: [], vars: [["[1, 8, 4]", "unusable, 8 > 7", "bad"]],
+      meta: "Every other triplet is ≤ target in all positions, so merging it is harmless.", hl: [4]
+    },
+    approach: {
+      caption: "One pass: skip any triplet above target, and record the positions each safe triplet matches.",
+      phase: "target = [2, 7, 5]", target: T, inp: IN, cur: -1, bad: [], done: [], hits: [], vars: [["found", "{}", "new"]],
+      meta: "Green = a position that equals target. Amber = the value that disqualifies a row.", hl: [2, 3, 4, 5, 6, 7, 8]
+    },
+    t1: {
+      caption: "[2, 5, 3]: 2 ≤ 2, 5 ≤ 7, 3 ≤ 5, safe. Only position 0 equals target, so found = {0}.",
+      phase: "triplet = [2, 5, 3]", target: T, inp: IN, cur: 0, bad: [], done: [], hits: [[0, 0]], vars: [["found", "{0}", "new"]],
+      meta: "2 == 2 adds position 0; 5 == 7 and 3 == 5 are false.", hl: [4, 5, 6, 7]
+    },
+    t2: {
+      caption: "[1, 8, 4]: 8 ≤ 7 is false, so all(...) fails and the triplet is skipped entirely.",
+      phase: "triplet = [1, 8, 4]", target: T, inp: IN, cur: 1, bad: [1], done: [0], hits: [[0, 0]], vars: [["found", "{0}", ""]],
+      meta: "Merging it would make the middle value max(5, 8) = 8, and nothing lowers it again.", hl: [4]
+    },
+    t3: {
+      caption: "[1, 7, 5]: safe, and 7 == 7 and 5 == 5 add positions 1 and 2. found = {0, 1, 2}.",
+      phase: "triplet = [1, 7, 5]", target: T, inp: IN, cur: 2, bad: [1], done: [0, 1], hits: [[0, 0], [2, 1], [2, 2]], vars: [["found", "{0, 1, 2}", "found"]],
+      meta: "len(found) == 3, so return <b>True</b>. Check: max([2,5,3], [1,7,5]) = [2, 7, 5].", hl: [6, 7, 8],
+      big: "true", bigNote: "[2, 5, 3] ⊔ [1, 7, 5] = [2, 7, 5]"
+    },
+    pitfall: {
+      caption: "[[2, 8, 4], [1, 7, 5]]: recording the 2 without the safety gate makes found = {0, 1, 2}, a false true.",
+      phase: "target = [2, 7, 5]", target: T, inp: [[2, 8, 4], [1, 7, 5]], cur: 0, bad: [0], done: [], hits: [[0, 0], [1, 1], [1, 2]], vars: [["found (buggy)", "{0, 1, 2}", "bad"], ["found (correct)", "{1, 2}", ""]],
+      meta: "The only triplet with a 2 in front also carries an 8, so the correct answer is <b>False</b>.", hl: [4, 6, 7],
+      big: "false, not true", bigNote: "an unsafe triplet contributes nothing, not even its matches"
+    },
+    complexity: {
+      caption: "Three comparisons plus three equality checks per triplet, one pass.",
+      phase: "target = [2, 7, 5]", target: T, inp: IN, cur: -1, bad: [1], done: [0, 1, 2], hits: [[0, 0], [2, 1], [2, 2]], vars: [["found", "{0, 1, 2}", "found"]],
+      meta: "The set never holds more than three integers.", hl: [3, 4],
+      big: "O(n) time · O(1) space", bigNote: "versus O(2ⁿ · n) for all subsets"
+    },
+    final: {
+      caption: "The whole solution.",
+      phase: "target = [2, 7, 5]", target: T, inp: IN, cur: -1, bad: [1], done: [0, 1, 2], hits: [[0, 0], [2, 1], [2, 2]], vars: [["found", "{0, 1, 2}", "found"], ["answer", "True", "found"]],
+      meta: "", hl: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function cells(vals, classer) {
+    var html = '<div class="array compact">';
+    for (var i = 0; i < vals.length; i++) {
+      html += '<div class="cell' + classer(i) + '">' + vals[i] + '<span class="idx">' + i + '</span></div>';
+    }
+    return html + '</div>';
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.phase;
+    $("meta").innerHTML = s.meta;
+
+    var html = '<div class="row target"><span class="rl">target</span>' + cells(s.target, function () { return ""; }) + '</div>';
+    for (var r = 0; r < s.inp.length; r++) {
+      var isBad = s.bad.indexOf(r) !== -1, isCur = r === s.cur, isDone = s.done.indexOf(r) !== -1;
+      var lcls = isCur ? " cur" : isBad ? " bad" : "";
+      html += '<div class="row"><span class="rl' + lcls + '">[' + s.inp[r].join(', ') + ']</span>' + cells(s.inp[r], function (i) {
+        if (isBad && s.inp[r][i] > s.target[i]) return " bad";
+        for (var k = 0; k < s.hits.length; k++) if (s.hits[k][0] === r && s.hits[k][1] === i) return " hit";
+        if (isCur) return " cur";
+        if (isDone || isBad) return " dim";
+        return "";
+      }) + '</div>';
+    }
+    $("rows").innerHTML = html;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">nothing matched yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

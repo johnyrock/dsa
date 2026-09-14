@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Koko Eating Bananas Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Binary Search · LeetCode #875</div>
+  <h1>Koko Eating Bananas, narrated</h1>
+  <p>Scroll through the thinking, from testing every speed one by one to binary searching the answer itself, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/binary-search.html">Binary Search</a> <span class="how">on the answer: feasibility is monotonic in the speed, so search the speed range</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Koko has a row of banana piles, <code>piles[i]</code> bananas each, and <code>h</code> hours before the guards return. She chooses one eating speed <code>k</code> and sticks with it. Each hour she picks a pile and eats <code>k</code> bananas from it; if fewer than <code>k</code> remain, she finishes the pile and the rest of that hour is wasted. She cannot start a second pile in the same hour.</p>
+      <p>Return the <em>smallest</em> integer <code>k</code> that still gets every pile eaten within <code>h</code> hours.</p>
+      <div class="callout">Running example: <code>piles = [3, 6, 7, 11]</code>, <code>h = 8</code>. The answer is <strong>4</strong>: at speed 4 the piles take <code>1 + 2 + 2 + 3 = 8</code> hours, exactly the budget. At speed 3 they take <code>1 + 2 + 3 + 4 = 10</code>, one too many.</div>
+      <p>Two things to notice. Because each hour is spent on exactly one pile, a pile of size <code>p</code> costs <code>ceil(p / k)</code> hours, no matter what the other piles look like. And because <code>h &gt;= len(piles)</code> is guaranteed, some speed always works — at worst <code>k = max(piles)</code>, which clears every pile in one hour each.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: try every speed from 1 upward</h2>
+      <p>The speed is an integer between 1 and <code>max(piles)</code>. So walk up from 1, compute the hours each speed needs, and stop at the first one that fits in <code>h</code>:</p>
+      <pre class="code"><span class="ln">for k in range(1, max(piles) + 1):</span><span class="ln">    hours = sum(math.ceil(p / k) for p in piles)</span><span class="ln">    if hours &lt;= h:</span><span class="ln">        return k</span></pre>
+      <p style="margin-top:14px">This is correct and it is a fine thing to say first in an interview. It is also far too slow: with <code>piles[i]</code> up to 10⁹ the loop can run a billion times, and each iteration scans all n piles. That is <strong>O(n · max(piles))</strong>.</p>
+      <p>On the running example it tests <code>k = 1</code> (27 hours), <code>k = 2</code> (12 hours), <code>k = 3</code> (10 hours), <code>k = 4</code> (8 hours) and stops. Four probes here, but potentially a billion in general.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 3</div>
+      <h2>The key idea: feasibility is monotonic, so binary search the speed</h2>
+      <p>Look at what the brute force actually discovered: speeds 1, 2, 3 fail, then 4 passes — and every speed above 4 passes too, because eating faster can only reduce the hours. Laid out over the range, feasibility looks like <code>[fail, fail, fail, pass, pass, …, pass]</code>.</p>
+      <p>A sorted-looking boolean array is exactly what binary search wants. The trick is that we are not searching for a value <em>in</em> an array; we are searching the <em>answer space</em> — the candidate speeds from <code>lo = 1</code> to <code>hi = max(piles)</code> — for the first candidate that passes a test.</p>
+      <div class="callout">The feasibility test is <code>hours = sum((pile + mid - 1) // mid for pile in piles)</code>, then <code>hours &lt;= h</code>. The expression <code>(pile + mid - 1) // mid</code> is ceiling division in integers: for pile 7 and speed 4 it gives <code>(7 + 3) // 4 = 2</code>, not <code>7 // 4 = 1</code>.</div>
+      <p>Because the test is monotonic, one probe rules out half the remaining speeds at once. Instead of up to a billion probes we need about <code>log₂(10⁹) ≈ 30</code>.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>lo, hi = 1, max(piles)</code> — the slowest legal speed and a speed that is guaranteed to work. Nothing above <code>hi</code> can beat it, so the answer is inside.</li>
+        <li><code>while lo &lt; hi</code> — keep going while more than one candidate is left. This is the "find the first passing value" shape, not the "find an exact match" shape, so there is no <code>&lt;=</code>.</li>
+        <li><code>mid = (lo + hi) // 2</code> — probe the middle speed.</li>
+        <li><code>hours = sum((pile + mid - 1) // mid for pile in piles)</code> — how many hours speed <code>mid</code> needs.</li>
+        <li><code>if hours &lt;= h: hi = mid</code> — feasible, so the answer is <code>mid</code> or slower. Keep <code>mid</code>; it might be the answer.</li>
+        <li><code>else: lo = mid + 1</code> — infeasible, so <code>mid</code> and everything slower are out.</li>
+        <li><code>return lo</code> — when the loop stops, <code>lo == hi</code> and it is the smallest speed never rejected.</li>
+      </ul>
+      <p>The invariant to hold in your head: <strong><code>hi</code> always works, and everything below <code>lo</code> never does.</strong> Every branch preserves it, and the loop ends when the two meet.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: probe 6, then probe 3</h2>
+      <p>Start with <code>lo = 1</code>, <code>hi = 11</code>. The first probe is <code>mid = (1 + 11) // 2 = 6</code>. Hours at speed 6: pile 3 takes 1, pile 6 takes 1, pile 7 takes 2, pile 11 takes 2 — <code>1 + 1 + 2 + 2 = 6</code>, which is within the budget of 8. So <code>hi = 6</code>: the answer is 6 or something slower.</p>
+      <p>Second probe: <code>mid = (1 + 6) // 2 = 3</code>. Hours at speed 3: <code>1 + 2 + 3 + 4 = 10</code>, more than 8. Speed 3 fails, and so does everything slower, so <code>lo = 4</code>.</p>
+      <p>Two probes have narrowed eleven candidates down to three: 4, 5, or 6. The panel shows the second probe, with the surviving range highlighted and the per-pile hour counts under each pile.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: probe 5</h2>
+      <p>Now <code>lo = 4</code>, <code>hi = 6</code>, so <code>mid = (4 + 6) // 2 = 5</code>. Hours at speed 5: pile 3 takes <code>(3 + 4) // 5 = 1</code>, pile 6 takes <code>(6 + 4) // 5 = 2</code>, pile 7 takes <code>(7 + 4) // 5 = 2</code>, pile 11 takes <code>(11 + 4) // 5 = 3</code>. Total <code>1 + 2 + 2 + 3 = 8</code>, and <code>8 &lt;= 8</code> passes.</p>
+      <p>So <code>hi = 5</code>. Note that 5 stays inside the range — it passed, so it could still be the answer. Only failing speeds get thrown away with the <code>mid + 1</code> step.</p>
+      <p>Two candidates remain: 4 and 5.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: probe 4, the answer</h2>
+      <p><code>lo = 4</code>, <code>hi = 5</code>, so <code>mid = (4 + 5) // 2 = 4</code>. Hours at speed 4: <code>1 + 2 + 2 + 3 = 8</code> again — pile 11 needs <code>(11 + 3) // 4 = 3</code> hours, since 4 + 4 + 3 is three hours of eating. That passes, so <code>hi = 4</code>.</p>
+      <p>Now <code>lo == hi == 4</code>, the loop condition <code>lo &lt; hi</code> is false, and we <code>return lo</code>, which is <strong>4</strong>.</p>
+      <div class="callout">The brute force needed four probes for this tiny input and could need a billion for a big one. The binary search needed four probes here and never needs more than about thirty.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: floor division and the shrinking rule</h2>
+      <p><strong>Rounding the hours down.</strong> Write the check as <code>hours = sum(pile // mid for pile in piles)</code> and every partial pile is under-counted. On the running example speed 3 now appears to take <code>1 + 2 + 2 + 3 = 8</code> hours, so the search accepts it and moves down: it probes 2 (12 hours, fails) and returns <strong>3</strong>. But at speed 3 the pile of 7 really takes 3 hours and the pile of 11 takes 4, for 10 hours total. Koko gets caught. The ceiling is the whole point of the "one pile per hour" rule.</p>
+      <p><strong>Discarding a passing speed.</strong> Write <code>hi = mid - 1</code> on the feasible branch, as you would in an exact-match search. Now the loop can end on a speed that was never tested: with <code>lo = 4</code>, <code>hi = 5</code>, probing 4 passes and sets <code>hi = 3</code>, the loop exits with <code>lo = 4</code> — right answer here, by luck. On <code>piles = [2, 2]</code>, <code>h = 4</code> it probes 1 (passes, <code>hi = 0</code>) and then returns <code>lo = 1</code>, also by luck; but pair the same off-by-one with <code>while lo &lt;= hi</code> and you return <code>lo</code> after it has walked past the answer. The safe pairing is <code>lo &lt; hi</code> with <code>hi = mid</code>.</p>
+      <p><strong>Starting at <code>lo = 0</code>.</strong> Speed 0 is not a legal speed, and the moment <code>mid</code> lands on 0 the check divides by zero.</p>
+      <div class="callout warn">Two rules: the feasibility test uses ceiling division, and a passing <code>mid</code> stays in the range (<code>hi = mid</code>) while a failing one leaves it (<code>lo = mid + 1</code>).</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>Each probe scans all n piles once, and the number of probes is the number of halvings of the range <code>[1, max(piles)]</code>. With m = <code>max(piles)</code> that is <strong>O(n log m)</strong> time; the biggest input allows roughly 10⁴ × 30 = 3 × 10⁵ operations. The search keeps three integers and a running sum, so <strong>O(1)</strong> extra space.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Try every speed 1 … max(piles)</td><td>O(n · m)</td><td>O(1)</td></tr>
+        <tr><td>Binary search on [1, sum(piles)]</td><td>O(n log(n · m))</td><td>O(1)</td></tr>
+        <tr><td>Binary search on [1, max(piles)]</td><td>O(n log m)</td><td>O(1)</td></tr>
+      </table>
+      <p>The middle row is a common first draft: searching up to <code>sum(piles)</code> is correct because any speed that large works, but it wastes a few probes. Noticing that no speed above <code>max(piles)</code> ever helps tightens the range for free.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Nine lines. Every one of them maps to a step above.</p>
+      <ul>
+        <li><code>lo, hi = 1, max(piles)</code> brackets the answer: <code>lo</code> is the slowest legal speed, <code>hi</code> is a speed known to work.</li>
+        <li><code>while lo &lt; hi</code> runs until exactly one candidate is left.</li>
+        <li><code>mid = (lo + hi) // 2</code> picks the probe.</li>
+        <li><code>hours = sum((pile + mid - 1) // mid for pile in piles)</code> is the feasibility test, with ceiling division done in integers.</li>
+        <li><code>if hours &lt;= h: hi = mid</code> keeps a passing speed in play and drops everything faster.</li>
+        <li><code>else: lo = mid + 1</code> drops a failing speed and everything slower.</li>
+        <li><code>return lo</code> is the first speed that passes.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>when "does k work?" is yes for every k past some threshold, binary search k itself and return the threshold.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>piles · [3,6,7,11], h = 8 · hours per pile at speed <span id="target">?</span></h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>candidate speeds · lo … hi, blue = mid</h3>
+        <div class="array" id="range"></div>
+      </div>
+
+      <div class="block">
+        <h3>search variables</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="koko_eating_bananas.py">koko_eating_bananas.py</a> · <a href="koko_eating_bananas_annotated.py">koko_eating_bananas_annotated.py</a> · <a href="test_koko_eating_bananas.py">test_koko_eating_bananas.py</a> · <a href="../../md.html?f=medium/037-koko-eating-bananas/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def min_eating_speed(self, piles: list[int], h: int) -> int:",
+    "        lo, hi = 1, max(piles)",
+    "        while lo < hi:",
+    "            mid = (lo + hi) // 2",
+    "            hours = sum((pile + mid - 1) // mid for pile in piles)",
+    "            if hours <= h:",
+    "                hi = mid",
+    "            else:",
+    "                lo = mid + 1",
+    "        return lo"
+  ];
+
+  var PILES = [3, 6, 7, 11];
+  var MAXK = 11;
+
+  // Each state describes what the sticky panel shows for one step.
+  // speed: the probe (or the final answer); hours: per-pile hour counts at that speed (verified with Python);
+  // lo/hi: the surviving candidate range; mid: the probed speed; found: the settled answer.
+  var STATES = {
+    problem: {
+      caption: "What is the slowest speed that still clears all four piles in 8 hours?",
+      speed: "?", hours: ["?", "?", "?", "?"], lo: 1, hi: 11, mid: -1, found: -1, vars: [],
+      meta: "Each hour goes to one pile, so pile p costs ceil(p / k) hours.", hl: []
+    },
+    brute: {
+      caption: "Try k = 1, 2, 3, 4 … and stop at the first speed that fits in 8 hours.",
+      speed: 3, hours: [1, 2, 3, 4], lo: 1, hi: 11, mid: 3, found: -1,
+      vars: [["k", 3], ["hours", 10, "new"], ["h", 8]],
+      meta: "k = 3 takes 1 + 2 + 3 + 4 = <b>10</b> hours, too many; the next probe is k = 4.", hl: [],
+      big: "O(n · max(piles))", bigNote: "up to a billion probes, each scanning every pile"
+    },
+    idea: {
+      caption: "Speeds 1–3 fail and 4–11 pass: a monotonic split, so binary search the speed.",
+      speed: "k", hours: ["?", "?", "?", "?"], lo: 1, hi: 11, mid: -1, found: 4, vars: [],
+      meta: "fail, fail, fail, <b>pass</b>, pass … — find the first pass with log₂(11) probes instead of 11.", hl: [5, 6]
+    },
+    approach: {
+      caption: "Bracket the answer: lo = 1 is the slowest speed, hi = max(piles) = 11 is known to work.",
+      speed: "?", hours: ["?", "?", "?", "?"], lo: 1, hi: 11, mid: -1, found: -1,
+      vars: [["lo", 1, "new"], ["hi", 11, "new"]],
+      meta: "Invariant: <b>hi always works</b>, everything below <b>lo</b> never does.", hl: [2, 3]
+    },
+    t1: {
+      caption: "Probe 6 passed (6 hours) so hi = 6; probe 3 takes 10 hours, so lo = 4.",
+      speed: 3, hours: [1, 2, 3, 4], lo: 4, hi: 6, mid: 3, found: -1,
+      vars: [["lo", 4, "new"], ["hi", 6], ["mid", 3], ["hours", 10]],
+      meta: "At speed 3: 1 + 2 + 3 + 4 = <b>10</b> &gt; 8, so speeds 1–3 are out.", hl: [4, 5, 9]
+    },
+    t2: {
+      caption: "Probe 5: 1 + 2 + 2 + 3 = 8 hours, which fits, so hi = 5.",
+      speed: 5, hours: [1, 2, 2, 3], lo: 4, hi: 5, mid: 5, found: -1,
+      vars: [["lo", 4], ["hi", 5, "new"], ["mid", 5], ["hours", 8]],
+      meta: "At speed 5: pile 11 takes (11 + 4) // 5 = <b>3</b> hours. Total 8 ≤ 8, keep 5 in range.", hl: [4, 5, 7]
+    },
+    t3: {
+      caption: "Probe 4: 1 + 2 + 2 + 3 = 8 hours, fits, so hi = 4. lo == hi — done.",
+      speed: 4, hours: [1, 2, 2, 3], lo: 4, hi: 4, mid: 4, found: 4,
+      vars: [["lo", 4, "found"], ["hi", 4, "found"], ["mid", 4], ["hours", 8]],
+      meta: "At speed 4: (11 + 3) // 4 = <b>3</b> hours for the last pile. Return lo = <b>4</b>.", hl: [4, 5, 7, 10],
+      big: "4", bigNote: "minimum bananas per hour"
+    },
+    pitfall: {
+      caption: "pile // mid under-counts: speed 3 looks like 8 hours, so the search returns 3.",
+      speed: 3, hours: [1, 2, 2, 3], lo: 3, hi: 3, mid: 3, found: 3,
+      vars: [["mid", 3], ["hours (floor)", 8], ["real hours", 10, "new"]],
+      meta: "7 // 3 = 2 and 11 // 3 = 3, but the real costs are 3 and 4 hours.", hl: [5],
+      big: "3, not 4", bigNote: "floor division accepts a speed that really needs 10 hours"
+    },
+    complexity: {
+      caption: "About log₂(max(piles)) probes, each a single pass over the piles.",
+      speed: 4, hours: [1, 2, 2, 3], lo: 4, hi: 4, mid: -1, found: 4, vars: [],
+      meta: "Four probes here (6, 3, 5, 4); never more than ~30 for piles up to 10⁹.", hl: [3, 5],
+      big: "O(n log m) time · O(1) space", bigNote: "versus O(n · m) for trying every speed"
+    },
+    final: {
+      caption: "The whole solution.",
+      speed: 4, hours: [1, 2, 2, 3], lo: 4, hi: 4, mid: -1, found: 4,
+      vars: [["answer", 4, "found"]],
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.speed;
+    $("meta").innerHTML = s.meta;
+
+    // piles row: value on top, hours at the probed speed underneath
+    var arr = "";
+    for (var i = 0; i < PILES.length; i++) {
+      var cls = "cell";
+      if (s.hours[i] !== "?") cls += (s.mid === -1 && s.found === -1) ? "" : " hit";
+      arr += '<div class="' + cls + '">' + PILES[i] + '<span class="idx">' + (s.hours[i] === "?" ? "? h" : s.hours[i] + " h") + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+
+    // candidate speed row: 1..11, dimmed outside [lo, hi], blue on mid, green on the found answer
+    var rng = "";
+    for (var k = 1; k <= MAXK; k++) {
+      var c = "cell";
+      if (k === s.found) c += " hit";
+      else if (k === s.mid) c += " cur";
+      else if (k < s.lo || k > s.hi) c += " dim";
+      var tag = k === s.lo && k === s.hi ? "lo=hi" : k === s.lo ? "lo" : k === s.hi ? "hi" : k === s.mid ? "mid" : "";
+      rng += '<div class="' + c + '" style="padding:6px 0 4px;font-size:0.95rem">' + k + '<span class="idx">' + (tag || "&nbsp;") + '</span></div>';
+    }
+    $("range").innerHTML = rng;
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started</span>';
+    } else {
+      var d = "";
+      for (var v = 0; v < s.vars.length; v++) {
+        var e = s.vars[v];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var code = "";
+    for (var l = 0; l < CODE.length; l++) {
+      code += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = code;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

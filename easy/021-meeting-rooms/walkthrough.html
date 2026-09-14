@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meeting Rooms Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* meeting-rooms additions: intervals drawn as bars on a shared number line (medium/009) */
+  .timeline { position: relative; margin: 6px 0 4px; }
+  .tl-row { position: relative; height: 26px; margin-bottom: 4px; }
+  .tl-bar {
+    position: absolute; top: 3px; height: 20px; border-radius: 5px;
+    background: var(--panel); border: 2px solid var(--line);
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.72rem; line-height: 16px; text-align: center;
+    color: var(--ink); white-space: nowrap; overflow: visible; transition: all 0.25s;
+  }
+  .tl-bar.cur { border-color: var(--accent); background: var(--accent-soft); }
+  .tl-bar.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .tl-bar.bad { border-color: var(--warn); background: var(--warn-soft); }
+  .tl-bar.dim { opacity: 0.4; }
+  .tl-axis { position: relative; height: 16px; border-top: 1px solid var(--line); margin-top: 4px; }
+  .tl-axis span { position: absolute; top: 1px; transform: translateX(-50%); font-size: 0.65rem; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+  .tl-mark { position: absolute; top: 0; bottom: 20px; width: 0; border-left: 2px dashed var(--warn); opacity: 0.8; }
+  .dict .kv.bad { border-color: var(--warn); background: var(--warn-soft); }
+  .meta b { color: var(--ink); }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#easy">← All walkthroughs</a>
+  <div class="tag">Easy · Intervals · LeetCode #252</div>
+  <h1>Meeting Rooms, narrated</h1>
+  <p>Scroll from checking every pair to a sort and one linear scan, with the meetings drawn on a timeline alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/intervals.html">Intervals</a> <span class="how">Once meetings are sorted by start time, a meeting can only newly conflict with its immediate predecessor.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>You are given a list of meetings, each as <code>[start, end]</code>. Decide whether a single person could attend all of them, which is another way of asking: do any two meetings overlap in time? Return <code>True</code> if none overlap, <code>False</code> if any pair does.</p>
+      <div class="callout">Running example: <code>intervals = [[0, 30], [5, 10], [15, 20]]</code>. The meeting <code>[5, 10]</code> sits entirely inside <code>[0, 30]</code>, so one person cannot be at both. Answer <strong>false</strong>.</div>
+      <p>Two things to pin down before writing code. First, the answer is a single boolean; you never need to say <em>which</em> meetings collide. Second, what counts as overlap: <code>[1, 2]</code> and <code>[2, 3]</code> share only the instant 2, and the convention here is that meetings that merely touch do <em>not</em> conflict.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: check every pair</h2>
+      <p>Two meetings <code>a</code> and <code>b</code> overlap when each starts before the other ends. Test that for every pair:</p>
+      <pre class="code"><span class="ln">for i in range(len(intervals)):</span><span class="ln">    for j in range(i + 1, len(intervals)):</span><span class="ln">        a, b = intervals[i], intervals[j]</span><span class="ln">        if a[0] &lt; b[1] and b[0] &lt; a[1]:</span><span class="ln">            return False</span><span class="ln">return True</span></pre>
+      <p style="margin-top:14px">Correct, and for three meetings it is three comparisons: <code>(0,1)</code>, <code>(0,2)</code>, <code>(1,2)</code>. But the pair count is <code>n(n − 1) / 2</code>, so 1,000 meetings need about 500,000 checks and the constraint allows <code>10^4</code> meetings, which is 50 million. That is <strong>O(n²)</strong>, and almost all of those comparisons are between meetings that are nowhere near each other in time.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: sorted by start, only neighbours can collide</h2>
+      <p>Sort the meetings by start time. Now take any meeting and ask which earlier meetings it could overlap with. If it starts after the meeting immediately before it has ended, does it need to be checked against anything further back?</p>
+      <div class="callout">No. The panel shows <code>[15, 20]</code> against <code>[5, 10]</code> only. If <code>[15, 20]</code> clears <code>[5, 10]</code>, and <code>[5, 10]</code> had already cleared <code>[0, 30]</code>, the chain of adjacent checks already covers <code>[15, 20]</code> versus <code>[0, 30]</code>. And if <code>[5, 10]</code> did <em>not</em> clear <code>[0, 30]</code>, we would have returned <code>False</code> at that step and never got here.</div>
+      <p>So after sorting, each meeting is compared with exactly one predecessor. That turns the quadratic pair scan into a single linear pass, at the price of an O(n log n) sort. The test itself simplifies too: once starts are ascending, <code>a[0] &lt; b[1]</code> is automatically true for the earlier meeting, so the only condition left is <code>intervals[index][0] &lt; intervals[index - 1][1]</code>, line 5 of the solution.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: sort, then scan adjacent pairs</h2>
+      <ul>
+        <li><code>intervals.sort(key=lambda interval: interval[0])</code> orders the meetings by start time, in place.</li>
+        <li><code>for index in range(1, len(intervals))</code> visits every meeting except the first, since the first has no predecessor.</li>
+        <li><code>if intervals[index][0] &lt; intervals[index - 1][1]: return False</code>: this meeting begins before the previous one has finished, which is a conflict. Stop immediately.</li>
+        <li><code>return True</code> after the loop: every adjacent pair was clear, so no pair overlaps.</li>
+      </ul>
+      <p>The panel summarises the test as <code>start[i] &lt; end[i-1]</code>. Note the early return: the first conflict is proof enough, and nothing later can undo it. Also note that with zero or one meeting the loop body never runs and the function returns <code>True</code>, which is what the tests expect for <code>[]</code>.</p>
+    </section>
+
+    <section class="step" data-state="trace1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the sort</h2>
+      <p>Line 3 sorts by <code>interval[0]</code>. The starts are 0, 5 and 15, already ascending, so the sort leaves the running example in the order it was given: <code>[0, 30]</code>, <code>[5, 10]</code>, <code>[15, 20]</code>.</p>
+      <p>That is a coincidence of this input, not something you can rely on. For <code>[[7, 10], [2, 4]]</code> the sort would swap them, and the adjacent-pair argument from step 3 only holds once the starts really are in order. The sort is the step that makes the rest of the algorithm correct, even when it looks like it did nothing.</p>
+    </section>
+
+    <section class="step" data-state="trace2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: <code>index = 1</code></h2>
+      <p>The loop starts at <code>index = 1</code>, so the current meeting is <code>intervals[1] = [5, 10]</code> and its predecessor is <code>intervals[0] = [0, 30]</code>.</p>
+      <p>Evaluate line 5: <code>intervals[1][0]</code> is 5 and <code>intervals[0][1]</code> is 30. <code>5 &lt; 30</code> is <code>True</code>: the second meeting begins while the first is still running. The panel draws a dashed line at time 5, the start of <code>[5, 10]</code>, and it falls inside the bar for <code>[0, 30]</code>.</p>
+      <div class="callout">Overlap found on the very first comparison. One person would have to be in two rooms at once from 5 to 10.</div>
+    </section>
+
+    <section class="step" data-state="trace3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: return at once</h2>
+      <p>Line 6 executes: <code>return False</code>. The function is done. <code>[15, 20]</code> is never examined, and the panel dims it to show that.</p>
+      <p>This is safe because the question is existential: "does <em>any</em> pair overlap?" One overlapping pair settles it, and no later comparison could make the conflict go away. The brute force in step 2 would also have stopped here, but only because pair <code>(0, 1)</code> happened to be first; on other inputs it might grind through many clear pairs before finding a conflicting one that the sorted scan would have hit immediately.</p>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: touching meetings and the missing sort</h2>
+      <p><strong>Using <code>&lt;=</code> instead of <code>&lt;</code>.</strong> The panel switches to <code>intervals = [[1, 2], [2, 3]]</code>. At <code>index = 1</code>, <code>intervals[1][0]</code> is 2 and <code>intervals[0][1]</code> is 2. With the correct test, <code>2 &lt; 2</code> is <code>False</code>, the loop finishes, and the function returns <strong>true</strong>: one meeting ends exactly when the next begins, which is fine. Write <code>if intervals[index][0] &lt;= intervals[index - 1][1]</code> instead and <code>2 &lt;= 2</code> is <code>True</code>, so it returns <strong>False</strong> for meetings that merely touch.</p>
+      <p><strong>Forgetting to sort.</strong> Drop line 3 and run <code>[[7, 10], [2, 4]]</code>: at <code>index = 1</code> the test is <code>2 &lt; 10</code>, <code>True</code>, so it returns <strong>False</strong> even though the meetings are disjoint. The neighbour argument from step 3 is only valid once the starts are ascending; without the sort, "adjacent in the list" means nothing about "adjacent in time".</p>
+      <div class="callout warn">Overlap means <em>strictly</em> before the previous end. Equal endpoints are back-to-back, not double-booked.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>The sort is <strong>O(n log n)</strong>. The scan visits each meeting once with O(1) work: <strong>O(n)</strong>. The sort dominates, so the total is <strong>O(n log n) time</strong>. <code>list.sort</code> works in place, so beyond the sort's own internal buffer the algorithm allocates only a few indices: <strong>O(1) extra space</strong>.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Check every pair</td><td>O(n²)</td><td>O(1)</td></tr>
+        <tr><td>Sort by start, scan neighbours</td><td>O(n log n)</td><td>O(1) extra</td></tr>
+      </table>
+      <p>For 10,000 meetings that is roughly 130,000 comparison steps in the sort versus 50 million pair checks.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Five lines, each one a step above.</p>
+      <ul>
+        <li><code>intervals.sort(key=lambda interval: interval[0])</code> puts meetings in start order, which is what makes "check only the predecessor" valid.</li>
+        <li><code>for index in range(1, len(intervals))</code> starts at 1 because meeting 0 has nothing before it; an empty or one-element list skips the loop.</li>
+        <li><code>if intervals[index][0] &lt; intervals[index - 1][1]</code> asks whether this meeting starts strictly before the previous one ends.</li>
+        <li><code>return False</code> the moment that is true; one conflict is enough.</li>
+        <li><code>return True</code> if the loop finishes, since every adjacent pair, and therefore every pair, is clear.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>sort by start, then a meeting can only conflict with the one right before it, and only if it starts strictly before that one ends.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>meetings on a timeline · <span id="target">sorted by start</span></h3>
+        <div class="timeline" id="tl"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>comparison</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="meeting_rooms.py">meeting_rooms.py</a> · <a href="meeting_rooms_annotated.py">meeting_rooms_annotated.py</a> · <a href="test_meeting_rooms.py">test_meeting_rooms.py</a> · <a href="../../md.html?f=easy/021-meeting-rooms/notes.md">notes.md</a> · <a href="../../index.html#easy">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def can_attend_meetings(self, intervals: list[list[int]]) -> bool:",
+    "        intervals.sort(key=lambda interval: interval[0])",
+    "        for index in range(1, len(intervals)):",
+    "            if intervals[index][0] < intervals[index - 1][1]:",
+    "                return False",
+    "        return True"
+  ];
+
+  var IN = [[0, 30], [5, 10], [15, 20]];
+  // inp: the intervals, one bar per row. cur = intervals[index] (blue), prev = intervals[index - 1] (green),
+  // bad = the pair found to overlap (amber), dim = already cleared. mark = an x position to draw a dashed line at.
+  var STATES = {
+    problem: {
+      caption: "Can one person attend every meeting, or do two of them overlap?",
+      phase: "intervals = [[0,30],[5,10],[15,20]]", inp: IN, cur: -1, prev: -1, bad: [], dim: [], mark: null, lo: 0, hi: 30,
+      vars: [], meta: "[5, 10] sits entirely inside [0, 30], so the answer is <b>false</b>.", hl: []
+    },
+    brute: {
+      caption: "Compare every pair of meetings for overlap: n(n − 1) / 2 checks.",
+      phase: "every pair", inp: IN, cur: 0, prev: -1, bad: [], dim: [], mark: null, lo: 0, hi: 30,
+      vars: [["pairs", "(0,1) (0,2) (1,2)", ""]], meta: "Three meetings need 3 comparisons; 1,000 meetings need about 500,000.", hl: [],
+      big: "O(n²)", bigNote: "every meeting against every other"
+    },
+    insight: {
+      caption: "Sorted by start, a meeting can only collide with the one that started just before it.",
+      phase: "sorted by start", inp: IN, cur: 2, prev: 1, bad: [], dim: [0], mark: null, lo: 0, hi: 30,
+      vars: [["[15, 20] vs", "its predecessor [5, 10] only", "new"]], meta: "If [15, 20] cleared [5, 10] and [5, 10] cleared [0, 30], the chain of checks already covers [15, 20] vs [0, 30].", hl: [2, 4]
+    },
+    approach: {
+      caption: "Sort, then walk adjacent pairs: a start before the previous end means a conflict.",
+      phase: "sorted by start", inp: IN, cur: -1, prev: -1, bad: [], dim: [], mark: null, lo: 0, hi: 30,
+      vars: [["test", "start[i] < end[i-1]", "new"]], meta: "Return False at the first conflict; return True if the loop finishes.", hl: [2, 3, 4, 5, 6]
+    },
+    trace1: {
+      caption: "Sorting by start leaves the example in the order it was given.",
+      phase: "sorted by start", inp: IN, cur: -1, prev: -1, bad: [], dim: [], mark: null, lo: 0, hi: 30,
+      vars: [["order", "[0,30] · [5,10] · [15,20]", ""]], meta: "Starts 0, 5, 15 are already ascending.", hl: [2]
+    },
+    trace2: {
+      caption: "index = 1: does [5, 10] start before [0, 30] ends? 5 < 30, yes.",
+      phase: "index = 1", inp: IN, cur: 1, prev: 0, bad: [0, 1], dim: [2], mark: 5, lo: 0, hi: 30,
+      vars: [["intervals[1][0]", "5", ""], ["intervals[0][1]", "30", ""], ["5 < 30", "True", "bad"]], meta: "The dashed line is the start of [5, 10]; it falls inside the previous bar.", hl: [4],
+      big: "5 < 30", bigNote: "overlap found"
+    },
+    trace3: {
+      caption: "Return False at once: [15, 20] is never looked at.",
+      phase: "index = 1", inp: IN, cur: -1, prev: -1, bad: [0, 1], dim: [2], mark: null, lo: 0, hi: 30,
+      vars: [["return", "False", "found"]], meta: "No later comparison could undo a conflict that already exists.", hl: [5],
+      big: "false", bigNote: "one person cannot attend both"
+    },
+    pitfall: {
+      caption: "[[1, 2], [2, 3]]: 2 < 2 is False, so back-to-back meetings are allowed.",
+      phase: "intervals = [[1,2],[2,3]]", inp: [[1, 2], [2, 3]], cur: 1, prev: 0, bad: [], dim: [], mark: 2, lo: 0, hi: 4,
+      vars: [["intervals[1][0]", "2", ""], ["intervals[0][1]", "2", ""], ["2 < 2", "False", "found"]], meta: "With <code>&lt;=</code> this would wrongly report a conflict for meetings that merely touch.", hl: [4],
+      big: "true", bigNote: "touching is not overlapping"
+    },
+    complexity: {
+      caption: "One sort, then one linear pass with O(1) work per meeting.",
+      phase: "intervals = [[0,30],[5,10],[15,20]]", inp: IN, cur: -1, prev: -1, bad: [], dim: [], mark: null, lo: 0, hi: 30,
+      vars: [["sort", "O(n log n)", ""], ["scan", "O(n)", ""]], meta: "The sort is in place, so nothing beyond a few indices is allocated.", hl: [2, 3],
+      big: "O(n log n) time · O(1) extra space", bigNote: "versus O(n²) for all pairs"
+    },
+    final: {
+      caption: "The whole solution.",
+      phase: "intervals = [[0,30],[5,10],[15,20]]", inp: IN, cur: -1, prev: -1, bad: [0, 1], dim: [2], mark: null, lo: 0, hi: 30,
+      vars: [["answer", "False", "found"]], meta: "", hl: [0, 1, 2, 3, 4, 5, 6]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function bar(iv, cls, lo, hi) {
+    var span = hi - lo;
+    var left = ((iv[0] - lo) / span) * 100;
+    var width = Math.max(((iv[1] - iv[0]) / span) * 100, 3);
+    return '<div class="tl-bar ' + cls + '" style="left:' + left + '%;width:' + width + '%">' + iv[0] + '–' + iv[1] + '</div>';
+  }
+
+  function axis(lo, hi) {
+    var html = '<div class="tl-axis">';
+    var step = hi - lo > 10 ? 5 : 1;
+    for (var t = lo; t <= hi; t += step) {
+      html += '<span style="left:' + (((t - lo) / (hi - lo)) * 100) + '%">' + t + '</span>';
+    }
+    return html + '</div>';
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("target").textContent = s.phase;
+    $("meta").innerHTML = s.meta;
+
+    var html = "";
+    for (var i = 0; i < s.inp.length; i++) {
+      var cls = s.bad.indexOf(i) !== -1 ? "bad" : i === s.cur ? "cur" : i === s.prev ? "hit" : s.dim.indexOf(i) !== -1 ? "dim" : "";
+      html += '<div class="tl-row">' + bar(s.inp[i], cls, s.lo, s.hi) + '</div>';
+    }
+    if (s.mark !== null) {
+      html += '<div class="tl-mark" style="left:' + (((s.mark - s.lo) / (s.hi - s.lo)) * 100) + '%"></div>';
+    }
+    $("tl").innerHTML = html + axis(s.lo, s.hi);
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">nothing compared yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

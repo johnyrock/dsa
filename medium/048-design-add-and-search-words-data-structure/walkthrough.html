@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design Add and Search Words Data Structure Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; min-width: 70px; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 6px 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  #array .cell { flex: 0 1 auto; min-width: 0; padding: 8px 10px 4px; font-size: 0.85rem; white-space: nowrap; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .edge { stroke: var(--muted); stroke-width: 2; fill: none; opacity: 0.6; transition: opacity 0.25s, stroke 0.25s; }
+  .fig .edge.dim { opacity: 0.2; }
+  .fig .edge.hit { stroke: var(--ok); opacity: 1; stroke-width: 3; }
+  .fig .edge.bad { stroke: var(--warn); opacity: 1; stroke-width: 3; }
+  .fig .node circle { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .node.end circle { stroke: var(--muted); stroke-width: 3; }
+  .fig .node text { fill: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 600; text-anchor: middle; dominant-baseline: central; transition: opacity 0.25s; }
+  .fig .node.hit circle { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .node.bad circle { fill: var(--warn-soft); stroke: var(--warn); }
+  .fig .node.dim circle, .fig .node.dim text { opacity: 0.3; }
+  .fig .root circle { fill: var(--code-bg); }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.3rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 60px; padding: 5px 4px 3px; font-size: 0.9rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.05rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Trie · LeetCode #211</div>
+  <h1>Design Add and Search Words Data Structure, narrated</h1>
+  <p>Scroll from matching the pattern against every stored word to a trie whose search branches at each dot, with the trie's contents shown after every operation.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/trie.html">Trie</a> <span class="how">A literal letter follows one child; a dot tries every child. Recursion with any() does the branching.</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>Design a class <code>WordDictionary</code> with two methods. <code>add_word(word)</code> stores a lowercase word. <code>search(word)</code> reports whether some stored word matches the given string, where a <code>.</code> in the string stands for exactly one arbitrary letter. The match has to cover the whole stored word, not just a prefix of it.</p>
+      <div class="callout">Running example: <code>add_word("bad")</code>, <code>add_word("dad")</code>, <code>add_word("mad")</code>, then <code>search("pad")</code> → <strong>false</strong>, <code>search("bad")</code> → <strong>true</strong>, <code>search(".ad")</code> → <strong>true</strong>, <code>search("b..")</code> → <strong>true</strong>.</div>
+      <p>Without dots this is Implement Trie's <code>search</code>. The dot is what makes it a new problem: at a <code>.</code> the search cannot know which letter to follow, so it may have to try several. <code>".ad"</code> could be "bad", "dad", or "mad", and any one of them is enough.</p>
+      <p>The constraints keep the fan-out honest: words are at most 25 letters and a search pattern has at most 2 dots, with up to 10⁴ calls in total.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: keep a list and test each word against the pattern</h2>
+      <p>Store the words in a list. To search, compare the pattern against every stored word of the same length, letter by letter, treating a dot as a free pass:</p>
+      <pre class="code"><span class="ln">def search(self, word):</span><span class="ln">    for w in self.words:</span><span class="ln">        if len(w) == len(word) and all(</span><span class="ln">            p == "." or p == c for p, c in zip(word, w)</span><span class="ln">        ):</span><span class="ln">            return True</span><span class="ln">    return False</span></pre>
+      <p style="margin-top:14px">It is correct, and for a handful of words it is fine. But every <code>search</code> touches every stored word: <strong>O(n · L)</strong> per query, where <code>n</code> is the number of words stored so far. With 10⁴ adds followed by 10⁴ searches that is on the order of 10⁸ character comparisons, and a pattern like <code>"pad"</code>, which no word could ever match, still scans everything.</p>
+      <p>Bucketing the list by length helps only when lengths vary. What we want is to rule out whole groups of words after reading one letter of the pattern: on <code>"pad"</code>, the first letter <code>p</code> should end the search immediately.</p>
+    </section>
+
+    <section class="step" data-state="insight">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: a trie, with the search branching at dots</h2>
+      <p>Put the words in a trie, exactly as in Implement Trie. Now a literal letter in the pattern means "follow this one child, or fail if it is missing", which kills <code>"pad"</code> at the root: there is no <code>p</code> branch. Words that do not share the pattern's prefix are never visited.</p>
+      <div class="callout">A <code>.</code> means "follow <em>every</em> child, and succeed if any of them works". That is a recursion, not a loop: <code>match(node, i)</code> answers whether <code>word[i:]</code> can be matched starting at <code>node</code>, and at a dot it returns <code>any(match(child, i + 1) for child in node.children.values())</code>.</div>
+      <p>The base case is the part people get wrong. When <code>i == len(word)</code> the pattern is used up, and the answer is <code>node.is_word</code>, not <code>True</code>. Reaching a node only proves a prefix exists; the flag proves a word ends there. For <code>"b."</code> the walk reaches the <code>a</code> under <code>b</code>, which is not flagged, so the answer is false even though "bad" is stored.</p>
+      <p>The panel shows the trie after the three adds: three branches from the root, each a chain <code>a → d</code> with a flag on the <code>d</code>.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach: add_word is a plain insert, search is match(root, 0)</h2>
+      <ul>
+        <li><code>add_word</code>: for each <code>ch</code>, <code>if ch not in node.children: node.children[ch] = TrieNode()</code>, step down, and after the loop <code>node.is_word = True</code>.</li>
+        <li><code>if i == len(word): return node.is_word</code> — pattern consumed; a match only if a word ends exactly here.</li>
+        <li><code>if ch == ".": return any(match(child, i + 1) for child in node.children.values())</code> — wildcard: try every child, stop at the first success.</li>
+        <li><code>child = node.children.get(ch)</code> then <code>return child is not None and match(child, i + 1)</code> — literal: one child or nothing.</li>
+        <li><code>return match(self.root, 0)</code> — start at the root with the whole pattern ahead.</li>
+      </ul>
+      <p>Two things fall out for free. <code>any</code> over an empty <code>children</code> dict is <code>False</code>, so a dot at a leaf fails correctly. And <code>and</code> short-circuits, so a missing literal never recurses into <code>None</code>.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: search("pad") and search("bad")</h2>
+      <p>After the three adds, the root's <code>children</code> dict has keys <code>b</code>, <code>d</code>, <code>m</code>. <code>search("pad")</code> calls <code>match(root, 0)</code>. The first pattern character is <code>p</code>, a literal, so <code>child = root.children.get("p")</code> is <code>None</code>, and <code>child is not None and …</code> is <strong>false</strong> without a single recursive call. The other two letters are never even looked at.</p>
+      <p><code>search("bad")</code>: <code>b</code> is found, recurse to <code>match(b, 1)</code>; <code>a</code> is found, <code>match(a, 2)</code>; <code>d</code> is found, <code>match(d, 3)</code>. Now <code>i == 3 == len(word)</code>, and the <code>d</code> node's <code>is_word</code> is <code>True</code>, so the whole chain of <code>and</code>s evaluates to <strong>true</strong>.</p>
+      <p>The panel shows the b-a-d path in green and the other two branches dimmed: with no dots, exactly one path is ever explored.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: search(".ad")</h2>
+      <p><code>match(root, 0)</code> sees <code>ch = "."</code>. So it evaluates <code>any(match(child, 1) for child in root.children.values())</code>. The children are the <code>b</code>, <code>d</code>, and <code>m</code> nodes, in insertion order.</p>
+      <p>The first candidate is <code>match(b, 1)</code>. Pattern index 1 is the literal <code>a</code>: found under <code>b</code>, recurse to <code>match(a, 2)</code>. Index 2 is the literal <code>d</code>: found, recurse to <code>match(d, 3)</code>. The pattern is consumed and <code>d.is_word</code> is <code>True</code>, so <code>match(b, 1)</code> returns <code>True</code>.</p>
+      <p>That is the first value the generator hands to <code>any</code>, so <code>any</code> stops right there and returns <strong>true</strong>. The <code>d</code> and <code>m</code> branches are never explored: the panel shows only <code>b → a → d</code> lit, with the dot's two unused alternatives dimmed. Had "bad" not been stored, the generator would have moved on to <code>match(d, 1)</code> next.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: search("b..")</h2>
+      <p><code>match(root, 0)</code>: literal <code>b</code>, found, recurse to <code>match(b, 1)</code>. Index 1 is a dot, so try every child of <code>b</code>. It has one, <code>a</code>: <code>match(a, 2)</code>. Index 2 is also a dot, so try every child of <code>a</code>. It has one, <code>d</code>: <code>match(d, 3)</code>. The pattern is consumed and <code>d.is_word</code> is <code>True</code>.</p>
+      <p>So <code>match(a, 2)</code> returns <code>True</code>, <code>match(b, 1)</code> returns <code>True</code>, and the top-level <code>and</code> returns <strong>true</strong>. Two dots, but each had only one child to try, so the whole search visited four nodes.</p>
+      <div class="callout">The four searches returned <code>false, true, true, true</code>. Every one of them touched only the nodes on paths that could still match; the list scan from step 2 would have compared the pattern against all three words every time.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong</h2>
+      <p><strong>Returning <code>True</code> at the end of the pattern.</strong> Write <code>if i == len(word): return True</code> instead of <code>return node.is_word</code>. Then <code>search("b.")</code> on this dictionary walks <code>b → a</code>, runs out of pattern, and answers <strong>true</strong>, although no stored word is two letters long. The panel shows that: the walk ends on the unflagged <code>a</code> and the bug says yes anyway. The same bug makes <code>search("ba")</code> true.</p>
+      <p><strong>Treating the dot as a letter.</strong> Leave out the <code>if ch == "."</code> branch, and <code>search(".ad")</code> does <code>root.children.get(".")</code>, gets <code>None</code>, and returns <strong>false</strong>. A dot is never a key in <code>children</code>; it has to be handled before the literal lookup.</p>
+      <p><strong><code>all</code> instead of <code>any</code> at the dot.</strong> On this dictionary it happens to work, because every branch of <code>".ad"</code> matches. But <code>search(".")</code> on an <em>empty</em> dictionary returns <strong>true</strong>, since <code>all()</code> of nothing is <code>True</code>, and any dictionary where one child branch fails turns a valid match into <code>False</code>.</p>
+      <div class="callout warn">The end of the pattern is not the end of the check: ask <code>node.is_word</code>. And a dot is a branching point, not a character to look up.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p><code>add_word</code> is one dict operation per letter, <strong>O(L)</strong>. A <code>search</code> with no dots follows one path, also <strong>O(L)</strong>. Each dot can fan out to every child of its node, up to 26, so a pattern with <code>d</code> dots costs up to <strong>O(26<sup>d</sup> · L)</strong> in the worst case. The constraint of at most 2 dots keeps that at a few hundred nodes per query.</p>
+      <p>Space is one node per stored character at most, <strong>O(total characters)</strong>, and less when words share prefixes.</p>
+      <table>
+        <tr><th>Approach</th><th>add_word</th><th>search</th><th>Space</th></tr>
+        <tr><td>List, compare against every word</td><td>O(1)</td><td>O(n · L)</td><td>O(total chars)</td></tr>
+        <tr><td>Trie with branching at dots</td><td>O(L)</td><td>O(L), up to O(26<sup>d</sup> · L) with d dots</td><td>O(total chars)</td></tr>
+      </table>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>A trie insert and a recursive matcher. Line by line:</p>
+      <ul>
+        <li><code>if ch not in node.children: node.children[ch] = TrieNode()</code> / <code>node.is_word = True</code> — the same insert as Implement Trie.</li>
+        <li><code>def match(node, i):</code> — can <code>word[i:]</code> be matched from <code>node</code>?</li>
+        <li><code>if i == len(word): return node.is_word</code> — pattern consumed; only a flagged node counts.</li>
+        <li><code>if ch == ".": return any(match(child, i + 1) for child in node.children.values())</code> — a dot tries every child and stops at the first success.</li>
+        <li><code>child = node.children.get(ch)</code> / <code>return child is not None and match(child, i + 1)</code> — a literal follows one child or fails.</li>
+        <li><code>return match(self.root, 0)</code> — kick off at the root.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>a trie search where a literal follows one child, a dot tries them all with any(), and the end of the pattern must land on a flagged node.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>operations · in order</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>trie · thick ring = is_word</h3>
+        <svg class="fig" id="fig" viewBox="0 0 400 300" aria-label="trie"></svg>
+      </div>
+
+      <div class="block">
+        <h3>match(node, i)</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="design_add_and_search_words_data_structure.py">design_add_and_search_words_data_structure.py</a> · <a href="design_add_and_search_words_data_structure_annotated.py">design_add_and_search_words_data_structure_annotated.py</a> · <a href="test_design_add_and_search_words_data_structure.py">test_design_add_and_search_words_data_structure.py</a> · <a href="../../md.html?f=medium/048-design-add-and-search-words-data-structure/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class WordDictionary:",
+    "    def __init__(self):",
+    "        self.root = TrieNode()",
+    "",
+    "    def add_word(self, word):",
+    "        node = self.root",
+    "        for ch in word:",
+    "            if ch not in node.children:",
+    "                node.children[ch] = TrieNode()",
+    "            node = node.children[ch]",
+    "        node.is_word = True",
+    "",
+    "    def search(self, word):",
+    "        def match(node, i):",
+    "            if i == len(word):",
+    "                return node.is_word",
+    "            ch = word[i]",
+    "            if ch == \".\":",
+    "                return any(match(child, i + 1) for child in node.children.values())",
+    "            child = node.children.get(ch)",
+    "            return child is not None and match(child, i + 1)",
+    "",
+    "        return match(self.root, 0)"
+  ];
+
+  // The running example: each op is [label, result shown once done].
+  var OPS = [
+    ['add_word("bad")', ""],
+    ['add_word("dad")', ""],
+    ['add_word("mad")', ""],
+    ['search("pad")', "false"],
+    ['search("bad")', "true"],
+    ['search(".ad")', "true"],
+    ['search("b..")', "true"]
+  ];
+  var W3 = ["bad", "dad", "mad"];
+
+  // words: what the trie holds at this moment. walk: {path, cls, dimRest}. cur/done: op indices.
+  var STATES = {
+    problem: {
+      caption: "Three adds, then four searches; a dot in a pattern stands for any one letter.",
+      words: [], walk: null, cur: -1, done: [],
+      vars: [], meta: "Expected: false, true, true, true.", hl: []
+    },
+    brute: {
+      caption: "A list: every search compares the pattern against every stored word.",
+      words: [], walk: null, cur: 3, done: [0, 1, 2],
+      vars: [["search(\"pad\")", "compare with bad, dad, mad", "new"]],
+      meta: "O(n · L) per query, even for a pattern nothing could match.", hl: [],
+      big: "O(n · L)", bigNote: "per search, scanning all n words"
+    },
+    insight: {
+      caption: "A trie: a literal follows one child, a dot tries every child, the end must be flagged.",
+      words: W3, walk: null, cur: -1, done: [0, 1, 2],
+      vars: [["literal", "one child or fail"], ["dot", "any(match(child, i + 1) …)", "new"], ["end", "node.is_word, not True"]],
+      meta: "Three branches from the root, each a → d with the d flagged.", hl: [14, 15, 17, 18, 19, 20]
+    },
+    approach: {
+      caption: "add_word is the plain trie insert; search is match(root, 0).",
+      words: W3, walk: null, cur: -1, done: [0, 1, 2],
+      vars: [["match(node, i)", "can word[i:] match from node?"], ["any() on no children", "False"]],
+      meta: "and short-circuits before recursing into None.", hl: [4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22]
+    },
+    t1: {
+      caption: "search(\"pad\"): no p under the root → false at once. search(\"bad\"): b → a → d, flagged → true.",
+      words: W3, walk: { path: "bad", cls: "hit", dimRest: true }, cur: 4, done: [0, 1, 2, 3],
+      vars: [["\"pad\"", "root.children.get(\"p\") = None", "bad"], ["\"bad\"", "match(b,1) → match(a,2) → match(d,3)"], ["d.is_word", "true"], ["search", "true", "found"]],
+      meta: "No dots: exactly one path is explored.", hl: [14, 15, 19, 20]
+    },
+    t2: {
+      caption: "search(\".ad\"): the dot tries b, d, m in order; match(b, 1) succeeds so any() stops.",
+      words: W3, walk: { path: "bad", cls: "hit", dimRest: true }, cur: 5, done: [0, 1, 2, 3, 4],
+      vars: [["i = 0", "\".\" → any over {b, d, m}", "new"], ["match(b, 1)", "a found, d found, i = 3"], ["d.is_word", "true"], ["any()", "true after the first child", "found"]],
+      meta: "The d and m branches are never visited.", hl: [16, 17, 18]
+    },
+    t3: {
+      caption: "search(\"b..\"): literal b, then a dot over {a}, then a dot over {d}; d is flagged → true.",
+      words: W3, walk: { path: "bad", cls: "hit", dimRest: true }, cur: 6, done: [0, 1, 2, 3, 4, 5],
+      vars: [["i = 0", "b found"], ["i = 1", "\".\" → any over {a}"], ["i = 2", "\".\" → any over {d}"], ["i = 3", "d.is_word = true", "found"]],
+      meta: "Four nodes visited for a two-dot pattern.", hl: [14, 15, 17, 18, 19, 20],
+      big: "false, true, true, true", bigNote: "pad, bad, .ad, b.."
+    },
+    pitfall: {
+      caption: "return True at i == len(word): search(\"b.\") ends on the unflagged a and says true.",
+      words: W3, walk: { path: "ba", cls: "bad", dimRest: true }, cur: -1, done: [0, 1, 2, 3, 4, 5, 6],
+      vars: [["bug", "if i == len(word): return True"], ["\"b.\"", "b → a, pattern consumed"], ["a.is_word", "false, never checked", "bad"]],
+      meta: "Reaching a node proves a prefix; only the flag proves a word.", hl: [14, 15],
+      big: "true, not false", bigNote: "search(\"b.\") with only 3-letter words stored"
+    },
+    complexity: {
+      caption: "One path per literal; each dot fans out to the children of its node.",
+      words: W3, walk: null, cur: -1, done: [0, 1, 2, 3, 4, 5, 6],
+      vars: [["add_word", "O(L)"], ["search", "O(L), up to O(26^d · L) with d dots"]],
+      meta: "At most 2 dots per query keeps the fan-out small.", hl: [],
+      big: "O(L) add · O(26ᵈ · L) search", bigNote: "versus O(n · L) per search on a list"
+    },
+    final: {
+      caption: "The whole class.",
+      words: W3, walk: null, cur: -1, done: [0, 1, 2, 3, 4, 5, 6],
+      vars: [["dictionary holds", "bad, dad, mad", "found"]],
+      meta: "", hl: [1, 2, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  // ---- trie figure (built per state from s.words, so it can grow op by op) ----
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVG_NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  var TR = 14, levelH = 42;
+  function buildTrie(words) {
+    var root = { ch: "", kids: {}, end: false, path: "" };
+    words.forEach(function (w) {
+      var n = root;
+      for (var i = 0; i < w.length; i++) {
+        if (!n.kids[w[i]]) n.kids[w[i]] = { ch: w[i], kids: {}, end: false, path: w.slice(0, i + 1) };
+        n = n.kids[w[i]];
+      }
+      n.end = true;
+    });
+    var leafSlot = 0, nodes = [], edges = [], depth = 0;
+    (function layout(n, d) {
+      n.depth = d; depth = Math.max(depth, d);
+      var keys = Object.keys(n.kids).sort();
+      if (!keys.length) { n.slot = leafSlot++; }
+      else {
+        var sum = 0;
+        keys.forEach(function (k) { layout(n.kids[k], d + 1); sum += n.kids[k].slot; edges.push([n, n.kids[k]]); });
+        n.slot = sum / keys.length;
+      }
+      nodes.push(n);
+    })(root, 0);
+    var stepX = leafSlot > 1 ? (400 - 120) / (leafSlot - 1) : 0;
+    nodes.forEach(function (n) { n.x = leafSlot > 1 ? 60 + n.slot * stepX : 200; n.y = 24 + n.depth * levelH; });
+    return { nodes: nodes, edges: edges, depth: depth };
+  }
+  var figSvg = document.getElementById("fig");
+
+  function renderTrie(s) {
+    while (figSvg.firstChild) figSvg.removeChild(figSvg.firstChild);
+    var t = buildTrie(s.words);
+    figSvg.setAttribute("viewBox", "0 0 400 " + (24 + Math.max(t.depth, 2) * levelH + 24));
+    var w = s.walk || { path: "", cls: "" };
+    function on(path) {
+      if (!w.path) return "";
+      if (path === "") return w.cls;
+      if (w.path.indexOf(path) === 0) return w.cls;
+      return w.dimRest ? "dim" : "";
+    }
+    t.edges.forEach(function (e) {
+      figSvg.appendChild(el("line", { "class": "edge " + on(e[1].path), x1: e[0].x, y1: e[0].y + TR, x2: e[1].x, y2: e[1].y - TR }));
+    });
+    t.nodes.forEach(function (n) {
+      var cls = "node " + on(n.path) + (n.end ? " end" : "") + (n.path === "" ? " root" : "");
+      var g = el("g", { "class": cls });
+      g.appendChild(el("circle", { cx: n.x, cy: n.y, r: TR }));
+      g.appendChild(el("text", { x: n.x, y: n.y }, n.path === "" ? "•" : n.ch));
+      figSvg.appendChild(g);
+    });
+    if (s.words.length === 0) {
+      figSvg.appendChild(el("text", { x: 200, y: 24 + levelH + 10, "class": "lbl" }, "empty: only the root"));
+    }
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var i = 0; i < OPS.length; i++) {
+      var cls = "cell";
+      if (i === s.cur) cls += " cur";
+      else if (s.done.indexOf(i) !== -1) cls += " hit";
+      else cls += " dim";
+      var res = (i === s.cur || s.done.indexOf(i) !== -1) ? OPS[i][1] : "";
+      arr += '<div class="' + cls + '">' + OPS[i][0] + '<span class="idx">' + (res || "&nbsp;") + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+    renderTrie(s);
+
+    if (!s.vars || s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">no walk yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.vars.length; k++) {
+        var e = s.vars[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

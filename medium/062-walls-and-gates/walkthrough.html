@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Walls and Gates Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  /* number-of-islands additions: a grid of square cells with land, water, sunk and current states */
+  .grid { display: grid; gap: 4px; margin: 8px 0 4px; }
+  .gc {
+    aspect-ratio: 1; border-radius: 6px; border: 2px solid var(--line); background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.9rem; color: var(--muted); transition: all 0.25s;
+  }
+  .gc.land { background: var(--ok-soft); border-color: var(--ok); color: var(--ink); font-weight: 600; }
+  .gc.sunk { background: var(--code-bg); border-color: var(--line); color: var(--muted); text-decoration: line-through; }
+  .gc.cur { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); transform: scale(1.06); }
+  .gc.scan { outline: 2px dashed var(--accent); outline-offset: -2px; }
+  .dict .kv.island { border-color: var(--ok); }
+  /* walls-and-gates additions: wall, gate, unfilled room, filled room, and the BFS frontier */
+  .gc.wall { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+  .gc.gate { background: var(--ok-soft); border-color: var(--ok); color: var(--ink); font-weight: 700; }
+  .gc.room { color: var(--muted); }
+  .gc.filled { background: var(--code-bg); border-color: var(--line); color: var(--ink); font-weight: 600; }
+  .gc.frontier { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  .gc.wrong { border-color: var(--warn); background: var(--warn-soft); color: var(--ink); font-weight: 700; }
+  .array .cell { font-size: 0.85rem; padding: 8px 0 6px; }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Graph · LeetCode #286</div>
+  <h1>Walls and Gates, narrated</h1>
+  <p>Scroll through the thinking, from one search per room to a single breadth-first search that starts at every gate at once, with the state of the algorithm shown alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph Traversal</a> <span class="how">multi-source BFS: seed the queue with all gates, fill each room the first time it is reached</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>A grid holds three kinds of cell: <code>-1</code> is a wall, <code>0</code> is a gate, and <code>INF</code> (<code>2147483647</code>) is an empty room. Fill every empty room with the number of steps to its <em>nearest</em> gate, moving up, down, left or right and never through a wall. A room that cannot reach any gate keeps <code>INF</code>.</p>
+      <p>The work is in place: the function returns nothing and overwrites the rooms in the grid it was given.</p>
+      <div class="callout">Running example: a 4 × 4 grid with gates at <code>(0, 2)</code> and <code>(3, 0)</code> and five walls. The room at <code>(0, 0)</code> ends up <strong>3</strong>: the wall at <code>(0, 1)</code> blocks the way right, so its nearest gate is the one at the bottom-left, reached down the left column.</div>
+      <p>"Nearest" is the whole difficulty. Every room has to compare all the gates it can reach and keep the closest, and there may be hundreds of gates.</p>
+    </section>
+
+    <section class="step" data-state="naive">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: search from every room</h2>
+      <p>The literal reading of the problem is a shortest-path query per room. For each <code>INF</code> cell, run a breadth-first search outward until the first gate appears, and write that depth:</p>
+      <pre class="code"><span class="ln">for r in range(rows):</span><span class="ln">    for c in range(cols):</span><span class="ln">        if rooms[r][c] == INF:</span><span class="ln">            rooms[r][c] = bfs_to_nearest_gate(r, c)</span></pre>
+      <p style="margin-top:14px">Each BFS can sweep the whole grid before it finds a gate, and there are up to <code>m × n</code> rooms, so the total is <strong>O((m × n)²)</strong>. On a 250 × 250 grid that is about four billion cell visits.</p>
+      <div class="callout warn">The waste is that neighbouring rooms run almost the same search. The room at <code>(1, 0)</code> and the room at <code>(2, 0)</code> both explore the same corridor toward the same gate, and neither result helps the other.</div>
+    </section>
+
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 3</div>
+      <h2>Reframe: search from the gates instead</h2>
+      <p>Distance is symmetric. The distance from a room to its nearest gate is the distance from the nearest gate to that room. So flip the direction: instead of asking each room "where is a gate?", let the gates announce "here I am" and spread outward.</p>
+      <p>A breadth-first search from a gate visits rooms in order of distance: everything 1 step away, then everything 2 steps away, and so on. If several gates spread at the same time, in lockstep, then the first gate to reach a room is the closest one, and its arrival time is the answer.</p>
+      <div class="callout">Put <strong>every gate</strong> into the queue before the loop starts. They all sit at distance 0, so they form the first layer together, and one BFS does the work of all of them.</div>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 4</div>
+      <h2>The key idea: multi-source BFS, fill on first touch</h2>
+      <p>The code is the plain BFS template with a different seed:</p>
+      <ul>
+        <li><code>queue = deque((r, c) for … if rooms[r][c] == 0)</code>: every gate, all at once.</li>
+        <li><code>while queue: r, c = queue.popleft()</code>: process cells in the order they were discovered, which is non-decreasing distance.</li>
+        <li>For each of the four neighbours, if it is in bounds and <code>rooms[nr][nc] == INF</code>, set <code>rooms[nr][nc] = rooms[r][c] + 1</code> and append it.</li>
+      </ul>
+      <p>The <code>== INF</code> test does three jobs. It skips walls (<code>-1</code>), it skips gates (<code>0</code>), and it skips rooms that were already filled by an earlier, shorter arrival. Writing the distance is the visited mark; no separate set is needed.</p>
+      <p>The panel shows the queue as a row of cells. Two gates are queued before a single room has been looked at.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the two gates spread one step</h2>
+      <p>Pop <code>(0, 2)</code>, the first gate, whose value is 0. Below it, <code>(1, 2)</code> is <code>INF</code>: write <code>0 + 1 = 1</code> and append. Above is out of bounds. Right, <code>(0, 3)</code>, is <code>INF</code>: write 1, append. Left, <code>(0, 1)</code>, is a wall, skipped by the <code>== INF</code> test.</p>
+      <p>Pop <code>(3, 0)</code>, the second gate. Below is out of bounds; above, <code>(2, 0)</code>, is <code>INF</code>: write 1, append. Right is the wall at <code>(3, 1)</code>; left is out of bounds.</p>
+      <p>The queue is now <code>[(1, 2), (0, 3), (2, 0)]</code>: every room at distance 1, from either gate, in one batch. The panel marks them as the frontier.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: distance 2, where the gates meet</h2>
+      <p>Pop <code>(1, 2)</code> (value 1). Below, <code>(2, 2)</code>, is <code>INF</code>: write <code>1 + 1 = 2</code>, append. Left, <code>(1, 1)</code>, is <code>INF</code>: write 2, append. Right is the wall at <code>(1, 3)</code>; above is the gate, not <code>INF</code>, skipped.</p>
+      <p>Pop <code>(0, 3)</code> (value 1). Below is the wall at <code>(1, 3)</code>; left is the gate. Nothing to fill. Pop <code>(2, 0)</code> (value 1). Above, <code>(1, 0)</code>, is <code>INF</code>: write 2, append. Right is a wall.</p>
+      <p>Now the two searches touch. <code>(1, 1)</code> was filled with 2 from the top gate, and <code>(1, 0)</code> with 2 from the bottom gate. When <code>(1, 1)</code> is popped later it will look at <code>(1, 0)</code>, see 2 rather than <code>INF</code>, and leave it alone. Neither gate can overwrite the other's claim, and neither needs to: both arrivals happened in the distance-2 layer.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: the far corners, and the answer</h2>
+      <p>Pop <code>(2, 2)</code> (value 2): below, <code>(3, 2)</code>, becomes 3. Pop <code>(1, 1)</code> (value 2): nothing left to fill around it. Pop <code>(1, 0)</code> (value 2): above, <code>(0, 0)</code>, becomes <code>2 + 1 = 3</code>. That is the room from the problem statement, and it got its answer from the bottom gate, three steps up the left column, because the wall at <code>(0, 1)</code> cut off the two-step route from the top gate.</p>
+      <p>Pop <code>(3, 2)</code> (value 3): right, <code>(3, 3)</code>, becomes 4. Pop <code>(0, 0)</code> and <code>(3, 3)</code>: every neighbour is a wall, out of bounds, or already filled. The queue is empty and the function returns.</p>
+      <div class="callout">Eleven pops for eleven non-wall cells. Every room was written exactly once, at the moment the closest gate reached it.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: one gate at a time</h2>
+      <p><strong>Looping over the gates and running a BFS from each.</strong> It looks like the same algorithm, and it uses the same <code>== INF</code> test, but the gates no longer spread in lockstep. The first gate, <code>(0, 2)</code>, floods every reachable room before the second gate starts, so <code>(2, 0)</code> is written as 4 (down through <code>(1, 2)</code>, <code>(1, 1)</code>, <code>(1, 0)</code>) and <code>(0, 0)</code> as 4. When the gate at <code>(3, 0)</code> finally runs, its neighbour <code>(2, 0)</code> is no longer <code>INF</code>, so it is skipped. The panel shows the result: <strong>4</strong> at <code>(2, 0)</code> where the answer is 1, and <code>(1, 0)</code> and <code>(0, 0)</code> off by one and two.</p>
+      <p><strong>Testing <code>!= -1</code> instead of <code>== INF</code>.</strong> Now gates and already-filled rooms get rewritten with a larger distance and re-queued, the queue never drains, and the loop runs forever.</p>
+      <p><strong>Using a stack instead of a queue.</strong> Depth-first order reaches a room by whatever path it stumbles on first, not the shortest. Distances come out too large, and fixing it with rewrites brings back the quadratic cost.</p>
+      <div class="callout warn">All sources in the queue before the first pop, one queue, first write wins. Each of those three clauses rules out one of the bugs above.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p>A cell is appended only while it is <code>INF</code>, and the append is what makes it not <code>INF</code>, so every cell enters the queue at most once. Each pop checks four neighbours in constant time. Total: <strong>O(m × n) time</strong>. The queue can hold a whole BFS layer, which is at most <code>m × n</code> cells: <strong>O(m × n) space</strong>. The distances live in the input grid, so nothing else is allocated.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>BFS from every room</td><td>O((m × n)²)</td><td>O(m × n)</td></tr>
+        <tr><td>BFS from each gate in turn, keeping the min</td><td>O(g × m × n)</td><td>O(m × n)</td></tr>
+        <tr><td>One BFS seeded with all gates</td><td>O(m × n)</td><td>O(m × n)</td></tr>
+      </table>
+      <p>The middle row is correct only if each gate's BFS is allowed to lower an existing value; with <code>g</code> gates it is <code>g</code> times slower than seeding them together, for the same answer.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>The BFS template with the seed changed. Every line maps to a step above.</p>
+      <ul>
+        <li><code>if not rooms or not rooms[0]: return</code> guards the empty grid before <code>rooms[0]</code> is indexed.</li>
+        <li><code>INF = 2147483647</code> names the sentinel that means both "empty room" and "unvisited".</li>
+        <li><code>queue = deque(… if rooms[r][c] == 0)</code> loads every gate as a distance-0 source.</li>
+        <li><code>r, c = queue.popleft()</code> takes cells in discovery order, which is distance order.</li>
+        <li><code>0 &lt;= nr &lt; rows and 0 &lt;= nc &lt; cols and rooms[nr][nc] == INF</code> admits only unvisited rooms, skipping walls, gates and filled cells alike.</li>
+        <li><code>rooms[nr][nc] = rooms[r][c] + 1</code> is the answer for that room and its visited mark, in one write.</li>
+        <li><code>queue.append((nr, nc))</code> lets the room spread to its own neighbours one layer later.</li>
+      </ul>
+      <div class="callout">One-line summary to remember: <em>seed the queue with every gate, BFS once, and the first arrival at each room is its distance.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>rooms · black = wall, green = gate, ∞ = unfilled, blue = just filled, dashed = popped</h3>
+        <div class="grid" id="grid"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>queue · front on the left</h3>
+        <div class="array" id="queue"></div>
+      </div>
+
+      <div class="block">
+        <h3>popped cell</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="walls_and_gates.py">walls_and_gates.py</a> · <a href="walls_and_gates_annotated.py">walls_and_gates_annotated.py</a> · <a href="test_walls_and_gates.py">test_walls_and_gates.py</a> · <a href="../../md.html?f=medium/062-walls-and-gates/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+
+  var CODE = [
+    "class Solution:",
+    "    def walls_and_gates(self, rooms: list[list[int]]) -> None:",
+    "        if not rooms or not rooms[0]:",
+    "            return",
+    "        INF = 2147483647",
+    "        rows, cols = len(rooms), len(rooms[0])",
+    "        queue = deque((r, c) for r in range(rows) for c in range(cols) if rooms[r][c] == 0)",
+    "        while queue:",
+    "            r, c = queue.popleft()",
+    "            for nr, nc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):",
+    "                if 0 <= nr < rows and 0 <= nc < cols and rooms[nr][nc] == INF:",
+    "                    rooms[nr][nc] = rooms[r][c] + 1",
+    "                    queue.append((nr, nc))"
+  ];
+
+  // W = wall, I = INF (unfilled room), numbers = gate (0) or filled distance
+  var W = -1, I = "I";
+  var G0 = [
+    [I, W, 0, I],
+    [I, I, I, W],
+    [I, W, I, W],
+    [0, W, I, I]
+  ];
+  // after both gates popped
+  var G1 = [
+    [I, W, 0, 1],
+    [I, I, 1, W],
+    [1, W, I, W],
+    [0, W, I, I]
+  ];
+  // after (1,2), (0,3), (2,0) popped
+  var G2 = [
+    [I, W, 0, 1],
+    [2, 2, 1, W],
+    [1, W, 2, W],
+    [0, W, I, I]
+  ];
+  var G3 = [
+    [3, W, 0, 1],
+    [2, 2, 1, W],
+    [1, W, 2, W],
+    [0, W, 3, 4]
+  ];
+  // one-gate-at-a-time bug: the top gate claims the left column first
+  var GBUG = [
+    [4, W, 0, 1],
+    [3, 2, 1, W],
+    [4, W, 2, W],
+    [0, W, 3, 4]
+  ];
+
+  // Each state describes what the sticky panel shows for one step.
+  // g = grid, q = queue contents (front first), cur = [r, c] just popped, frontier = cells written in this step,
+  // wrong = cells whose value is the bug's output.
+  var STATES = {
+    problem: {
+      caption: "Fill every ∞ room with the number of steps to its nearest gate.",
+      g: G0, q: [], cur: null, frontier: [], wrong: [], chips: [],
+      meta: "Answer for (0, 0): <b>3</b>, via the gate at (3, 0). The wall at (0, 1) blocks the short way to (0, 2).", hl: []
+    },
+    naive: {
+      caption: "A separate BFS from every room finds its gate, but repeats the same corridors over and over.",
+      g: G0, q: [], cur: null, frontier: [[1, 0], [2, 0]], wrong: [], chips: [["rooms", "9"], ["BFS runs", "9"]],
+      meta: "(1, 0) and (2, 0) would each search the whole left column toward the same gate.", hl: [],
+      big: "O((m × n)²)", bigNote: "one full search per room"
+    },
+    reframe: {
+      caption: "Distance is symmetric: let the gates spread outward instead, all at once.",
+      g: G0, q: [], cur: null, frontier: [[0, 2], [3, 0]], wrong: [], chips: [["sources", "2"]],
+      meta: "If both gates advance in lockstep, the first to reach a room is its nearest gate.", hl: []
+    },
+    idea: {
+      caption: "Seed the queue with every gate, then run one plain BFS, filling rooms on first touch.",
+      g: G0, q: ["(0,2)", "(3,0)"], cur: null, frontier: [], wrong: [], chips: [["queue", "both gates, distance 0", "new"]],
+      meta: "<b>== INF</b> skips walls, gates and already-filled rooms in one test.", hl: [6, 7, 8, 10, 11, 12]
+    },
+    t1: {
+      caption: "Pop (0, 2): fill (1, 2) and (0, 3) with 1. Pop (3, 0): fill (2, 0) with 1.",
+      g: G1, q: ["(1,2)", "(0,3)", "(2,0)"], cur: [3, 0], frontier: [[1, 2], [0, 3], [2, 0]], wrong: [],
+      chips: [["popped", "(3, 0)", "new"], ["value", "0"], ["writes", "0 + 1 = 1"]],
+      meta: "Every room at distance 1 from either gate is now queued, in one batch.", hl: [8, 9, 10, 11, 12]
+    },
+    t2: {
+      caption: "Pop (1, 2): fill (2, 2), (1, 1) with 2. Pop (0, 3): nothing. Pop (2, 0): fill (1, 0) with 2.",
+      g: G2, q: ["(2,2)", "(1,1)", "(1,0)"], cur: [2, 0], frontier: [[2, 2], [1, 1], [1, 0]], wrong: [],
+      chips: [["popped", "(2, 0)", "new"], ["value", "1"], ["writes", "1 + 1 = 2"]],
+      meta: "(1, 1) came from the top gate and (1, 0) from the bottom one. Neither will overwrite the other: both are no longer INF.", hl: [8, 9, 10, 11, 12]
+    },
+    t3: {
+      caption: "(3, 2) = 3, (0, 0) = 2 + 1 = 3, (3, 3) = 3 + 1 = 4. Queue empty; done.",
+      g: G3, q: [], cur: [3, 3], frontier: [[0, 0], [3, 2], [3, 3]], wrong: [],
+      chips: [["popped", "(3, 3)", "found"], ["value", "4"], ["writes", "none"]],
+      meta: "(0, 0) got 3 from the bottom gate up the left column; the top gate's route was walled off.", hl: [7, 8, 11],
+      big: "(0, 0) = 3", bigNote: "eleven pops, every room written exactly once"
+    },
+    pitfall: {
+      caption: "One BFS per gate, in turn: the top gate fills the left column first and the bottom gate cannot fix it.",
+      g: GBUG, q: [], cur: [3, 0], frontier: [], wrong: [[0, 0], [1, 0], [2, 0]],
+      chips: [["(2, 0) buggy", "4"], ["(2, 0) correct", "1", "found"]],
+      meta: "When the gate at (3, 0) runs, (2, 0) is already 4, not INF, so it is skipped.", hl: [6, 10],
+      big: "4, not 1", bigNote: "all sources must be queued before the first pop"
+    },
+    complexity: {
+      caption: "Every cell enters the queue at most once and checks four neighbours.",
+      g: G3, q: [], cur: null, frontier: [], wrong: [], chips: [["cells", "16"], ["appends", "9"]],
+      meta: "The grid stores the distances, so the queue is the only extra memory.", hl: [7, 10, 12],
+      big: "O(m × n) time · O(m × n) queue worst case", bigNote: "versus O((m × n)²) for a search per room"
+    },
+    final: {
+      caption: "The whole solution.",
+      g: G3, q: [], cur: null, frontier: [], wrong: [], chips: [["(0, 0)", "3", "found"]], meta: "",
+      hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function inList(list, r, c) {
+    for (var i = 0; i < list.length; i++) if (list[i][0] === r && list[i][1] === c) return true;
+    return false;
+  }
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("meta").innerHTML = s.meta;
+
+    var grid = $("grid");
+    grid.style.gridTemplateColumns = "repeat(" + s.g[0].length + ", 1fr)";
+    var html = "";
+    for (var r = 0; r < s.g.length; r++) {
+      for (var c = 0; c < s.g[r].length; c++) {
+        var v = s.g[r][c];
+        var cls = "gc", txt;
+        if (v === W) { cls += " wall"; txt = "#"; }
+        else if (v === I) { cls += " room"; txt = "∞"; }
+        else if (v === 0) { cls += " gate"; txt = "0"; }
+        else { cls += " filled"; txt = String(v); }
+        if (inList(s.frontier, r, c)) cls += " frontier";
+        if (inList(s.wrong, r, c)) cls += " wrong";
+        if (s.cur && s.cur[0] === r && s.cur[1] === c) cls += " scan";
+        html += '<div class="' + cls + '">' + txt + '</div>';
+      }
+    }
+    grid.innerHTML = html;
+
+    var q = "";
+    if (s.q.length === 0) {
+      q = '<div class="cell dim">empty</div>';
+    } else {
+      for (var i = 0; i < s.q.length; i++) {
+        q += '<div class="cell' + (i === 0 ? " cur" : "") + '">' + s.q[i] + '<span class="idx">' + (i === 0 ? "front" : "") + '</span></div>';
+      }
+    }
+    $("queue").innerHTML = q;
+
+    if (s.chips.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started yet</span>';
+    } else {
+      var d = "";
+      for (var k = 0; k < s.chips.length; k++) {
+        var e = s.chips[k];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var code = "";
+    for (var l = 0; l < CODE.length; l++) {
+      code += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l].replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</span>";
+    }
+    $("code").innerHTML = code;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

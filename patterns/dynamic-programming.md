@@ -31,7 +31,21 @@ return b
 | [easy/010 Climbing Stairs](../easy/010-climbing-stairs/) | Easy | f(n) = f(n-1) + f(n-2), Fibonacci with two variables |
 | [medium/007 Maximum Subarray](../medium/007-maximum-subarray/) | Medium | best ending here = max(x, prev + x), Kadane |
 | [medium/008 Coin Change](../medium/008-coin-change/) | Medium | dp[a] = 1 + min(dp[a - c]), table over amounts |
-
+| [easy/020 Min Cost Climbing Stairs](../easy/020-min-cost-climbing-stairs/) | Easy | Keep the cheapest costs for the prior two positions. |
+| [medium/072 House Robber](../medium/072-house-robber/) | Medium | For each house the decision is binary: rob it and add its money to the best total from… |
+| [medium/073 House Robber II](../medium/073-house-robber-ii/) | Medium | On a circle the only new constraint is that house 0 and house n-1 cannot both be robbed |
+| [medium/074 Palindromic Substrings](../medium/074-palindromic-substrings/) | Medium | Every palindrome has a centre: a character for odd length, the gap between two… |
+| [medium/075 Decode Ways](../medium/075-decode-ways/) | Medium | Look at how a decoding of the prefix `s[:i+1]` ends: either its last code is the… |
+| [medium/076 Maximum Product Subarray](../medium/076-maximum-product-subarray/) | Medium | Kadane's idea, "best subarray ending here is either this element alone or this element… |
+| [medium/077 Word Break](../medium/077-word-break/) | Medium | Ask about prefixes, not the whole string: `dp[i]` is "can `s[:i]` be segmented?" |
+| [medium/078 Longest Increasing Subsequence](../medium/078-longest-increasing-subsequence/) | Medium | Anchor the subproblem on where the subsequence *ends*: `dp[i]` is the length of the… |
+| [medium/079 Partition Equal Subset Sum](../medium/079-partition-equal-subset-sum/) | Medium | Two equal halves each sum to `total / 2`, so the problem is really "is there a subset… |
+| [medium/080 Unique Paths](../medium/080-unique-paths/) | Medium | The robot enters any cell from exactly one of two neighbours: the cell above (its last… |
+| [medium/081 Longest Common Subsequence](../medium/081-longest-common-subsequence/) | Medium | `dp[i][j]` is the LCS length of the first `i` characters of `text1` and the first `j`… |
+| [medium/082 Best Time to Buy and Sell Stock with Cooldown](../medium/082-best-time-to-buy-and-sell-stock-with-cooldown/) | Medium | At the end of any day you are in one of three states: `hold` (own a share), `sold`… |
+| [medium/083 Coin Change II](../medium/083-coin-change-ii/) | Medium | `dp[a]` is the number of combinations that make amount `a` using only the coins… |
+| [medium/084 Target Sum](../medium/084-target-sum/) | Medium | Split the numbers into the plus group `P` and the minus group `N` |
+| [medium/085 Interleaving String](../medium/085-interleaving-string/) | Medium | `dp[i][j]` asks whether the first `i` characters of `s1` and the first `j` of `s2` can… |
 ## Common mistakes
 
 - Wrong base cases, which shift every later answer.
