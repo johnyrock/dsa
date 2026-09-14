@@ -205,7 +205,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Dynamic Programming · LeetCode #309</div>
   <h1>Best Time to Buy and Sell Stock with Cooldown, narrated</h1>
-  <p>Scroll through the thinking, from trying every sequence of trades to a three-state machine rolled forward one day at a time, with the state of the algorithm shown alongside.</p>
+  <p>I track the best balance for holding, selling, and resting at the end of every day.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">state machine: hold / sold / rest as three rolling variables</span></p>
 </header>
 
@@ -223,35 +223,36 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instinct: try every plan</h2>
-      <p>On each day you either do nothing, buy (if you hold nothing and yesterday was not a sale), or sell (if you hold a share). Recurse over the days and take the best.</p>
+<h2>First instinct: try every plan</h2>
+      <p>My first instinct is to try every choice on each day: I rest, buy when I am allowed, or sell when I hold a share, then keep the best result.</p>
       <pre class="code"><span class="ln">def best(i, holding):</span><span class="ln">    if i &gt;= len(prices):</span><span class="ln">        return 0</span><span class="ln">    skip = best(i + 1, holding)</span><span class="ln">    if holding:</span><span class="ln">        return max(skip, prices[i] + best(i + 2, False))  # sell, then cooldown</span><span class="ln">    return max(skip, -prices[i] + best(i + 1, True))      # buy</span></pre>
-      <p style="margin-top:14px">Correct, and it even expresses the cooldown neatly as <code>i + 2</code>. But every day branches two ways, so it is <strong>O(2ⁿ)</strong>: the same <code>(i, holding)</code> pair is recomputed from every path that reaches it. At 5000 days this never finishes. Memoizing on <code>(i, holding)</code> fixes the time, but the shape of the fix is what points at the real solution.</p>
+      <p style="margin-top:14px">The <code>i + 2</code> call handles the cooldown, but the branches take <strong>O(2ⁿ) time</strong> and <strong>O(n) space</strong> for the call stack. At 5000 days, it never finishes.</p>
+      <p>The same <code>(i, holding)</code> state appears along many plans. I only need the best balance for each kind of end-of-day state.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>The key idea: three states, rolled forward</h2>
-      <p>At the end of any day you are in exactly one of three situations, and for each one only the best cash balance matters:</p>
+      <p>At the end of any day, I am in exactly one of three situations, and only the best cash balance for each matters:</p>
       <ul>
-        <li><code>hold</code> — you own a share. The cash is negative if you have not sold yet.</li>
-        <li><code>sold</code> — you sold <em>today</em>. Tomorrow is the cooldown.</li>
-        <li><code>rest</code> — you own nothing and are free to buy tomorrow.</li>
+        <li><code>hold</code> — I own a share. The cash is negative if I have not sold yet.</li>
+        <li><code>sold</code> — I sold <em>today</em>. Tomorrow is the cooldown.</li>
+        <li><code>rest</code> — I own nothing and am free to buy tomorrow.</li>
       </ul>
       <p>Each day, every state is rebuilt from yesterday's three values:</p>
       <ul>
         <li><code>hold = max(hold, rest - price)</code> — keep holding, or buy today. Buying is only allowed from <code>rest</code>. That one detail <em>is</em> the cooldown rule.</li>
         <li><code>sold = hold + price</code> — the only way to have just sold is to have been holding.</li>
-        <li><code>rest = max(rest, sold)</code> — keep resting, or you sold yesterday and today is the cooldown.</li>
+        <li><code>rest = max(rest, sold)</code> — I keep resting, or I sold yesterday and today is the cooldown.</li>
       </ul>
-      <div class="callout">The exponential tree collapses to three numbers per day because a plan's past does not matter, only which state it left you in and how much cash it left you with.</div>
+      <div class="callout">The exponential tree collapses to three numbers per day because a plan's past does not matter; I only need its ending state and cash balance.</div>
     </section>
 
     <section class="step" data-state="approach">
       <div class="n">STEP 4</div>
       <h2>The approach, line by line</h2>
       <ul>
-        <li><code>hold, sold, rest = float("-inf"), 0, 0</code> seeds the states before day 0. You cannot be holding a share you never bought, so <code>hold</code> starts impossible; doing nothing leaves 0 cash in the other two.</li>
+        <li><code>hold, sold, rest = float("-inf"), 0, 0</code> seeds the states before day 0. I cannot be holding a share I never bought, so <code>hold</code> starts impossible; doing nothing leaves 0 cash in the other two.</li>
         <li><code>for price in prices</code> walks the days in order.</li>
         <li><code>hold, sold, rest = max(hold, rest - price), hold + price, max(rest, sold)</code> is the whole recurrence in one tuple assignment. The right-hand side is evaluated with yesterday's values before any name is rebound.</li>
         <li><code>return max(sold, rest)</code> — ending while holding a share is never better than not having bought it, so only the two cash-only states compete.</li>
@@ -261,8 +262,8 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: days 0 and 1</h2>
-      <p>Day 0, <code>price = 1</code>. <code>hold = max(-inf, 0 − 1) = −1</code>: buying today is the only way to hold. <code>sold = −inf + 1 = −inf</code>: you cannot sell what you never had. <code>rest = max(0, 0) = 0</code>.</p>
-      <p>Day 1, <code>price = 2</code>. <code>hold = max(−1, 0 − 2) = −1</code>: keep the share bought at 1 rather than buy at 2. <code>sold = −1 + 2 = 1</code>: sell the share for a profit of 1. <code>rest = max(0, −inf) = 0</code>.</p>
+      <p>Day 0, <code>price = 1</code>. <code>hold = max(-inf, 0 − 1) = −1</code>: buying today is my only way to hold. <code>sold = −inf + 1 = −inf</code>: I cannot sell what I never had. <code>rest = max(0, 0) = 0</code>.</p>
+      <p>Day 1, <code>price = 2</code>. <code>hold = max(−1, 0 − 2) = −1</code>: I retain the share bought at 1 instead of buying at 2. <code>sold = −1 + 2 = 1</code>: I can sell that share for a profit of 1. <code>rest = max(0, −inf) = 0</code>.</p>
       <p>After two days the best "just sold" plan is worth 1 and the best "holding" plan is still the share bought at 1.</p>
     </section>
 
@@ -284,10 +285,10 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: reading today's values</h2>
-      <p><strong>Updating the states one line at a time.</strong> Write the three updates as separate statements, <code>hold = max(hold, rest - price)</code>, then <code>sold = hold + price</code>, then <code>rest = max(rest, sold)</code>, and <code>sold</code> reads the <em>new</em> <code>hold</code>. That lets a plan buy and sell on the same day for zero profit, and worse, <code>rest</code> then reads the new <code>sold</code> so the cooldown disappears entirely. On the running example this returns <strong>4, not 3</strong>: buy 1, sell 3, buy 0, sell 2 with no rest day. The tuple assignment exists precisely so all three right-hand sides see yesterday's values.</p>
+      <p><strong>Updating the states one line at a time.</strong> If I write the three updates as separate statements, <code>hold = max(hold, rest - price)</code>, then <code>sold = hold + price</code>, then <code>rest = max(rest, sold)</code>, <code>sold</code> reads the <em>new</em> <code>hold</code>. That lets a plan buy and sell on the same day for zero profit, and worse, <code>rest</code> then reads the new <code>sold</code> so the cooldown disappears entirely. On the running example it returns <strong>4, not 3</strong>: I buy at 1, sell at 3, buy at 0, and sell at 2 with no rest day. The tuple assignment exists precisely so all three right-hand sides see yesterday's values.</p>
       <p><strong>Letting <code>hold</code> read from <code>sold</code>.</strong> <code>hold = max(hold, max(rest, sold) - price)</code> is the recurrence for the no-cooldown problem and also gives 4 here. The cooldown lives in that one missing read.</p>
-      <p><strong>Seeding <code>hold = 0</code>.</strong> That pretends you start the first day holding a free share. <code>[2, 1]</code> then returns 2 instead of 0, because "selling" the phantom share on day 0 earns 2.</p>
-      <div class="callout warn">All three states are computed from yesterday's numbers in one tuple assignment, and only <code>rest</code> may buy. Check with <code>[1, 2, 3, 0, 2]</code>: the answer is 3, and any 4 means the cooldown leaked.</div>
+      <p><strong>Seeding <code>hold = 0</code>.</strong> That pretends I start the first day holding a free share. <code>[2, 1]</code> then returns 2 instead of 0, because “selling” the phantom share on day 0 earns 2.</p>
+      <div class="callout warn">I compute all three states from yesterday's numbers in one tuple assignment, and only <code>rest</code> may buy. On <code>[1, 2, 3, 0, 2]</code>, I get 3; any 4 means the cooldown leaked.</div>
     </section>
 
     <section class="step" data-state="complexity">

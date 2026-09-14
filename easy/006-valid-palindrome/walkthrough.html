@@ -185,8 +185,8 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Two Pointers · LeetCode #125</div>
   <h1>Valid Palindrome, narrated</h1>
-  <p>Scroll through the thinking, from the cleaned copy you reach for first to the two pointers that need no copy at all, with the state of the algorithm shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/two-pointers.html">Two Pointers</a> <span class="how">skip non-alphanumerics, compare lowercase</span></p>
+  <p>I’ll start by building a cleaned copy, then replace that copy with two pointers that compare the original string in place.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/two-pointers.html">Two Pointers</a> <span class="how">inward pointers over lowercase alphanumeric characters</span></p>
 </header>
 
 <div class="layout">
@@ -195,7 +195,7 @@
     <section class="step" data-state="problem">
       <div class="n">STEP 1</div>
       <h2>The problem</h2>
-      <p>You get a string <code>s</code>. Decide whether it reads the same forwards and backwards, ignoring everything that is not a letter or a digit, and treating uppercase and lowercase as the same character.</p>
+      <p>Given a string <code>s</code>, decide whether it reads the same forwards and backwards while ignoring non-alphanumeric characters and letter case.</p>
       <p>So spaces, commas, colons and apostrophes are invisible, and <code>'N'</code> and <code>'n'</code> are the same letter.</p>
       <div class="callout">Running example: <code>s = "No 'x' in Nixon"</code>. The alphanumeric characters spell <code>noxinnixon</code>, which is the same read either way, so the answer is <code>True</code>.</div>
       <p>Two inputs that look like trick questions are not: the empty string <code>""</code> and a string of only punctuation like <code>".,;'"</code> both return <code>True</code>, because there is nothing left that could disagree.</p>
@@ -204,11 +204,11 @@
     <section class="step" data-state="naive">
       <div class="n">STEP 2</div>
       <h2>First instinct: clean it, then reverse it</h2>
-      <p>The obvious move is to do the two rules literally. Build a new string containing only the lowercased alphanumeric characters, then compare it to its own reverse.</p>
+      <p>My first instinct is to apply both rules literally. I build a new string of lowercased alphanumeric characters, then compare it with its reverse.</p>
       <pre class="code"><span class="ln">cleaned = "".join(c.lower() for c in s if c.isalnum())</span><span class="ln">return cleaned == cleaned[::-1]</span></pre>
       <p style="margin-top:14px">This is correct and it is a perfectly good first answer to say out loud. It is also <strong>O(n) time</strong>, so the time is already optimal.</p>
-      <p>The cost is memory. <code>cleaned</code> is a copy of the input, and <code>cleaned[::-1]</code> is a second copy, so this is <strong>O(n) extra space</strong>. For a 200,000-character input that is two more strings held in memory just to answer a yes/no question.</p>
-      <p>What is the copy actually buying us?</p>
+      <p>This baseline scans the input and compares the cleaned text once, so it takes <strong>O(n) time</strong>. <code>cleaned</code> and <code>cleaned[::-1]</code> can each hold the input length, so it uses <strong>O(n) extra space</strong>.</p>
+      <p>The copies only make mirrored characters convenient to compare. I can reach those characters directly with one pointer from each end and avoid the extra storage.</p>
     </section>
 
     <section class="step" data-state="reframe">
@@ -217,17 +217,17 @@
       <p>Comparing a string to its reverse means comparing position 0 with the last position, position 1 with the second-to-last, and so on inward until the two meet in the middle.</p>
       <p>That is the entire operation: a sequence of <em>mirrored pairs</em>. The reversed copy exists only so that both halves can be read left to right.</p>
       <div class="callout">In <code>"No 'x' in Nixon"</code>, the first pair is <code>N</code> at index 0 against <code>n</code> at index 14. Nothing in between matters yet.</div>
-      <p>But we can read a string backwards without reversing it — just walk an index down from the end. And the filtering does not need a new string either; it only needs to decide which positions to <em>skip</em>.</p>
+      <p>I can read a string backwards without reversing it by moving an index down from the end. I can also filter by deciding which positions to <em>skip</em>, without building a new string.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 4</div>
       <h2>The key idea: two pointers, skipping in place</h2>
-      <p>Put <code>left</code> on the first character and <code>right</code> on the last, and walk them toward each other. At each step:</p>
+      <p>I put <code>left</code> on the first character and <code>right</code> on the last, then walk them toward each other. At each step:</p>
       <ul>
-        <li><strong>Skip</strong> <code>left</code> forward past anything that fails <code>isalnum()</code>.</li>
-        <li><strong>Skip</strong> <code>right</code> backward past anything that fails <code>isalnum()</code>.</li>
-        <li><strong>Compare</strong> the two characters they land on, lowercased. A mismatch answers the whole question: <code>False</code>.</li>
+        <li>I move <code>left</code> forward past anything that fails <code>isalnum()</code>.</li>
+        <li>I move <code>right</code> backward past anything that fails <code>isalnum()</code>.</li>
+        <li>I compare the two characters they land on after lowercasing them. A mismatch answers the whole question: <code>False</code>.</li>
         <li><strong>Step</strong> both pointers inward and repeat.</li>
       </ul>
       <p>Filtering has turned from a string-building step into a movement rule. Nothing is copied, so the extra space is two integers: <strong>O(1)</strong>.</p>
@@ -237,7 +237,7 @@
     <section class="step" data-state="t0">
       <div class="n">STEP 5</div>
       <h2>Trace it: the outermost pair</h2>
-      <p>Start at <code>left = 0</code> and <code>right = 14</code>. Both characters are already alphanumeric, so neither skip loop moves.</p>
+      <p>I start at <code>left = 0</code> and <code>right = 14</code>. Both characters are already alphanumeric, so neither skip loop moves.</p>
       <p><code>s[0].lower()</code> is <code>'n'</code> and <code>s[14].lower()</code> is <code>'n'</code>. They match, so the pair is settled and both pointers step inward to <code>left = 1</code>, <code>right = 13</code>.</p>
       <p>There, <code>'o'</code> meets <code>'o'</code> — another match — and the pointers move again, to <code>left = 2</code> and <code>right = 12</code>.</p>
       <div class="callout">Note what did <em>not</em> happen: no string was built, and the capital <code>N</code> was handled by <code>.lower()</code> at comparison time rather than by rewriting the input.</div>
@@ -255,8 +255,8 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 7</div>
       <h2>Where it goes wrong</h2>
-      <p>Take <code>s = "race a car"</code>. The first three pairs match: <code>r</code>/<code>r</code>, <code>a</code>/<code>a</code>, <code>c</code>/<code>c</code>. Then <code>left = 3</code> sits on <code>e</code>, and <code>right = 6</code> is a space, so the right skip loop backs it up to index 5, an <code>a</code>.</p>
-      <p><code>'e' != 'a'</code>, so the answer is <code>False</code> and we return immediately — no need to look at the middle.</p>
+      <p>For <code>s = "race a car"</code>, the first three pairs match: <code>r</code>/<code>r</code>, <code>a</code>/<code>a</code>, <code>c</code>/<code>c</code>. Then <code>left = 3</code> sits on <code>e</code>, and <code>right = 6</code> is a space, so the right skip loop backs it up to index 5, an <code>a</code>.</p>
+      <p><code>'e' != 'a'</code>, so I return <code>False</code> immediately and do not need to inspect the middle.</p>
       <div class="callout warn">The off-by-one to watch: both inner skip loops need their own <code>left &lt; right</code> guard. On <code>".,;'"</code> nothing is alphanumeric, so an unguarded loop walks <code>left</code> straight off the end of the string and raises <code>IndexError</code>. With the guard, the pointers stop against each other and the function correctly returns <code>True</code>.</div>
       <p>The empty string is free: <code>right</code> starts at <code>-1</code>, the outer <code>while left &lt; right</code> is false immediately, and the answer is <code>True</code> with no special case.</p>
     </section>
@@ -286,7 +286,7 @@
         <li><code>left += 1</code> / <code>right -= 1</code> close the window by one on each side.</li>
         <li><code>return True</code> is reached only when the pointers met without a mismatch.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>walk inward from both ends, skip what does not count, compare what does.</em></div>
+      <div class="callout">I remember this as: <em>I walk inward from both ends, skip what does not count, and compare what does.</em></div>
     </section>
 
     <div class="code-final">

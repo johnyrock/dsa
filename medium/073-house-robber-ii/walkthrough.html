@@ -208,8 +208,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Dynamic Programming · LeetCode #213</div>
   <h1>House Robber II, narrated</h1>
-  <p>Scroll through the thinking, from the linear robber that quietly breaks on a ring to two passes that each leave one end house alone, with the state of the algorithm shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">rob the line twice, once without the first house and once without the last, keep the larger</span></p>
+  <p>I will first test every subset that respects the circular adjacency rule, then split the ring into two ordinary robber problems.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">I solve the line twice, excluding a different end house each time, then keep the larger result</span></p>
 </header>
 
 <div class="layout">
@@ -224,19 +224,19 @@
       <p>Everything about this problem is the ordinary House Robber except one extra wire: the one that joins house <code>n − 1</code> back to house <code>0</code>.</p>
     </section>
 
-    <section class="step" data-state="brute">
-      <div class="n">STEP 2</div>
-      <h2>First instinct: try every subset of houses</h2>
-      <p>Enumerate every subset of houses, throw out the ones with two neighbours (including the wrap-around pair), and keep the richest survivor.</p>
-      <pre class="code"><span class="ln">best = 0</span><span class="ln">for mask in range(1 &lt;&lt; n):</span><span class="ln">    chosen = [i for i in range(n) if mask &gt;&gt; i &amp; 1]</span><span class="ln">    if all((i + 1) % n not in chosen for i in chosen):</span><span class="ln">        best = max(best, sum(nums[i] for i in chosen))</span></pre>
-      <p style="margin-top:14px">There are <code>2ⁿ</code> subsets, and checking each takes O(n): <strong>O(n · 2ⁿ)</strong>. At the constraint limit of 100 houses that is astronomically many masks. It does at least state the rule precisely: the neighbour of house <code>i</code> is <code>(i + 1) % n</code>, and the modulo is what makes house <code>n − 1</code> touch house <code>0</code>.</p>
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 2</div><h2>First instinct: try every subset of houses</h2>
+      <p>I can enumerate each subset, discard one containing adjacent houses including the first-last pair, and keep its largest sum.</p>
+      <pre class="code"><span class="ln">def rob(nums):</span><span class="ln">    best, n = 0, len(nums)</span><span class="ln">    for mask in range(1 &lt;&lt; n):</span><span class="ln">        chosen = {i for i in range(n) if mask &gt;&gt; i &amp; 1}</span><span class="ln">        if all((i + 1) % n not in chosen for i in chosen):</span><span class="ln">            best = max(best, sum(nums[i] for i in chosen))</span><span class="ln">    return best</span></pre>
+      <p style="margin-top:14px">This is correct. It considers 2ⁿ subsets and validates or sums up to n houses for each, so the time complexity is O(n · 2ⁿ). The chosen set uses O(n) space.</p>
+      <p>Recognising that every legal solution excludes either the first house or the last reduces the ring to two linear ranges. I solve those ranges with the House Robber recurrence and keep the larger answer.</p>
     </section>
 
     <section class="step" data-state="reframe">
       <div class="n">STEP 3</div>
       <h2>Reframe: the ring only adds one rule</h2>
-      <p>Suppose you already know how to rob a straight line of houses. <code>skip</code> is the best loot so far if the previous house was <em>not</em> robbed; <code>take</code> is the best loot so far, full stop. Each new house either joins the plan (<code>skip + money</code>) or stays out (<code>take</code>), and the pair rolls forward.</p>
-      <p>The ring breaks that only at one seam. Run the linear robber on <code>[2, 3, 2]</code> and it happily takes house 0 and house 2 for <strong>4</strong>, never noticing that they touch.</p>
+      <p>For a straight line of houses, I use <code>skip</code> for the best loot so far when the previous house was <em>not</em> robbed, and <code>take</code> for the best loot overall. Each new house either joins the plan (<code>skip + money</code>) or stays out (<code>take</code>), and the pair rolls forward.</p>
+      <p>The ring breaks that only at one seam. If I run the linear robber on <code>[2, 3, 2]</code>, it takes house 0 and house 2 for <strong>4</strong>, never noticing that they touch.</p>
       <div class="callout">The circle forbids exactly one thing the line allows: robbing house <code>0</code> and house <code>n − 1</code> together. Every other constraint is already handled by the line.</div>
     </section>
 
@@ -255,7 +255,7 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: pass 1, drop house 0, rob [3, 2]</h2>
-      <p>Start with <code>skip = 0</code>, <code>take = 0</code>. House 1 has 3: <code>take = max(0, 0 + 3) = 3</code>, and the old take, 0, becomes the new <code>skip</code>.</p>
+      <p>I start with <code>skip = 0</code>, <code>take = 0</code>. House 1 has 3: <code>take = max(0, 0 + 3) = 3</code>, and the old take, 0, becomes the new <code>skip</code>.</p>
       <p>House 2 has 2: robbing it means the previous house was skipped, so it is worth <code>skip + 2 = 0 + 2 = 2</code>. Not robbing it keeps <code>take = 3</code>. <code>max(3, 2) = 3</code>, and <code>skip</code> becomes 3.</p>
       <p>Pass 1 returns <strong>3</strong>: with house 0 off the table, the 3 alone beats the lone 2.</p>
     </section>
@@ -272,7 +272,7 @@
       <div class="n">STEP 7</div>
       <h2>Trace it: combine</h2>
       <p><code>max(3, 3) = 3</code>. That is the answer, and it is the value the panel shows in green.</p>
-      <p>Compare with the linear robber on the whole ring, which would have continued from pass 2's state: house 2 is worth <code>skip + 2 = 2 + 2 = 4</code>, beating <code>take = 3</code>. That 4 is the illegal plan that robs both end houses. Splitting into two lines is what makes that plan impossible to express.</p>
+      <p>The linear robber on the whole ring would continue from pass 2's state: house 2 is worth <code>skip + 2 = 2 + 2 = 4</code>, beating <code>take = 3</code>. That 4 is the illegal plan that robs both end houses. Splitting into two lines makes that plan impossible to express.</p>
       <div class="callout">The linear robber is called twice on <code>n − 1</code> houses each. Nothing about the recurrence changed; only the input did.</div>
     </section>
 

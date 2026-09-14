@@ -204,8 +204,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Backtracking · LeetCode #17</div>
   <h1>Letter Combinations of a Phone Number, narrated</h1>
-  <p>Scroll through the thinking, from enumerating every letter string to a recursion that picks one letter per digit and undoes it, with the state of the algorithm shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/backtracking.html">Backtracking</a> <span class="how">one recursion level per digit; push a letter, recurse, pop</span></p>
+  <p>I will first generate every alphabet string and filter it by the keypad, then choose only letters available for the current digit.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/backtracking.html">Backtracking</a> <span class="how">I use one recursion level per digit, adding a letter before recursion and removing it afterwards</span></p>
 </header>
 
 <div class="layout">
@@ -222,19 +222,19 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>Brute force: every string of letters, filtered</h2>
-      <p>The dumbest correct approach ignores the keypad while generating: build every string of length <code>len(digits)</code> over all 26 letters, then keep the ones whose letter at each position sits on the right key.</p>
-      <pre class="code"><span class="ln">from itertools import product</span><span class="ln">letters = "abcdefghijklmnopqrstuvwxyz"</span><span class="ln">result = []</span><span class="ln">for s in product(letters, repeat=len(digits)):</span><span class="ln">    if all(s[i] in keypad[digits[i]] for i in range(len(digits))):</span><span class="ln">        result.append("".join(s))</span></pre>
-      <p style="margin-top:14px">For <code>"23"</code> that is <code>26^2 = 676</code> candidates to find 9 answers; for four digits it is <code>26^4 = 456,976</code> candidates for at most 256 answers. <strong>O(26ⁿ · n)</strong>, almost all of it spent building strings whose first letter was already off the first key.</p>
-      <p>The obvious fix is to never generate a letter that is not on the current digit's key. Then every string we build is an answer, and the only remaining question is how to write "one loop per digit" for an unknown number of digits.</p>
+      <h2>First instinct: every string of letters, then filter</h2>
+      <p>I can generate every alphabet string of the required length and retain it only when each character belongs to the matching keypad digit.</p>
+      <pre class="code"><span class="ln">from itertools import product</span><span class="ln">def letterCombinations(digits):</span><span class="ln">    if not digits: return []</span><span class="ln">    keypad = {"2": "abc", "3": "def", "4": "ghi", "5": "jkl", "6": "mno", "7": "pqrs", "8": "tuv", "9": "wxyz"}</span><span class="ln">    letters, result = "abcdefghijklmnopqrstuvwxyz", []</span><span class="ln">    for chars in product(letters, repeat=len(digits)):</span><span class="ln">        if all(chars[i] in keypad[digits[i]] for i in range(len(digits))):</span><span class="ln">            result.append("".join(chars))</span><span class="ln">    return result</span></pre>
+      <p style="margin-top:14px">This is correct. It builds <code>26ⁿ</code> strings and checks up to <code>n</code> positions in each, so the time complexity is O(26ⁿ · n). The result and candidate work have O(26ⁿ · n) space complexity.</p>
+      <p>Looking up the current digit before I choose a letter avoids building any invalid strings. Backtracking then creates only valid keypad combinations, so every completed path is an answer.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>Key insight: one recursion level per digit</h2>
       <p>A recursive function <code>backtrack(index)</code> is responsible for exactly one position. It loops over the letters of <code>keypad[digits[index]]</code>, and for each one appends it to <code>path</code>, calls <code>backtrack(index + 1)</code> to fill the rest, and then pops it so the next letter of the same key starts from the same prefix.</p>
-      <p>Each level of the call stack is one of the nested loops we could not write by hand, and the depth adjusts itself to <code>len(digits)</code>.</p>
-      <div class="callout">The base case is <code>index == len(digits)</code>: every position has its letter, so <code>"".join(path)</code> is a complete answer. Record it and return. There is no pruning anywhere, because there is nothing to prune.</div>
+      <p>Each level of the call stack stands in for one nested loop I could not write by hand, and its depth adjusts itself to <code>len(digits)</code>.</p>
+      <div class="callout">The base case is <code>index == len(digits)</code>: every position has its letter, so <code>"".join(path)</code> is a complete answer. I record it and return. There is no pruning anywhere, because there is nothing to prune.</div>
     </section>
 
     <section class="step" data-state="approach">
@@ -243,7 +243,7 @@
       <ul>
         <li><code>if not digits: return []</code> — the empty input is handled before the recursion can record an empty string.</li>
         <li><code>keypad</code> — a dict from digit character to its letters.</li>
-        <li><code>backtrack(index)</code> — if <code>index == len(digits)</code>, append <code>"".join(path)</code> to <code>result</code> and return.</li>
+        <li><code>backtrack(index)</code> — when <code>index == len(digits)</code>, I append <code>"".join(path)</code> to <code>result</code> and return.</li>
         <li><code>for letter in keypad[digits[index]]</code> — the choices for this position, in key order so the output comes out lexicographic.</li>
         <li><code>path.append(letter)</code>, <code>backtrack(index + 1)</code>, <code>path.pop()</code> — choose, recurse, undo.</li>
         <li><code>backtrack(0)</code> then <code>return result</code>.</li>
@@ -255,15 +255,15 @@
       <div class="n">STEP 5</div>
       <h2>Trace: "a" then d, e, f</h2>
       <p><code>backtrack(0)</code>: <code>digits[0] = "2"</code>, so the loop runs over <code>"abc"</code>. First <code>letter = "a"</code>: <code>path = ["a"]</code>, call <code>backtrack(1)</code>.</p>
-      <p><code>backtrack(1)</code>: <code>digits[1] = "3"</code>, loop over <code>"def"</code>. Push <code>"d"</code>, call <code>backtrack(2)</code>: <code>2 == len(digits)</code>, so <code>"ad"</code> is recorded. Pop <code>"d"</code>. Push <code>"e"</code>: <code>"ae"</code> recorded, pop. Push <code>"f"</code>: <code>"af"</code> recorded, pop.</p>
+      <p>At <code>backtrack(1)</code>, <code>digits[1] = "3"</code>, so I loop over <code>"def"</code>. I add <code>"d"</code> and call <code>backtrack(2)</code>; because <code>2 == len(digits)</code>, <code>"ad"</code> is recorded. I then remove <code>"d"</code>. Repeating that work with <code>"e"</code> and <code>"f"</code> records <code>"ae"</code> and <code>"af"</code>.</p>
       <div class="callout">The loop in <code>backtrack(1)</code> is finished, so it returns to <code>backtrack(0)</code>, which pops <code>"a"</code>. The path is empty again, exactly as it was before <code>"a"</code> was chosen.</div>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace: "b" then d, e, f</h2>
-      <p>Second iteration of the outer loop: <code>letter = "b"</code>. Push it, call <code>backtrack(1)</code>, and the inner loop repeats over <code>"def"</code> from the new prefix: <code>"bd"</code>, <code>"be"</code>, <code>"bf"</code> are recorded, each after a push and before a pop.</p>
-      <p>Notice that <code>backtrack(1)</code> is the same function with the same argument as before; it only produces different strings because <code>path</code> now begins with <code>"b"</code>. The prefix is the only state that changes between calls, and the pop is what keeps it honest.</p>
+      <p>On the second outer iteration, <code>letter = "b"</code>. I add it, call <code>backtrack(1)</code>, and repeat the inner loop over <code>"def"</code> from that prefix. This records <code>"bd"</code>, <code>"be"</code>, and <code>"bf"</code>, with each temporary letter removed before the next choice.</p>
+      <p>I call <code>backtrack(1)</code> with the same argument as before; it produces different strings because <code>path</code> now begins with <code>"b"</code>. The prefix is the only state that changes between calls, and the pop restores it.</p>
       <p>Six strings so far, three calls to <code>backtrack(2)</code> per outer letter.</p>
     </section>
 
@@ -272,7 +272,7 @@
       <h2>Trace: "c" then d, e, f, and done</h2>
       <p>Third and last iteration: <code>letter = "c"</code>. The same inner loop records <code>"cd"</code>, <code>"ce"</code>, <code>"cf"</code>. The outer loop is exhausted, <code>backtrack(0)</code> returns, and <code>result</code> holds nine strings in lexicographic order.</p>
       <p>Count the calls: one <code>backtrack(0)</code>, three <code>backtrack(1)</code>, nine <code>backtrack(2)</code>: thirteen in all, and nine of them recorded an answer. Nothing was built and thrown away.</p>
-      <div class="callout">Compare the brute force: 676 candidate strings generated to find the same nine.</div>
+      <div class="callout">The brute-force contrast is stark: it generates 676 candidate strings to find the same nine.</div>
     </section>
 
     <section class="step" data-state="pitfall">
@@ -303,14 +303,14 @@
       <ul>
         <li><code>if not digits: return []</code> — no digits, no strings.</li>
         <li><code>keypad = {"2": "abc", …, "9": "wxyz"}</code> — the letters on each key.</li>
-        <li><code>if index == len(digits): result.append("".join(path))</code> — one letter per digit chosen; record.</li>
+        <li><code>if index == len(digits): result.append("".join(path))</code> — with one letter per digit chosen, I record the answer.</li>
         <li><code>for letter in keypad[digits[index]]</code> — the choices for this position.</li>
         <li><code>path.append(letter)</code> — choose.</li>
         <li><code>backtrack(index + 1)</code> — fill the remaining positions.</li>
         <li><code>path.pop()</code> — undo, so the next letter starts from the same prefix.</li>
         <li><code>backtrack(0)</code> and <code>return result</code>.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>one recursion level per digit, one loop over that key's letters, push before the call and pop after it.</em></div>
+      <div class="callout">My rule is: <em>I use one recursion level per digit, loop through that key's letters, and restore the path after each recursive call.</em></div>
     </section>
 
     <div class="code-final">

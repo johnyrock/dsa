@@ -204,8 +204,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Graph · LeetCode #286</div>
   <h1>Walls and Gates, narrated</h1>
-  <p>Scroll through the thinking, from one search per room to a single breadth-first search that starts at every gate at once, with the state of the algorithm shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph Traversal</a> <span class="how">multi-source BFS: seed the queue with all gates, fill each room the first time it is reached</span></p>
+  <p>I will first search outward from each empty room, then let every gate spread outward together in one breadth-first search.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph Traversal</a> <span class="how">I seed a multi-source BFS with every gate and fill each room on its first arrival</span></p>
 </header>
 
 <div class="layout">
@@ -220,13 +220,12 @@
       <p>"Nearest" is the whole difficulty. Every room has to compare all the gates it can reach and keep the closest, and there may be hundreds of gates.</p>
     </section>
 
-    <section class="step" data-state="naive">
-      <div class="n">STEP 2</div>
-      <h2>First instinct: search from every room</h2>
-      <p>The literal reading of the problem is a shortest-path query per room. For each <code>INF</code> cell, run a breadth-first search outward until the first gate appears, and write that depth:</p>
-      <pre class="code"><span class="ln">for r in range(rows):</span><span class="ln">    for c in range(cols):</span><span class="ln">        if rooms[r][c] == INF:</span><span class="ln">            rooms[r][c] = bfs_to_nearest_gate(r, c)</span></pre>
-      <p style="margin-top:14px">Each BFS can sweep the whole grid before it finds a gate, and there are up to <code>m × n</code> rooms, so the total is <strong>O((m × n)²)</strong>. On a 250 × 250 grid that is about four billion cell visits.</p>
-      <div class="callout warn">The waste is that neighbouring rooms run almost the same search. The room at <code>(1, 0)</code> and the room at <code>(2, 0)</code> both explore the same corridor toward the same gate, and neither result helps the other.</div>
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 2</div><h2>First instinct: search from every room</h2>
+      <p>I can run a fresh breadth-first search from each empty room until I reach a gate, then write that distance.</p>
+      <pre class="code"><span class="ln">def wallsAndGates(rooms):</span><span class="ln">    for r in range(len(rooms)):</span><span class="ln">        for c in range(len(rooms[0])):</span><span class="ln">            if rooms[r][c] == 2147483647:</span><span class="ln">                rooms[r][c] = nearest_gate(rooms, r, c)</span></pre>
+      <p style="margin-top:14px">This is correct when <code>nearest_gate</code> performs BFS through non-wall cells. Up to <code>m · n</code> rooms can each scan the grid, so the time complexity is O((m · n)²); each BFS uses O(m · n) space.</p>
+      <p>Reversing the searches removes the repeated room-by-room traversals. Starting from all gates at once means the first time I reach a room is already its shortest distance.</p>
     </section>
 
     <section class="step" data-state="reframe">
@@ -234,7 +233,7 @@
       <h2>Reframe: search from the gates instead</h2>
       <p>Distance is symmetric. The distance from a room to its nearest gate is the distance from the nearest gate to that room. So flip the direction: instead of asking each room "where is a gate?", let the gates announce "here I am" and spread outward.</p>
       <p>A breadth-first search from a gate visits rooms in order of distance: everything 1 step away, then everything 2 steps away, and so on. If several gates spread at the same time, in lockstep, then the first gate to reach a room is the closest one, and its arrival time is the answer.</p>
-      <div class="callout">Put <strong>every gate</strong> into the queue before the loop starts. They all sit at distance 0, so they form the first layer together, and one BFS does the work of all of them.</div>
+      <div class="callout">I put <strong>every gate</strong> into the queue before the loop starts. They all sit at distance 0, so they form the first layer together, and one BFS does the work of all of them.</div>
     </section>
 
     <section class="step" data-state="idea">
@@ -243,8 +242,8 @@
       <p>The code is the plain BFS template with a different seed:</p>
       <ul>
         <li><code>queue = deque((r, c) for … if rooms[r][c] == 0)</code>: every gate, all at once.</li>
-        <li><code>while queue: r, c = queue.popleft()</code>: process cells in the order they were discovered, which is non-decreasing distance.</li>
-        <li>For each of the four neighbours, if it is in bounds and <code>rooms[nr][nc] == INF</code>, set <code>rooms[nr][nc] = rooms[r][c] + 1</code> and append it.</li>
+        <li><code>while queue: r, c = queue.popleft()</code>: I process cells in discovery order, which is non-decreasing distance.</li>
+        <li>For each in-bounds neighbour whose value is <code>INF</code>, I set <code>rooms[nr][nc] = rooms[r][c] + 1</code> and append it.</li>
       </ul>
       <p>The <code>== INF</code> test does three jobs. It skips walls (<code>-1</code>), it skips gates (<code>0</code>), and it skips rooms that were already filled by an earlier, shorter arrival. Writing the distance is the visited mark; no separate set is needed.</p>
       <p>The panel shows the queue as a row of cells. Two gates are queued before a single room has been looked at.</p>
@@ -253,24 +252,24 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: the two gates spread one step</h2>
-      <p>Pop <code>(0, 2)</code>, the first gate, whose value is 0. Below it, <code>(1, 2)</code> is <code>INF</code>: write <code>0 + 1 = 1</code> and append. Above is out of bounds. Right, <code>(0, 3)</code>, is <code>INF</code>: write 1, append. Left, <code>(0, 1)</code>, is a wall, skipped by the <code>== INF</code> test.</p>
-      <p>Pop <code>(3, 0)</code>, the second gate. Below is out of bounds; above, <code>(2, 0)</code>, is <code>INF</code>: write 1, append. Right is the wall at <code>(3, 1)</code>; left is out of bounds.</p>
+      <p>I pop <code>(0, 2)</code>, the first gate, with value 0. I write <code>0 + 1 = 1</code> at <code>(1, 2)</code> and append it, then write and append 1 at <code>(0, 3)</code>. The remaining neighbours are out of bounds or a wall.</p>
+      <p>I pop the second gate, <code>(3, 0)</code>, and write and append 1 at its only empty neighbour, <code>(2, 0)</code>.</p>
       <p>The queue is now <code>[(1, 2), (0, 3), (2, 0)]</code>: every room at distance 1, from either gate, in one batch. The panel marks them as the frontier.</p>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: distance 2, where the gates meet</h2>
-      <p>Pop <code>(1, 2)</code> (value 1). Below, <code>(2, 2)</code>, is <code>INF</code>: write <code>1 + 1 = 2</code>, append. Left, <code>(1, 1)</code>, is <code>INF</code>: write 2, append. Right is the wall at <code>(1, 3)</code>; above is the gate, not <code>INF</code>, skipped.</p>
-      <p>Pop <code>(0, 3)</code> (value 1). Below is the wall at <code>(1, 3)</code>; left is the gate. Nothing to fill. Pop <code>(2, 0)</code> (value 1). Above, <code>(1, 0)</code>, is <code>INF</code>: write 2, append. Right is a wall.</p>
+      <p>I pop <code>(1, 2)</code> with value 1, then write and append <code>2</code> at <code>(2, 2)</code> and <code>(1, 1)</code>. Its other neighbours are a wall and the gate.</p>
+      <p>I pop <code>(0, 3)</code> and find nothing to fill. Then I pop <code>(2, 0)</code> and write and append 2 at <code>(1, 0)</code>.</p>
       <p>Now the two searches touch. <code>(1, 1)</code> was filled with 2 from the top gate, and <code>(1, 0)</code> with 2 from the bottom gate. When <code>(1, 1)</code> is popped later it will look at <code>(1, 0)</code>, see 2 rather than <code>INF</code>, and leave it alone. Neither gate can overwrite the other's claim, and neither needs to: both arrivals happened in the distance-2 layer.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: the far corners, and the answer</h2>
-      <p>Pop <code>(2, 2)</code> (value 2): below, <code>(3, 2)</code>, becomes 3. Pop <code>(1, 1)</code> (value 2): nothing left to fill around it. Pop <code>(1, 0)</code> (value 2): above, <code>(0, 0)</code>, becomes <code>2 + 1 = 3</code>. That is the room from the problem statement, and it got its answer from the bottom gate, three steps up the left column, because the wall at <code>(0, 1)</code> cut off the two-step route from the top gate.</p>
-      <p>Pop <code>(3, 2)</code> (value 3): right, <code>(3, 3)</code>, becomes 4. Pop <code>(0, 0)</code> and <code>(3, 3)</code>: every neighbour is a wall, out of bounds, or already filled. The queue is empty and the function returns.</p>
+      <p>I pop <code>(2, 2)</code> and set <code>(3, 2)</code> to 3. After <code>(1, 1)</code> yields nothing new, I pop <code>(1, 0)</code> and set <code>(0, 0)</code> to <code>2 + 1 = 3</code>. That room gets its answer from the bottom gate because the wall at <code>(0, 1)</code> blocks the shorter route from the top gate.</p>
+      <p>I pop <code>(3, 2)</code> and set <code>(3, 3)</code> to 4. The final pops at <code>(0, 0)</code> and <code>(3, 3)</code> have no empty neighbours, so my queue drains.</p>
       <div class="callout">Eleven pops for eleven non-wall cells. Every room was written exactly once, at the moment the closest gate reached it.</div>
     </section>
 

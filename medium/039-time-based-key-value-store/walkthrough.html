@@ -204,7 +204,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Binary Search · LeetCode #981</div>
   <h1>Time Based Key-Value Store, narrated</h1>
-  <p>Scroll through the thinking, from scanning a key's whole history on every read to a per-key sorted list searched in logarithmic time, with the contents of the store shown alongside.</p>
+  <p>I will keep each key's history in order and scan it at first, then I use binary search to find the latest allowed timestamp.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/binary-search.html">Binary Search</a> <span class="how">rightmost timestamp ≤ t in a list that is sorted because writes arrive in order</span></p>
 </header>
 
@@ -223,17 +223,17 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: keep every write and scan on read</h2>
-      <p>Store, per key, a list of <code>(timestamp, value)</code> pairs. <code>set</code> appends. <code>get</code> walks the list and remembers the last pair whose timestamp fits:</p>
-      <pre class="code"><span class="ln">def get(self, key, timestamp):</span><span class="ln">    best = ""</span><span class="ln">    for t, v in self.store.get(key, []):</span><span class="ln">        if t &lt;= timestamp:</span><span class="ln">            best = v</span><span class="ln">    return best</span></pre>
-      <p style="margin-top:14px">This is correct, and it already exploits the ordering guarantee a little (the last fit wins, no sorting needed). But each <code>get</code> is <strong>O(k)</strong> in the number of writes to that key. With 2 × 10⁵ operations, a hot key that is written 10⁵ times and then read 10⁵ times costs on the order of 10¹⁰ comparisons.</p>
-      <p>On the running example, <code>get("foo", 5)</code> checks <code>1 &lt;= 5</code> (best = "bar"), <code>4 &lt;= 5</code> (best = "bar2"), <code>7 &lt;= 5</code> (no), and returns "bar2". Three checks for three writes — fine here, hopeless at scale.</p>
+      <p>I can append each value and timestamp to its key's history. On a read, I scan the history and remember the latest timestamp that does not exceed the request.</p>
+      <pre class="code"><span class="ln">class TimeMap:</span><span class="ln">    def __init__(self): self.store = {}</span><span class="ln">    def set(self, key, value, timestamp):</span><span class="ln">        self.store.setdefault(key, []).append((timestamp, value))</span><span class="ln">    def get(self, key, timestamp):</span><span class="ln">        best = ""</span><span class="ln">        for t, value in self.store.get(key, []):</span><span class="ln">            if t &lt;= timestamp: best = value</span><span class="ln">        return best</span></pre>
+      <p style="margin-top:14px">This is correct because timestamps for a key arrive in order, so the last fitting value is the answer. <code>set</code> takes O(1) time, while <code>get</code> takes O(k) time for a key with <code>k</code> writes. Stored histories use O(n) space across all operations.</p>
+      <p>The repeated read scan disappears because each key's timestamps are already sorted. Binary search can locate the rightmost timestamp at or before the requested time.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>The key idea: the history is already sorted, so binary search it</h2>
-      <p>The scan looks at every timestamp to find the last one <code>&lt;= timestamp</code>. But the list is sorted — the problem promised increasing timestamps, and we only ever append — so the predicate "<code>times[i] &lt;= timestamp</code>" reads <code>[yes, yes, …, yes, no, no, …, no]</code> across the list. We want the position of the last <em>yes</em>. That is a boundary, and binary search finds boundaries in <strong>O(log k)</strong>.</p>
-      <div class="callout">Keep two parallel lists per key: <code>self.times[key]</code> and <code>self.values[key]</code>. <code>set</code> appends to both. <code>get</code> binary searches <code>times</code> for the insertion point of <code>timestamp</code> — the index just past every timestamp <code>&lt;= timestamp</code> — and returns <code>values[lo - 1]</code>.</div>
+      <p>The scan looks at every timestamp to find the last one <code>&lt;= timestamp</code>. But the list is sorted — the problem promised increasing timestamps, and I only ever append — so the predicate "<code>times[i] &lt;= timestamp</code>" reads <code>[yes, yes, …, yes, no, no, …, no]</code> across the list. I want the position of the last <em>yes</em>. That is a boundary, and binary search finds boundaries in <strong>O(log k)</strong>.</p>
+      <div class="callout">I keep two parallel lists per key: <code>self.times[key]</code> and <code>self.values[key]</code>. <code>set</code> appends to both. <code>get</code> binary searches <code>times</code> for the insertion point of <code>timestamp</code> — the index just past every timestamp <code>&lt;= timestamp</code> — and returns <code>values[lo - 1]</code>.</div>
       <p>This is exactly what <code>bisect.bisect_right(times, timestamp)</code> computes. Writing the loop by hand is worth doing once, because the two decisions inside it — <code>&lt;=</code> versus <code>&lt;</code>, and <code>lo - 1</code> versus <code>lo</code> — are where every bug in this problem lives.</p>
     </section>
 
@@ -258,7 +258,7 @@
       <div class="n">STEP 5</div>
       <h2>Trace it: three sets, then get("foo", 4)</h2>
       <p>After the three writes, <code>times["foo"]</code> is <code>[1, 4, 7]</code> and <code>values["foo"]</code> is <code>["bar", "bar2", "bar3"]</code>. Each <code>set</code> was a pair of appends; nothing was searched or shifted.</p>
-      <p>Now <code>get("foo", 4)</code>. Start with <code>lo = 0</code>, <code>hi = 3</code>. First probe: <code>mid = (0 + 3) // 2 = 1</code>, <code>times[1] = 4</code>, and <code>4 &lt;= 4</code> is true — the exact hit counts as old enough, so <code>lo = 2</code>. Second probe: <code>mid = (2 + 3) // 2 = 2</code>, <code>times[2] = 7</code>, and <code>7 &lt;= 4</code> is false, so <code>hi = 2</code>.</p>
+      <p>Now <code>get("foo", 4)</code>. I start with <code>lo = 0</code>, <code>hi = 3</code>. First probe: <code>mid = (0 + 3) // 2 = 1</code>, <code>times[1] = 4</code>, and <code>4 &lt;= 4</code> is true — the exact hit counts as old enough, so <code>lo = 2</code>. Second probe: <code>mid = (2 + 3) // 2 = 2</code>, <code>times[2] = 7</code>, and <code>7 &lt;= 4</code> is false, so <code>hi = 2</code>.</p>
       <p>Now <code>lo == hi == 2</code>: two timestamps are <code>&lt;= 4</code>. The answer is <code>values[2 - 1] = values[1]</code>, which is <strong>"bar2"</strong>.</p>
     </section>
 
@@ -280,10 +280,10 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the comparison and the offset</h2>
-      <p><strong>Strict less-than.</strong> Write <code>if times[mid] &lt; timestamp</code> and the search computes the <em>left</em> insertion point instead of the right one: an exact hit is treated as "too new". On <code>get("foo", 4)</code>, <code>mid = 1</code> gives <code>4 &lt; 4</code> false, so <code>hi = 1</code>; then <code>mid = 0</code>, <code>1 &lt; 4</code>, <code>lo = 1</code>. The result is <code>values[0]</code> = <strong>"bar"</strong>, the value from <em>before</em> the write at 4. The problem says "at or before", so the comparison must be <code>&lt;=</code>.</p>
+      <p><strong>Strict less-than.</strong> I write <code>if times[mid] &lt; timestamp</code> and the search computes the <em>left</em> insertion point instead of the right one: an exact hit is treated as "too new". On <code>get("foo", 4)</code>, <code>mid = 1</code> gives <code>4 &lt; 4</code> false, so <code>hi = 1</code>; then <code>mid = 0</code>, <code>1 &lt; 4</code>, <code>lo = 1</code>. The result is <code>values[0]</code> = <strong>"bar"</strong>, the value from <em>before</em> the write at 4. The problem says "at or before", so the comparison must be <code>&lt;=</code>.</p>
       <p><strong>Returning <code>values[lo]</code>.</strong> <code>lo</code> is the insertion point, one past the last qualifying write. <code>get("foo", 5)</code> ends with <code>lo = 2</code> and would return <code>values[2]</code> = <strong>"bar3"</strong>, a value from the future; <code>get("foo", 9)</code> ends with <code>lo = 3</code> and raises <code>IndexError</code>.</p>
       <p><strong>Dropping the <code>lo == 0</code> guard.</strong> <code>values[0 - 1]</code> is <code>values[-1]</code>, so <code>get("foo", 0)</code> returns <strong>"bar3"</strong> instead of <code>""</code>. Python's negative indexing turns an off-by-one into a silently wrong answer rather than a crash.</p>
-      <div class="callout warn">Search with <code>&lt;=</code>, treat <code>lo</code> as a count, and answer with <code>values[lo - 1]</code> — after checking that the count is not zero.</div>
+      <div class="callout warn">Search with <code>&lt;=</code>, I treat <code>lo</code> as a count, and answer with <code>values[lo - 1]</code> — after checking that the count is not zero.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -309,11 +309,11 @@
         <li><code>if key not in self.times: return ""</code> — unknown key.</li>
         <li><code>lo, hi = 0, len(times)</code> — exclusive <code>hi</code> so <code>lo</code> can reach the end.</li>
         <li><code>if times[mid] &lt;= timestamp: lo = mid + 1</code> — an exact hit counts as old enough.</li>
-        <li><code>else: hi = mid</code> — too new, keep <code>mid</code> as a possible boundary.</li>
+        <li><code>else: hi = mid</code> — too new, I keep <code>mid</code> as a possible boundary.</li>
         <li><code>if lo == 0: return ""</code> — nothing is old enough.</li>
         <li><code>return self.values[key][lo - 1]</code> — the last qualifying write.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>writes arrive in order, so append them and answer reads with a rightmost-<code>&lt;=</code> binary search (bisect_right minus one).</em></div>
+      <div class="callout">One-line summary to remember: <em>writes arrive in order, so I append them and answer reads with a rightmost-<code>&lt;=</code> binary search (bisect_right minus one).</em></div>
     </section>
 
     <div class="code-final">

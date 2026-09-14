@@ -223,7 +223,7 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Intervals · LeetCode #252</div>
   <h1>Meeting Rooms, narrated</h1>
-  <p>Scroll from checking every pair to a sort and one linear scan, with the meetings drawn on a timeline alongside.</p>
+  <p>I’ll start by checking every pair of meetings, then sort once and scan only neighboring intervals.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/intervals.html">Intervals</a> <span class="how">Once meetings are sorted by start time, a meeting can only newly conflict with its immediate predecessor.</span></p>
 </header>
 
@@ -240,16 +240,17 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: check every pair</h2>
-      <p>Two meetings <code>a</code> and <code>b</code> overlap when each starts before the other ends. Test that for every pair:</p>
+      <p>My first instinct is to test every pair. Two meetings <code>a</code> and <code>b</code> overlap when each starts before the other ends.</p>
       <pre class="code"><span class="ln">for i in range(len(intervals)):</span><span class="ln">    for j in range(i + 1, len(intervals)):</span><span class="ln">        a, b = intervals[i], intervals[j]</span><span class="ln">        if a[0] &lt; b[1] and b[0] &lt; a[1]:</span><span class="ln">            return False</span><span class="ln">return True</span></pre>
-      <p style="margin-top:14px">Correct, and for three meetings it is three comparisons: <code>(0,1)</code>, <code>(0,2)</code>, <code>(1,2)</code>. But the pair count is <code>n(n − 1) / 2</code>, so 1,000 meetings need about 500,000 checks and the constraint allows <code>10^4</code> meetings, which is 50 million. That is <strong>O(n²)</strong>, and almost all of those comparisons are between meetings that are nowhere near each other in time.</p>
+      <p style="margin-top:14px">This identifies every overlap. It checks <code>n(n − 1) / 2</code> pairs, so it takes <strong>O(n²) time</strong> and uses <strong>O(1) extra space</strong>.</p>
+      <p>Most compared meetings are far apart in time. Once I sort by start time, I only need to check a meeting against the one immediately before it.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: sorted by start, only neighbours can collide</h2>
-      <p>Sort the meetings by start time. Now take any meeting and ask which earlier meetings it could overlap with. If it starts after the meeting immediately before it has ended, does it need to be checked against anything further back?</p>
-      <div class="callout">No. The panel shows <code>[15, 20]</code> against <code>[5, 10]</code> only. If <code>[15, 20]</code> clears <code>[5, 10]</code>, and <code>[5, 10]</code> had already cleared <code>[0, 30]</code>, the chain of adjacent checks already covers <code>[15, 20]</code> versus <code>[0, 30]</code>. And if <code>[5, 10]</code> did <em>not</em> clear <code>[0, 30]</code>, we would have returned <code>False</code> at that step and never got here.</div>
+      <p>I sort the meetings by start time, then ask which earlier meetings a given meeting could overlap with. If it starts after the immediately preceding meeting ends, I do not need to check anything further back.</p>
+      <div class="callout">The panel shows <code>[15, 20]</code> against <code>[5, 10]</code> only. If <code>[15, 20]</code> clears <code>[5, 10]</code>, and <code>[5, 10]</code> already cleared <code>[0, 30]</code>, the adjacent checks cover <code>[15, 20]</code> versus <code>[0, 30]</code>. If <code>[5, 10]</code> did <em>not</em> clear <code>[0, 30]</code>, I would have returned <code>False</code> at that step and never reached this one.</div>
       <p>So after sorting, each meeting is compared with exactly one predecessor. That turns the quadratic pair scan into a single linear pass, at the price of an O(n log n) sort. The test itself simplifies too: once starts are ascending, <code>a[0] &lt; b[1]</code> is automatically true for the earlier meeting, so the only condition left is <code>intervals[index][0] &lt; intervals[index - 1][1]</code>, line 5 of the solution.</p>
     </section>
 
@@ -269,7 +270,7 @@
       <div class="n">STEP 5</div>
       <h2>Trace it: the sort</h2>
       <p>Line 3 sorts by <code>interval[0]</code>. The starts are 0, 5 and 15, already ascending, so the sort leaves the running example in the order it was given: <code>[0, 30]</code>, <code>[5, 10]</code>, <code>[15, 20]</code>.</p>
-      <p>That is a coincidence of this input, not something you can rely on. For <code>[[7, 10], [2, 4]]</code> the sort would swap them, and the adjacent-pair argument from step 3 only holds once the starts really are in order. The sort is the step that makes the rest of the algorithm correct, even when it looks like it did nothing.</p>
+      <p>That is a coincidence of this input, not something I can rely on. For <code>[[7, 10], [2, 4]]</code>, the sort swaps them, and the adjacent-pair argument from step 3 only holds once the starts are in order. Sorting makes the rest of my algorithm correct, even when it appears to do nothing.</p>
     </section>
 
     <section class="step" data-state="trace2">
@@ -290,8 +291,8 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: touching meetings and the missing sort</h2>
-      <p><strong>Using <code>&lt;=</code> instead of <code>&lt;</code>.</strong> The panel switches to <code>intervals = [[1, 2], [2, 3]]</code>. At <code>index = 1</code>, <code>intervals[1][0]</code> is 2 and <code>intervals[0][1]</code> is 2. With the correct test, <code>2 &lt; 2</code> is <code>False</code>, the loop finishes, and the function returns <strong>true</strong>: one meeting ends exactly when the next begins, which is fine. Write <code>if intervals[index][0] &lt;= intervals[index - 1][1]</code> instead and <code>2 &lt;= 2</code> is <code>True</code>, so it returns <strong>False</strong> for meetings that merely touch.</p>
-      <p><strong>Forgetting to sort.</strong> Drop line 3 and run <code>[[7, 10], [2, 4]]</code>: at <code>index = 1</code> the test is <code>2 &lt; 10</code>, <code>True</code>, so it returns <strong>False</strong> even though the meetings are disjoint. The neighbour argument from step 3 is only valid once the starts are ascending; without the sort, "adjacent in the list" means nothing about "adjacent in time".</p>
+      <p><strong>A non-strict <code>&lt;=</code> comparison.</strong> The panel switches to <code>intervals = [[1, 2], [2, 3]]</code>. At <code>index = 1</code>, <code>intervals[1][0]</code> is 2 and <code>intervals[0][1]</code> is 2. With the correct test, <code>2 &lt; 2</code> is <code>False</code>, the loop finishes, and the function returns <strong>true</strong>: one meeting ends exactly when the next begins, which is fine. If I write <code>if intervals[index][0] &lt;= intervals[index - 1][1]</code>, then <code>2 &lt;= 2</code> is <code>True</code>, so it returns <strong>False</strong> for meetings that merely touch.</p>
+      <p><strong>Skipping the sort.</strong> Without line 3, <code>[[7, 10], [2, 4]]</code> reaches <code>index = 1</code> with the test <code>2 &lt; 10</code>. It is <code>True</code>, so the function returns <strong>False</strong> even though the meetings are disjoint. My neighbour argument from step 3 only holds once the starts are ascending; without the sort, "adjacent in the list" says nothing about "adjacent in time".</p>
       <div class="callout warn">Overlap means <em>strictly</em> before the previous end. Equal endpoints are back-to-back, not double-booked.</div>
     </section>
 
@@ -318,7 +319,7 @@
         <li><code>return False</code> the moment that is true; one conflict is enough.</li>
         <li><code>return True</code> if the loop finishes, since every adjacent pair, and therefore every pair, is clear.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>sort by start, then a meeting can only conflict with the one right before it, and only if it starts strictly before that one ends.</em></div>
+      <div class="callout">One-line summary to remember: <em>I sort by start, then compare each meeting with the one right before it; a conflict exists only when it starts strictly before that earlier meeting ends.</em></div>
     </section>
 
     <div class="code-final">

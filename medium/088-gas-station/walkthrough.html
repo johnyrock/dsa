@@ -204,7 +204,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Greedy · LeetCode #134</div>
   <h1>Gas Station, narrated</h1>
-  <p>Scroll through the thinking, from simulating every possible start to a single pass that moves the candidate forward whenever the tank runs dry, with the state of the algorithm shown alongside.</p>
+  <p>I follow one running fuel balance, using each failure to discard every start that would fail even sooner.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/greedy.html">Greedy</a> <span class="how">running dry at i rules out every start up to i, so restart at i + 1 with an empty tank</span></p>
 </header>
 
@@ -222,17 +222,17 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>Brute force: simulate every start</h2>
-      <p>The direct approach tries each station as a start and drives the whole circle, stopping early if the tank goes negative.</p>
+<h2>First instinct: simulate every start</h2>
+      <p>My first instinct is to try each station as a start and drive the whole circle, stopping early whenever my tank goes negative.</p>
       <pre class="code"><span class="ln">for start in range(n):</span><span class="ln">    tank = 0</span><span class="ln">    for k in range(n):</span><span class="ln">        i = (start + k) % n</span><span class="ln">        tank += gas[i] - cost[i]</span><span class="ln">        if tank &lt; 0:</span><span class="ln">            break</span><span class="ln">    else:</span><span class="ln">        return start</span><span class="ln">return -1</span></pre>
-      <p style="margin-top:14px">On the example: start 0 reads <code>1 - 3 = -2</code> and dies on the first leg. Start 1 dies at once too (<code>2 - 4</code>), and so does start 2 (<code>3 - 5</code>). Start 3 survives all five legs, so the answer is 3. That is n simulations of up to n legs, <strong>O(n²)</strong>, and at <code>n = 10⁵</code> it is far too slow.</p>
-      <p>The waste is that the simulations overlap. When start 3's drive passes through stations 4, 0, 1 and 2, it is re-driving legs the earlier attempts already measured.</p>
+      <p style="margin-top:14px">On the example, starts 0, 1, and 2 fail immediately, while start 3 survives all five legs. This is <strong>O(n²) time</strong> in the worst case and <strong>O(1) extra space</strong>.</p>
+      <p>The simulations overlap. When I try start 3, I re-drive legs that earlier attempts already measured, even though one failure can rule out several starts.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: a failure rules out a whole stretch</h2>
-      <p>Suppose you leave station <code>s</code> and the tank first goes negative on the leg out of station <code>i</code>. Then no station between <code>s</code> and <code>i</code> can be the answer either. Why: you arrived at each of those stations with fuel <code>&gt;= 0</code> (otherwise you would have died earlier), so starting from one of them with an <em>empty</em> tank puts you in a strictly worse position on the same legs, and you die at <code>i</code> at the latest.</p>
+      <p>If I leave station <code>s</code> and the tank first goes negative on the leg out of station <code>i</code>, no station between <code>s</code> and <code>i</code> can be the answer either. I reached each of those stations with fuel <code>&gt;= 0</code>, so starting there with an <em>empty</em> tank puts me in a strictly worse position on the same legs and I die at <code>i</code> at the latest.</p>
       <div class="callout">So the next candidate is <code>i + 1</code>, with <code>tank = 0</code>. Every station is examined once as a candidate or skipped in one go.</div>
       <p>The second fact closes the loop. The single pass only drives from the candidate to the end of the array, never wrapping around. It is enough because <code>sum(gas) &gt;= sum(cost)</code> guarantees <em>some</em> start works, and the pass has eliminated every station except the survivor. If the totals fail, no start can work at all, and that check comes first.</p>
     </section>
@@ -244,7 +244,7 @@
         <li><code>if sum(gas) &lt; sum(cost): return -1</code>: the circle burns more than it provides; nobody finishes.</li>
         <li><code>start = 0</code>, <code>tank = 0</code>: assume station 0 until proven otherwise.</li>
         <li><code>for i in range(len(gas))</code>: drive each leg once.</li>
-        <li><code>tank += gas[i] - cost[i]</code>: fill up and drive to the next station.</li>
+        <li><code>tank += gas[i] - cost[i]</code>: I fill up and drive to the next station.</li>
         <li><code>if tank &lt; 0</code>: the candidate died on this leg, so <code>start = i + 1</code> and <code>tank = 0</code>.</li>
         <li><code>return start</code>: the last candidate never went negative, and the total check covers the wrap.</li>
       </ul>
@@ -254,8 +254,8 @@
     <section class="step" data-state="t0">
       <div class="n">STEP 5</div>
       <h2>Trace it: leg 0</h2>
-      <p>First, <code>sum(gas) = 15</code> and <code>sum(cost) = 15</code>, so a solution exists and we go on.</p>
-      <p><code>i = 0</code>: <code>tank = 0 + (1 - 3) = -2</code>. Negative, so station 0 is out. Set <code>start = 1</code> and <code>tank = 0</code>.</p>
+      <p>I first check <code>sum(gas) = 15</code> and <code>sum(cost) = 15</code>, so a solution exists and I continue.</p>
+      <p><code>i = 0</code>: <code>tank = 0 + (1 - 3) = -2</code>. It is negative, so station 0 is out. I set <code>start = 1</code> and <code>tank = 0</code>.</p>
       <p>Only one station was ruled out here, because the candidate died on its very first leg. The elimination gets more powerful when a candidate lasts a few legs before failing.</p>
     </section>
 
@@ -272,16 +272,16 @@
       <h2>Trace it: legs 3 and 4</h2>
       <p><code>i = 3</code>: <code>tank = 0 + (4 - 1) = 3</code>. Positive, so station 3 survives its first leg.</p>
       <p><code>i = 4</code>: <code>tank = 3 + (5 - 2) = 6</code>. Still positive, and the array is finished. The loop exits with <code>start = 3</code>.</p>
-      <div class="callout">We never drove the wrap-around legs 0, 1, 2 from station 3. We do not have to: the totals balance, so the 6 litres in hand are exactly enough to cover the <code>-2 -2 -2</code> that those legs cost. <code>return 3</code>.</div>
+      <div class="callout">I never drive the wrap-around legs 0, 1, 2 from station 3. The totals balance, so the 6 litres in hand exactly cover the <code>-2 -2 -2</code> those legs cost. <code>return 3</code>.</div>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the reset and the total check</h2>
-      <p><strong>Resetting to <code>start = i</code>.</strong> It feels natural: "the tank died at station i, try i". But <code>i</code> is the station we ran dry <em>leaving</em>; we filled up there and it was not enough, so it cannot be the start. On the example the last reset happens at <code>i = 2</code> and the function returns <strong>2</strong> instead of 3. The next candidate is <code>i + 1</code>.</p>
-      <p><strong>Skipping the <code>sum(gas) &lt; sum(cost)</code> check.</strong> The sweep never wraps, so it always ends with some <code>start</code> in hand. On <code>gas = [2,3,4]</code>, <code>cost = [3,4,3]</code> the net legs are <code>[-1, -1, 1]</code>; the sweep resets twice and returns <strong>2</strong>, but total gas 9 is less than total cost 10 and the correct answer is <code>-1</code>. The greedy pass proves "nobody else", the total check proves "somebody"; you need both.</p>
+      <p><strong>Resetting to <code>start = i</code>.</strong> It feels natural to try the station where the tank died. But <code>i</code> is the station I ran dry <em>leaving</em>; I filled up there and it was not enough, so it cannot be the start. On the example the last reset happens at <code>i = 2</code> and the function returns <strong>2</strong> instead of 3. The next candidate is <code>i + 1</code>.</p>
+      <p><strong>Skipping the <code>sum(gas) &lt; sum(cost)</code> check.</strong> My sweep never wraps, so it always ends with some <code>start</code> in hand. On <code>gas = [2,3,4]</code>, <code>cost = [3,4,3]</code> the net legs are <code>[-1, -1, 1]</code>; the sweep resets twice and returns <strong>2</strong>, but total gas 9 is less than total cost 10 and the correct answer is <code>-1</code>. The greedy pass proves “nobody else,” while the total check proves somebody exists; I need both.</p>
       <p><strong>Forgetting <code>tank = 0</code> on reset.</strong> The deficit leaks into the next candidate. On the example the tank runs −2, −4, −6, −3, 0, so the reset also fires at <code>i = 3</code> and the answer comes out as 4.</p>
-      <div class="callout warn">On failure at <code>i</code>: candidate becomes <code>i + 1</code>, tank becomes 0. Before the sweep: compare the totals.</div>
+      <div class="callout warn">When I fail at <code>i</code>, my candidate becomes <code>i + 1</code> and my tank becomes 0. Before the sweep, I compare the totals.</div>
     </section>
 
     <section class="step" data-state="complexity">

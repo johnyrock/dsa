@@ -220,8 +220,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Math · LeetCode #7</div>
   <h1>Reverse Integer, narrated</h1>
-  <p>Scroll through the thinking, from flipping a string to peeling digits off one end and stacking them on the other while watching for 32-bit overflow, with the digits shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/math.html">Math</a> <span class="how"><code>x % 10</code> reads the lowest digit, <code>x // 10</code> drops it, <code>result * 10 + digit</code> appends it; check the limit before the append, not after.</span></p>
+  <p>I’ll start by reversing a string, then peel and append digits while checking for 32-bit overflow.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/math.html">Math</a> <span class="how"><code>x % 10</code> reads the lowest digit, <code>x // 10</code> drops it, and <code>result * 10 + digit</code> appends it; I check the limit before the append.</span></p>
 </header>
 
 <div class="layout">
@@ -230,7 +230,7 @@
     <section class="step" data-state="problem">
       <div class="n">STEP 1</div>
       <h2>The problem</h2>
-      <p>You get a signed 32-bit integer <code>x</code>. Return the number whose decimal digits are those of <code>x</code> in reverse order, with the sign kept in front. If that reversed number does not fit in the signed 32-bit range <code>[-2^31, 2^31 - 1]</code>, return <code>0</code> instead.</p>
+      <p>Given a signed 32-bit integer <code>x</code>, reverse its decimal digits while keeping its sign. Return <code>0</code> if the result falls outside <code>[-2^31, 2^31 - 1]</code>.</p>
       <div class="callout">Running example: <code>x = -123</code>. The digits <code>1, 2, 3</code> become <code>3, 2, 1</code> and the sign stays, so the answer is <strong>-321</strong>.</div>
       <p>The catch is in the second sentence. <code>1534236469</code> fits in 32 bits, but its reversal <code>9646324351</code> does not, and the problem says to assume you cannot store 64-bit integers. So the overflow has to be spotted <em>before</em> the last digit is appended, using only numbers that fit.</p>
     </section>
@@ -238,15 +238,16 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: reverse the string</h2>
-      <p>Turn the number into text, flip it, and parse it back. The sign needs stripping first so it does not end up at the wrong end, and the range check still has to be done by hand:</p>
+      <p>My first instinct is to turn the number into text, reverse it, and parse it back. I strip the sign first, then check the range.</p>
       <pre class="code"><span class="ln">sign = -1 if x &lt; 0 else 1</span><span class="ln">r = sign * int(str(abs(x))[::-1])</span><span class="ln">if r &lt; -2**31 or r &gt; 2**31 - 1:</span><span class="ln">    return 0</span><span class="ln">return r</span></pre>
-      <p style="margin-top:14px">It is <strong>O(d)</strong> for <code>d</code> digits and gives the right answers in Python. But it only works because Python's <code>int</code> is unbounded: <code>int("9646324351")</code> is built in full and then compared. In a language with 32-bit integers that parse overflows before the <code>if</code> runs, which is exactly what the problem tells you not to rely on. It also allocates two strings to do arithmetic.</p>
+      <p style="margin-top:14px">For <code>d</code> digits, this takes <strong>O(d) time</strong> and <strong>O(d) space</strong> for the strings. It gives the right answer in Python, but fixed-width parsing can overflow before the range check.</p>
+      <p>Peeling digits numerically lets me check the 32-bit limit before I append each one.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>The key idea: peel and append, and look one step ahead</h2>
-      <p>Two operations move digits without strings. <code>x % 10</code> is the lowest digit of <code>x</code>, and <code>x // 10</code> is <code>x</code> with that digit removed. Going the other way, <code>result * 10 + digit</code> shifts every digit of <code>result</code> one place left and drops <code>digit</code> into the ones column. Peel from <code>x</code>, append to <code>result</code>, and the digits come out reversed.</p>
+      <p>Two operations move digits without strings. <code>x % 10</code> is the lowest digit of <code>x</code>, and <code>x // 10</code> is <code>x</code> with that digit removed. Going the other way, <code>result * 10 + digit</code> shifts every digit of <code>result</code> one place left and drops <code>digit</code> into the ones column. I peel from <code>x</code>, append to <code>result</code>, and the digits come out reversed.</p>
       <p>The overflow test goes <em>before</em> the append. <code>result * 10 + digit</code> exceeds <code>INT_MAX = 2147483647</code> exactly when <code>result &gt; 214748364</code>, or when <code>result == 214748364</code> and <code>digit &gt; 7</code>. Both comparisons use numbers that already fit, so nothing overflows while checking.</p>
       <div class="callout">Work on the magnitude. Python's <code>%</code> and <code>//</code> round toward negative infinity, so <code>-123 % 10</code> is <code>7</code>, not <code>3</code>. Taking <code>abs(x)</code> first and putting the sign back at the end keeps the digit arithmetic honest and lets one overflow threshold serve both signs.</div>
     </section>
@@ -256,7 +257,7 @@
       <h2>The approach, line by line</h2>
       <ul>
         <li><code>INT_MAX = 2**31 - 1</code>, so <code>INT_MAX // 10</code> is <code>214748364</code> and its last digit is <code>7</code>.</li>
-        <li><code>sign = -1 if x &lt; 0 else 1</code> and <code>x = abs(x)</code> — remember the sign, keep the magnitude.</li>
+        <li><code>sign = -1 if x &lt; 0 else 1</code> and <code>x = abs(x)</code> — I remember the sign and keep the magnitude.</li>
         <li><code>result = 0</code> — nothing appended yet.</li>
         <li><code>while x:</code> — one round per remaining digit.</li>
         <li><code>digit = x % 10</code> and <code>x //= 10</code> — peel the lowest digit.</li>
@@ -271,13 +272,13 @@
       <h2>Trace it: the first two digits</h2>
       <p><code>x = -123</code> is negative, so <code>sign = -1</code> and <code>x</code> becomes <code>123</code>. <code>result = 0</code>.</p>
       <p><strong>Round 1.</strong> <code>digit = 123 % 10 = 3</code>, and <code>x = 123 // 10 = 12</code>. Overflow check: <code>result = 0</code> is not greater than <code>214748364</code> and not equal to it, so the append is safe. <code>result = 0 * 10 + 3 = 3</code>. The lowest digit of the input is now the highest digit of the output, which is the whole idea: each round moves one digit from the tail of <code>x</code> to the head of the digits already in <code>result</code>.</p>
-      <p><strong>Round 2.</strong> <code>x = 12</code>, so <code>digit = 12 % 10 = 2</code> and <code>x = 12 // 10 = 1</code>. Overflow check: <code>3 &gt; 214748364</code> is false, so append. <code>result = 3 * 10 + 2 = 32</code>. The multiply by 10 is what shifts the earlier <code>3</code> into the tens column so the new <code>2</code> can sit in the ones column.</p>
+      <p><strong>Round 2.</strong> <code>x = 12</code>, so <code>digit = 12 % 10 = 2</code> and <code>x = 12 // 10 = 1</code>. The overflow check, <code>3 &gt; 214748364</code>, is false, so I append. <code>result = 3 * 10 + 2 = 32</code>. The multiply by 10 is what shifts the earlier <code>3</code> into the tens column so the new <code>2</code> can sit in the ones column.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 6</div>
       <h2>Trace it: the last digit and the sign</h2>
-      <p><strong>Round 3.</strong> <code>x = 1</code>, so <code>digit = 1</code> and <code>x = 1 // 10 = 0</code>. Check: <code>32 &gt; 214748364</code> is false. <code>result = 32 * 10 + 1 = 321</code>. Now <code>while x</code> sees <code>0</code> and stops.</p>
+      <p><strong>Round 3.</strong> <code>x = 1</code>, so <code>digit = 1</code> and <code>x = 1 // 10 = 0</code>. The check, <code>32 &gt; 214748364</code>, is false. <code>result = 32 * 10 + 1 = 321</code>. Now <code>while x</code> sees <code>0</code> and stops.</p>
       <p><code>return sign * result = -1 * 321 = -321</code>. Three rounds for three digits, and the sign that was set aside at the start goes back on at the end.</p>
       <div class="callout">A trailing zero in the input, as in <code>x = 120</code>, is peeled first and appended as <code>result = 0 * 10 + 0 = 0</code>, which changes nothing; the answer <code>21</code> has no leading zero because the number never had one.</div>
     </section>
@@ -285,8 +286,8 @@
     <section class="step" data-state="overflow">
       <div class="n">STEP 7</div>
       <h2>Trace it: an overflow caught one step early</h2>
-      <p>Take <code>x = 1534236469</code>. Nine rounds peel <code>9, 6, 4, 6, 3, 2, 4, 3, 5</code> and build <code>result = 964632435</code>, with <code>x = 1</code> left.</p>
-      <p><strong>Round 10.</strong> <code>digit = 1</code>, <code>x = 0</code>. Overflow check: <code>result = 964632435</code> is greater than <code>INT_MAX // 10 = 214748364</code>, so <code>result * 10 + 1 = 9646324351</code> would not fit. Return <code>0</code> without computing it.</p>
+      <p>I take <code>x = 1534236469</code>. Nine rounds peel <code>9, 6, 4, 6, 3, 2, 4, 3, 5</code> and build <code>result = 964632435</code>, with <code>x = 1</code> left.</p>
+      <p><strong>Round 10.</strong> <code>digit = 1</code>, <code>x = 0</code>. The overflow check finds <code>result = 964632435</code> greater than <code>INT_MAX // 10 = 214748364</code>, so <code>result * 10 + 1 = 9646324351</code> would not fit. I return <code>0</code> without computing it.</p>
       <p>The boundary case works the same way: for <code>x = 1463847412</code>, nine rounds give <code>result = 214748364</code>, exactly <code>INT_MAX // 10</code>, and the last <code>digit = 1</code> is not greater than <code>7</code>, so <code>2147483641</code> is appended and returned. Had the last digit been <code>8</code>, the check would have returned <code>0</code>.</p>
     </section>
 
@@ -296,7 +297,7 @@
       <p><strong>Skipping <code>abs(x)</code>.</strong> Feed <code>-123</code> straight into the loop. Python computes <code>-123 % 10 = 7</code> and <code>-123 // 10 = -13</code>, then <code>-13 % 10 = 7</code>, <code>-13 // 10 = -2</code>, then <code>-2 // 10 = -1</code>, and from there <code>-1 // 10</code> is <code>-1</code> forever. <code>while x:</code> never sees <code>0</code>: the function <strong>hangs instead of returning -321</strong>. Even a version that terminates would have collected the digits <code>7, 7, 8</code>, which are nothing like <code>3, 2, 1</code>.</p>
       <p><strong>Testing <code>result &gt;= INT_MAX // 10</code>.</strong> The equal case is not automatically an overflow; it depends on the digit. With <code>&gt;=</code>, <code>x = 1463847412</code> returns <strong>0</strong> instead of the valid <code>2147483641</code>.</p>
       <p><strong>Checking after the append.</strong> <code>result = result * 10 + digit</code> followed by <code>if result &gt; INT_MAX: return 0</code> passes every test in Python, but only because Python integers cannot overflow. In a fixed-width <code>int</code> the product has already wrapped to garbage by the time it is compared, which is the situation the problem describes.</p>
-      <div class="callout warn">Strip the sign first, compare before you multiply, and treat <code>result == 214748364</code> as "look at the digit", not as overflow.</div>
+      <div class="callout warn">I strip the sign first, compare before I multiply, and treat <code>result == 214748364</code> as “look at the digit,” not as overflow.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -325,7 +326,7 @@
         <li><code>result = result * 10 + digit</code> — append.</li>
         <li><code>return sign * result</code> — sign back on.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>peel the last digit with % 10 and // 10, append with × 10 + digit, and check the limit before the append.</em></div>
+      <div class="callout">One-line summary to remember: <em>I peel the last digit with % 10 and // 10, append with × 10 + digit, and check the limit before the append.</em></div>
     </section>
 
     <div class="code-final">

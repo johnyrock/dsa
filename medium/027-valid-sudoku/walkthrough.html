@@ -236,8 +236,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Hash Set · LeetCode #36</div>
   <h1>Valid Sudoku, narrated</h1>
-  <p>Scroll through the thinking, from re-scanning a row, a column, and a box for every cell to one pass over the board with 27 sets, with the state of the algorithm shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/hash-map.html">Hash Set</a> <span class="how">one set of seen digits per row, per column, and per 3x3 box; check all three, then record in all three</span></p>
+  <p>I’ll start by re-scanning every row, column, and box for each filled cell, then I remember seen digits in 27 sets.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/hash-map.html">Hash Set</a> <span class="how">one set of seen digits per row, per column, and per 3x3 box; I check all three, then I record in all three</span></p>
 </header>
 
 <div class="layout">
@@ -255,10 +255,10 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: for each cell, re-scan its groups</h2>
-      <p>For every filled cell, walk its whole row, its whole column, and its whole box looking for the same digit anywhere else.</p>
+      <p>My first instinct is to re-scan a filled cell’s whole row, column, and box for the same digit.</p>
       <pre class="code"><span class="ln">for r in range(9):</span><span class="ln">    for c in range(9):</span><span class="ln">        v = board[r][c]</span><span class="ln">        if v == ".": continue</span><span class="ln">        for k in range(9):</span><span class="ln">            if k != c and board[r][k] == v: return False</span><span class="ln">            if k != r and board[k][c] == v: return False</span><span class="ln">        br, bc = 3 * (r // 3), 3 * (c // 3)</span><span class="ln">        for i in range(br, br + 3):</span><span class="ln">            for j in range(bc, bc + 3):</span><span class="ln">                if (i, j) != (r, c) and board[i][j] == v: return False</span><span class="ln">return True</span></pre>
-      <p style="margin-top:14px">Correct, and on a 9x9 board it finishes instantly: 81 cells times 27 comparisons is about 2 000 operations. The complexity is <strong>O(n³)</strong> for an n x n board, and every pair of cells in a group is compared twice, once from each side.</p>
-      <p>The wasted work is the re-scanning. When we reach the <code>9</code> at <code>(2, 1)</code>, we walk box 0 again even though we already walked it for <code>(0, 0)</code>, <code>(0, 1)</code>, <code>(1, 0)</code>, and <code>(2, 2)</code>. What we want is a record of what has already been seen in each group.</p>
+      <p style="margin-top:14px">For an <code>n × n</code> board, it takes <strong>O(n³) time</strong> and uses <strong>O(1) extra space</strong> beyond the board.</p>
+      <p>I avoid repeated scans by recording digits already seen in each row, column, and box. Then every duplicate test becomes one membership lookup.</p>
     </section>
 
     <section class="step" data-state="insight">
@@ -267,7 +267,7 @@
       <p>There are 9 rows, 9 columns, and 9 boxes: 27 groups. Give each group a set. As the board is read once in order, each digit is checked against the three sets it belongs to, and then added to those same three sets.</p>
       <p>A set membership test is O(1), so the per-cell cost drops from 27 comparisons to 3 lookups and 3 inserts, and every cell is visited exactly once.</p>
       <div class="callout">The one line that needs thought is the box number. <code>r // 3</code> is which band of rows (0, 1, 2) the cell is in, <code>c // 3</code> is which stack of columns. <code>(r // 3) * 3 + c // 3</code> combines them into 0–8, numbering the boxes like the cells of a 3x3 grid: top row 0 1 2, middle 3 4 5, bottom 6 7 8.</div>
-      <p>Check it on the running example: <code>(2, 1)</code> is in band 0, stack 0, box <code>0 * 3 + 0 = 0</code>. <code>(3, 4)</code> is band 1, stack 1, box <code>1 * 3 + 1 = 4</code>, the centre box. <code>(2, 7)</code> is band 0, stack 2, box <code>2</code>.</p>
+      <p>I check it on the running example: <code>(2, 1)</code> is in band 0, stack 0, box <code>0 * 3 + 0 = 0</code>. <code>(3, 4)</code> is band 1, stack 1, box <code>1 * 3 + 1 = 4</code>, the centre box. <code>(2, 7)</code> is band 0, stack 2, box <code>2</code>.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -289,7 +289,7 @@
       <div class="n">STEP 5</div>
       <h2>Trace it: the first cell, (0, 0) = 5</h2>
       <p>All 27 sets start empty. The first cell is <code>board[0][0] = "5"</code>. Its box is <code>(0 // 3) * 3 + 0 // 3 = 0</code>.</p>
-      <p>Check: <code>"5" in rows[0]</code> is false, <code>"5" in cols[0]</code> is false, <code>"5" in boxes[0]</code> is false. No violation, so record it: <code>rows[0] = {5}</code>, <code>cols[0] = {5}</code>, <code>boxes[0] = {5}</code>.</p>
+      <p>I check: <code>"5" in rows[0]</code> is false, <code>"5" in cols[0]</code> is false, <code>"5" in boxes[0]</code> is false. No violation, so I record it: <code>rows[0] = {5}</code>, <code>cols[0] = {5}</code>, <code>boxes[0] = {5}</code>.</p>
       <p>The next cell, <code>(0, 1) = "3"</code>, is checked against <code>rows[0] = {5}</code>, <code>cols[1] = {}</code>, and <code>boxes[0] = {5}</code>. Also fine, and all three sets grow. The panel highlights the row, column, and box a cell is being checked against.</p>
     </section>
 
@@ -297,7 +297,7 @@
       <div class="n">STEP 6</div>
       <h2>Trace it: (2, 1) = 9, where the box set has content</h2>
       <p>By the time the loop reaches row 2, column 1, the top-left box has already collected the <code>5</code>, <code>3</code>, and <code>6</code> from rows 0 and 1. Column 1 has the <code>3</code> from <code>(0, 1)</code>. Row 2 is fresh, since <code>(2, 0)</code> is empty.</p>
-      <p>So the three lookups are: <code>"9" in rows[2] = {}</code> false, <code>"9" in cols[1] = {3}</code> false, <code>"9" in boxes[0] = {3, 5, 6}</code> false. Record it: <code>boxes[0]</code> becomes <code>{3, 5, 6, 9}</code>.</p>
+      <p>So the three lookups are: <code>"9" in rows[2] = {}</code> false, <code>"9" in cols[1] = {3}</code> false, <code>"9" in boxes[0] = {3, 5, 6}</code> false. I record it: <code>boxes[0]</code> becomes <code>{3, 5, 6, 9}</code>.</p>
       <p>This is the cell where the brute force would have re-walked nine box cells. Here the whole history of the box is one set lookup.</p>
     </section>
 
@@ -315,8 +315,8 @@
       <h2>Where this goes wrong: the box index</h2>
       <p><strong>Writing <code>r // 3 + c // 3</code> without the <code>* 3</code>.</strong> That expression only produces 0 to 4, so nine boxes are squeezed into five buckets, and boxes on the same anti-diagonal are merged. Box 2 (top right), box 4 (centre), and box 6 (bottom left) all get key 2.</p>
       <p>On the valid running example this returns <strong><code>False</code></strong>. The <code>6</code> at <code>(2, 7)</code> in box 2 is recorded under key <code>0 + 2 = 2</code>. When the loop reaches the <code>6</code> at <code>(3, 4)</code> in box 4, its key is <code>1 + 1 = 2</code> too, the lookup finds the earlier <code>6</code>, and a legal board is rejected.</p>
-      <p><strong>Not skipping the dots.</strong> Drop <code>if value == ".": continue</code> and the second empty cell in row 0, at <code>(0, 3)</code>, is a "repeat" of the <code>'.'</code> at <code>(0, 2)</code>: <code>False</code> on every real board.</p>
-      <p><strong>Inserting before checking.</strong> Swap the <code>add</code> lines above the <code>if</code>, and the very first digit is found in its own sets: <code>False</code> at <code>(0, 0)</code>.</p>
+      <p><strong>Not skipping the dots.</strong> I drop <code>if value == ".": continue</code> and the second empty cell in row 0, at <code>(0, 3)</code>, is a "repeat" of the <code>'.'</code> at <code>(0, 2)</code>: <code>False</code> on every real board.</p>
+      <p><strong>Inserting before checking.</strong> I swap the <code>add</code> lines above the <code>if</code>, and the very first digit is found in its own sets: <code>False</code> at <code>(0, 0)</code>.</p>
       <div class="callout warn">Test the box index on two cells in different boxes that share neither row nor column, such as <code>(0, 6)</code> and <code>(3, 3)</code>: they must get different numbers.</div>
     </section>
 
@@ -345,7 +345,7 @@
         <li><code>if value in rows[r] or value in cols[c] or value in boxes[box]: return False</code> is the whole rule.</li>
         <li>Three <code>add</code> calls record the digit, and <code>return True</code> after the loop means nothing ever clashed.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>each digit lives in one row, one column, and one box; check its three sets, then join them.</em></div>
+      <div class="callout">One-line summary to remember: <em>each digit lives in one row, one column, and one box; I check its three sets, then join them.</em></div>
     </section>
 
     <div class="code-final">

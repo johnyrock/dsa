@@ -205,8 +205,8 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Stack · LeetCode #20</div>
   <h1>Valid Parentheses, narrated</h1>
-  <p>Scroll through the thinking, from counting brackets to the one-pass stack, with the state of the algorithm shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/stack.html">Stack</a> <span class="how">map closer to opener, pop on match</span></p>
+  <p>I’ll start with a literal reduction approach, then show why a stack keeps the bracket order that correctness depends on.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/stack.html">Stack</a> <span class="how">a closer-to-opener map and matching stack operations</span></p>
 </header>
 
 <div class="layout">
@@ -215,7 +215,7 @@
     <section class="step" data-state="problem">
       <div class="n">STEP 1</div>
       <h2>The problem</h2>
-      <p>You get a string <code>s</code> containing only the six bracket characters <code>(</code> <code>)</code> <code>[</code> <code>]</code> <code>{</code> <code>}</code>. Return <code>True</code> if the brackets are balanced.</p>
+      <p>Given a string <code>s</code> containing only the six bracket characters <code>(</code> <code>)</code> <code>[</code> <code>]</code> <code>{</code> <code>}</code>, return <code>True</code> when the brackets are balanced.</p>
       <p>Balanced means two things at once: every bracket is closed by the <em>same kind</em> of bracket, and they close in the <em>right order</em>.</p>
       <div class="callout">Running example: <code>s = "([]{})"</code>. The answer is <code>True</code>. Every closer lines up with the opener it belongs to.</div>
       <p>That second requirement, the order, is the whole problem. It is what makes this more than a counting exercise.</p>
@@ -223,12 +223,11 @@
 
     <section class="step" data-state="counting">
       <div class="n">STEP 2</div>
-      <h2>First instinct: count the brackets</h2>
-      <p>The obvious idea is to count. Walk the string keeping a running balance: add one for every opener, subtract one for every closer. If the balance ever goes negative, a closer arrived with nothing open. If it ends at zero, everything matched.</p>
-      <pre class="code"><span class="ln">balance = 0</span><span class="ln">for ch in s:</span><span class="ln">    balance += 1 if ch in "([{" else -1</span><span class="ln">    if balance &lt; 0:</span><span class="ln">        return False</span><span class="ln">return balance == 0</span></pre>
-      <p style="margin-top:14px">This is O(n) time and O(1) space, which sounds great. It is also wrong.</p>
-      <div class="callout warn">Try <code>s = "([)]"</code>. Two openers, two closers, the balance goes 1, 2, 1, 0 and never dips below zero. The counter says valid. But <code>(</code> and <code>)</code> are interleaved with <code>[</code> and <code>]</code> instead of nested, so the string is invalid.</div>
-      <p>Even three separate counters, one per bracket type, fail on the same input. A count throws away the one thing that matters: <em>which</em> opener each closer is supposed to close.</p>
+      <h2>First instinct: repeatedly remove matching pairs</h2>
+      <p>My first instinct is to remove every adjacent matching pair, then repeat until no more pairs can be removed. A balanced string reduces to an empty string.</p>
+      <pre class="code"><span class="ln">previous = None</span><span class="ln">while previous != s:</span><span class="ln">    previous = s</span><span class="ln">    s = s.replace("()", "").replace("[]", "").replace("{}", "")</span><span class="ln">return s == ""</span></pre>
+      <p style="margin-top:14px">An innermost matching pair can always disappear first, so this gives the right answer. In the worst case it makes <strong>O(n²) time</strong> worth of scans and replacements, and the replacement strings use <strong>O(n) extra space</strong>.</p>
+      <p>Each replacement pass makes me rescan characters I already understood. I only need to remember the most recent unmatched opener, so I can match each closer as it arrives.</p>
     </section>
 
     <section class="step" data-state="reframe">
@@ -244,19 +243,19 @@
       <div class="n">STEP 4</div>
       <h2>The key idea: a stack of pending openers</h2>
       <p>"Last in, first out" is the definition of a <strong>stack</strong>. In Python a plain list is one: <code>append</code> pushes, <code>pop</code> removes the last item.</p>
-      <p>Keep on the stack every opener that has not been closed yet. Then each character is one of two cases:</p>
+      <p>I keep every opener that has not been closed yet on the stack. Each character then falls into one of two cases:</p>
       <ul>
         <li><strong>An opener</strong> — push it. It is now the one that must close next.</li>
         <li><strong>A closer</strong> — pop the top and check it is the matching opener. If the stack is empty, or the popped bracket is the wrong kind, the string is invalid.</li>
       </ul>
-      <p>To answer "is this the matching opener?" in one comparison, use a dict mapping each closer to its opener: <code>{")": "(", "]": "[", "}": "{"}</code>. Membership in that dict also tells you whether the character is a closer at all, so one lookup does both jobs.</p>
+      <p>I use a dictionary mapping each closer to its opener: <code>{")": "(", "]": "[", "}": "{"}</code>. One lookup tells me whether the character is a closer and which opener it needs.</p>
     </section>
 
     <section class="step" data-state="t0">
       <div class="n">STEP 5</div>
       <h2>Trace it: the openers go on</h2>
-      <p>Start with an empty stack. Index 0 is <code>(</code>. It is not a key of <code>pairs</code>, so it is an opener: push it.</p>
-      <p>Index 1 is <code>[</code>. Also an opener, so push it too. The stack is now <code>( [</code> with <code>[</code> on top.</p>
+      <p>I start with an empty stack. Index 0 is <code>(</code>, not a key of <code>pairs</code>, so I push it as an opener.</p>
+      <p>Index 1 is <code>[</code>, another opener, so I push it too. The stack is now <code>( [</code> with <code>[</code> on top.</p>
       <p>Two brackets are pending, and the stack remembers the order they were opened in. That order is the information the counter threw away.</p>
     </section>
 
@@ -264,9 +263,9 @@
       <div class="n">STEP 6</div>
       <h2>Trace it: the first closer</h2>
       <p>Index 2 is <code>]</code>, which <em>is</em> a key of <code>pairs</code>, so it is a closer. Its required partner is <code>pairs["]"]</code>, which is <code>[</code>.</p>
-      <p>The stack is not empty, so pop the top: it is <code>[</code>. That equals the required partner, so this pair is settled and we keep going.</p>
+      <p>The stack is not empty, so I pop its top: <code>[</code>. It equals the required partner, so I settle this pair and continue.</p>
       <p>The pop is not just a peek. Removing the <code>[</code> is what makes <code>(</code> the top again, ready to be closed later.</p>
-      <div class="callout">Indices 3 and 4 are <code>{</code> and <code>}</code>: push, then pop and match, exactly the same way. The stack is back to just <code>(</code>.</div>
+      <div class="callout">At indices 3 and 4, I push <code>{</code>, then pop and match <code>}</code> the same way. The stack is back to just <code>(</code>.</div>
     </section>
 
     <section class="step" data-state="t2">
@@ -280,7 +279,7 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Two ways it goes wrong</h2>
-      <p>The counterexample from step 2, <code>s = "([)]"</code>, is the interesting one. Push <code>(</code>, push <code>[</code>. At index 2 the closer is <code>)</code>, so the required partner is <code>(</code> — but the top of the stack is <code>[</code>. Mismatch, return <code>False</code> immediately.</p>
+      <p>The counterexample from step 2, <code>s = "([)]"</code>, is the interesting one. I push <code>(</code> and <code>[</code>. At index 2, <code>)</code> requires <code>(</code>, but the stack top is <code>[</code>, so I return <code>False</code> immediately.</p>
       <div class="callout warn">The other failure is quieter. For <code>s = "(("</code> the loop never hits a closer, so no check ever fires. The string is invalid only because the stack still holds two openers at the end. That is the case <code>return not stack</code> catches.</div>
       <p>A third case: a closer with an empty stack, like <code>s = ")"</code>. That is why the test is <code>if not stack or stack.pop() != pairs[ch]</code> — check emptiness first, because <code>pop()</code> on an empty list raises <code>IndexError</code>. Python's <code>or</code> short-circuits, so the pop never runs when the stack is empty.</p>
     </section>

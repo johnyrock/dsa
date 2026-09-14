@@ -216,7 +216,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Tree · LeetCode #199</div>
   <h1>Binary Tree Right Side View, narrated</h1>
-  <p>Scroll through the thinking, from walking down the right spine (which is wrong) to a level-order traversal that keeps the last node of each level, with the state of the algorithm shown alongside.</p>
+  <p>I will first collect one depth at a time, then visit every depth together with a breadth-first traversal and keep its last node.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/tree-traversal.html">Tree Traversal</a> <span class="how">BFS by level; the node popped at i == size − 1 is the rightmost</span></p>
 </header>
 
@@ -234,21 +234,20 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instinct: walk down the right spine</h2>
-      <p>The tempting shortcut is to start at the root and keep taking <code>.right</code>:</p>
-      <pre class="code"><span class="ln">result = []</span><span class="ln">node = root</span><span class="ln">while node:</span><span class="ln">    result.append(node.val)</span><span class="ln">    node = node.right</span></pre>
-      <p style="margin-top:14px">On the running example this gives <code>1 → 3 → 4</code>, which happens to be correct. It is O(h) time and looks too good to be true, because it is.</p>
-      <p>On <code>[1,2,3,4,null,null,null,5]</code> the right spine is just <code>1 → 3</code>, so it returns <strong>[1, 3]</strong> and misses 4 and 5 entirely. The panel dims what this approach never visits. Any node that is the only one on its level is visible from the right, whichever subtree it lives in.</p>
-      <p>A correct brute force is to compute every level separately — for each depth <code>d</code>, traverse the tree collecting nodes at depth <code>d</code> and take the last one — which is O(n · h). We can do it in one traversal.</p>
+      <h2>First instinct: traverse once for every depth</h2>
+      <p>I can find the tree height, then I run a depth-first traversal for each depth and keep the last node encountered at that depth.</p>
+      <pre class="code"><span class="ln">def rightSideView(root):</span><span class="ln">    def height(node):</span><span class="ln">        return -1 if not node else 1 + max(height(node.left), height(node.right))</span><span class="ln">    result = []</span><span class="ln">    def visit(node, depth, wanted):</span><span class="ln">        if not node: return</span><span class="ln">        if depth == wanted: result[-1] = node.val; return</span><span class="ln">        visit(node.left, depth + 1, wanted)</span><span class="ln">        visit(node.right, depth + 1, wanted)</span><span class="ln">    for wanted in range(height(root) + 1):</span><span class="ln">        result.append(None); visit(root, 0, wanted)</span><span class="ln">    return result</span></pre>
+      <p style="margin-top:14px">This is correct because the rightmost node visited at each requested depth is the visible one. Repeating the traversal for every level takes O(n · h) time for height <code>h</code>, and the recursion plus result use O(h) space.</p>
+      <p>I visit every node at a level in one pass. A queue makes the boundary of each level explicit, so I can append that level's last node immediately.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>The key idea: the last node popped in each level</h2>
-      <p>Level-order traversal already visits the tree one depth at a time, left to right, using a queue. If we can tell where each level ends, the node popped just before the boundary is the rightmost node of that level — regardless of which parent it hangs from.</p>
-      <div class="callout">The boundary trick: at the start of each level, record <code>size = len(queue)</code>. Exactly <code>size</code> nodes belong to this level; everything appended while popping them belongs to the next. The node popped at <code>i == size - 1</code> is the one we want.</div>
+      <p>Level-order traversal already visits the tree one depth at a time, left to right, using a queue. If I can tell where each level ends, the node popped just before the boundary is the rightmost node of that level — regardless of which parent it hangs from.</p>
+      <div class="callout">The boundary trick: at the start of each level, I record <code>size = len(queue)</code>. Exactly <code>size</code> nodes belong to this level; everything appended while popping them belongs to the next. The node popped at <code>i == size - 1</code> is the one I want.</div>
       <p>Two details keep the order right. Children are enqueued <code>left</code> first, then <code>right</code>, so each level is queued left to right. And <code>size</code> must be a snapshot: the queue grows during the loop, so re-reading <code>len(queue)</code> would move the boundary.</p>
-      <p>This is <a href="../014-binary-tree-level-order-traversal/walkthrough.html">Level Order Traversal</a> with one change: instead of collecting every node of the level into a list, keep only the last one.</p>
+      <p>This is <a href="../014-binary-tree-level-order-traversal/walkthrough.html">Level Order Traversal</a> with one change: instead of collecting every node of the level into a list, I keep only the last one.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -268,7 +267,7 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: level 0</h2>
-      <p>The queue starts as <code>[1]</code>, so <code>size = 1</code>. Pop node 1 with <code>i = 0</code>. Since <code>0 == size - 1</code>, append 1 to <code>result</code>: it is the only node on its level, so it is also the rightmost.</p>
+      <p>The queue starts as <code>[1]</code>, so <code>size = 1</code>. I pop node 1 with <code>i = 0</code>. Since <code>0 == size - 1</code>, I append 1 to <code>result</code>: it is the only node on its level, so it is also the rightmost.</p>
       <p>Enqueue its children, left first: <code>node.left</code> is 2, <code>node.right</code> is 3. The queue is now <code>[2, 3]</code>, which is exactly level 1 in left-to-right order.</p>
       <p><code>result = [1]</code>. The root is always the first entry — it is alone on level 0.</p>
     </section>
@@ -276,15 +275,15 @@
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: level 1</h2>
-      <p><code>size = 2</code>. Pop node 2 (<code>i = 0</code>). It is not the last of the level, so nothing is recorded; 2 has no left child, and its right child 5 is enqueued. Queue: <code>[3, 5]</code>.</p>
-      <p>Pop node 3 (<code>i = 1</code>). Now <code>1 == size - 1</code>, so append 3. Its only child, 4, is enqueued. Queue: <code>[5, 4]</code>.</p>
-      <p><code>result = [1, 3]</code>. Notice the queue held <code>[3, 5]</code> mid-level, three items would have been wrong to treat as a level — that is why <code>size</code> was frozen at 2.</p>
+      <p><code>size = 2</code>. I pop node 2 (<code>i = 0</code>). It is not the last of the level, so nothing is recorded; 2 has no left child, and its right child 5 is enqueued. Queue: <code>[3, 5]</code>.</p>
+      <p>I pop node 3 (<code>i = 1</code>). Now <code>1 == size - 1</code>, so I append 3. Its only child, 4, is enqueued. Queue: <code>[5, 4]</code>.</p>
+      <p><code>result = [1, 3]</code>. I see the queue held <code>[3, 5]</code> mid-level, three items would have been wrong to treat as a level — that is why <code>size</code> was frozen at 2.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: level 2, the answer</h2>
-      <p><code>size = 2</code>. Pop node 5 (<code>i = 0</code>): not last, no children. Pop node 4 (<code>i = 1</code>): last of the level, append 4. No children, so the queue is empty and the outer <code>while queue</code> loop ends.</p>
+      <p><code>size = 2</code>. I pop node 5 (<code>i = 0</code>): not last, no children. I pop node 4 (<code>i = 1</code>): last of the level, I append 4. No children, so the queue is empty and the outer <code>while queue</code> loop ends.</p>
       <div class="callout"><code>result = [1, 3, 4]</code>. Three levels, three values. Node 5 was on the same level as 4 but sat to its left, so it is hidden.</div>
       <p>Had 3 lacked its child 4, node 5 would have been the last pop at this level and the answer would end in 5 — a node reached through the left subtree. The BFS handles that without a special case.</p>
     </section>
@@ -292,10 +291,10 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: a moving boundary, and the wrong end</h2>
-      <p><strong>Reading <code>len(queue)</code> live.</strong> Write the test as <code>if i == len(queue) - 1</code> inside the loop, after the children have been appended. At level 0: pop 1, enqueue 2 and 3, then <code>0 == 2 - 1</code> is false, so the root is skipped. At level 1: pop 2, queue <code>[3, 5]</code>, false; pop 3, queue <code>[5, 4]</code>, <code>1 == 1</code>, record 3. At level 2: pop 5, queue <code>[4]</code>, <code>0 == 0</code>, record <strong>5</strong>; pop 4, queue empty, <code>1 == -1</code> false. Output <strong>[3, 5]</strong>. Snapshot <code>size</code> before the loop.</p>
+      <p><strong>Reading <code>len(queue)</code> live.</strong> I write the test as <code>if i == len(queue) - 1</code> inside the loop, after the children have been appended. At level 0: I pop 1, enqueue 2 and 3, then <code>0 == 2 - 1</code> is false, so the root is skipped. At level 1: I pop 2, queue <code>[3, 5]</code>, false; I pop 3, queue <code>[5, 4]</code>, <code>1 == 1</code>, I record 3. At level 2: I pop 5, queue <code>[4]</code>, <code>0 == 0</code>, I record <strong>5</strong>; I pop 4, queue empty, <code>1 == -1</code> false. Output <strong>[3, 5]</strong>. Snapshot <code>size</code> before the loop.</p>
       <p><strong>Recording the first pop.</strong> <code>if i == 0</code> gives the left side view: <strong>[1, 2, 5]</strong> on the example.</p>
       <p><strong>Enqueuing right before left.</strong> Then the last pop of each level is the <em>leftmost</em> node, and the output is again <strong>[1, 2, 5]</strong>.</p>
-      <div class="callout warn">Freeze <code>size</code> once per level, pop exactly <code>size</code> nodes, and record the one at <code>i == size - 1</code>. Children go in left, then right.</div>
+      <div class="callout warn">Freeze <code>size</code> once per level, I pop exactly <code>size</code> nodes, and record the one at <code>i == size - 1</code>. Children go in left, then right.</div>
     </section>
 
     <section class="step" data-state="complexity">

@@ -222,8 +222,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Intervals · LeetCode #435</div>
   <h1>Non-overlapping Intervals, narrated</h1>
-  <p>Scroll through the thinking, from trying every subset of intervals to sorting by end time and keeping whichever one finishes first, with the intervals drawn on a timeline alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/intervals.html">Intervals</a> <span class="how">sort by end; keep an interval if it starts at or after the last kept end, otherwise count it removed</span></p>
+  <p>I’ll start by trying subsets of intervals, then sort by end time and keep the interval that finishes first.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/intervals.html">Intervals</a> <span class="how">I sort by end and retain an interval when it starts at or after the last retained end; otherwise I count it as removed</span></p>
 </header>
 
 <div class="layout">
@@ -232,7 +232,7 @@
     <section class="step" data-state="problem">
       <div class="n">STEP 1</div>
       <h2>The problem</h2>
-      <p>You are given intervals as <code>[start, end]</code> pairs. Remove as few of them as possible so that none of the survivors overlap, and return how many you removed. Two intervals that merely touch, like <code>[1, 2]</code> and <code>[2, 3]</code>, are not overlapping.</p>
+      <p>Given <code>[start, end]</code> intervals, remove as few as possible so the survivors do not overlap. Return the number removed. Intervals that only touch do not overlap.</p>
       <div class="callout">Running example: <code>intervals = [[1, 2], [2, 3], [3, 4], [1, 3]]</code>. Remove <code>[1, 3]</code> and the other three sit back to back. Answer <strong>1</strong>.</div>
       <p>Note that the output is a count, not a list. That frees the algorithm from tracking which intervals survive; it only has to decide, for each one, whether it stays or goes.</p>
       <p>Also note the equivalence that drives the solution: removing the <em>fewest</em> intervals is the same as keeping the <em>most</em> non-overlapping intervals. Every scheduling problem of the form "pick the most compatible activities" is this problem in disguise.</p>
@@ -241,17 +241,18 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: try every subset of survivors</h2>
-      <p>Enumerate every subset of the intervals, test whether it is pairwise non-overlapping, and remember the largest one that is:</p>
+      <p>My first instinct is to enumerate every subset, test whether it is pairwise non-overlapping, and remember the largest valid subset.</p>
       <pre class="code"><span class="ln">best = 0</span><span class="ln">for mask in range(1 &lt;&lt; n):</span><span class="ln">    chosen = [iv for i, iv in enumerate(intervals) if mask &gt;&gt; i &amp; 1]</span><span class="ln">    chosen.sort()</span><span class="ln">    if all(chosen[k][0] &gt;= chosen[k - 1][1] for k in range(1, len(chosen))):</span><span class="ln">        best = max(best, len(chosen))</span><span class="ln">return n - best</span></pre>
-      <p style="margin-top:14px">For four intervals that is 16 subsets. The constraint allows <code>10^5</code> intervals, and <code>2^100000</code> subsets will not finish. This is <strong>O(2ⁿ · n log n)</strong>, and it ignores structure that is sitting in plain sight: intervals live on a line, and the ones that end early leave room for the ones that come after.</p>
+      <p style="margin-top:14px">For four intervals, I check 16 subsets. In general this costs <strong>O(2ⁿ · n log n) time</strong> and <strong>O(n) space</strong> for a chosen subset, so it cannot handle <code>10^5</code> intervals.</p>
+      <p>Intervals live on a line, so one that ends early leaves the most room for everything that follows.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: the interval that ends earliest is always safe to keep</h2>
-      <p>Among all intervals, consider the one with the smallest <code>end</code>. Any optimal set of survivors either contains it or contains some other interval that overlaps it. In the second case, swap that other interval out and the earliest-ending one in: the new set is the same size, and because its new member ends <em>no later</em> than the one it replaced, it cannot collide with anything the old member did not already collide with.</p>
-      <div class="callout">So there is always an optimal answer that keeps the earliest-ending interval. Keep it, discard everything that overlaps it, and repeat on what is left. That is a sort by <code>end</code> followed by a single sweep.</div>
-      <p>In the panel the intervals are now in end order: <code>[1, 2]</code>, <code>[2, 3]</code>, <code>[1, 3]</code>, <code>[3, 4]</code>. Line 3, <code>intervals.sort(key=lambda interval: interval[1])</code>, is that reordering. Notice that <code>[1, 3]</code> has moved after <code>[2, 3]</code>; they share an end, and the stable sort keeps their input order, which does not matter for the count.</p>
+      <p>Among all intervals, I consider the one with the smallest <code>end</code>. Any optimal set of survivors either contains it or contains some other interval that overlaps it. In the second case, I swap that other interval out and the earliest-ending one in: the new set is the same size, and because its new member ends <em>no later</em> than the one it replaced, it cannot collide with anything the old member did not already collide with.</p>
+      <div class="callout">So there is always an optimal answer that keeps the earliest-ending interval. I retain it, discard everything that overlaps it, and repeat on what is left. That becomes a sort by <code>end</code> followed by a single sweep.</div>
+      <p>I now have the intervals in end order: <code>[1, 2]</code>, <code>[2, 3]</code>, <code>[1, 3]</code>, <code>[3, 4]</code>. Line 3, <code>intervals.sort(key=lambda interval: interval[1])</code>, creates that order. I can see <code>[1, 3]</code> after <code>[2, 3]</code>; they share an end, and their order does not affect the count.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -260,8 +261,8 @@
       <ul>
         <li><code>intervals.sort(key=lambda interval: interval[1])</code> puts the earliest-ending interval first.</li>
         <li><code>prev_end = intervals[0][1]</code>: the first interval is always kept; its end is the boundary the next kept one must clear.</li>
-        <li><code>for start, end in intervals[1:]</code>: walk the rest in end order.</li>
-        <li><code>if start &gt;= prev_end: prev_end = end</code>: no conflict with what is kept, so keep it and advance the boundary.</li>
+        <li><code>for start, end in intervals[1:]</code>: I walk the rest in end order.</li>
+        <li><code>if start &gt;= prev_end: prev_end = end</code>: with no conflict, I retain it and advance the boundary.</li>
         <li><code>else: removed += 1</code>: it starts before the last kept interval ends, so it overlaps and must go.</li>
         <li><code>return removed</code>.</li>
       </ul>
@@ -272,7 +273,7 @@
       <div class="n">STEP 5</div>
       <h2>Trace it: keep <code>[1, 2]</code>, then keep <code>[2, 3]</code></h2>
       <p>After the sort, <code>intervals[0] = [1, 2]</code>, so <code>prev_end = 2</code>. It is kept without a comparison; nothing ends before it, so nothing can be a better first choice.</p>
-      <p>Next is <code>[2, 3]</code>: <code>start = 2</code>, and <code>2 &gt;= 2</code> is true. The intervals touch at 2, which is allowed, so keep it and set <code>prev_end = 3</code>. <code>removed</code> is still 0.</p>
+      <p>Next is <code>[2, 3]</code>: <code>start = 2</code>, and <code>2 &gt;= 2</code> is true. The intervals touch at 2, which is allowed, so I retain it and set <code>prev_end = 3</code>. <code>removed</code> is still 0.</p>
       <p>The boundary moved from 2 to 3. Everything kept so far ends at or before 3, and any future survivor must start at or after it.</p>
     </section>
 
@@ -280,14 +281,14 @@
       <div class="n">STEP 6</div>
       <h2>Trace it: <code>[1, 3]</code> starts before the boundary, remove it</h2>
       <p>Next is <code>[1, 3]</code>: <code>start = 1</code>, and <code>1 &gt;= 3</code> is false. It overlaps the kept <code>[2, 3]</code> (and <code>[1, 2]</code> too), so <code>removed = 1</code>. <code>prev_end</code> stays at 3.</p>
-      <p>Why is removing <em>this</em> one right, rather than removing <code>[2, 3]</code> to make room for it? Because they end at the same time, and <code>[2, 3]</code> was reached first, so keeping it already leaves at least as much room to the right. In general the interval we are looking at ends no earlier than the last kept one, so dropping it never costs anything the alternative would have gained.</p>
+      <p>I remove <em>this</em> interval rather than <code>[2, 3]</code> because they end at the same time and <code>[2, 3]</code> was reached first, so keeping it already leaves at least as much room to the right. In general, the interval I am looking at ends no earlier than the last kept one, so dropping it never costs anything the alternative would gain.</p>
       <div class="callout">The removed bar is amber. The boundary does not move on a removal; only kept intervals push it.</div>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: keep <code>[3, 4]</code> and finish</h2>
-      <p>Last is <code>[3, 4]</code>: <code>start = 3</code>, and <code>3 &gt;= 3</code> is true. Touching again, so keep it and set <code>prev_end = 4</code>.</p>
+      <p>Last is <code>[3, 4]</code>: <code>start = 3</code>, and <code>3 &gt;= 3</code> is true. Touching again, so I retain it and set <code>prev_end = 4</code>.</p>
       <p>The loop ends and the function returns <code>removed = 1</code>. Three intervals survived, <code>[1, 2]</code>, <code>[2, 3]</code>, <code>[3, 4]</code>, which is the most that can fit in <code>[1, 4]</code> when each has length one, so no better answer exists.</p>
       <p>Four intervals, one sort, three comparisons.</p>
     </section>
@@ -295,10 +296,10 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: sorting by start</h2>
-      <p><strong>Sorting by <code>start</code> and keeping whichever comes first.</strong> Take <code>[[1, 100], [2, 3], [4, 5]]</code>, which the panel now shows. In start order <code>[1, 100]</code> comes first and is kept, <code>prev_end = 100</code>, and both <code>[2, 3]</code> and <code>[4, 5]</code> start before 100, so the code reports <strong>2</strong> removals. The answer is <strong>1</strong>: drop the long interval and the two short ones coexist. In end order, <code>[2, 3]</code> and <code>[4, 5]</code> come first, are kept, and <code>[1, 100]</code> is the one removed. A start-sorted sweep can be rescued by keeping the interval with the smaller <code>end</code> on each conflict, but sorting by end makes that the default.</p>
+      <p><strong>Sorting by <code>start</code> and keeping whichever comes first.</strong> I take <code>[[1, 100], [2, 3], [4, 5]]</code>, which the panel now shows. In start order <code>[1, 100]</code> comes first and is retained, <code>prev_end = 100</code>, and both <code>[2, 3]</code> and <code>[4, 5]</code> start before 100, so the code reports <strong>2</strong> removals. The answer is <strong>1</strong>: I drop the long interval and the two short ones coexist. In end order, <code>[2, 3]</code> and <code>[4, 5]</code> come first, are retained, and <code>[1, 100]</code> is the one removed. A start-sorted sweep can be rescued by retaining the interval with the smaller <code>end</code> on each conflict, but sorting by end makes that the default.</p>
       <p><strong>Using <code>&gt;</code> instead of <code>&gt;=</code>.</strong> Then <code>2 &gt; 2</code> is false at <code>[2, 3]</code>, and touching intervals are treated as overlapping. The running example returns <strong>2</strong> instead of 1, and <code>[[1, 2], [2, 3]]</code> returns 1 instead of 0.</p>
       <p><strong>Seeding <code>prev_end = 0</code> and looping over every interval.</strong> With negative coordinates such as <code>[[-5, -1], [-2, 0]]</code>, neither start clears 0, both are counted removed, and the function returns 2 for an input whose answer is 1. Seed from <code>intervals[0][1]</code> instead.</p>
-      <div class="callout warn">Sort by <code>end</code>. The earliest finisher leaves the most room, and "starts first" says nothing about how much room it leaves.</div>
+      <div class="callout warn">I sort by <code>end</code>. The earliest finisher leaves the most room, while “starts first” says nothing about the room it leaves.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -325,7 +326,7 @@
         <li><code>else: removed += 1</code> drops an overlapping one without moving the boundary.</li>
         <li><code>return removed</code>.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>sort by end, keep whatever starts at or after the last kept end, and count everything else as removed.</em></div>
+      <div class="callout">One-line summary to remember: <em>I sort by end, retain whatever starts at or after the last retained end, and count everything else as removed.</em></div>
     </section>
 
     <div class="code-final">

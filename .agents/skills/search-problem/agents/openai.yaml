@@ -1,0 +1,6 @@
+interface:
+  display_name: "Search DSA Problems"
+  short_description: "Find matching DSA problems already in this repo"
+  default_prompt: "Use $search-problem to search: <problem title or scenario>."
+policy:
+  allow_implicit_invocation: true

@@ -203,7 +203,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Graph · Union-Find · LeetCode #684</div>
   <h1>Redundant Connection, narrated</h1>
-  <p>Scroll through the thinking, from re-running a DFS after every edge to a union-find that spots the cycle-closing edge the moment it arrives, with the components shown alongside.</p>
+  <p>I will first search the current graph before adding each edge, then store its connectivity in a union-find.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph</a> <span class="how">union-find: an edge whose endpoints already share a root closes a cycle</span></p>
 </header>
 
@@ -219,22 +219,21 @@
       <p>Nodes are labelled 1 to n, not 0 to n-1. That detail will matter when we size an array.</p>
     </section>
 
-    <section class="step" data-state="brute">
-      <div class="n">STEP 2</div>
-      <h2>First instinct: add edges one by one and DFS</h2>
-      <p>Take the edges in order. Before adding <code>[a, b]</code>, ask whether <code>a</code> can already reach <code>b</code> through the edges added so far. If it can, this edge would create a second path between them, which is a cycle, and it is the answer.</p>
-      <pre class="code"><span class="ln">graph = defaultdict(list)</span><span class="ln">for a, b in edges:</span><span class="ln">    if dfs(graph, a, b, seen=set()):   # already connected?</span><span class="ln">        return [a, b]</span><span class="ln">    graph[a].append(b)</span><span class="ln">    graph[b].append(a)</span></pre>
-      <p style="margin-top:14px">This is correct and it also gets the tie-break right for free: the first edge whose endpoints are already connected is necessarily the last edge of the cycle to arrive. The cost is the repeated <code>dfs</code>. Each one can touch every edge added so far, so over <code>n</code> edges that is <strong>O(n²)</strong> time.</p>
-      <p>The waste is obvious once named. The DFS answers "are <code>a</code> and <code>b</code> in the same connected component?" by re-walking the whole component. We are asking that one question <code>n</code> times, and the components only ever grow by merging.</p>
+    <section class="step" data-state="insight">
+      <div class="n">STEP 2</div><h2>First instinct: add edges one by one and search</h2>
+      <p>I can ask whether an edge's endpoints already connect through the edges I have added; if so, that edge is redundant.</p>
+      <pre class="code"><span class="ln">def findRedundantConnection(edges):</span><span class="ln">    graph = defaultdict(list)</span><span class="ln">    for a, b in edges:</span><span class="ln">        if dfs(graph, a, b, set()): return [a, b]</span><span class="ln">        graph[a].append(b); graph[b].append(a)</span></pre>
+      <p style="margin-top:14px">This is correct. Each DFS can traverse O(n) edges, and it runs once per input edge, so the time complexity is O(n²). The graph and DFS visited set use O(n) space.</p>
+      <p>Union-find avoids repeated connectivity checks: each edge either merges two roots or is the first edge whose roots already match.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: track components, not paths</h2>
-      <p>We never need the path from <code>a</code> to <code>b</code>. We only need to know whether they are in the same component. A <strong>union-find</strong> (disjoint set) structure answers exactly that: every node stores a <code>parent</code> pointer, following pointers upward ends at a root, and two nodes are connected if and only if they have the same root.</p>
+      <p>I never need the path from <code>a</code> to <code>b</code>; I only need to know whether they are in the same component. A <strong>union-find</strong> (disjoint set) structure answers exactly that: every node stores a <code>parent</code> pointer, following pointers upward ends at a root, and two nodes are connected if and only if they have the same root.</p>
       <p>Adding a tree edge is then a merge: point one root at the other. Detecting the redundant edge is a comparison: <code>find(a) == find(b)</code> before merging.</p>
       <div class="callout">Every node starts as its own root: <code>parent = [0, 1, 2, 3, 4, 5]</code>. Slot 0 is unused padding; there are <code>len(edges) + 1</code> slots so that node <code>n</code> has one.</div>
-      <p>The one refinement is <em>path halving</em> inside <code>find</code>: <code>parent[x] = parent[parent[x]]</code> re-points each node at its grandparent as we climb, so chains flatten as they are used. That is what makes each operation effectively constant time.</p>
+      <p>The one refinement is <em>path halving</em> inside <code>find</code>: <code>parent[x] = parent[parent[x]]</code> re-points each node at its grandparent as I climb, so chains flatten as they are used. That is what makes each operation effectively constant time.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -262,7 +261,7 @@
       <h2>Trace it: edge [3,4]</h2>
       <p><code>find(3)</code>: <code>parent[3] = 1</code> and <code>parent[1] = 1</code>, so the climb stops at <strong>1</strong>. <code>find(4) = 4</code>, still its own root.</p>
       <p><code>1 != 4</code>, so merge: <code>parent[4] = 1</code>. The component rooted at 1 now holds nodes 1, 2, 3, 4, and <code>parent = [0, 1, 1, 1, 1, 5]</code>. Every node in it points straight at the root, so the next <code>find</code> calls on them take a single step.</p>
-      <p>Look at the figure: a path 1-2-3-4 exists, so nodes 1 and 4 are already connected. Whatever edge arrives next between two of these four nodes will be the answer.</p>
+      <p>In the figure, a path 1-2-3-4 exists, so nodes 1 and 4 are already connected. Any later edge between two of these four nodes will be the answer.</p>
     </section>
 
     <section class="step" data-state="t3">
@@ -276,9 +275,9 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: order of union and check, and array size</h2>
-      <p><strong>Merging before comparing.</strong> Write the union first, <code>parent[find(b)] = find(a)</code>, and then test <code>if find(a) == find(b)</code>. The test is now true for <em>every</em> edge, because you just made it true. The loop returns on the first iteration: <strong><code>[1, 2]</code></strong> instead of <code>[1, 4]</code>. The panel shows the array after that premature union.</p>
+      <p><strong>Merging before comparing.</strong> If I write the union first, <code>parent[find(b)] = find(a)</code>, and then test <code>if find(a) == find(b)</code>, the test is true for <em>every</em> edge because I just made it true. The loop returns on the first iteration: <strong><code>[1, 2]</code></strong> instead of <code>[1, 4]</code>. The panel shows the array after that premature union.</p>
       <p><strong>Sizing the array for 0-indexed nodes.</strong> <code>parent = list(range(len(edges)))</code> gives five slots, indices 0 to 4. Node 5 exists in the example, and the very last edge <code>[1,5]</code> would evaluate <code>parent[5]</code>: <code>IndexError</code>. In this example the answer is found before that edge, which is exactly why the bug survives a quick test; the last test case in the suite puts node <code>n</code> in the final edge to catch it.</p>
-      <div class="callout warn">Compare roots first, merge second, and give <code>parent</code> exactly <code>n + 1</code> slots because the labels start at 1.</div>
+      <div class="callout warn">I compare roots first, merge second, and give <code>parent</code> exactly <code>n + 1</code> slots because the labels start at 1.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -301,7 +300,7 @@
       <ul>
         <li><code>parent = list(range(len(edges) + 1))</code> — every node is its own root; <code>n + 1</code> slots because labels run 1 to n.</li>
         <li><code>while parent[x] != x</code> — climb until a node that is its own parent; that is the root.</li>
-        <li><code>parent[x] = parent[parent[x]]</code> — path halving: skip a level so the next climb is shorter.</li>
+        <li><code>parent[x] = parent[parent[x]]</code> — I use path halving, which skips a level so my next climb is shorter.</li>
         <li><code>root_a, root_b = find(a), find(b)</code> — resolve both endpoints before touching anything.</li>
         <li><code>if root_a == root_b: return [a, b]</code> — already connected, so this edge is the redundant one.</li>
         <li><code>parent[root_b] = root_a</code> — otherwise merge the two components at their roots.</li>

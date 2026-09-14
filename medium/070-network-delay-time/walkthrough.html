@@ -205,8 +205,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Graph · Dijkstra · LeetCode #743</div>
   <h1>Network Delay Time, narrated</h1>
-  <p>Scroll through the thinking, from relaxing every edge over and over to Dijkstra's algorithm with a min-heap, with the distances and the heap shown alongside as nodes settle.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph</a> <span class="how">Dijkstra: pop the closest unsettled node from a min-heap, relax its edges, repeat</span></p>
+  <p>I will first relax every edge over and over, then settle the closest unfinished node first with a min-heap.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph</a> <span class="how">I repeatedly settle the closest unfinished node and relax its edges with Dijkstra's algorithm</span></p>
 </header>
 
 <div class="layout">
@@ -221,22 +221,21 @@
       <p>So the question is really two questions: the shortest time to each node, and then the maximum of those. The second part is one line. The first is single-source shortest paths.</p>
     </section>
 
-    <section class="step" data-state="brute">
-      <div class="n">STEP 2</div>
-      <h2>First instinct: relax every edge until nothing changes</h2>
-      <p>Start with <code>dist[k] = 0</code> and every other distance at infinity. Then sweep over all the edges: if <code>dist[u] + w</code> beats <code>dist[v]</code>, lower it. One sweep can only propagate the signal one hop further, so repeat the sweep <code>n - 1</code> times.</p>
-      <pre class="code"><span class="ln">dist = {node: float("inf") for node in range(1, n + 1)}</span><span class="ln">dist[k] = 0</span><span class="ln">for _ in range(n - 1):</span><span class="ln">    for u, v, w in times:</span><span class="ln">        if dist[u] + w &lt; dist[v]:</span><span class="ln">            dist[v] = dist[u] + w</span></pre>
-      <p style="margin-top:14px">This is Bellman-Ford, and it is correct. It even handles negative weights. But it costs <strong>O(n · E)</strong>: for <code>n = 100</code> and <code>E = 6000</code> that is 600,000 relaxations, most of which compare two infinities and do nothing.</p>
-      <p>The waste has a name. Every sweep re-examines edges leaving nodes whose distance is already final. If we knew which node was "done" next, we could relax its edges exactly once.</p>
+    <section class="step" data-state="insight">
+      <div class="n">STEP 2</div><h2>First instinct: relax every edge until nothing changes</h2>
+      <p>I can use Bellman-Ford: initialize distances, then relax every directed edge up to n - 1 times.</p>
+      <pre class="code"><span class="ln">def networkDelayTime(times, n, k):</span><span class="ln">    dist = [float("inf")] * (n + 1)</span><span class="ln">    dist[k] = 0</span><span class="ln">    for _ in range(n - 1):</span><span class="ln">        for u, v, w in times:</span><span class="ln">            if dist[u] + w &lt; dist[v]: dist[v] = dist[u] + w</span><span class="ln">    return -1 if float("inf") in dist[1:] else max(dist[1:])</span></pre>
+      <p style="margin-top:14px">This is correct. It relaxes E edges for n - 1 rounds, so the time complexity is O(n · E). The distance array has O(n) space complexity.</p>
+      <p>Because all weights are non-negative, the closest unfinished node has a final distance. A min-heap then lets me relax its outgoing edges only once.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: the closest unsettled node is already final</h2>
-      <p>Weights are non-negative. So among all the nodes we have not settled yet, the one with the smallest tentative time cannot get any better: any other route to it must pass through some node that is at least as far away, then add a non-negative edge. That node is <em>settled</em>, and its outgoing edges need relaxing exactly once.</p>
+      <p>Weights are non-negative. Among nodes I have not settled, the smallest tentative time cannot improve because another route passes through a node at least as far away and adds a non-negative edge. I can settle that node and relax its outgoing edges exactly once.</p>
       <p>This is Dijkstra's algorithm. The only data structure question is how to find "the smallest tentative time" quickly, and a <strong>min-heap</strong> keyed on <code>(time, node)</code> does it in <code>O(log n)</code>.</p>
-      <div class="callout">Seed the heap with <code>(0, k)</code>: the source is reached at time 0. <code>dist</code> starts empty and only settled nodes are written into it, so <code>node in dist</code> means "already final".</div>
-      <p>Because we push a new entry every time we find a route to a node, the same node can appear in the heap more than once with different times. The smaller one is popped first and settles the node; when the larger one surfaces later, <code>if node in dist: continue</code> discards it. That single check replaces a decrease-key operation.</p>
+      <div class="callout">I seed the heap with <code>(0, k)</code> because the source is reached at time 0. <code>dist</code> starts empty and records only final nodes.</div>
+      <p>Because I push a new entry every time I find a route to a node, that node can appear in the heap more than once with different times. The smaller one is popped first and settles it; when the larger one surfaces later, <code>if node in dist: continue</code> discards it. That single check replaces a decrease-key operation.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -246,7 +245,7 @@
       <ul>
         <li><code>graph[u].append((v, w))</code> — an adjacency list, so each node's outgoing edges are found without scanning <code>times</code>.</li>
         <li><code>d, node = heapq.heappop(heap)</code> — the unsettled node with the smallest tentative time.</li>
-        <li><code>if node in dist: continue</code> — a stale entry for a node that already settled; skip it.</li>
+        <li><code>if node in dist: continue</code> — I discard a stale entry for a node that already settled.</li>
         <li><code>dist[node] = d</code> — settle it. This is the first and only write for this node.</li>
         <li><code>heapq.heappush(heap, (d + w, nxt))</code> for every unsettled neighbour — relax the outgoing edges.</li>
         <li><code>max(dist.values()) if len(dist) == n else -1</code> — all nodes settled means the slowest arrival is the answer; otherwise something was unreachable.</li>
@@ -257,22 +256,22 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: settle the source</h2>
-      <p>Pop <code>(0, 2)</code>. Node 2 is not in <code>dist</code>, so settle it: <code>dist[2] = 0</code>.</p>
-      <p>Relax its edges. <code>graph[2]</code> holds <code>(1, 1)</code> and <code>(3, 1)</code>; neither neighbour is settled, so push <code>(0 + 1, 1)</code> and <code>(0 + 1, 3)</code>. The heap is now <code>[(1, 1), (1, 3)]</code>. Two nodes are tied at time 1, and the tuple comparison breaks the tie on the node label, so 1 will come out first.</p>
+      <p>I pop <code>(0, 2)</code>. Node 2 is new, so I set <code>dist[2] = 0</code>.</p>
+      <p>I relax its edges from <code>graph[2]</code>, adding <code>(0 + 1, 1)</code> and <code>(0 + 1, 3)</code>. The heap is now <code>[(1, 1), (1, 3)]</code>.</p>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: settle nodes 1 and 3</h2>
-      <p>Pop <code>(1, 1)</code>. Node 1 is new, so <code>dist[1] = 1</code>. It has no outgoing edges, so nothing is pushed; the heap is <code>[(1, 3)]</code>.</p>
-      <p>Pop <code>(1, 3)</code>. Node 3 is new, so <code>dist[3] = 1</code>. Its one edge is <code>(4, 1)</code>, and 4 is unsettled, so push <code>(1 + 1, 4)</code>. The heap is <code>[(2, 4)]</code>.</p>
-      <p>After this step <code>dist = {2: 0, 1: 1, 3: 1}</code>. Notice that <code>dist</code> is filled in increasing order of time. That is not a coincidence, it is the invariant that makes the first pop of each node final.</p>
+      <p>I pop <code>(1, 1)</code>, set <code>dist[1] = 1</code>, and find no outgoing edges. The heap becomes <code>[(1, 3)]</code>.</p>
+      <p>I next pop <code>(1, 3)</code>, set <code>dist[3] = 1</code>, and add <code>(1 + 1, 4)</code>. The heap is <code>[(2, 4)]</code>.</p>
+      <p>After this step <code>dist = {2: 0, 1: 1, 3: 1}</code>. I fill <code>dist</code> in increasing order of time. That is the invariant that makes each node's first pop final.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: settle node 4 and take the max</h2>
-      <p>Pop <code>(2, 4)</code>. Node 4 is new, so <code>dist[4] = 2</code>. It has no outgoing edges and the heap is now empty, so the <code>while heap</code> loop ends.</p>
+      <p>I pop <code>(2, 4)</code> and set <code>dist[4] = 2</code>. It has no outgoing edges, so the heap empties.</p>
       <p><code>len(dist)</code> is 4, equal to <code>n</code>, so every node received the signal. The delay is the slowest arrival: <code>max(0, 1, 1, 2) = 2</code>.</p>
       <div class="callout">Four pops, three pushes. Bellman-Ford would have done three sweeps of three edges, nine relaxations, and most of them would have been wasted comparisons.</div>
     </section>
@@ -280,7 +279,7 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: edge direction and the reachability check</h2>
-      <p><strong>Building the edge backwards.</strong> Write <code>graph[v].append((u, w))</code> instead of <code>graph[u].append((v, w))</code> and every arrow flips. In the example nothing then leaves node 2: after settling the source the heap is empty, <code>dist = {2: 0}</code>, <code>len(dist)</code> is 1, and the function returns <strong>-1</strong> instead of 2. The panel shows the flipped graph.</p>
+      <p><strong>Building the edge backwards.</strong> If I write <code>graph[v].append((u, w))</code>, every arrow flips. Then nothing leaves node 2 and the function returns <strong>-1</strong> instead of 2.</p>
       <p><strong>Skipping the <code>len(dist) == n</code> guard.</strong> Returning <code>max(dist.values())</code> unconditionally is right whenever every node is reachable, which is every example that comes to mind first. For <code>times = [[1,2,1]], n = 2, k = 2</code> only the source settles, and the answer becomes <strong>0</strong> instead of -1.</p>
       <p><strong>Dropping <code>if node in dist: continue</code>.</strong> With <code>[[1,2,5],[1,3,1],[3,2,1]]</code> node 2 is pushed as <code>(5, 2)</code> and later as <code>(2, 2)</code>. The <code>(2, 2)</code> entry pops first and sets <code>dist[2] = 2</code>; without the guard, <code>(5, 2)</code> then overwrites it with 5.</p>
       <div class="callout warn"><code>[u, v, w]</code> is <code>u → v</code>. A node is done the first time it is popped, never the second, and the answer is only a max if all <code>n</code> nodes made it into <code>dist</code>.</div>

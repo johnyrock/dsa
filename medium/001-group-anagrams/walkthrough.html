@@ -189,7 +189,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Hash Map · LeetCode #49</div>
   <h1>Group Anagrams, narrated</h1>
-  <p>Scroll through the thinking, from comparing every pair of words to a single pass that buckets each word under a canonical key, with the state of the algorithm shown alongside.</p>
+  <p>I’ll start by comparing a word with existing groups, then give every word a canonical key that lets me bucket it in one pass.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/hash-map.html">Hash Map</a> <span class="how">letter-count tuple -> bucket of words</span></p>
 </header>
 
@@ -208,10 +208,10 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: compare every pair</h2>
-      <p>The direct idea: for each word, look through the groups formed so far and ask a representative of each group "are you my anagram?" using the Valid Anagram check. If yes, join that group; if no group says yes, start a new one.</p>
-      <pre class="code"><span class="ln">groups = []</span><span class="ln">for word in strs:</span><span class="ln">    for g in groups:</span><span class="ln">        if is_anagram(word, g[0]):</span><span class="ln">            g.append(word); break</span><span class="ln">    else:</span><span class="ln">        groups.append([word])</span></pre>
-      <p style="margin-top:14px">It is correct. But every word may be checked against every existing group, and each check costs O(k) for words of length k. In the worst case, with no anagrams at all, that is <strong>O(n² · k)</strong>. At n = 10,000 the inner loop runs about fifty million anagram checks.</p>
-      <p>The waste is that we re-derive "same letters?" from scratch for every pair, when that fact depends on each word alone.</p>
+      <p>My first instinct is to place each word by comparing it with one representative from every group formed so far.</p>
+      <pre class="code"><span class="ln">def is_anagram(a, b):</span><span class="ln">    return sorted(a) == sorted(b)</span><span class="ln">groups = []</span><span class="ln">for word in strs:</span><span class="ln">    for g in groups:</span><span class="ln">        if is_anagram(word, g[0]): g.append(word); break</span><span class="ln">    else: groups.append([word])</span><span class="ln">return groups</span></pre>
+      <p style="margin-top:14px">For <code>n</code> words of length <code>k</code>, this takes <strong>O(n² · k log k) time</strong>; the groups and sorting copies use <strong>O(n · k) extra space</strong>.</p>
+      <p>Repeatedly comparing a word with every existing group is the expensive part. I replace those comparisons with one canonical key per word and a direct dictionary lookup.</p>
     </section>
 
     <section class="step" data-state="reframe">
@@ -226,19 +226,19 @@
     <section class="step" data-state="idea">
       <div class="n">STEP 4</div>
       <h2>The key idea: a dictionary from key to bucket</h2>
-      <p>Walk the list once. For each word, compute its key, then append the word to <code>groups[key]</code>, creating the bucket the first time the key appears. At the end, the buckets are the answer.</p>
+      <p>I walk the list once. For each word, I compute its key, then append the word to <code>groups[key]</code>, creating the bucket the first time the key appears. At the end, the buckets are the answer.</p>
       <ul>
-        <li>The dictionary lookup is O(1) on average, so grouping costs nothing beyond computing the key.</li>
-        <li>No word is ever compared to another word. The key does all the matching.</li>
+        <li>I get an O(1) average dictionary lookup, so grouping costs nothing beyond computing the key.</li>
+        <li>I never compare one word with another word. The key does all the matching.</li>
       </ul>
-      <p>For the key itself there is a choice. Sorting the letters costs O(k log k). Because the alphabet is only lowercase a–z, we can instead count letters into a 26-slot list in O(k), and freeze that list into a tuple so it can be a dictionary key. The final code uses the tally; the sorted string is a perfectly acceptable answer too.</p>
+      <p>For the key itself, I have a choice. Sorting the letters costs O(k log k). Because the alphabet is only lowercase a–z, I can instead count letters into a 26-slot list in O(k), then freeze that list into a tuple for a dictionary key. The final code uses the tally; a sorted string also works.</p>
     </section>
 
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: the first three words</h2>
       <p><code>eat</code>: the tally has a 1 in the a, e and t slots. Nothing has that key yet, so open a new bucket and drop <code>eat</code> in.</p>
-      <p><code>tea</code>: same three letters, so the very same tally. The key is already in the dictionary. Append <code>tea</code> to the existing bucket. No comparison against <code>eat</code> happened; the equal key did the work.</p>
+      <p>For <code>tea</code>, I get the same three-letter tally. Its key is already in the dictionary, so I append <code>tea</code> to that bucket. No comparison against <code>eat</code> happens; the equal key does the work.</p>
       <p><code>tan</code>: a, n, t. A different tally, so a second bucket opens.</p>
     </section>
 
@@ -253,9 +253,9 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 7</div>
       <h2>The pitfall: a key that is not exact</h2>
-      <p>It is tempting to shortcut the key: add up the character codes, or multiply primes assigned to letters. Sums are not safe. <code>"bdddddddddd"</code> and <code>"bbbbbbbbbbc"</code> have the same total but are not anagrams, so a sum-based key would wrongly merge them.</p>
+      <p>I might try a shortcut such as adding character codes or multiplying assigned primes. Sums are not safe: <code>"bdddddddddd"</code> and <code>"bbbbbbbbbbc"</code> have the same total but are not anagrams, so a sum-based key would wrongly merge them.</p>
       <div class="callout warn">The key must be a lossless description of the letter multiset. The sorted string and the 26-count tally both are. Anything that compresses further can collide.</div>
-      <p>Two smaller traps: a Python list cannot be a dictionary key, so the tally has to become a <code>tuple</code>; and the empty string is a legal word whose key is 26 zeros, which works fine as long as you do not special-case it away.</p>
+      <p>I also turn the tally into a <code>tuple</code>, because a Python list cannot be a dictionary key. The empty string is legal too: its key is simply 26 zeros.</p>
     </section>
 
     <section class="step" data-state="complexity">

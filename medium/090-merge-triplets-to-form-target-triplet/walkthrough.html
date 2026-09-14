@@ -218,8 +218,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Greedy · LeetCode #1899</div>
   <h1>Merge Triplets to Form Target Triplet, narrated</h1>
-  <p>Scroll through the thinking, from trying every subset of triplets to a single pass that throws out anything too big and merges everything else, with the triplets shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/greedy.html">Greedy</a> <span class="how">max only goes up, so skip any triplet that exceeds target and merge all the rest</span></p>
+  <p>I discard triplets that overshoot the target, then track which target coordinates the safe triplets can supply.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/greedy.html">Greedy</a> <span class="how">because max only goes up, I skip any triplet that exceeds target and merge all the rest</span></p>
 </header>
 
 <div class="layout">
@@ -236,19 +236,20 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instinct: try every subset of triplets</h2>
-      <p>The merge is commutative and associative, so the result of merging a set of triplets does not depend on the order. That means the search space is "which triplets do I include?", and a brute force simply tries every non-empty subset, merges it, and compares against <code>target</code>:</p>
+<h2>First instinct: try every subset of triplets</h2>
+      <p>My first instinct is to try every non-empty subset. Because merge order does not matter, I merge each chosen subset and compare its result with <code>target</code>.</p>
       <pre class="code"><span class="ln">for mask in range(1, 1 &lt;&lt; len(triplets)):</span><span class="ln">    merged = [0, 0, 0]</span><span class="ln">    for i, t in enumerate(triplets):</span><span class="ln">        if mask &gt;&gt; i &amp; 1:</span><span class="ln">            merged = [max(a, b) for a, b in zip(merged, t)]</span><span class="ln">    if merged == target:</span><span class="ln">        return True</span><span class="ln">return False</span></pre>
-      <p style="margin-top:14px">For three triplets that is seven subsets, fine. The constraint allows <code>10^5</code> triplets, and <code>2^100000</code> subsets is not a number a computer will ever finish counting to. This is <strong>O(2ⁿ · n)</strong>, and the wasted work is obvious once you look at it: most subsets contain a triplet that has already ruined the result.</p>
+      <p style="margin-top:14px">With three triplets I check seven subsets, but in general this needs <strong>O(2ⁿ · n) time</strong> and <strong>O(1) extra space</strong> beyond a three-value merge result. It cannot handle <code>10^5</code> triplets.</p>
+      <p>Many subsets contain a triplet that has already made the target impossible. I discard those triplets before considering any merge.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: a value above target is poison, everything else is free</h2>
-      <p>Look at <code>[1, 8, 4]</code> in the panel. Its middle value is 8 and the target's middle value is 7. If this triplet is ever merged in, the middle position becomes at least 8, and since <code>max</code> never goes down, it stays at least 8 forever. No subset containing <code>[1, 8, 4]</code> can work, so it should be skipped outright.</p>
-      <p>Now the flip side. Take a triplet where every value is <code>&lt;= target</code> in its position, like <code>[2, 5, 3]</code>. Merging it in can never push any position past the target, so including it is harmless. And if it is harmless, why be selective? Merge <em>every</em> safe triplet.</p>
+      <p>I look at <code>[1, 8, 4]</code> in the panel. Its middle value is 8 and the target's middle value is 7. If I merge this triplet in, the middle position becomes at least 8, and since <code>max</code> never goes down, it stays at least 8 forever. No subset containing <code>[1, 8, 4]</code> can work, so I skip it outright.</p>
+      <p>Now the flip side. I take a triplet where every value is <code>&lt;= target</code> in its position, like <code>[2, 5, 3]</code>. Merging it in can never push any position past the target, so including it is harmless. Since it is harmless, I merge <em>every</em> safe triplet.</p>
       <div class="callout">The greedy rule: discard any triplet with a value above <code>target</code> in some position, merge all the others, and see whether the result equals <code>target</code>. That is line 3's <code>all(triplet[i] &lt;= target[i] for i in range(3))</code> test, and the merge is what the <code>found</code> set stands in for.</div>
-      <p>Merging all safe triplets gives, in each position, the largest safe value seen there. That equals <code>target[i]</code> precisely when some safe triplet has <code>triplet[i] == target[i]</code>. So we do not even need to compute the merged triplet; we only need to know which positions got matched.</p>
+      <p>Merging all safe triplets gives, in each position, the largest safe value seen there. That equals <code>target[i]</code> precisely when some safe triplet has <code>triplet[i] == target[i]</code>. I do not even need to compute the merged triplet; I only need to know which positions got matched.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -256,9 +257,9 @@
       <h2>The approach: one pass, a set of matched positions</h2>
       <ul>
         <li><code>found = set()</code> collects the positions (0, 1, 2) where some safe triplet equals the target.</li>
-        <li><code>for triplet in triplets</code>: look at each triplet exactly once, in any order.</li>
+        <li><code>for triplet in triplets</code>: I look at each triplet exactly once, in any order.</li>
         <li><code>if all(triplet[i] &lt;= target[i] for i in range(3))</code>: the safety check. A triplet fails it if any position is above the target.</li>
-        <li><code>if triplet[i] == target[i]: found.add(i)</code>: for a safe triplet, record every position it already matches.</li>
+        <li><code>if triplet[i] == target[i]: found.add(i)</code>: for a safe triplet, I record every position it already matches.</li>
         <li><code>return len(found) == 3</code>: all three positions were matched by safe triplets, so merging all of them is exactly <code>target</code>.</li>
       </ul>
       <p>The panel shows the target row on top, the three input rows below it, and the <code>found</code> set as the running variable. Green cells are positions that match the target; an amber cell is the value that disqualifies a triplet.</p>
@@ -269,7 +270,7 @@
       <h2>Trace it: <code>[2, 5, 3]</code> is safe and matches position 0</h2>
       <p>Safety check against <code>[2, 7, 5]</code>: <code>2 &lt;= 2</code>, <code>5 &lt;= 7</code>, <code>3 &lt;= 5</code>. All three hold, so this triplet may be merged.</p>
       <p>Now the equality check position by position. <code>2 == 2</code> at position 0, so <code>found.add(0)</code>. <code>5 == 7</code> is false and <code>3 == 5</code> is false, so nothing else is added. After the first triplet, <code>found = {0}</code>.</p>
-      <p>Notice that we did not build a merged triplet anywhere. The set is enough, because the only thing that matters about the eventual merge is whether each position reaches the target.</p>
+      <p>I do not build a merged triplet here. The set is enough, because I only need to know whether each position reaches the target.</p>
     </section>
 
     <section class="step" data-state="t2">
@@ -291,8 +292,8 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: matching before checking safety</h2>
-      <p><strong>Recording matches from an unsafe triplet.</strong> It is tempting to fold the two loops into one: for each position, <code>if triplet[i] == target[i]: found.add(i)</code>, with no safety gate. Run that on the panel's input, <code>[[2, 8, 4], [1, 7, 5]]</code> with target <code>[2, 7, 5]</code>. The first triplet's <code>2</code> matches position 0 and gets recorded, even though its <code>8</code> makes the triplet unusable. The second adds positions 1 and 2, <code>len(found) == 3</code>, and the code says <strong>true</strong>. The real answer is <strong>false</strong>: the only triplet with a 2 in front also carries an 8, and nothing can reach <code>[2, 7, 5]</code>.</p>
-      <p><strong>Using <code>&lt;</code> instead of <code>&lt;=</code> in the safety check.</strong> Then a triplet that equals the target in some position, which is exactly the one you need, is thrown out. With <code>triplets = [[2, 7, 5]]</code> and the same target, the strict test fails on every position, <code>found</code> stays empty, and the function returns <strong>false</strong> for an input that is literally the target.</p>
+      <p><strong>Recording matches from an unsafe triplet.</strong> It is tempting to fold the two loops into one: for each position, <code>if triplet[i] == target[i]: found.add(i)</code>, with no safety gate. I can run that on the panel's input, <code>[[2, 8, 4], [1, 7, 5]]</code> with target <code>[2, 7, 5]</code>. The first triplet's <code>2</code> matches position 0 and gets recorded, even though its <code>8</code> makes the triplet unusable. The second adds positions 1 and 2, <code>len(found) == 3</code>, and the code says <strong>true</strong>. The real answer is <strong>false</strong>: the only triplet with a 2 in front also carries an 8, and nothing can reach <code>[2, 7, 5]</code>.</p>
+      <p><strong>Using <code>&lt;</code> instead of <code>&lt;=</code> in the safety check.</strong> Then a triplet that equals the target in some position—the one I need—is thrown out. With <code>triplets = [[2, 7, 5]]</code> and the same target, the strict test fails on every position, <code>found</code> stays empty, and the function returns <strong>false</strong> for an input that is literally the target.</p>
       <p><strong>Counting matches instead of collecting positions.</strong> A counter <code>matched += 1</code> reaches 3 on <code>[[2, 1, 1], [2, 1, 1], [2, 1, 1]]</code>, three matches all at position 0, and wrongly returns <strong>true</strong>. The set deduplicates for free.</p>
       <div class="callout warn">Safety first, then equality. A triplet is either entirely usable or entirely discarded; it cannot contribute one good position while carrying one bad one.</div>
     </section>

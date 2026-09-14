@@ -220,7 +220,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Hash Map · LeetCode #2013</div>
   <h1>Detect Squares, narrated</h1>
-  <p>Scroll through the thinking, from checking every triple of stored points to picking only the diagonal corner and multiplying three counts, with the point map and the grid shown after every operation.</p>
+  <p>I’ll start by checking triples of stored points, then use the diagonal corner to determine the other two.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/hash-map.html">Hash Map</a> <span class="how">a counter keyed by (x, y); the diagonal corner fixes the other two, so count = n(diag) × n(x, py) × n(px, y)</span></p>
 </header>
 
@@ -239,15 +239,16 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: try every triple of stored points</h2>
-      <p>Keep a list of everything added. On <code>count</code>, pick any three stored points and test whether they and the query form a square:</p>
+      <p>My first instinct is to keep every added point in a list. On <code>count</code>, I pick three stored points and test whether they and the query form a square.</p>
       <pre class="code"><span class="ln">for a in points:</span><span class="ln">    for b in points:</span><span class="ln">        for c in points:</span><span class="ln">            if is_square(query, a, b, c):</span><span class="ln">                total += 1</span></pre>
-      <p style="margin-top:14px">With k stored points that is <strong>O(k³)</strong> per query, and <code>is_square</code> needs care to avoid counting the same square in six orders. With up to 3000 operations the triple loop is billions of checks. It also treats every corner as unknown, when in fact three of them are tied to each other.</p>
+      <p style="margin-top:14px">With <code>k</code> stored points, this takes <strong>O(k³) time</strong> per query and <strong>O(1) extra space</strong> beyond the stored list. It is far too slow for thousands of operations.</p>
+      <p>The corners are not independent. Once I choose the diagonal corner, the other two corners are fixed.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>Key insight: the diagonal corner fixes the other two</h2>
-      <p>Take the query <code>(px, py)</code> and suppose the corner diagonally opposite it is a stored point <code>(x, y)</code>. For an axis-aligned square that diagonal must span the same distance in x as in y, so <code>abs(x - px) == abs(y - py)</code>, and that distance must be non-zero, so <code>x != px</code>.</p>
+      <p>I take the query <code>(px, py)</code> and suppose its diagonally opposite corner is a stored point <code>(x, y)</code>. For an axis-aligned square that diagonal must span the same distance in x as in y, so <code>abs(x - px) == abs(y - py)</code>, and that distance must be non-zero, so <code>x != px</code>.</p>
       <p>Once those two corners are fixed there is no freedom left: the remaining corners are <code>(x, py)</code>, which shares the query's y, and <code>(px, y)</code>, which shares the query's x.</p>
       <div class="callout">On the example with query <code>(11, 10)</code>, the stored point <code>(3, 2)</code> is 8 away in x and 8 away in y, so it is a valid diagonal. The other two corners must be <code>(3, 10)</code> and <code>(11, 2)</code>, both stored.</div>
       <p>So the triple loop collapses to a single loop over candidate diagonals, and each candidate needs two dictionary lookups. Storing the points in a counter <code>count_at[(x, y)]</code> gives both the loop and the lookups.</p>
@@ -259,7 +260,7 @@
       <ul>
         <li><code>self.count_at = defaultdict(int)</code> — copies per point; a missing point reads as 0.</li>
         <li><code>add</code>: <code>self.count_at[(point[0], point[1])] += 1</code>.</li>
-        <li><code>count</code>: unpack <code>px, py = point</code>, start <code>total = 0</code>.</li>
+        <li><code>count</code>: I unpack <code>px, py = point</code> and start <code>total = 0</code>.</li>
         <li>Loop <code>for (x, y), n in self.count_at.items()</code>, treating each stored point as a candidate diagonal.</li>
         <li><code>if x == px or abs(x - px) != abs(y - py): continue</code> — reject zero-size and non-square offsets.</li>
         <li><code>total += n * self.count_at[(x, py)] * self.count_at[(px, y)]</code> — copies of the diagonal times copies of the two side corners.</li>
@@ -270,10 +271,10 @@
     <section class="step" data-state="trace1">
       <div class="n">STEP 5</div>
       <h2>Trace it: count([11, 10]) → 1</h2>
-      <p>The query is <code>px = 11, py = 10</code>. Walk the three stored points as diagonal candidates:</p>
+      <p>The query is <code>px = 11, py = 10</code>. I walk the three stored points as diagonal candidates:</p>
       <ul>
-        <li><code>(3, 10)</code>: <code>abs(3 - 11) = 8</code> but <code>abs(10 - 10) = 0</code>. Not equal, skip.</li>
-        <li><code>(11, 2)</code>: <code>x == px</code>, skip.</li>
+        <li><code>(3, 10)</code>: <code>abs(3 - 11) = 8</code> but <code>abs(10 - 10) = 0</code>. They are not equal, so I skip it.</li>
+        <li><code>(11, 2)</code>: <code>x == px</code>, so I skip it.</li>
         <li><code>(3, 2)</code>: <code>abs(3 - 11) = 8</code> and <code>abs(2 - 10) = 8</code>. A valid diagonal.</li>
       </ul>
       <p>For that diagonal the side corners are <code>(x, py) = (3, 10)</code> and <code>(px, y) = (11, 2)</code>. The product is <code>1 × 1 × 1 = 1</code>, so <code>total = 1</code>.</p>
@@ -284,11 +285,11 @@
       <h2>Trace it: count([14, 8]) → 0</h2>
       <p>Now <code>px = 14, py = 8</code>. Nothing lines up:</p>
       <ul>
-        <li><code>(3, 10)</code>: <code>abs(3 - 14) = 11</code>, <code>abs(10 - 8) = 2</code>. Skip.</li>
-        <li><code>(11, 2)</code>: <code>abs(11 - 14) = 3</code>, <code>abs(2 - 8) = 6</code>. Skip.</li>
-        <li><code>(3, 2)</code>: <code>abs(3 - 14) = 11</code>, <code>abs(2 - 8) = 6</code>. Skip.</li>
+        <li><code>(3, 10)</code>: <code>abs(3 - 14) = 11</code>, <code>abs(10 - 8) = 2</code>, so I skip it.</li>
+        <li><code>(11, 2)</code>: <code>abs(11 - 14) = 3</code>, <code>abs(2 - 8) = 6</code>, so I skip it.</li>
+        <li><code>(3, 2)</code>: <code>abs(3 - 14) = 11</code>, <code>abs(2 - 8) = 6</code>, so I skip it.</li>
       </ul>
-      <p>No candidate survives the filter, so the multiplication line never runs and <code>total</code> stays <code>0</code>. Notice the loop never needed to look up the side corners at all.</p>
+      <p>No candidate survives the filter, so I never run the multiplication line and <code>total</code> stays <code>0</code>. I do not need to look up side corners at all.</p>
     </section>
 
     <section class="step" data-state="trace3">
@@ -304,7 +305,7 @@
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: sets, and the zero-size square</h2>
       <p><strong>Storing points in a set.</strong> Replace the counter with <code>self.points = set()</code> and duplicates vanish. The example's last query then returns <strong>1 instead of 2</strong>, because the second copy of <code>(11, 2)</code> was never recorded.</p>
-      <p><strong>Dropping the <code>x == px</code> guard.</strong> If the query point is itself stored, it passes <code>abs(0) == abs(0)</code> and is counted as its own diagonal, contributing <code>n × n × n</code> squares of side 0. Add <code>(11, 10)</code> once to the example and <code>count([11, 10])</code> returns <strong>3 instead of 2</strong>.</p>
+      <p><strong>Dropping the <code>x == px</code> guard.</strong> If the query point is itself stored, it passes <code>abs(0) == abs(0)</code> and is counted as its own diagonal, contributing <code>n × n × n</code> squares of side 0. If I add <code>(11, 10)</code> once to the example, <code>count([11, 10])</code> returns <strong>3 instead of 2</strong>.</p>
       <p><strong>Checking only that x and y differ.</strong> The condition <code>x != px and y != py</code> accepts any rectangle: <code>add([0,0])</code>, <code>add([1,2])</code>, <code>add([0,2])</code>, <code>count([1,0])</code> returns <strong>1 instead of 0</strong>.</p>
       <div class="callout warn">A diagonal needs equal, non-zero offsets in both axes: <code>abs(x - px) == abs(y - py)</code> and <code>x != px</code>. And keep counts, not membership.</div>
     </section>
@@ -332,7 +333,7 @@
         <li><code>if x == px or abs(x - px) != abs(y - py): continue</code> — equal non-zero offsets only.</li>
         <li><code>total += n * self.count_at[(x, py)] * self.count_at[(px, y)]</code> — three counts multiplied.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>pick the diagonal corner, the other two are forced; multiply the copies of all three.</em></div>
+      <div class="callout">One-line summary to remember: <em>I pick the diagonal corner, the other two are forced, and I multiply the copies of all three.</em></div>
     </section>
 
     <div class="code-final">

@@ -226,8 +226,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Two Pointers · LeetCode #19</div>
   <h1>Remove Nth Node From End of List, narrated</h1>
-  <p>Scroll through the thinking, from counting the list twice to one walk with two pointers held exactly n apart, with the state of the algorithm shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/two-pointers.html">Two Pointers</a> <span class="how">open a gap of n, then walk both pointers until the leader hits the tail</span></p>
+  <p>I will count the list before removing a node, then fold that count into one walk by keeping two pointers a fixed distance apart.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/two-pointers.html">Two Pointers</a> <span class="how">open a gap of n, then I walk both pointers until the leader hits the tail</span></p>
 </header>
 
 <div class="layout">
@@ -245,19 +245,19 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: count, then walk again</h2>
-      <p>If you knew the length <code>L</code>, "n-th from the end" becomes "position <code>L - n</code> from the front" (0-based). So walk the list once to count, then walk a second time to that position's predecessor and splice.</p>
-      <pre class="code"><span class="ln">length = 0</span><span class="ln">node = head</span><span class="ln">while node:</span><span class="ln">    length += 1</span><span class="ln">    node = node.next</span><span class="ln">prev = dummy</span><span class="ln">for _ in range(length - n):</span><span class="ln">    prev = prev.next</span><span class="ln">prev.next = prev.next.next</span></pre>
-      <p style="margin-top:14px">On the example, <code>length = 5</code>, <code>5 - 2 = 3</code>, so <code>prev</code> moves three steps from the dummy and stops on node 3, whose <code>next</code> is then pointed at 5. That is correct and already <strong>O(L) time, O(1) space</strong>.</p>
-      <p>It is a perfectly good answer. The only thing wrong with it is the second pass: the list is walked twice, and the classic follow-up asks for one pass. The two-pointer version below is the same idea with the counting folded into the walk.</p>
+      <p>I can count the nodes first, translate the request into an index from the front, and walk to the predecessor that must be rewired.</p>
+      <pre class="code"><span class="ln">def removeNthFromEnd(head, n):</span><span class="ln">    dummy = ListNode(0, head)</span><span class="ln">    length, node = 0, head</span><span class="ln">    while node: length += 1; node = node.next</span><span class="ln">    prev = dummy</span><span class="ln">    for _ in range(length - n): prev = prev.next</span><span class="ln">    prev.next = prev.next.next</span><span class="ln">    return dummy.next</span></pre>
+      <p style="margin-top:14px">This is correct, including when the head must be removed because the dummy node supplies its predecessor. The two walks take O(n) time, and the algorithm uses O(1) extra space.</p>
+      <p>I make this a one-pass walk by moving a leading pointer <code>n</code> nodes ahead. When that leader reaches the end, the trailing pointer is already at the needed predecessor.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>The key idea: two pointers held n apart</h2>
-      <p>Put two pointers on the list and separate them by exactly <code>n</code> nodes. Then move both forward one step at a time. The gap never changes, so when the leading pointer reaches the last node, the trailing pointer is exactly <code>n</code> nodes behind the last node — which is <code>n + 1</code> from the end, the predecessor of the target.</p>
+      <p>I put two pointers on the list and separate them by exactly <code>n</code> nodes. I move both forward one step at a time. The gap never changes, so when the leading pointer reaches the last node, the trailing pointer is exactly <code>n</code> nodes behind the last node — which is <code>n + 1</code> from the end, the predecessor of the target.</p>
       <p>The one subtlety is where the pointers <em>start</em>. If both start on <code>head</code>, the trailing pointer lands on the target itself, not on its predecessor, and if <code>n</code> equals the length there is no predecessor to land on at all.</p>
-      <div class="callout">Fix both problems with one node: <code>dummy = ListNode(0, head)</code>. Start <code>fast</code> and <code>slow</code> on the dummy. Now every real node, including the head, has something before it, and <code>slow</code> stops one node before the victim.</div>
-      <p>At the end, return <code>dummy.next</code> rather than <code>head</code>: if the head was the node deleted, <code>dummy.next</code> already points past it.</p>
+      <div class="callout">Fix both problems with one node: <code>dummy = ListNode(0, head)</code>. I start <code>fast</code> and <code>slow</code> on the dummy. Now every real node, including the head, has something before it, and <code>slow</code> stops one node before the victim.</div>
+      <p>At the end, I return <code>dummy.next</code> rather than <code>head</code>: if the head was the node deleted, <code>dummy.next</code> already points past it.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -267,8 +267,8 @@
         <li><code>dummy = ListNode(0, head)</code> — a throwaway node in front of the list.</li>
         <li><code>fast = slow = dummy</code> — both pointers start on it, not on <code>head</code>.</li>
         <li><code>for _ in range(n): fast = fast.next</code> — open the gap: <code>fast</code> is now <code>n</code> nodes ahead of <code>slow</code>.</li>
-        <li><code>while fast.next is not None:</code> move both pointers one step. Stop when <code>fast</code> is on the last node.</li>
-        <li><code>slow.next = slow.next.next</code> — <code>slow</code> is on the predecessor; skip the target.</li>
+        <li><code>while fast.next is not None:</code> I move both pointers one step. Stop when <code>fast</code> is on the last node.</li>
+        <li><code>slow.next = slow.next.next</code> — <code>slow</code> is on the predecessor; I skip the target.</li>
         <li><code>return dummy.next</code> — the real head, whatever it is now.</li>
       </ul>
       <p>Two loops, but they do not overlap in work: the first moves only <code>fast</code> through <code>n</code> nodes, the second moves it through the remaining <code>L - n</code>. Together <code>fast</code> touches each node once.</p>
@@ -285,15 +285,15 @@
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: walking together</h2>
-      <p>Now the main loop. The test is <code>fast.next is not None</code>: keep going while there is a node after <code>fast</code>.</p>
-      <p>Iteration 1: <code>fast.next</code> is 3, so move. <code>fast = 3</code>, <code>slow = 1</code>. Iteration 2: <code>fast.next</code> is 4, so move. <code>fast = 4</code>, <code>slow = 2</code>. Iteration 3: <code>fast.next</code> is 5, so move. <code>fast = 5</code>, <code>slow = 3</code>.</p>
-      <p>Now <code>fast.next</code> is <code>None</code>: <code>fast</code> is on the tail and the loop stops. Check the gap: 3 → 4 → 5 is two steps, still <code>n</code>. And <code>slow</code> is on node 3, whose next node, 4, is exactly the 2nd from the end.</p>
+      <p>Now the main loop. The test is <code>fast.next is not None</code>: I keep going while there is a node after <code>fast</code>.</p>
+      <p>Iteration 1: <code>fast.next</code> is 3, so I move. <code>fast = 3</code>, <code>slow = 1</code>. Iteration 2: <code>fast.next</code> is 4, so I move. <code>fast = 4</code>, <code>slow = 2</code>. Iteration 3: <code>fast.next</code> is 5, so I move. <code>fast = 5</code>, <code>slow = 3</code>.</p>
+      <p>Now <code>fast.next</code> is <code>None</code>: <code>fast</code> is on the tail and the loop stops. I check the gap: 3 → 4 → 5 is two steps, still <code>n</code>. And <code>slow</code> is on node 3, whose next node, 4, is exactly the 2nd from the end.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: the splice</h2>
-      <p><code>slow.next = slow.next.next</code>. Read the right side first: <code>slow.next</code> is 4, and <code>4.next</code> is 5. So node 3's <code>next</code> becomes 5, and node 4 is no longer reachable from the head.</p>
+      <p><code>slow.next = slow.next.next</code>. I read the right side first: <code>slow.next</code> is 4, and <code>4.next</code> is 5. So node 3's <code>next</code> becomes 5, and node 4 is no longer reachable from the head.</p>
       <p>Node 4 still exists in memory with its own <code>next</code> pointing at 5, but nothing points at it, so as far as the list is concerned it is gone. Python's garbage collector reclaims it.</p>
       <div class="callout"><code>return dummy.next</code> gives node 1, and walking from it reads <strong>1 → 2 → 3 → 5</strong>. That is the answer, found in one pass with no length computed.</div>
     </section>
@@ -301,7 +301,7 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: one step too far, or no dummy</h2>
-      <p><strong>Looping on <code>fast</code> instead of <code>fast.next</code>.</strong> Write <code>while fast is not None</code> and both pointers take one extra step. On the example <code>fast</code> runs off the end to <code>None</code> and <code>slow</code> ends on node 4 — the target itself, not its predecessor. <code>slow.next = slow.next.next</code> then deletes node 5 and returns <strong>[1,2,3,4]</strong>. The list is one node shorter, so a lazy length check passes.</p>
+      <p><strong>Looping on <code>fast</code> instead of <code>fast.next</code>.</strong> I write <code>while fast is not None</code> and both pointers take one extra step. On the example <code>fast</code> runs off the end to <code>None</code> and <code>slow</code> ends on node 4 — the target itself, not its predecessor. <code>slow.next = slow.next.next</code> then deletes node 5 and returns <strong>[1,2,3,4]</strong>. The list is one node shorter, so a lazy length check passes.</p>
       <p><strong>Starting on <code>head</code> instead of the dummy.</strong> Then <code>slow</code> lands on the target rather than before it, and there is no predecessor at all when the head is the target: for <code>[1,2], n = 2</code> the gap loop leaves <code>fast = None</code> and the main loop's <code>fast.next</code> raises <code>AttributeError</code>. People patch this with an <code>if fast is None: return head.next</code> branch; the dummy makes the branch unnecessary.</p>
       <p><strong>Returning <code>head</code>.</strong> Correct for every case except deleting the head, where the old head is returned intact: <code>[1,2], n = 2</code> gives <strong>[1,2]</strong>. Always return <code>dummy.next</code>.</p>
       <div class="callout warn">The loop stops when <code>fast</code> is <em>on</em> the last node, not past it. Then <code>slow</code> is on the node before the victim, which is the only place a delete can happen from.</div>
@@ -317,7 +317,7 @@
         <tr><td>Copy to array, index L − n</td><td>O(L)</td><td>O(L)</td><td>1 + array</td></tr>
         <tr><td>Two pointers, gap of n</td><td>O(L)</td><td>O(1)</td><td>1</td></tr>
       </table>
-      <p>Big-O does not separate the first and last rows. The two-pointer version wins on the "one pass" follow-up and on not needing to know <code>L</code> — which matters when the list is a stream you cannot rewind.</p>
+      <p>Big-O does not separate the first and last rows. The two-pointer version wins on the "one pass" follow-up and on not needing to know <code>L</code> — which matters when the list is a stream I cannot rewind.</p>
     </section>
 
     <section class="step" data-state="final">

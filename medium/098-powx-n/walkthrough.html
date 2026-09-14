@@ -220,7 +220,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Math · LeetCode #50</div>
   <h1>Pow(x, n), narrated</h1>
-  <p>Scroll through the thinking, from multiplying x by itself n times to reading n one bit at a time while squaring a running base, with the bits of n and the two running values shown alongside.</p>
+  <p>I’ll start by multiplying <code>x</code> by itself <code>n</code> times, then read <code>n</code> one bit at a time while squaring a base.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/math.html">Math</a> <span class="how">Binary exponentiation: <code>x^n</code> is the product of <code>x^(2^k)</code> over the set bits <code>k</code> of <code>n</code>, and repeated squaring produces those factors in order.</span></p>
 </header>
 
@@ -238,16 +238,17 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: multiply n times</h2>
-      <p>Start from <code>1.0</code> and multiply by <code>x</code> once per unit of the exponent, after flipping a negative <code>n</code> into a positive one on <code>1 / x</code>:</p>
+      <p>My first instinct is to start at <code>1.0</code> and multiply by <code>x</code> once per exponent unit, first turning a negative <code>n</code> into a positive power of <code>1 / x</code>.</p>
       <pre class="code"><span class="ln">if n &lt; 0:</span><span class="ln">    x, n = 1 / x, -n</span><span class="ln">result = 1.0</span><span class="ln">for _ in range(n):</span><span class="ln">    result *= x</span></pre>
-      <p style="margin-top:14px">For the example that is ten multiplications, and it gives the right answer. But it is <strong>O(n)</strong>, and <code>n</code> may be <code>2^31 - 1</code>: over two billion float multiplications, which takes minutes in Python. The exponent is a number, not a collection, and a loop that runs once per unit of a number is almost always the wrong shape.</p>
+      <p style="margin-top:14px">For the example, I do ten multiplications. In general this takes <strong>O(|n|) time</strong> and <strong>O(1) space</strong>; <code>|n|</code> may be <code>2^31 - 1</code>.</p>
+      <p>The exponent is a number, not a collection, so its binary digits let me skip whole groups of multiplications.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key idea: read n in binary</h2>
-      <p>Write <code>n</code> in binary: <code>10 = 1010</code>, meaning <code>8 + 2</code>. Then <code>x^10 = x^8 · x^2</code>. In general, <code>x^n</code> is the product of <code>x^(2^k)</code> for every bit <code>k</code> that is set in <code>n</code>.</p>
-      <p>Those factors are cheap to produce in order: <code>x</code>, then <code>x^2 = x · x</code>, then <code>x^4 = x^2 · x^2</code>, then <code>x^8 = x^4 · x^4</code>. Each is the square of the previous one. So keep a running <code>base</code> that squares once per bit, and multiply it into <code>result</code> only when the current lowest bit of <code>n</code> is <code>1</code>.</p>
+      <p>I write <code>n</code> in binary: <code>10 = 1010</code>, meaning <code>8 + 2</code>. Then <code>x^10 = x^8 · x^2</code>. In general, <code>x^n</code> is the product of <code>x^(2^k)</code> for every bit <code>k</code> that is set in <code>n</code>.</p>
+      <p>Those factors are cheap to produce in order: <code>x</code>, then <code>x^2 = x · x</code>, then <code>x^4 = x^2 · x^2</code>, then <code>x^8 = x^4 · x^4</code>. Each is the square of the previous one. I keep a running <code>base</code> that squares once per bit, and I multiply it into <code>result</code> only when the current lowest bit of <code>n</code> is <code>1</code>.</p>
       <p>The panel shows the four bits of <code>10</code> lined up with the four bases <code>2, 4, 16, 256</code>. The set bits are bit 1 and bit 3, so the answer is <code>4 · 256 = 1024</code>.</p>
       <div class="callout">One iteration per bit of <code>n</code>: <code>n &amp; 1</code> reads the lowest bit, <code>n &gt;&gt;= 1</code> drops it. That is about <code>log₂ n</code> rounds, at most 31 for the constraint range, instead of <code>n</code> rounds.</div>
     </section>
@@ -270,10 +271,10 @@
     <section class="step" data-state="trace1">
       <div class="n">STEP 5</div>
       <h2>Trace it: rounds 1 and 2</h2>
-      <p>Start: <code>result = 1.0</code>, <code>base = 2.0</code>, <code>n = 10</code> which is <code>1010</code>.</p>
+      <p>I start with <code>result = 1.0</code>, <code>base = 2.0</code>, and <code>n = 10</code>, which is <code>1010</code>.</p>
       <p><strong>Round 1.</strong> <code>n &amp; 1</code> is <code>0</code>, so <code>result</code> stays <code>1.0</code>. Square the base: <code>base = 2.0 · 2.0 = 4.0</code>. Shift: <code>n = 10 &gt;&gt; 1 = 5</code>, which is <code>101</code>.</p>
       <p><strong>Round 2.</strong> <code>n &amp; 1</code> is <code>1</code>, so <code>result = 1.0 · 4.0 = 4.0</code>: the <code>x^2</code> factor for bit 1 of the original <code>n</code> is in. Square: <code>base = 4.0 · 4.0 = 16.0</code>. Shift: <code>n = 5 &gt;&gt; 1 = 2</code>, which is <code>10</code>.</p>
-      <p>Notice the base was squared in round 1 even though nothing was multiplied in. Squaring happens every round regardless; it is the multiplication into <code>result</code> that is conditional.</p>
+      <p>I still square the base in round 1 even though I multiply nothing into the result. Squaring happens every round; only the multiplication into <code>result</code> is conditional.</p>
     </section>
 
     <section class="step" data-state="trace2">
@@ -287,10 +288,10 @@
     <section class="step" data-state="negative">
       <div class="n">STEP 7</div>
       <h2>Trace it: a negative exponent</h2>
-      <p>Take <code>x = 2.0</code>, <code>n = -2</code>. The guard fires: <code>x = 1 / 2.0 = 0.5</code> and <code>n = 2</code>, which is <code>10</code> in binary. From here the loop is identical to the positive case.</p>
+      <p>I take <code>x = 2.0</code>, <code>n = -2</code>. The guard fires: <code>x = 1 / 2.0 = 0.5</code> and <code>n = 2</code>, which is <code>10</code> in binary. From here the loop is identical to the positive case.</p>
       <p><strong>Round 1.</strong> <code>n &amp; 1</code> is <code>0</code>; <code>base = 0.5 · 0.5 = 0.25</code>; <code>n = 1</code>.</p>
       <p><strong>Round 2.</strong> <code>n &amp; 1</code> is <code>1</code>; <code>result = 1.0 · 0.25 = 0.25</code>; <code>base = 0.0625</code>; <code>n = 0</code>. The answer is <code>0.25</code>, which is <code>2^-2 = 1/4</code>.</p>
-      <div class="callout">Python's integers are unbounded, so <code>-n</code> is safe even for <code>n = -2^31</code>. In a language with 32-bit ints that negation overflows; use a wider type or process <code>n</code> as a negative number.</div>
+      <div class="callout">Python's integers are unbounded, so <code>-n</code> is safe even for <code>n = -2^31</code>. In a language with 32-bit ints that negation overflows; I use a wider type or process <code>n</code> as a negative number.</div>
     </section>
 
     <section class="step" data-state="pitfall">
@@ -299,7 +300,7 @@
       <p><strong>Squaring before checking the bit.</strong> Writing <code>base *= base</code> above <code>if n &amp; 1: result *= base</code> means every factor that gets multiplied in is one squaring too far along: bit <code>k</code> contributes <code>x^(2^(k + 1))</code> instead of <code>x^(2^k)</code>. On the example the two set bits pull in <code>16</code> and <code>65536</code> instead of <code>4</code> and <code>256</code>, and the function returns <strong>1048576, not 1024</strong>, which is <code>2^20</code>, twice the intended exponent.</p>
       <p><strong>Forgetting the negative branch.</strong> With <code>n = -2</code> and no guard, <code>while n:</code> never ends: <code>-2 &gt;&gt; 1</code> is <code>-1</code> and <code>-1 &gt;&gt; 1</code> is still <code>-1</code>, so <code>n</code> never reaches <code>0</code>. Changing the condition to <code>while n &gt; 0:</code> stops the hang but returns <strong>1.0</strong> instead of <code>0.25</code>.</p>
       <p><strong>Starting <code>result</code> at <code>x</code>.</strong> Then <code>n = 0</code> returns <code>x</code> rather than <code>1.0</code>, and every other answer carries an extra factor of <code>x</code>: <code>2048.0</code> on the example.</p>
-      <div class="callout warn">Check the bit, then square, then shift. The base is the factor for the bit you are looking at <em>now</em>; squaring prepares it for the next bit.</div>
+      <div class="callout warn">I check the bit, then square, then shift. The base is the factor for the bit I am looking at <em>now</em>; squaring prepares it for the next bit.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -328,7 +329,7 @@
         <li><code>n &gt;&gt;= 1</code> — move on to that bit.</li>
         <li><code>return result</code>.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>read n's bits from the bottom; square the base every round, multiply it in on a 1.</em></div>
+      <div class="callout">One-line summary to remember: <em>I read n's bits from the bottom, square the base every round, and multiply it in on a 1.</em></div>
     </section>
 
     <div class="code-final">

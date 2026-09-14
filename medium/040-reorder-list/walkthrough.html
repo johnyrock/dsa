@@ -224,7 +224,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Linked List · LeetCode #143</div>
   <h1>Reorder List, narrated</h1>
-  <p>Scroll through the thinking, from copying the nodes into an array to rewiring the list in place in three passes, with the state of the list shown alongside.</p>
+  <p>I will first store the nodes in an array to reach both ends, then reproduce that ordering in place by splitting, reversing, and weaving the list.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/linked-list.html">Linked List</a> <span class="how">find the middle, reverse the second half, merge the halves alternately</span></p>
 </header>
 
@@ -242,17 +242,17 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: copy the nodes into an array</h2>
-      <p>Random access is what the list lacks, so buy it: walk the list once and put every node in a Python list. Then two indices, one from each end, pick nodes in the target order and you rewire as you go:</p>
-      <pre class="code"><span class="ln">nodes = []</span><span class="ln">while head: nodes.append(head); head = head.next</span><span class="ln">i, j = 0, len(nodes) - 1</span><span class="ln">while i &lt; j:</span><span class="ln">    nodes[i].next = nodes[j]; i += 1</span><span class="ln">    if i == j: break</span><span class="ln">    nodes[j].next = nodes[i]; j -= 1</span><span class="ln">nodes[i].next = None</span></pre>
-      <p style="margin-top:14px">This is <strong>O(n) time</strong> and it works. Its cost is <strong>O(n) extra space</strong> for the array, and the problem is really asking whether you can do without it. The break-and-terminate dance at the end is also fiddly: the pointer that ends up last has to be set to <code>None</code> or the list keeps a stale link into the middle.</p>
-      <p>Keep the idea, though. The array made two things easy: reaching the back, and walking the back <em>toward</em> the front. We need to get both from the list itself.</p>
+      <p>I can walk the list once, I put every node in an array, then I use indices from both ends to rewire the nodes in the required order.</p>
+      <pre class="code"><span class="ln">def reorderList(head):</span><span class="ln">    nodes = []</span><span class="ln">    node = head</span><span class="ln">    while node: nodes.append(node); node = node.next</span><span class="ln">    i, j = 0, len(nodes) - 1</span><span class="ln">    while i &lt; j:</span><span class="ln">        nodes[i].next = nodes[j]; i += 1</span><span class="ln">        if i == j: break</span><span class="ln">        nodes[j].next = nodes[i]; j -= 1</span><span class="ln">    if nodes: nodes[i].next = None</span></pre>
+      <p style="margin-top:14px">This is correct. Building the array and rewiring the list both take O(n) time. The array uses O(n) extra space.</p>
+      <p>I avoid the extra space by making the list itself provide a backward-moving second half. I will find the middle, reverse that half, and alternate nodes from the two halves.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>The key idea: reverse the second half, then zip</h2>
-      <p>Write the target next to the input. <code>[1, 5, 2, 4, 3]</code> is <code>[1, 2, 3]</code> and <code>[5, 4]</code> interleaved — the first half of the list, and the second half <em>backwards</em>. The reversed second half is exactly the "walk the back toward the front" the array gave us, and reversing a linked list in place is a standard loop you already know.</p>
-      <div class="callout">Three phases, each a well-known linked-list move: <strong>find the middle</strong> with slow/fast pointers (<code>slow</code> stops at 3), <strong>reverse</strong> everything after it (<code>4 → 5</code> becomes <code>5 → 4</code>), and <strong>merge</strong> the two halves by alternating one node from each.</div>
+      <p>I write the target next to the input. <code>[1, 5, 2, 4, 3]</code> is <code>[1, 2, 3]</code> and <code>[5, 4]</code> interleaved — the first half of the list, and the second half <em>backwards</em>. The reversed second half is exactly the "walk the back toward the front" the array gave us, and reversing a linked list in place is a standard loop I already know.</p>
+      <div class="callout">Three phases, each a well-known linked-list move: <strong>I find the middle</strong> with slow/fast pointers (<code>slow</code> stops at 3), <strong>reverse</strong> everything after it (<code>4 → 5</code> becomes <code>5 → 4</code>), and <strong>merge</strong> the two halves by alternating one node from each.</div>
       <p>One detail decides whether the merge is clean: the first half has to be <em>cut</em> from the second with <code>slow.next = None</code>. After that, both halves end in <code>None</code>, and the merge loop can run <code>while second is not None</code> — the first half is never shorter than the second, so when the second runs out the first half's remaining node (the middle, if any) is already in place and already terminated.</p>
     </section>
 
@@ -283,16 +283,16 @@
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: reverse the second half</h2>
-      <p>Standard three-pointer reversal on <code>4 → 5</code>. Start <code>prev = None</code>, <code>second = 4</code>. First pass: <code>nxt = 5</code>, point <code>4.next = None</code> (the old <code>prev</code>), then <code>prev = 4</code>, <code>second = 5</code>. Second pass: <code>nxt = None</code>, point <code>5.next = 4</code>, then <code>prev = 5</code>, <code>second = None</code>. The loop ends.</p>
+      <p>Standard three-pointer reversal on <code>4 → 5</code>. I start <code>prev = None</code>, <code>second = 4</code>. First pass: <code>nxt = 5</code>, point <code>4.next = None</code> (the old <code>prev</code>), then <code>prev = 4</code>, <code>second = 5</code>. Second pass: <code>nxt = None</code>, point <code>5.next = 4</code>, then <code>prev = 5</code>, <code>second = None</code>. The loop ends.</p>
       <p><code>prev</code> is node 5, the head of the reversed half <code>5 → 4 → None</code>. The first half is untouched: <code>1 → 2 → 3 → None</code>.</p>
-      <p>Compare with the target <code>[1, 5, 2, 4, 3]</code>: it is exactly these two lists read alternately, first-half node, second-half node, first-half node, and so on, with the first half's leftover 3 at the end.</p>
+      <p>I compare with the target <code>[1, 5, 2, 4, 3]</code>: it is exactly these two lists read alternately, first-half node, second-half node, first-half node, and so on, with the first half's leftover 3 at the end.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: merge, the answer</h2>
-      <p>Set <code>first = 1</code>, <code>second = 5</code>. Splice 1: save <code>first_next = 2</code> and <code>second_next = 4</code>. Then <code>1.next = 5</code> and <code>5.next = 2</code>. The list now reads <code>1 → 5 → 2 → 3 → None</code>, and the cursors advance to <code>first = 2</code>, <code>second = 4</code>.</p>
-      <p>Splice 2: save <code>first_next = 3</code> and <code>second_next = None</code>. Then <code>2.next = 4</code> and <code>4.next = 3</code>. The list reads <code>1 → 5 → 2 → 4 → 3 → None</code>. Advance: <code>first = 3</code>, <code>second = None</code>, and the loop condition <code>second is not None</code> fails.</p>
+      <p>I set <code>first = 1</code> and <code>second = 5</code>. For the first splice, I save <code>first_next = 2</code> and <code>second_next = 4</code>, then set <code>1.next = 5</code> and <code>5.next = 2</code>. The list becomes <code>1 → 5 → 2 → 3 → None</code>, and I advance the cursors to <code>first = 2</code> and <code>second = 4</code>.</p>
+      <p>For the second splice, I save <code>first_next = 3</code> and <code>second_next = None</code>, then set <code>2.next = 4</code> and <code>4.next = 3</code>. I now have <code>1 → 5 → 2 → 4 → 3 → None</code>. After advancing to <code>first = 3</code> and <code>second = None</code>, my loop condition <code>second is not None</code> fails.</p>
       <p>Nothing else to do. Node 3 was already the end of the first half with <code>3.next = None</code> from the cut, so the merged list is properly terminated. <code>head</code> still points at node 1, which is why the function returns nothing.</p>
       <div class="callout">Three passes, each over roughly half the list, and never more than a handful of pointers alive at once.</div>
     </section>
@@ -301,9 +301,9 @@
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the missing cut and the lost successor</h2>
       <p><strong>Forgetting <code>slow.next = None</code>.</strong> Without the cut, the "first half" is still <code>1 → 2 → 3 → 4 → 5</code> when the merge starts — and after the reversal, node 4's <code>next</code> is <code>None</code> and node 5's is 4, so it is really <code>1 → 2 → 3 → 4 → None</code>. Merging then splices 5 after 1 and 4 after 2, setting <code>4.next = 3</code>. But 3's own <code>next</code> is still 4. Result: <code>1 → 5 → 2 → 4 → 3 → 4 → 3 → …</code>, a cycle. Printing it never ends; the test helper's length cap is the only thing that makes the failure visible.</p>
-      <p><strong>Rewiring before saving.</strong> Write the splice as <code>first.next = second</code> followed by <code>second.next = first.next</code>. By the time the second line runs, <code>first.next</code> <em>is</em> <code>second</code>, so node 5 gets pointed at itself: <code>1 → 5 → 5 → 5 → …</code>. Both successors must be read into <code>first_next</code> and <code>second_next</code> before either pointer is written.</p>
+      <p><strong>Rewiring before saving.</strong> I write the splice as <code>first.next = second</code> followed by <code>second.next = first.next</code>. By the time the second line runs, <code>first.next</code> <em>is</em> <code>second</code>, so node 5 gets pointed at itself: <code>1 → 5 → 5 → 5 → …</code>. Both successors must be read into <code>first_next</code> and <code>second_next</code> before either pointer is written.</p>
       <p><strong>No guard for the empty list.</strong> With <code>head = None</code>, the middle-finding loop evaluates <code>fast.next</code> on <code>None</code> and raises <code>AttributeError</code>. A single node happens to work without the guard, which is why it is easy to forget.</p>
-      <div class="callout warn">Cut the halves apart before you reverse, and save every successor before you overwrite a <code>next</code>.</div>
+      <div class="callout warn">Cut the halves apart before I reverse, and save every successor before I overwrite a <code>next</code>.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -316,7 +316,7 @@
         <tr><td>Copy nodes into an array, two indices</td><td>O(n)</td><td>O(n)</td></tr>
         <tr><td>Find middle, reverse second half, merge</td><td>O(n)</td><td>O(1)</td></tr>
       </table>
-      <p>The array version is not wrong, and in an interview it is a good thing to say first. The in-place version is what the follow-up is really asking for, and it is built entirely from loops you have already written for other problems.</p>
+      <p>The array version is not wrong, and in an interview it is a good thing to say first. The in-place version is what the follow-up is really asking for, and it is built entirely from loops I have already written for other problems.</p>
     </section>
 
     <section class="step" data-state="final">

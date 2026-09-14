@@ -218,7 +218,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Dynamic Programming · LeetCode #97</div>
   <h1>Interleaving String, narrated</h1>
-  <p>Scroll through the thinking, from trying every way to split s3 between the two strings to filling a table of yes/no answers for prefixes, with the state of the algorithm shown alongside.</p>
+  <p>I track how many characters I take from each source, because that pair fixes the next character in the merged string.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">2-D prefix table: the last character of s3's prefix came from s1 (cell above) or from s2 (cell to the left)</span></p>
 </header>
 
@@ -236,17 +236,18 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instinct: try every split</h2>
-      <p>Walk <code>s3</code> from the front with two pointers <code>i</code> into <code>s1</code> and <code>j</code> into <code>s2</code>. At each character, if it matches <code>s1[i]</code> try taking it from <code>s1</code>; if it matches <code>s2[j]</code> also try taking it from <code>s2</code>. Recurse on both and succeed if either succeeds.</p>
+<h2>First instinct: try every split</h2>
+      <p>My first instinct is to walk <code>s3</code> with pointers <code>i</code> and <code>j</code>. When a character matches either source, I try taking it from that source and succeed if either branch works.</p>
       <pre class="code"><span class="ln">def go(i, j):</span><span class="ln">    if i + j == len(s3):</span><span class="ln">        return i == len(s1) and j == len(s2)</span><span class="ln">    ok = False</span><span class="ln">    if i &lt; len(s1) and s1[i] == s3[i + j]:</span><span class="ln">        ok = go(i + 1, j)</span><span class="ln">    if not ok and j &lt; len(s2) and s2[j] == s3[i + j]:</span><span class="ln">        ok = go(i, j + 1)</span><span class="ln">    return ok</span></pre>
-      <p style="margin-top:14px">Whenever both branches match, the recursion forks. On a string like <code>"aaaa"</code> against <code>"aaaa"</code> and <code>"aaaaaaaa"</code> every character forks, so the number of paths is about <code>C(m + n, m)</code>, exponential: <strong>O(2^(m + n))</strong> in the worst case. Yet the recursion only ever sees <code>(m + 1)(n + 1)</code> distinct <code>(i, j)</code> pairs; it is re-solving the same pair over and over. That is the signal for a table.</p>
+      <p style="margin-top:14px">When both characters match, this forks, giving <strong>O(2^(m + n)) time</strong> and <strong>O(m + n) space</strong> for the call stack in the worst case.</p>
+      <p>I only ever ask about <code>(m + 1)(n + 1)</code> distinct <code>(i, j)</code> pairs. A table lets me answer each pair once.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>The key idea: yes/no answers for prefixes</h2>
-      <p>Define <code>dp[i][j]</code> as "can the first <code>i</code> characters of <code>s1</code> and the first <code>j</code> characters of <code>s2</code> interleave to form the first <code>i + j</code> characters of <code>s3</code>?" The position in <code>s3</code> is not a third dimension: it is always <code>i + j</code>, because every character used so far went into <code>s3</code>.</p>
-      <p>Look at the last character of that prefix of <code>s3</code>, which is <code>s3[i + j - 1]</code>. It came from exactly one of the two strings:</p>
+      <p>I define <code>dp[i][j]</code> as “can the first <code>i</code> characters of <code>s1</code> and the first <code>j</code> characters of <code>s2</code> interleave to form the first <code>i + j</code> characters of <code>s3</code>?” The position in <code>s3</code> is not a third dimension: it is always <code>i + j</code>, because every character used so far went into <code>s3</code>.</p>
+      <p>I look at the last character of that prefix of <code>s3</code>, <code>s3[i + j - 1]</code>. It came from exactly one of the two strings:</p>
       <ul>
         <li>From <code>s1</code>: then it must equal <code>s1[i - 1]</code>, and the rest must have been reachable without it: <code>dp[i - 1][j]</code>, the cell <strong>above</strong>.</li>
         <li>From <code>s2</code>: then it must equal <code>s2[j - 1]</code>, and <code>dp[i][j - 1]</code>, the cell to the <strong>left</strong>, must hold.</li>
@@ -298,7 +299,7 @@
       <p><strong>Starting the loops at 1.</strong> Copying the LCS shape, <code>for i in range(1, m + 1)</code> and <code>for j in range(1, n + 1)</code>, skips row 0 and column 0. In LCS those are constant zeros, but here they carry real information: <code>dp[1][0]</code> and <code>dp[2][0]</code> must be <code>True</code> for the <code>aa</code> at the front of <code>s3</code>. With the border left <code>False</code>, no cell can ever become <code>True</code> because every cell needs a <code>True</code> above or to its left. The whole table stays <code>False</code> and the function returns <strong>False, not True</strong> on the running example.</p>
       <p><strong>A greedy scan.</strong> Walking <code>s3</code> once and taking each character from <code>s1</code> whenever it matches, else from <code>s2</code>, never backtracks. On the running example it spends both of <code>s1</code>'s <code>c</code>s on <code>s3[5]</code> and <code>s3[7]</code>, then reaches <code>s3[8] = a</code> with <code>s1</code> exhausted and <code>s2</code> still waiting on its <code>c</code>, and returns <strong>False</strong>. The table avoids this by keeping both owners of each repeated letter alive.</p>
       <p><strong>Indexing <code>s3[i + j]</code>.</strong> Cell <code>(i, j)</code> covers <code>i + j</code> characters, and the last of them is at index <code>i + j - 1</code>. Without the <code>- 1</code> every comparison is shifted by one and the last cell raises <code>IndexError</code>.</p>
-      <div class="callout warn">Two owners for the last character, cell above or cell to the left; and the border is computed, not assumed. Check with <code>s1 = ""</code>, <code>s2 = "b"</code>, <code>s3 = "b"</code>: only row 0 exists and the answer must be <code>True</code>.</div>
+      <div class="callout warn">I consider two owners for the last character: the cell above or the cell to the left. The border is computed rather than assumed. With <code>s1 = ""</code>, <code>s2 = "b"</code>, and <code>s3 = "b"</code>, only row 0 exists and the answer is <code>True</code>.</div>
     </section>
 
     <section class="step" data-state="complexity">

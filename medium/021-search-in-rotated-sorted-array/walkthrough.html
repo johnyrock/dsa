@@ -182,20 +182,20 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Binary Search · LeetCode #33</div>
   <h1>Search in Rotated Sorted Array, narrated</h1>
-  <p>Scroll through identifying which half of the array is a normal sorted run at each step, and discarding the other.</p>
+  <p>I’ll start with a linear scan, then I use the sorted half at every midpoint to discard half the rotated array.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/binary-search.html">Binary Search</a> <span class="how">at every mid, one half is a contiguous sorted run — check it, discard the other if the target can't be in it</span></p>
 </header>
 
 <div class="layout">
   <div class="steps">
 <section class="step" data-state="problem"><div class="n">STEP 1</div><h2>The problem</h2><p>Find a target's index in an ascending array that's been rotated at an unknown pivot, in O(log n) time.</p><div class="callout">Running example: <code>[4,5,6,7,0,1,2]</code>, target = 0. Answer: index 4.</div></section>
-<section class="step" data-state="idea"><div class="n">STEP 2</div><h2>The key idea: one half is always properly sorted</h2><p>Even after rotation, comparing <code>nums[left]</code> to <code>nums[mid]</code> reveals which half — left-to-mid, or mid-to-right — is a normal ascending run with no rotation inside it. Check whether the target falls in that sorted half's range; if so, search there, otherwise search the other half.</p></section>
+<section class="step" data-state="idea"><div class="n">STEP 2</div><h2>First instinct: scan every value</h2><p>I walk the array from left to right and return the first matching index.</p><pre class="code"><span class="ln">for index, value in enumerate(nums):</span><span class="ln">    if value == target:</span><span class="ln">        return index</span><span class="ln">return -1</span></pre><p style="margin-top:14px">That scan takes <strong>O(n) time</strong> and uses <strong>O(1) extra space</strong>.</p><p>Rotation still leaves one side of each midpoint sorted. Its range lets me rule out an entire half whenever it cannot contain the target.</p></section>
 <section class="step" data-state="t1"><div class="n">STEP 3</div><h2>Trace it: first mid</h2><p>left=0, right=6, mid=3 (value 7). <code>nums[0]=4 &lt;= nums[3]=7</code> — left half is sorted. Is target 0 in <code>[4, 7)</code>? No. Search the other half: left = mid+1 = 4.</p></section>
 <section class="step" data-state="t2"><div class="n">STEP 4</div><h2>Trace it: second mid</h2><p>left=4, right=6, mid=5 (value 1). <code>nums[4]=0 &lt;= nums[5]=1</code> — left half [4,5] sorted. Is 0 in <code>[0, 1)</code>? Yes. Search there: right = mid-1 = 4.</p></section>
 <section class="step" data-state="t3"><div class="n">STEP 5</div><h2>Trace it: found</h2><p>left=4, right=4, mid=4 (value 0). <code>nums[4] == target</code> — return 4.</p></section>
 <section class="step" data-state="pitfall"><div class="n">STEP 6</div><h2>Where this goes wrong</h2><p>Using <code>&lt;</code> instead of <code>&lt;=</code> in <code>nums[left] &lt;= nums[mid]</code> breaks the 2-element window case, where <code>left == mid</code> must still count as "sorted". Getting the two branches backwards — treating the mid-to-right half as sorted when it's actually the left half — silently searches the wrong side.</p></section>
 <section class="step" data-state="complexity"><div class="n">STEP 7</div><h2>Time and space</h2><p><strong>O(log n) time</strong> — still standard binary search, just with an extra branch each step. <strong>O(1) space</strong>.</p></section>
-<section class="step" data-state="final"><div class="n">STEP 8</div><h2>The final solution</h2><ul><li>Standard binary-search loop with <code>left &lt;= right</code>.</li><li>Check <code>nums[mid] == target</code> first.</li><li>Determine which half is sorted via <code>nums[left] &lt;= nums[mid]</code>.</li><li>Check whether target falls in that sorted half's range to decide which side to keep.</li></ul></section>
+<section class="step" data-state="final"><div class="n">STEP 8</div><h2>The final solution</h2><p>I recompute <code>mid = (left + right) // 2</code> in every pass and return <code>mid</code> as soon as the value matches.</p><ul><li>I use <code>left &lt;= right</code> for the standard binary-search loop.</li><li>I test <code>nums[mid] == target</code> first.</li><li>I identify the sorted half with <code>nums[left] &lt;= nums[mid]</code>.</li><li>I compare the target with that half’s range before choosing the side to keep.</li></ul></section>
     <div class="code-final">
       <h3>Full solution</h3>
       <pre class="code" id="code-final"></pre>

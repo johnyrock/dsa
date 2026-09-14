@@ -225,7 +225,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Heap · LeetCode #355</div>
   <h1>Design Twitter, narrated</h1>
-  <p>Scroll from re-sorting every tweet on each feed request to per-user tweet lists merged by a heap that stops after 10, with the tweets, the follow graph and the merge heap shown alongside after every operation.</p>
+  <p>I will first filter and sort every tweet for each feed request, then merge only the newest tweets from the relevant users.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/heap.html">Heap</a> <span class="how">Each user's tweet list is already sorted by time, so a news feed is a k-way merge: a max-heap seeded with each followee's newest tweet, popped 10 times.</span></p>
 </header>
 
@@ -242,18 +242,18 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instinct: one global list, filter and sort on every feed</h2>
-      <p>Keep every tweet ever posted in a single list of <code>(stamp, user, tweet_id)</code>, and on each feed request scan it, keep the tweets whose author is the user or someone they follow, sort those by stamp descending, and take 10:</p>
-      <pre class="code"><span class="ln">visible = [t for t in self.all_tweets</span><span class="ln">           if t.user == user_id or t.user in self.following[user_id]]</span><span class="ln">visible.sort(key=lambda t: -t.stamp)</span><span class="ln">return [t.tweet_id for t in visible[:10]]</span></pre>
-      <p style="margin-top:14px">Correct, and easy to write. But every feed request touches <em>every tweet in the system</em>, <code>O(N)</code> for the scan and <code>O(N log N)</code> for the sort, where <code>N</code> is the total number of tweets, even though the answer is at most 10 items. With <code>3 · 10⁴</code> operations, a feed-heavy workload does that scan tens of thousands of times.</p>
-      <p>The waste is twofold: the scan looks at tweets by authors the user does not follow, and the sort orders tweets that will never make the top 10.</p>
+      <h2>First instinct: one global list, filter and sort each feed</h2>
+      <p>I can keep every tweet in one global list. For a feed, I filter to the user and their followees, I sort the visible tweets by time, and return ten IDs.</p>
+      <pre class="code"><span class="ln">def getNewsFeed(self, userId):</span><span class="ln">    authors = self.following[userId] | {userId}</span><span class="ln">    visible = [tweet for tweet in self.all_tweets if tweet[1] in authors]</span><span class="ln">    visible.sort(reverse=True)</span><span class="ln">    return [tweet_id for _, _, tweet_id in visible[:10]]</span></pre>
+      <p style="margin-top:14px">This is correct. If there are <code>N</code> tweets, filtering takes O(N) time and sorting takes O(N log N) time per feed request. The visible-tweet list uses O(N) space.</p>
+      <p>Each author's tweet list is already ordered by time, and I only need ten feed items. A heap can merge the newest tweet from each relevant author and stop after ten pops.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: per-author lists are already sorted, so merge them</h2>
-      <p>Store tweets <em>per user</em>: <code>self.tweets[user_id]</code> is a list of <code>(stamp, tweet_id)</code>, appended in posting order. A global counter <code>self.time</code> supplies the stamp, so within any one author's list the stamps strictly increase. Each list is sorted by time for free.</p>
-      <p>A feed is then the classic problem of merging <code>k</code> sorted lists, newest first, but only for the first 10 results. That is a heap job: seed a heap with the <strong>newest tweet of each author</strong> (the user plus their followees), pop the newest overall, and replace it with that same author's next-older tweet. Every pop yields the next feed entry, and after 10 pops we stop.</p>
+      <p>I store tweets <em>per user</em>: <code>self.tweets[user_id]</code> is a list of <code>(stamp, tweet_id)</code>, appended in posting order. A global counter <code>self.time</code> supplies the stamp, so within any one author's list the stamps strictly increase. Each list is sorted by time for free.</p>
+      <p>A feed is then the classic problem of merging <code>k</code> sorted lists, newest first, but only for the first 10 results. That is a heap job: seed a heap with the <strong>newest tweet of each author</strong> (the user plus their followees), I pop the newest overall, and replace it with that same author's next-older tweet. Every pop yields the next feed entry, and after 10 pops I stop.</p>
       <div class="callout">The heap holds at most one entry per author. It never sees an author's older tweets until the newer ones have been emitted, so a feed of 10 does at most 10 pops and 10 pushes regardless of how many tweets exist.</div>
       <p><code>heapq</code> is a min-heap, so the entry is <code>(-stamp, tweet_id, uid, idx)</code>: the negated stamp puts the newest at the root, and <code>uid, idx</code> say where to find the next-older tweet. Following is a <code>set</code> per user, so <code>follow</code>, <code>unfollow</code> and "who do I follow" are O(1).</p>
     </section>
@@ -264,7 +264,7 @@
       <ul>
         <li><code>self.time = 0</code>, <code>self.tweets = defaultdict(list)</code>, <code>self.following = defaultdict(set)</code>: the clock, per-user tweet lists, per-user follow sets.</li>
         <li><code>post_tweet</code>: <code>self.tweets[user_id].append((self.time, tweet_id))</code> then <code>self.time += 1</code>.</li>
-        <li><code>get_news_feed</code>: for each <code>uid in self.following[user_id] | {user_id}</code> with tweets, seed <code>(-stamp, tweet_id, uid, idx)</code> for their newest; <code>heapq.heapify(heap)</code>; then <code>while heap and len(feed) &lt; 10</code>: pop, append <code>tweet_id</code>, and <code>if idx &gt; 0</code> push the author's tweet at <code>idx - 1</code>.</li>
+        <li><code>get_news_feed</code>: for each <code>uid in self.following[user_id] | {user_id}</code> with tweets, seed <code>(-stamp, tweet_id, uid, idx)</code> for their newest; <code>heapq.heapify(heap)</code>; then <code>while heap and len(feed) &lt; 10</code>: I pop, I append <code>tweet_id</code>, and <code>if idx &gt; 0</code> I push the author's tweet at <code>idx - 1</code>.</li>
         <li><code>follow</code>: <code>self.following[follower_id].add(followee_id)</code>.</li>
         <li><code>unfollow</code>: <code>self.following[follower_id].discard(followee_id)</code>, which is silent if the pair was never followed.</li>
       </ul>
@@ -275,7 +275,7 @@
       <div class="n">STEP 5</div>
       <h2>Trace it: post_tweet(1, 5), get_news_feed(1)</h2>
       <p><code>post_tweet(1, 5)</code> appends <code>(0, 5)</code> to <code>self.tweets[1]</code>, stamp 0 because the clock starts at zero, and then advances the clock to <code>self.time = 1</code>.</p>
-      <p><code>get_news_feed(1)</code>: the author set is <code>self.following[1] | {1}</code>. User 1 follows nobody yet, so that is just <code>{1}</code>. User 1 has one tweet at <code>idx = 0</code>, so the heap is seeded with the single entry <code>(0, 5, 1, 0)</code>, the stamp 0 negated being still 0. Pop it: <code>feed = [5]</code>. <code>idx &gt; 0</code> is false, so nothing is pushed back, the heap is empty, and the loop ends. Result <strong>[5]</strong>.</p>
+      <p><code>get_news_feed(1)</code>: the author set is <code>self.following[1] | {1}</code>. User 1 follows nobody yet, so that is just <code>{1}</code>. User 1 has one tweet at <code>idx = 0</code>, so the heap is seeded with the single entry <code>(0, 5, 1, 0)</code>, the stamp 0 negated being still 0. I pop it: <code>feed = [5]</code>. <code>idx &gt; 0</code> is false, so nothing is pushed back, the heap is empty, and the loop ends. Result <strong>[5]</strong>.</p>
     </section>
 
     <section class="step" data-state="t2">
@@ -283,7 +283,7 @@
       <h2>Trace it: follow(1, 2), post_tweet(2, 6), get_news_feed(1)</h2>
       <p><code>follow(1, 2)</code> makes <code>self.following[1] = {2}</code>. <code>post_tweet(2, 6)</code> appends <code>(1, 6)</code> to <code>self.tweets[2]</code> and advances the clock to 2. Tweet 6 has stamp 1, tweet 5 has stamp 0, so 6 is newer.</p>
       <p><code>get_news_feed(1)</code> now iterates <code>{2} | {1} = {1, 2}</code>. Both have tweets, so the heap is seeded with <code>(0, 5, 1, 0)</code> for user 1 and <code>(-1, 6, 2, 0)</code> for user 2. After <code>heapify</code> the layout is <code>[(-1, 6, 2, 0), (0, 5, 1, 0)]</code>: the more negative stamp, i.e. the newer tweet, is the root.</p>
-      <p>Pop the root: <code>feed = [6]</code>. User 2 has no older tweet (<code>idx = 0</code>), so nothing is pushed. Pop again: <code>feed = [6, 5]</code>. Heap empty, loop ends. Result <strong>[6, 5]</strong>, newest first, even though the two tweets came from different authors' lists.</p>
+      <p>I pop the root: <code>feed = [6]</code>. User 2 has no older tweet (<code>idx = 0</code>), so nothing is pushed. I pop again: <code>feed = [6, 5]</code>. Heap empty, loop ends. Result <strong>[6, 5]</strong>, newest first, even though the two tweets came from different authors' lists.</p>
     </section>
 
     <section class="step" data-state="t3">
@@ -291,14 +291,14 @@
       <h2>Trace it: unfollow(1, 2), get_news_feed(1)</h2>
       <p><code>unfollow(1, 2)</code> calls <code>discard(2)</code> on <code>self.following[1]</code>, which becomes the empty set. User 2's tweets are untouched: they still exist in <code>self.tweets[2]</code>, they simply will not be seeded into user 1's heap any more.</p>
       <p><code>get_news_feed(1)</code>: the author set is back to <code>{1}</code>. The heap is seeded with only <code>(0, 5, 1, 0)</code>, one pop yields <code>feed = [5]</code>, and the loop ends. Result <strong>[5]</strong>.</p>
-      <div class="callout">Nothing was deleted or re-sorted on unfollow. The feed is computed from the follow set at request time, so changing who you follow is a single set operation.</div>
+      <div class="callout">Nothing was deleted or re-sorted on unfollow. The feed is computed from the follow set at request time, so changing who I follow is a single set operation.</div>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the sign, the self, and the guard</h2>
       <p><strong>Forgetting to negate the stamp.</strong> Seed <code>(stamp, tweet_id, uid, idx)</code> and the min-heap's root is the <em>oldest</em> tweet. On the running example the second feed comes back as <code>[5, 6]</code>: tweet 5 (stamp 0) before tweet 6 (stamp 1). Oldest first is the opposite of a news feed.</p>
-      <p><strong>Leaving out the user.</strong> Iterate <code>self.following[user_id]</code> without <code>| {user_id}</code> and users never see their own tweets: the first feed is <code>[]</code> and the second is <code>[6]</code>.</p>
+      <p><strong>Leaving out the user.</strong> I iterate <code>self.following[user_id]</code> without <code>| {user_id}</code> and users never see their own tweets: the first feed is <code>[]</code> and the second is <code>[6]</code>.</p>
       <p><strong>Dropping <code>if idx &gt; 0</code>.</strong> After popping an author's oldest tweet, <code>idx - 1</code> is <code>-1</code>, which Python reads as "the last element", i.e. that author's <em>newest</em> tweet again. It is pushed and emitted a second time, <code>[6, 6, …]</code>, until <code>idx - 1 = -2</code> falls off a one-element list with an <code>IndexError</code>.</p>
       <div class="callout warn">Newest first means the largest stamp must be the smallest heap key. Negate it, and include the user in their own feed.</div>
     </section>
@@ -313,7 +313,7 @@
         <tr><td>Per-user lists, heap merge</td><td>O(1)</td><td>O(f + 10 log f)</td><td>O(N + edges)</td></tr>
         <tr><td>Pre-merged feed per user (fan-out on write)</td><td>O(followers)</td><td>O(10)</td><td>O(N · followers)</td></tr>
       </table>
-      <p>The third row is what real systems do for most users: push each new tweet into every follower's stored feed at post time, so reads are trivial. It is the wrong trade for an account with millions of followers, which is why production systems mix both strategies. In an interview, the heap merge is the expected answer.</p>
+      <p>The third row is what real systems do for most users: I push each new tweet into every follower's stored feed at post time, so reads are trivial. It is the wrong trade for an account with millions of followers, which is why production systems mix both strategies. In an interview, the heap merge is the expected answer.</p>
     </section>
 
     <section class="step" data-state="final">
@@ -322,8 +322,8 @@
       <p>One class, three fields, four methods.</p>
       <ul>
         <li><code>self.time</code>, <code>self.tweets</code>, <code>self.following</code>: clock, per-user tweet lists, per-user follow sets.</li>
-        <li><code>post_tweet</code>: append <code>(self.time, tweet_id)</code>, then <code>self.time += 1</code>.</li>
-        <li><code>get_news_feed</code>: seed the heap with each author's newest tweet as <code>(-stamp, tweet_id, uid, idx)</code>, <code>heapify</code>, then pop up to 10 times, pushing the popped author's <code>idx - 1</code> tweet if <code>idx &gt; 0</code>.</li>
+        <li><code>post_tweet</code>: I append <code>(self.time, tweet_id)</code>, then <code>self.time += 1</code>.</li>
+        <li><code>get_news_feed</code>: seed the heap with each author's newest tweet as <code>(-stamp, tweet_id, uid, idx)</code>, <code>heapify</code>, then I pop up to 10 times, pushing the popped author's <code>idx - 1</code> tweet if <code>idx &gt; 0</code>.</li>
         <li><code>follow</code>: <code>add</code> to the set. <code>unfollow</code>: <code>discard</code> from the set.</li>
       </ul>
       <div class="callout">One-line summary to remember: <em>tweets live in per-author lists that are sorted by construction; a feed is a heap merge of those lists that stops after 10.</em></div>

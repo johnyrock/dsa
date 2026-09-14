@@ -216,7 +216,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Backtracking · LeetCode #39</div>
   <h1>Combination Sum, narrated</h1>
-  <p>Scroll through the thinking, from trying every count of every coin to a recursion that spends candidates in order, reuses them, and stops the moment one is too big, with the path, the recursion tree, and the answers shown alongside.</p>
+  <p>I will first try every possible count for every candidate, then stop a partial combination as soon as its sum exceeds the target.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/backtracking.html">Backtracking</a> <span class="how">choose a candidate, recurse from the same index so it can repeat, undo; sorted input lets a break prune the rest</span></p>
 </header>
 
@@ -234,22 +234,22 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: pick a count for every candidate</h2>
-      <p>Since each candidate can appear any number of times, decide a count for each one. <code>2</code> can appear 0 to 3 times in a sum of 7, <code>3</code> 0 to 2 times, <code>6</code> and <code>7</code> 0 or 1 times. Try every combination of counts and keep the ones that hit the target:</p>
-      <pre class="code"><span class="ln">from itertools import product</span><span class="ln">ranges = [range(target // c + 1) for c in candidates]</span><span class="ln">for counts in product(*ranges):</span><span class="ln">    if sum(k * c for k, c in zip(counts, candidates)) == target:</span><span class="ln">        result.append([c for k, c in zip(counts, candidates) for _ in range(k)])</span></pre>
-      <p style="margin-top:14px">For the example that is <code>4 · 3 · 2 · 2 = 48</code> count vectors for 2 answers. In general it is <strong>O(∏ (target / cᵢ))</strong>, exponential in the number of candidates, and almost all of it is wasted: the vector <code>(3, 2, 1, 1)</code> sums to 25 and was never going to work, but nothing stopped it from being generated and summed.</p>
-      <p>The thing to notice is that the waste is decided <em>early</em>. Once the running sum passes the target, every further choice is pointless. A recursion that adds one candidate at a time can stop at that moment; the product cannot.</p>
+      <p>I choose a count for each candidate, build the corresponding combination, and retain it when its sum equals the target.</p>
+      <pre class="code"><span class="ln">from itertools import product</span><span class="ln">def combinationSum(candidates, target):</span><span class="ln">    result = []</span><span class="ln">    ranges = [range(target // value + 1) for value in candidates]</span><span class="ln">    for counts in product(*ranges):</span><span class="ln">        if sum(count * value for count, value in zip(counts, candidates)) == target:</span><span class="ln">            result.append([value for count, value in zip(counts, candidates) for _ in range(count)])</span><span class="ln">    return result</span></pre>
+      <p style="margin-top:14px">This is correct. It examines O(∏(target / cᵢ)) count vectors, so the time complexity is O(∏(target / cᵢ)). Storing the candidate combinations gives it space complexity of O(∏(target / cᵢ) · target).</p>
+      <p>I build one combination incrementally. Once its running sum exceeds <code>target</code>, I can stop that branch before choosing counts for every remaining candidate.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>Key insight: spend in index order, reuse by not advancing, prune by sorting</h2>
-      <p>Build a combination in a shared list <code>path</code>, tracking <code>remaining = target − sum(path)</code>. Three rules make it both complete and duplicate-free.</p>
+      <p>I build a combination in a shared list <code>path</code>, tracking <code>remaining = target − sum(path)</code>. Three rules make it both complete and duplicate-free.</p>
       <ul>
-        <li><strong>Only pick from <code>start</code> onward.</strong> The loop is <code>for i in range(start, len(candidates))</code>. Once a <code>3</code> has been placed, <code>2</code> is never offered again, so <code>[3, 2, 2]</code> cannot be built and <code>[2, 2, 3]</code> is produced exactly once.</li>
-        <li><strong>Recurse with <code>i</code>, not <code>i + 1</code>.</strong> The candidate just placed stays available, which is how <code>2</code> gets used twice. This is the one-character difference from Subsets.</li>
-        <li><strong>Sort, then <code>break</code> when <code>candidates[i] &gt; remaining</code>.</strong> In sorted order, if this candidate overshoots, so does everything after it. The loop ends instead of recursing into dead ends.</li>
+        <li><strong>I only pick from <code>start</code> onward.</strong> The loop is <code>for i in range(start, len(candidates))</code>. Once a <code>3</code> has been placed, <code>2</code> is never offered again, so <code>[3, 2, 2]</code> cannot be built and <code>[2, 2, 3]</code> is produced exactly once.</li>
+        <li><strong>I recurse with <code>i</code>, not <code>i + 1</code>.</strong> The candidate just placed stays available, which is how <code>2</code> gets used twice. This is the one-character difference from Subsets.</li>
+        <li><strong>I sort, then <code>break</code> when <code>candidates[i] &gt; remaining</code>.</strong> In sorted order, if this candidate overshoots, so does everything after it. The loop ends instead of recursing into dead ends.</li>
       </ul>
-      <div class="callout">A combination is complete exactly when <code>remaining == 0</code>. That is the base case, checked on entry: record a copy of <code>path</code> and return.</div>
+      <div class="callout">A combination is complete exactly when <code>remaining == 0</code>. That is the base case, checked on entry: I record a copy of <code>path</code> and return.</div>
       <p>The panel is standing on <code>[2, 2]</code> with <code>remaining = 3</code>: its children will be <code>[2, 2, 2]</code> (remaining 1, a dead end) and <code>[2, 2, 3]</code> (remaining 0, an answer), and then <code>6 &gt; 3</code> breaks the loop before <code>6</code> or <code>7</code> is tried.</p>
     </section>
 
@@ -260,35 +260,35 @@
         <li><code>candidates = sorted(candidates)</code>: required for the <code>break</code> to be safe.</li>
         <li><code>result = []</code>, <code>path = []</code>: the answers and the combination under construction.</li>
         <li><code>backtrack(start, remaining)</code>: extend <code>path</code> with candidates at index ≥ <code>start</code>, still needing <code>remaining</code>.</li>
-        <li><code>if remaining == 0</code>: record <code>path[:]</code> and return.</li>
+        <li><code>if remaining == 0</code>: I record <code>path[:]</code> and return.</li>
         <li><code>for i in range(start, len(candidates))</code>, and inside it <code>if candidates[i] &gt; remaining: break</code>.</li>
-        <li>Choose with <code>path.append(candidates[i])</code>, recurse with <code>backtrack(i, remaining − candidates[i])</code>, undo with <code>path.pop()</code>.</li>
-        <li>Kick off with <code>backtrack(0, target)</code> and return <code>result</code>.</li>
+        <li>I choose with <code>path.append(candidates[i])</code>, recurse with <code>backtrack(i, remaining − candidates[i])</code>, undo with <code>path.pop()</code>.</li>
+        <li>I start with <code>backtrack(0, target)</code> and return <code>result</code>.</li>
       </ul>
-      <p>There is no <code>remaining &lt; 0</code> check because the <code>break</code> guarantees we never recurse with a negative value: a candidate is only chosen when <code>candidates[i] &lt;= remaining</code>.</p>
+      <p>The sorted <code>break</code> means I never need a <code>remaining &lt; 0</code> check: I only choose a candidate when <code>candidates[i] &lt;= remaining</code>.</p>
     </section>
 
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: 2, 2, 2 is a dead end; 2, 2, 3 is an answer</h2>
-      <p><code>backtrack(0, 7)</code>: <code>2 &lt;= 7</code>, push <code>2</code>, call <code>backtrack(0, 5)</code>. Again <code>2 &lt;= 5</code>, push, call <code>backtrack(0, 3)</code>. Again <code>2 &lt;= 3</code>, push, call <code>backtrack(0, 1)</code> with <code>path = [2, 2, 2]</code>.</p>
-      <p>Now <code>remaining = 1</code>, not zero, so the loop runs: <code>candidates[0] = 2 &gt; 1</code>, and the very first iteration breaks. This call returns having done nothing. Pop the third <code>2</code>. Back in <code>backtrack(0, 3)</code> the loop moves to <code>i = 1</code>: <code>3 &lt;= 3</code>, push <code>3</code>, call <code>backtrack(1, 0)</code>.</p>
-      <p><code>remaining == 0</code>: record <code>[2, 2, 3]</code>. The first answer, found after five calls. Pop the <code>3</code>; the loop in <code>backtrack(0, 3)</code> reaches <code>i = 2</code>, <code>6 &gt; 3</code>, break. Candidates <code>6</code> and <code>7</code> were never pushed under <code>[2, 2]</code>.</p>
+      <p><code>backtrack(0, 7)</code>: <code>2 &lt;= 7</code>, I push <code>2</code>, call <code>backtrack(0, 5)</code>. Again <code>2 &lt;= 5</code>, I push, call <code>backtrack(0, 3)</code>. Again <code>2 &lt;= 3</code>, I push, call <code>backtrack(0, 1)</code> with <code>path = [2, 2, 2]</code>.</p>
+      <p>Now <code>remaining = 1</code>, not zero, so the loop runs: <code>candidates[0] = 2 &gt; 1</code>, and the very first iteration breaks. This call returns having done nothing. I pop the third <code>2</code>. Back in <code>backtrack(0, 3)</code> the loop moves to <code>i = 1</code>: <code>3 &lt;= 3</code>, I push <code>3</code>, call <code>backtrack(1, 0)</code>.</p>
+      <p><code>remaining == 0</code>: I record <code>[2, 2, 3]</code>. The first answer, found after five calls. I pop the <code>3</code>; the loop in <code>backtrack(0, 3)</code> reaches <code>i = 2</code>, <code>6 &gt; 3</code>, break. Candidates <code>6</code> and <code>7</code> were never pushed under <code>[2, 2]</code>.</p>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: back up to <code>[2]</code>, then the <code>[3]</code> subtree</h2>
-      <p>Pop the second <code>2</code>; back in <code>backtrack(0, 5)</code> with <code>path = [2]</code>, the loop moves to <code>i = 1</code>: <code>3 &lt;= 5</code>, push, call <code>backtrack(1, 2)</code>. Its loop starts at <code>i = 1</code>, and <code>3 &gt; 2</code> breaks immediately. Notice it never even looks at <code>2</code>: <code>start = 1</code> forbids it, which is exactly what prevents <code>[2, 3, 2]</code>. Pop. Back at <code>[2]</code>, <code>i = 2</code>: <code>6 &gt; 5</code>, break.</p>
-      <p>Pop the first <code>2</code>. At the root, <code>i = 1</code>: push <code>3</code>, call <code>backtrack(1, 4)</code>. <code>3 &lt;= 4</code>, push, call <code>backtrack(1, 1)</code> with <code>path = [3, 3]</code>: <code>3 &gt; 1</code>, break, dead end. Pop; at <code>[3]</code> the loop hits <code>6 &gt; 4</code>, break.</p>
+      <p>I pop the second <code>2</code>; back in <code>backtrack(0, 5)</code> with <code>path = [2]</code>, the loop moves to <code>i = 1</code>: <code>3 &lt;= 5</code>, I push, call <code>backtrack(1, 2)</code>. Its loop starts at <code>i = 1</code>, and <code>3 &gt; 2</code> breaks immediately. It never looks at <code>2</code>: <code>start = 1</code> forbids it, which prevents <code>[2, 3, 2]</code>. I pop, I return to <code>[2]</code>, then break when <code>i = 2</code> gives <code>6 &gt; 5</code>.</p>
+      <p>I pop the first <code>2</code>. At the root, <code>i = 1</code>: I push <code>3</code>, call <code>backtrack(1, 4)</code>. <code>3 &lt;= 4</code>, I push, call <code>backtrack(1, 1)</code> with <code>path = [3, 3]</code>: <code>3 &gt; 1</code>, break, dead end. I pop; at <code>[3]</code> the loop hits <code>6 &gt; 4</code>, break.</p>
       <p>Three dead ends so far, and each of them cost a single comparison. The tree is thin because the <code>break</code> refuses to grow branches that cannot finish.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: 6 fails, 7 succeeds, done</h2>
-      <p>Back at the root with <code>i = 2</code>: <code>6 &lt;= 7</code>, push, call <code>backtrack(2, 1)</code>. Its loop starts at <code>6</code>: <code>6 &gt; 1</code>, break. Pop. Then <code>i = 3</code>: <code>7 &lt;= 7</code>, push, call <code>backtrack(3, 0)</code>. <code>remaining == 0</code>, record <code>[7]</code>. Pop. The root's loop is finished.</p>
-      <p><code>result</code> is <code>[[2, 2, 3], [7]]</code>. Count the calls: ten in total, of which two recorded answers and four were dead ends that broke on their first comparison. Compare that with the 48 count vectors the brute force summed.</p>
+      <p>Back at the root with <code>i = 2</code>: <code>6 &lt;= 7</code>, I push, call <code>backtrack(2, 1)</code>. Its loop starts at <code>6</code>: <code>6 &gt; 1</code>, break. I pop. Then <code>i = 3</code>: <code>7 &lt;= 7</code>, I push, call <code>backtrack(3, 0)</code>. <code>remaining == 0</code>, I record <code>[7]</code>. I pop. The root's loop is finished.</p>
+      <p><code>result</code> is <code>[[2, 2, 3], [7]]</code>. Count the calls: ten in total, of which two recorded answers and four were dead ends that broke on their first comparison. I compare that with the 48 count vectors the brute force summed.</p>
       <div class="callout">Every answer appears once and in non-decreasing order, because the loop never goes back to an earlier index.</div>
     </section>
 
@@ -320,13 +320,13 @@
       <p>One sort, one nested function, one loop with a break.</p>
       <ul>
         <li><code>candidates = sorted(candidates)</code> so that overshooting once means overshooting for the rest of the loop.</li>
-        <li><code>if remaining == 0</code>: record <code>path[:]</code> and return.</li>
+        <li><code>if remaining == 0</code>: I record <code>path[:]</code> and return.</li>
         <li><code>for i in range(start, len(candidates))</code>: never look back at earlier candidates.</li>
         <li><code>if candidates[i] &gt; remaining: break</code>: the prune.</li>
-        <li><code>path.append(candidates[i])</code>, <code>backtrack(i, remaining − candidates[i])</code>, <code>path.pop()</code>: choose, recurse from the same index, undo.</li>
+        <li><code>path.append(candidates[i])</code>, <code>backtrack(i, remaining − candidates[i])</code>, <code>path.pop()</code>: I choose, recurse from the same index, undo.</li>
         <li><code>backtrack(0, target)</code> starts with everything owed; <code>return result</code>.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>walk the candidates in order, let each one repeat by recursing from its own index, and break as soon as one is bigger than what is left.</em></div>
+      <div class="callout">One-line summary to remember: <em>I walk the candidates in order, let each one repeat by recursing from its own index, and break as soon as one is bigger than what is left.</em></div>
     </section>
 
     <div class="code-final">

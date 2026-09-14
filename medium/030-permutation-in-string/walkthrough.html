@@ -205,8 +205,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Sliding Window · LeetCode #567</div>
   <h1>Permutation in String, narrated</h1>
-  <p>Scroll through the thinking, from sorting every substring to sliding a fixed-width window of letter counts across the text, with the state of the algorithm shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/sliding-window.html">Sliding Window</a> <span class="how">fixed width len(s1); add the entering letter, drop the leaving one, compare 26 counts</span></p>
+  <p>I’ll start by sorting every candidate window, then slide a fixed-width letter-count window across the text.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/sliding-window.html">Sliding Window</a> <span class="how">fixed width len(s1); I add the entering letter, I drop the leaving one, I compare 26 counts</span></p>
 </header>
 
 <div class="layout">
@@ -224,9 +224,10 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: sort every substring</h2>
-      <p>Two strings are permutations of each other exactly when their sorted forms are equal. So sort <code>s1</code> once, then for every start index sort the <code>k</code>-character slice of <code>s2</code> and compare.</p>
+      <p>My first instinct is to sort <code>s1</code>, then I sort every same-length slice of <code>s2</code> and compare the sorted forms.</p>
       <pre class="code"><span class="ln">key = sorted(s1)</span><span class="ln">for i in range(len(s2) - len(s1) + 1):</span><span class="ln">    if sorted(s2[i:i + len(s1)]) == key:</span><span class="ln">        return True</span><span class="ln">return False</span></pre>
-      <p style="margin-top:14px">There are about <code>n</code> windows and each sort costs <code>O(k log k)</code>, so the total is <strong>O(n · k log k)</strong>. With both strings at 10,000 characters that is on the order of 10⁹ operations, and every sort throws away the work of the previous one even though the two windows overlap in all but two characters.</p>
+      <p style="margin-top:14px">With window width <code>k</code>, it takes <strong>O(n · k log k) time</strong> and uses <strong>O(k) extra space</strong> for each sorted window.</p>
+      <p>Neighboring windows differ by one entering and one leaving character. I keep 26 counts and update only those two positions as the window moves.</p>
     </section>
 
     <section class="step" data-state="reframe">
@@ -255,8 +256,8 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: i = 0 and i = 1, the window fills up</h2>
-      <p>At <code>i = 0</code> the character is <code>e</code>. It enters: <code>window = {e:1}</code>. Since <code>0 &gt;= 2</code> is false, nothing leaves yet. Compare with <code>need = {a:1, b:1}</code>: no match.</p>
-      <p>At <code>i = 1</code> the character is <code>i</code>: <code>window = {e:1, i:1}</code>. Still <code>1 &gt;= 2</code> is false, so the window has grown to its full width of 2 for the first time. Compare: no match.</p>
+      <p>At <code>i = 0</code> the character is <code>e</code>. It enters: <code>window = {e:1}</code>. Since <code>0 &gt;= 2</code> is false, nothing leaves yet. I compare with <code>need = {a:1, b:1}</code>: no match.</p>
+      <p>At <code>i = 1</code> the character is <code>i</code>: <code>window = {e:1, i:1}</code>. Still <code>1 &gt;= 2</code> is false, so the window has grown to its full width of 2 for the first time. I compare: no match.</p>
       <p>From here on, every step will both add and remove one character, so the window stays exactly 2 wide.</p>
     </section>
 
@@ -264,21 +265,21 @@
       <div class="n">STEP 6</div>
       <h2>Trace it: i = 2 and i = 3, the window slides</h2>
       <p>At <code>i = 2</code> the character <code>d</code> enters. Now <code>2 &gt;= 2</code> is true, so <code>s2[i - k] = s2[0] = 'e'</code> leaves: <code>window = {i:1, d:1}</code>. No match.</p>
-      <p>At <code>i = 3</code>, <code>b</code> enters and <code>s2[1] = 'i'</code> leaves: <code>window = {d:1, b:1}</code>. We now have one of the two letters we need, but <code>d</code> is in the way. No match.</p>
+      <p>At <code>i = 3</code>, <code>b</code> enters and <code>s2[1] = 'i'</code> leaves: <code>window = {d:1, b:1}</code>. I now have one of the two letters I need, but <code>d</code> is in the way. No match.</p>
       <p>Each step was two array updates and one 26-slot comparison, regardless of how long the strings are.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: i = 4, the counts line up</h2>
-      <p>At <code>i = 4</code>, <code>a</code> enters and <code>s2[2] = 'd'</code> leaves: <code>window = {b:1, a:1}</code>. That is exactly <code>need = {a:1, b:1}</code>, and since both are 26-slot lists indexed by letter, the order the letters arrived in is invisible. <code>window == need</code> is <code>True</code>, so we return <code>True</code>.</p>
+      <p>At <code>i = 4</code>, <code>a</code> enters and <code>s2[2] = 'd'</code> leaves: <code>window = {b:1, a:1}</code>. That is exactly <code>need = {a:1, b:1}</code>, and since both are 26-slot lists indexed by letter, the order the letters arrived in is invisible. <code>window == need</code> is <code>True</code>, so I return <code>True</code>.</p>
       <div class="callout">The window covering <code>"ba"</code> matched <code>"ab"</code> without any sorting. Five characters examined, five constant-time checks.</div>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the off-by-one on the leaving character</h2>
-      <p><strong>Removing one step late.</strong> Write <code>if i &gt; k</code> instead of <code>if i &gt;= k</code>. At <code>i = 2</code> the <code>e</code> is not removed, so the window holds three characters from then on: at <code>i = 4</code> it is <code>{a:1, b:1, e:1}</code>, which never equals a two-letter signature. The running example returns <strong>False</strong> instead of True, and so does every other input where <code>k &lt; len(s2)</code>.</p>
+      <p><strong>Removing one step late.</strong> I write <code>if i &gt; k</code> instead of <code>if i &gt;= k</code>. At <code>i = 2</code> the <code>e</code> is not removed, so the window holds three characters from then on: at <code>i = 4</code> it is <code>{a:1, b:1, e:1}</code>, which never equals a two-letter signature. The running example returns <strong>False</strong> instead of True, and so does every other input where <code>k &lt; len(s2)</code>.</p>
       <p><strong>Removing the wrong index.</strong> <code>s2[i - k + 1]</code> instead of <code>s2[i - k]</code> evicts the character that should stay. The window shrinks to <code>k - 1</code> letters and can never match either.</p>
       <p><strong>Comparing sets instead of counts.</strong> <code>set(window) == set(s1)</code> says <code>"abb"</code> is a permutation of <code>"aab"</code>. Multiplicity is part of the definition, which is why the panel shows counts rather than letters.</p>
       <div class="callout warn">The window at index <code>i</code> covers <code>s2[i - k + 1 .. i]</code>, so the character that just left is <code>s2[i - k]</code>, and it exists as soon as <code>i &gt;= k</code>.</div>

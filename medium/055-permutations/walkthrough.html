@@ -216,7 +216,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Backtracking · LeetCode #46</div>
   <h1>Permutations, narrated</h1>
-  <p>Scroll through the thinking, from generating every sequence and filtering to a recursion that fills one slot at a time from the elements not yet used, with the path, the recursion tree, and the answers shown alongside.</p>
+  <p>I will first generate all sequences and filter repeats, then I choose only unused values as I fill each position.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/backtracking.html">Backtracking</a> <span class="how">choose any unused element, mark it, recurse, then unmark and pop; leaves at depth n are the answers</span></p>
 </header>
 
@@ -235,20 +235,20 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: every sequence, then filter</h2>
-      <p>Fill each of the <code>n</code> slots with any of the <code>n</code> elements, giving <code>n^n</code> sequences, and keep the ones with no repeated element:</p>
-      <pre class="code"><span class="ln">from itertools import product</span><span class="ln">result = []</span><span class="ln">for seq in product(nums, repeat=len(nums)):</span><span class="ln">    if len(set(seq)) == len(nums):</span><span class="ln">        result.append(list(seq))</span></pre>
-      <p style="margin-top:14px">For <code>n = 3</code> that is <code>27</code> sequences for 6 answers; for <code>n = 6</code> it is <code>46,656</code> for 720. Each one costs O(n) to check, so <strong>O(n · nⁿ)</strong>. Sequences such as <code>[1, 1, 1]</code> and <code>[1, 1, 2]</code> were doomed from their second slot, but the product cannot know that.</p>
-      <p>The fix is the same shape as always: build the sequence one slot at a time, and only offer elements that are not already in it. Then every sequence that reaches length <code>n</code> is a permutation, and nothing else is ever built.</p>
+      <p>I can fill every slot with every possible input value and keep the sequences that contain each value exactly once.</p>
+      <pre class="code"><span class="ln">from itertools import product</span><span class="ln">def permute(nums):</span><span class="ln">    result = []</span><span class="ln">    for sequence in product(nums, repeat=len(nums)):</span><span class="ln">        if len(set(sequence)) == len(nums): result.append(list(sequence))</span><span class="ln">    return result</span></pre>
+      <p style="margin-top:14px">This is correct because the input values are distinct. It builds <code>nⁿ</code> sequences and checks up to <code>n</code> values in each, so the time complexity is O(n · nⁿ). The result and generated candidates use O(n · nⁿ) space.</p>
+      <p>I refuse to place a value that is already used. That removes every invalid sequence before it grows past its first repeated value.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>Key insight: fill the next slot from whatever is still unused</h2>
-      <p>Keep a shared list <code>path</code> for the ordering under construction and a parallel list <code>used</code> of booleans, one per index. To fill the next slot, loop over <em>all</em> indices <code>for i in range(len(nums))</code> and skip any with <code>used[i]</code> set.</p>
+      <p>I keep a shared list <code>path</code> for the ordering under construction and a parallel list <code>used</code> of booleans, one per index. To fill the next slot, loop over <em>all</em> indices <code>for i in range(len(nums))</code> and skip any with <code>used[i]</code> I set.</p>
       <ul>
         <li>The loop always starts at <code>0</code>, not at a <code>start</code> index. That is what lets <code>1</code> appear after <code>2</code>: <code>[2, 1, 3]</code> is reachable.</li>
         <li><code>used</code> is what stops <code>1</code> appearing twice. Checking it is O(1); scanning <code>path</code> would cost O(n) per candidate.</li>
-        <li>An ordering is complete exactly when <code>len(path) == len(nums)</code>. Record a copy there and return; nothing shorter is an answer.</li>
+        <li>An ordering is complete exactly when <code>len(path) == len(nums)</code>. I record a copy there and return; nothing shorter is an answer.</li>
       </ul>
       <div class="callout">The recursion tree has <code>n</code> children at the root, <code>n − 1</code> under each of those, and so on. Only its <code>n!</code> leaves are answers; the inner nodes are prefixes.</div>
       <p>The panel is standing on <code>[1, 2]</code>: <code>used = [T, T, F]</code>, so the loop will skip <code>i = 0</code> and <code>i = 1</code> and the only child is <code>[1, 2, 3]</code>.</p>
@@ -260,9 +260,9 @@
       <ul>
         <li><code>result = []</code>, <code>path = []</code>, <code>used = [False] * len(nums)</code>.</li>
         <li><code>backtrack()</code> takes no arguments: everything it needs is in the shared state.</li>
-        <li><code>if len(path) == len(nums)</code>: record <code>path[:]</code> and return.</li>
+        <li><code>if len(path) == len(nums)</code>: I record <code>path[:]</code> and return.</li>
         <li><code>for i in range(len(nums))</code>, and <code>if used[i]: continue</code>.</li>
-        <li>Choose: <code>used[i] = True</code>, <code>path.append(nums[i])</code>. Recurse: <code>backtrack()</code>. Undo <em>both</em>: <code>path.pop()</code>, <code>used[i] = False</code>.</li>
+        <li>I choose: <code>used[i] = True</code>, <code>path.append(nums[i])</code>. Recurse: <code>backtrack()</code>. Undo <em>both</em>: <code>path.pop()</code>, <code>used[i] = False</code>.</li>
         <li>Kick off with <code>backtrack()</code> and return <code>result</code>.</li>
       </ul>
       <p>The choice has two halves, so the undo has two halves. Forgetting either one is the classic bug here, and step 8 shows what each does to the output.</p>
@@ -271,31 +271,31 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: the leftmost leaf, <code>[1, 2, 3]</code></h2>
-      <p>From the empty path, <code>i = 0</code> is unused: mark it, push <code>1</code>, recurse. In that call <code>i = 0</code> is used, skip; <code>i = 1</code> is free: mark, push <code>2</code>, recurse. Now <code>i = 0</code> and <code>i = 1</code> are both used, so the loop reaches <code>i = 2</code>: mark, push <code>3</code>, recurse.</p>
-      <p><code>len(path) == 3</code>: record <code>[1, 2, 3]</code> and return. The panel shows <code>used = [T, T, T]</code> at that moment, every slot filled, and the tree grown straight down the left edge, four calls deep.</p>
-      <p>Then the unwinding starts. Pop <code>3</code>, clear <code>used[2]</code>. The call for <code>[1, 2]</code> has no more indices to try, so it returns. Pop <code>2</code>, clear <code>used[1]</code>; we are back in the call for <code>[1]</code> with its loop about to try <code>i = 2</code>.</p>
+      <p>From the empty path, <code>i = 0</code> is unused: mark it, I push <code>1</code>, recurse. In that call <code>i = 0</code> is used, I skip; <code>i = 1</code> is free: mark, I push <code>2</code>, recurse. Now <code>i = 0</code> and <code>i = 1</code> are both used, so the loop reaches <code>i = 2</code>: mark, I push <code>3</code>, recurse.</p>
+      <p><code>len(path) == 3</code>: I record <code>[1, 2, 3]</code> and return. The panel shows <code>used = [T, T, T]</code> at that moment, every slot filled, and the tree grown straight down the left edge, four calls deep.</p>
+      <p>Then the unwinding starts. I pop <code>3</code>, clear <code>used[2]</code>. The call for <code>[1, 2]</code> has no more indices to try, so it returns. I pop <code>2</code>, clear <code>used[1]</code>; I am back in the call for <code>[1]</code> with its loop about to try <code>i = 2</code>.</p>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: the second leaf, <code>[1, 3, 2]</code></h2>
-      <p>In the call for <code>[1]</code>, <code>i = 2</code> is free: mark, push <code>3</code>, recurse. Inside, <code>i = 0</code> is used, skip. <code>i = 1</code> is free again, because it was cleared on the way back up: mark, push <code>2</code>, recurse. Length 3, record <code>[1, 3, 2]</code>.</p>
+      <p>In the call for <code>[1]</code>, <code>i = 2</code> is free: mark, I push <code>3</code>, recurse. Inside, <code>i = 0</code> is used, I skip. <code>i = 1</code> is free again, because it was cleared on the way back up: mark, I push <code>2</code>, recurse. Length 3, I record <code>[1, 3, 2]</code>.</p>
       <p>That is the moment the two undo lines earn their keep. If <code>used[1]</code> had stayed <code>True</code> after <code>[1, 2, 3]</code>, this call would have skipped <code>i = 1</code>, found nothing free, and returned without recording anything. The second answer exists only because the first one was fully undone.</p>
-      <p>Unwind again: pop <code>2</code>, clear <code>used[1]</code>; pop <code>3</code>, clear <code>used[2]</code>; the call for <code>[1]</code> is done. Pop <code>1</code>, clear <code>used[0]</code>. Back at the root with <code>path = []</code>, <code>used = [F, F, F]</code>, and the loop about to try <code>i = 1</code>.</p>
+      <p>Unwind again: I pop <code>2</code>, clear <code>used[1]</code>; I pop <code>3</code>, clear <code>used[2]</code>; the call for <code>[1]</code> is done. I pop <code>1</code>, clear <code>used[0]</code>. Back at the root with <code>path = []</code>, <code>used = [F, F, F]</code>, and the loop about to try <code>i = 1</code>.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: the <code>[2]</code> and <code>[3]</code> subtrees</h2>
-      <p>The root's <code>i = 1</code> pushes <code>2</code>. Under it, <code>i = 0</code> is free, so <code>[2, 1]</code>, then only <code>i = 2</code> remains: <code>[2, 1, 3]</code>. Unwind to <code>[2]</code>, take <code>i = 2</code>: <code>[2, 3]</code>, then <code>i = 0</code>: <code>[2, 3, 1]</code>. The root's <code>i = 2</code> gives <code>[3, 1, 2]</code> and <code>[3, 2, 1]</code> the same way.</p>
-      <p>Six leaves, six answers. The tree has <code>1 + 3 + 6 + 6 = 16</code> nodes, and the ten inner nodes are the only "wasted" calls, one per prefix. Compare with the 27 sequences the brute force built and checked.</p>
+      <p>The root's <code>i = 1</code> pushes <code>2</code>. Under it, <code>i = 0</code> is free, so <code>[2, 1]</code>, then only <code>i = 2</code> remains: <code>[2, 1, 3]</code>. Unwind to <code>[2]</code>, I take <code>i = 2</code>: <code>[2, 3]</code>, then <code>i = 0</code>: <code>[2, 3, 1]</code>. The root's <code>i = 2</code> gives <code>[3, 1, 2]</code> and <code>[3, 2, 1]</code> the same way.</p>
+      <p>Six leaves, six answers. The tree has <code>1 + 3 + 6 + 6 = 16</code> nodes, and the ten inner nodes are the only "wasted" calls, one per prefix. I compare with the 27 sequences the brute force built and checked.</p>
       <div class="callout">The loop from <code>0</code> is what puts <code>1</code> under <code>2</code>. The <code>used</code> array is what keeps <code>2</code> from going under <code>2</code>.</div>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: half an undo, no copy, a stray <code>start</code></h2>
-      <p><strong>Popping but not unmarking.</strong> Drop the line <code>used[i] = False</code>. After <code>[1, 2, 3]</code> is recorded, all three flags stay <code>True</code> forever. Every later call skips every index, and the output is <strong><code>[[1, 2, 3]]</code></strong>, a single permutation. The panel shows the tree that results: one path, then nothing. The mark must be cleared on the way back up, exactly like the pop.</p>
+      <p><strong>Popping but not unmarking.</strong> I drop the line <code>used[i] = False</code>. After <code>[1, 2, 3]</code> is recorded, all three flags stay <code>True</code> forever. Every later call skips every index, and the output is <strong><code>[[1, 2, 3]]</code></strong>, a single permutation. The panel shows the tree that results: one path, then nothing. The mark must be cleared on the way back up, exactly like the pop.</p>
       <p><strong>Recording <code>path</code> instead of <code>path[:]</code>.</strong> All six entries point at the same list, which is empty once the recursion finishes: six copies of <code>[]</code>.</p>
       <p><strong>Copying the Subsets loop, <code>for i in range(start, …)</code>.</strong> Elements can then only appear in index order, so the only sequence to reach length 3 is <code>[1, 2, 3]</code>. Permutations need the loop to start at <code>0</code> every time.</p>
       <p><strong>Checking <code>used[i]</code> but never setting it.</strong> Nothing is ever skipped, so the recursion builds all 27 sequences including <code>[1, 1, 1]</code>: the brute force, at recursion prices.</p>
@@ -321,7 +321,7 @@
       <p>One nested function, a loop over every index, a two-part choose and a two-part undo.</p>
       <ul>
         <li><code>result = []</code>, <code>path = []</code>, <code>used = [False] * len(nums)</code>.</li>
-        <li><code>if len(path) == len(nums)</code>: record <code>path[:]</code> and return.</li>
+        <li><code>if len(path) == len(nums)</code>: I record <code>path[:]</code> and return.</li>
         <li><code>for i in range(len(nums))</code>: every index, every time.</li>
         <li><code>if used[i]: continue</code>: except the ones already in the path.</li>
         <li><code>used[i] = True</code>, <code>path.append(nums[i])</code>, <code>backtrack()</code>, <code>path.pop()</code>, <code>used[i] = False</code>.</li>

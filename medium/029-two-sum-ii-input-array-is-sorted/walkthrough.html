@@ -204,7 +204,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Two Pointers · LeetCode #167</div>
   <h1>Two Sum II - Input Array Is Sorted, narrated</h1>
-  <p>Scroll through the thinking, from checking every pair to walking two pointers inward from both ends of a sorted array, with the state of the algorithm shown alongside.</p>
+  <p>I’ll start by checking every pair, then I use the sorted order to move two pointers inward without extra memory.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/two-pointers.html">Two Pointers</a> <span class="how">one pointer at each end; the sum decides which one moves inward</span></p>
 </header>
 
@@ -223,18 +223,18 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: try every pair</h2>
-      <p>Pick every <code>i</code>, then every <code>j &gt; i</code>, and check whether <code>numbers[i] + numbers[j]</code> equals the target. Sortedness is ignored completely.</p>
-      <pre class="code"><span class="ln">for i in range(len(numbers)):</span><span class="ln">    for j in range(i + 1, len(numbers)):</span><span class="ln">        if numbers[i] + numbers[j] == target:</span><span class="ln">            return [i + 1, j + 1]</span></pre>
-      <p style="margin-top:14px">That is <strong>O(n²)</strong> pairs. With <code>n = 30,000</code> it is roughly 450 million additions, which is far past what an interviewer wants to see, and it never uses the one fact the problem went out of its way to give us.</p>
-      <p>The hash-map trick from Two Sum brings it to O(n) time, but at the cost of O(n) space for the map. The problem explicitly asks for O(1) space, so that is not the intended answer either.</p>
+      <p>My first instinct is to pick every <code>i</code>, then every <code>j &gt; i</code>, and check their sum.</p>
+      <pre class="code"><span class="ln">for i in range(len(numbers)):</span><span class="ln">    for j in range(i + 1, len(numbers)):</span><span class="ln">        if numbers[i] + numbers[j] == target:</span><span class="ln">            return [i + 1, j + 1]</span><span class="ln">return []</span></pre>
+      <p style="margin-top:14px">It checks <strong>O(n²) pairs</strong>, so it takes <strong>O(n²) time</strong> and uses <strong>O(1) extra space</strong>.</p>
+      <p>The sorted endpoints tell me which pointer is safe to move. Comparing the two outer values tells me which pointer can move without losing a possible answer.</p>
     </section>
 
     <section class="step" data-state="reframe">
       <div class="n">STEP 3</div>
       <h2>Reframe: a sorted pair tells you which way to move</h2>
-      <p>Put one pointer on the smallest value and one on the largest. Look at their sum. Because the array is sorted, that single comparison eliminates a whole element, not just a pair.</p>
-      <p>If <code>numbers[left] + numbers[right]</code> is <strong>too small</strong>, then <code>numbers[left]</code> paired with <em>anything</em> is too small, because <code>numbers[right]</code> is already the largest partner available. So <code>left</code> can never be part of the answer and we move it up.</p>
-      <p>If the sum is <strong>too big</strong>, the mirror argument holds: <code>numbers[right]</code> is too big for every partner, because <code>numbers[left]</code> is the smallest one on offer. Move <code>right</code> down.</p>
+      <p>I put one pointer on the smallest value and one on the largest. I look at their sum. Because the array is sorted, that single comparison eliminates a whole element, not just a pair.</p>
+      <p>If <code>numbers[left] + numbers[right]</code> is <strong>too small</strong>, then <code>numbers[left]</code> paired with <em>anything</em> is too small, because <code>numbers[right]</code> is already the largest partner available. So <code>left</code> can never be part of the answer and I move it up.</p>
+      <p>If the sum is <strong>too big</strong>, the mirror argument holds: <code>numbers[right]</code> is too big for every partner, because <code>numbers[left]</code> is the smallest one on offer. I move <code>right</code> down.</p>
       <div class="callout">Every comparison throws away one element for good. That is why a single pass suffices, and why no memory is needed to record what was tried.</div>
     </section>
 
@@ -242,10 +242,10 @@
       <div class="n">STEP 4</div>
       <h2>The approach</h2>
       <ul>
-        <li><code>left, right = 0, len(numbers) - 1</code>: start at the two ends.</li>
-        <li><code>while left &lt; right</code>: keep going while the two pointers still name different elements.</li>
+        <li><code>left, right = 0, len(numbers) - 1</code>: I start at the two ends.</li>
+        <li><code>while left &lt; right</code>: I keep going while the two pointers still name different elements.</li>
         <li><code>total = numbers[left] + numbers[right]</code>: the only pair examined this round.</li>
-        <li><code>if total == target</code>: done, return <code>[left + 1, right + 1]</code> to convert to 1-based positions.</li>
+        <li><code>if total == target</code>: done, I return <code>[left + 1, right + 1]</code> to convert to 1-based positions.</li>
         <li><code>if total &lt; target</code>: <code>left += 1</code>, otherwise <code>right -= 1</code>.</li>
       </ul>
       <p>The panel shows <code>left</code> in blue and <code>right</code> in green, with the cells the pointers have already discarded dimmed out. Watch the sum shrink toward 9.</p>
@@ -254,14 +254,14 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: 2 + 15 is too big</h2>
-      <p>Start with <code>left = 0</code> and <code>right = 3</code>. The sum is <code>numbers[0] + numbers[3] = 2 + 15 = 17</code>, which is larger than 9.</p>
+      <p>I start with <code>left = 0</code> and <code>right = 3</code>. The sum is <code>numbers[0] + numbers[3] = 2 + 15 = 17</code>, which is larger than 9.</p>
       <p>Apply the reframe: 15 is the largest number in the array and even with the smallest partner it overshoots. So 15 is out of the running for every pair, and <code>right</code> moves down to 2. Nothing about <code>left</code> changes.</p>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: 2 + 11 is still too big</h2>
-      <p>Now <code>left = 0</code> and <code>right = 2</code>. The sum is <code>2 + 11 = 13</code>. Still larger than 9, so the same reasoning applies to 11: it cannot pair with anything at or above 2, and 2 is the smallest value we have.</p>
+      <p>Now <code>left = 0</code> and <code>right = 2</code>. The sum is <code>2 + 11 = 13</code>. Still larger than 9, so the same reasoning applies to 11: it cannot pair with anything at or above 2, and 2 is the smallest value I have.</p>
       <p><code>right</code> moves down again, to 1. Two elements have been eliminated with two additions, and no pair was ever revisited.</p>
     </section>
 
@@ -276,7 +276,7 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the loop bound and the index base</h2>
-      <p><strong>Letting the pointers meet.</strong> Write <code>while left &lt;= right</code> instead of <code>while left &lt; right</code> and the two pointers can land on the same element. Take the running array with <code>target = 4</code>: the sums go 17, 13, 9, and then with <code>left = right = 0</code> the loop computes <code>2 + 2 = 4</code> and returns <strong>[1, 1]</strong>. That uses element 1 twice, which the problem forbids. With the strict bound the loop simply ends.</p>
+      <p><strong>Letting the pointers meet.</strong> I write <code>while left &lt;= right</code> instead of <code>while left &lt; right</code> and the two pointers can land on the same element. I take the running array with <code>target = 4</code>: the sums go 17, 13, 9, and then with <code>left = right = 0</code> the loop computes <code>2 + 2 = 4</code> and returns <strong>[1, 1]</strong>. That uses element 1 twice, which the problem forbids. With the strict bound the loop simply ends.</p>
       <p><strong>Forgetting the 1-based shift.</strong> Returning <code>[left, right]</code> gives <strong>[0, 1]</strong> for the running example, which reads as a plausible answer and fails every test. The conversion belongs in the return statement and nowhere else.</p>
       <p><strong>Moving the wrong pointer.</strong> If <code>total &gt; target</code> moves <code>left</code> up, the sum only grows: 17, then 22, then 26, and the loop walks off the end without ever finding 9.</p>
       <div class="callout warn">Two different indices, so <code>left &lt; right</code>. Too small moves <code>left</code> up, too big moves <code>right</code> down, and the answer is shifted by one only when returning.</div>
@@ -307,7 +307,7 @@
         <li><code>left += 1</code> when too small, <code>right -= 1</code> when too big: each branch discards an element that can never be in the answer.</li>
         <li><code>return []</code> is never reached because a solution is guaranteed, but keeps the function total.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>on a sorted array, a too-small sum means the left value is useless and a too-big sum means the right value is useless, so walk inward.</em></div>
+      <div class="callout">One-line summary to remember: <em>on a sorted array, a too-small sum means the left value is useless and a too-big sum means the right value is useless, so I walk inward.</em></div>
     </section>
 
     <div class="code-final">

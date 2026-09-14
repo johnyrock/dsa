@@ -204,7 +204,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Stack · LeetCode #853</div>
   <h1>Car Fleet, narrated</h1>
-  <p>Scroll through the thinking, from simulating the road tick by tick to sorting by position and stacking arrival times, with the state of the algorithm shown alongside.</p>
+  <p>I will first merge fleets through repeated passes over their arrival times, then show the single backward pass that does the same work directly.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/stack.html">Stack</a> <span class="how">sort front to back; a car slower than the fleet ahead starts a new fleet, otherwise it merges</span></p>
 </header>
 
@@ -222,20 +222,20 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instinct: simulate the road</h2>
-      <p>Advance time in small steps, move every car by <code>speed × dt</code>, and whenever a car would pass the one ahead, clamp it to that car's position and speed. Stop when everyone has crossed <code>target</code> and count the distinct groups.</p>
-      <pre class="code"><span class="ln">cars = sorted(zip(position, speed))</span><span class="ln">while any(p &lt; target for p, _ in cars):</span><span class="ln">    for i in range(len(cars)):</span><span class="ln">        p, s = cars[i]</span><span class="ln">        p += s * dt</span><span class="ln">        if i + 1 &lt; len(cars) and p &gt;= cars[i + 1][0]:</span><span class="ln">            p, s = cars[i + 1]      # caught up: merge</span><span class="ln">        cars[i] = (p, s)</span></pre>
-      <p style="margin-top:14px">This is O(n × T / dt): the number of cars times the number of ticks. With <code>target</code> up to a million and speeds as low as 1, that is a million ticks per car, and the choice of <code>dt</code> is a correctness problem in its own right, because two cars can meet between ticks.</p>
-      <p>The simulation tracks positions over time, but the question only cares about one moment per car: when does it reach the target, and does it get there before the car ahead?</p>
+      <h2>First instinct: repeatedly merge adjacent arrival times</h2>
+      <p>I can sort cars from front to back, calculate their independent arrival times, and repeatedly merge a car into the fleet ahead whenever it would arrive no later.</p>
+      <pre class="code"><span class="ln">def carFleet(target, position, speed):</span><span class="ln">    times = [(target - p) / s for p, s in sorted(zip(position, speed), reverse=True)]</span><span class="ln">    changed = True</span><span class="ln">    while changed:</span><span class="ln">        changed = False</span><span class="ln">        for i in range(1, len(times)):</span><span class="ln">            if times[i] &lt;= times[i - 1]:</span><span class="ln">                times.pop(i)</span><span class="ln">                changed = True</span><span class="ln">                break</span><span class="ln">    return len(times)</span></pre>
+      <p style="margin-top:14px">This is correct: a car that would arrive earlier catches the fleet in front and shares its later arrival time. Sorting costs O(n log n), and repeated scans and removals make the total time O(n²). The arrival-time list uses O(n) space.</p>
+      <p>I decide each merge while I move from the frontmost car backward. Keeping only the arrival times of fleets I have already formed removes the repeated passes.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>Key insight: compare arrival times, front to back</h2>
-      <p>Ignore the other cars for a moment and compute, for each car, how long it <em>would</em> take on an empty road: <code>time = (target − pos) / spd</code>.</p>
-      <p>Now look at two cars where A is ahead of B. If B's time is less than or equal to A's, B would reach the target no later than A, which is impossible without passing, so B must catch A before the target and merge into A's fleet. That fleet then arrives at A's time, because the leader sets the pace. If B's time is greater, B never catches A and is its own fleet.</p>
-      <div class="callout">A car's fate depends only on the fleet directly ahead of it, and that fleet's time is the time of its slowest, front-most leader. So process cars from the front, and each car only has to look at the most recent fleet.</div>
-      <p>"Most recent fleet" is a stack top. Push a time when a new fleet starts; when a car merges, push nothing, because the fleet's time is already there.</p>
+      <p>Ignore the other cars for a moment and compute, for each car, how long it <em>would</em> I take on an empty road: <code>time = (target − pos) / spd</code>.</p>
+      <p>I look at two cars where A is ahead of B. If B's time is less than or equal to A's, B would reach the target no later than A, which is impossible without passing, so B must catch A before the target and merge into A's fleet. That fleet then arrives at A's time, because the leader sets the pace. If B's time is greater, B never catches A and is its own fleet.</p>
+      <div class="callout">A car's fate depends only on the fleet directly ahead of it, and that fleet's time is the time of its slowest, front-most leader. I process cars from the front, and each car only has to look at the most recent fleet.</div>
+      <p>"Most recent fleet" is a stack top. I push a time when a new fleet starts; when a car merges, I push nothing, because the fleet's time is already there.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -245,7 +245,7 @@
         <li><code>cars = sorted(zip(position, speed), reverse=True)</code>: pair each position with its speed and order by position, closest to the target first.</li>
         <li><code>fleets = []</code>: a stack of arrival times, one per fleet, front-most at the bottom.</li>
         <li>For each car, <code>time = (target − pos) / spd</code>, as a float.</li>
-        <li><code>if not fleets or time &gt; fleets[-1]</code>: slower than the fleet ahead (or no fleet ahead), so push a new fleet.</li>
+        <li><code>if not fleets or time &gt; fleets[-1]</code>: slower than the fleet ahead (or no fleet ahead), so I push a new fleet.</li>
         <li>Otherwise do nothing: the car catches the fleet on top and rides with it.</li>
         <li><code>return len(fleets)</code>.</li>
       </ul>
@@ -255,23 +255,23 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: the cars at 10 and 8</h2>
-      <p>Car at 10, speed 2: <code>time = (12 − 10) / 2 = 1.0</code>. The stack is empty, so this is the first fleet. Push 1.0.</p>
-      <p>Car at 8, speed 4: <code>time = (12 − 8) / 4 = 1.0</code>. Compare with the top: <code>1.0 &gt; 1.0</code> is false. This car would arrive at the same moment as the fleet ahead, which means it reaches that fleet exactly at the target line, and by the rules that is the same fleet. Push nothing.</p>
+      <p>Car at 10, speed 2: <code>time = (12 − 10) / 2 = 1.0</code>. The stack is empty, so this is the first fleet. I push 1.0.</p>
+      <p>Car at 8, speed 4: <code>time = (12 − 8) / 4 = 1.0</code>. I compare with the top: <code>1.0 &gt; 1.0</code> is false. This car would arrive at the same moment as the fleet ahead, which means it reaches that fleet exactly at the target line, and by the rules that is the same fleet. I push nothing.</p>
       <p>The stack is still <code>[1.0]</code>. One fleet so far, two cars in it.</p>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: the cars at 5 and 3</h2>
-      <p>Car at 5, speed 1: <code>time = (12 − 5) / 1 = 7.0</code>. Top is 1.0, and <code>7.0 &gt; 1.0</code>, so it never catches the leaders. Push 7.0: a second fleet.</p>
-      <p>Car at 3, speed 3: <code>time = (12 − 3) / 3 = 3.0</code>. Top is now 7.0, and <code>3.0 &gt; 7.0</code> is false. On an empty road this car would arrive four hours earlier than the crawler at 5, so it is certain to catch it, and from then on it crawls too. Push nothing.</p>
-      <p>Notice that the merged fleet's time stays 7.0, the leader's time, not 3.0. That is exactly why nothing is pushed or replaced: the stack already holds the right number.</p>
+      <p>Car at 5, speed 1: <code>time = (12 − 5) / 1 = 7.0</code>. Top is 1.0, and <code>7.0 &gt; 1.0</code>, so it never catches the leaders. I push 7.0: a second fleet.</p>
+      <p>Car at 3, speed 3: <code>time = (12 − 3) / 3 = 3.0</code>. Top is now 7.0, and <code>3.0 &gt; 7.0</code> is false. On an empty road this car would arrive four hours earlier than the crawler at 5, so it is certain to catch it, and from then on it crawls too. I push nothing.</p>
+      <p>I see that the merged fleet's time stays 7.0, the leader's time, not 3.0. That is exactly why nothing is pushed or replaced: the stack already holds the right number.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: the car at 0, and the answer</h2>
-      <p>Car at 0, speed 1: <code>time = (12 − 0) / 1 = 12.0</code>. Top is 7.0, and <code>12.0 &gt; 7.0</code>. It is slower than everything ahead and never catches up. Push 12.0.</p>
+      <p>Car at 0, speed 1: <code>time = (12 − 0) / 1 = 12.0</code>. Top is 7.0, and <code>12.0 &gt; 7.0</code>. It is slower than everything ahead and never catches up. I push 12.0.</p>
       <p>The loop ends with <code>fleets = [1.0, 7.0, 12.0]</code>, and <code>len(fleets)</code> is <strong>3</strong>.</p>
       <div class="callout">The stack was never popped. Every car either starts a fleet (push) or joins the one on top (no-op). That is what makes the pass after sorting a single linear sweep.</div>
     </section>
@@ -280,9 +280,9 @@
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the comparison, the sort order, and integer division</h2>
       <p><strong><code>&gt;=</code> instead of <code>&gt;</code>.</strong> The car at 8 has <code>time = 1.0</code>, equal to the fleet ahead. With <code>time &gt;= fleets[-1]</code> it is pushed as its own fleet and the function returns <strong>4</strong> instead of 3. Equal times meet at the line and are one fleet.</p>
-      <p><strong>Sorting ascending.</strong> Drop <code>reverse=True</code> and the first car processed is the one at 0 with time 12.0. Every later car has a smaller time, nothing is ever pushed again, and the answer is <strong>1</strong>. Each car must be compared with the car <em>ahead</em>, so the front car has to go first.</p>
+      <p><strong>Sorting ascending.</strong> I drop <code>reverse=True</code> and the first car processed is the one at 0 with time 12.0. Every later car has a smaller time, nothing is ever pushed again, and the answer is <strong>1</strong>. Each car must be compared with the car <em>ahead</em>, so the front car has to go first.</p>
       <p><strong>Integer division.</strong> With <code>(target − pos) // spd</code>, <code>target = 10</code>, cars at 8 (speed 2) and 6 (speed 3) both get time 1: the true times are 1.0 and 1.33, so they never meet, but the rounding merges them and returns 1 instead of 2.</p>
-      <div class="callout warn">Sort descending by position, compare with strict <code>&gt;</code>, and keep the time as a float.</div>
+      <div class="callout warn">I sort descending by position, I compare with strict <code>&gt;</code>, and keep the time as a float.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -310,7 +310,7 @@
         <li><code>fleets.append(time)</code> only in that case; a merging car pushes nothing.</li>
         <li><code>return len(fleets)</code>.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>walk the cars from the front; a car that would arrive later than the fleet ahead is a new fleet, anything else merges.</em></div>
+      <div class="callout">One-line summary to remember: <em>I walk the cars from the front; a car that would arrive later than the fleet ahead is a new fleet, anything else merges.</em></div>
     </section>
 
     <div class="code-final">

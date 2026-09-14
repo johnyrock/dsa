@@ -217,7 +217,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Dynamic Programming · LeetCode #62</div>
   <h1>Unique Paths, narrated</h1>
-  <p>Scroll through the thinking, from enumerating every right/down sequence to a 2-D table and then a single rolling row, with the state of the algorithm shown alongside.</p>
+  <p>I count paths into each cell from its top and left neighbours, reusing every sub-grid count once.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">paths(r, c) = paths(r−1, c) + paths(r, c−1), one rolling row</span></p>
 </header>
 
@@ -235,11 +235,11 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instinct: recurse on the two moves</h2>
-      <p>From any cell, either move right or move down, and add up the routes from each. Reaching the last row or column leaves only one way home.</p>
+<h2>First instinct: recurse on the two moves</h2>
+      <p>My first instinct is to branch from each cell: I move right or down, then add the route counts. Once I reach the last row or column, only one route remains.</p>
       <pre class="code"><span class="ln">def paths(r, c):</span><span class="ln">    if r == m - 1 or c == n - 1:</span><span class="ln">        return 1</span><span class="ln">    return paths(r + 1, c) + paths(r, c + 1)</span></pre>
-      <p style="margin-top:14px">Correct, and exponential: each call branches twice, and the depth is <code>m + n − 2</code>, so roughly <strong>O(2^(m+n))</strong>. For <code>100 × 100</code> it never returns.</p>
-      <p>The waste is visible on the example: <code>paths(1, 1)</code> is reached by right-then-down and by down-then-right, and both callers recompute the entire sub-grid below it. Deeper cells are recomputed thousands of times.</p>
+      <p style="margin-top:14px">Each call branches twice, so this takes roughly <strong>O(2^(m+n)) time</strong> and <strong>O(m+n) space</strong> for its call stack. For <code>100 × 100</code>, it never finishes.</p>
+      <p>I reach <code>paths(1, 1)</code> after right-then-down and after down-then-right, yet both routes recompute the same sub-grid. I only need to count each cell once.</p>
     </section>
 
     <section class="step" data-state="idea">
@@ -247,8 +247,8 @@
       <h2>The key idea: how did the robot get here?</h2>
       <p>Flip the direction of the question. Instead of "how many routes from this cell to the end", ask "how many routes from the start <em>to</em> this cell". The robot's last move into cell <code>(r, c)</code> was either a down from <code>(r − 1, c)</code> or a right from <code>(r, c − 1)</code>. There is no third way in.</p>
       <div class="callout"><code>paths(r, c) = paths(r − 1, c) + paths(r, c − 1)</code>. Every cell in the first row and the first column is 1: the only route there is a straight line.</div>
-      <p>Fill the table row by row, left to right, and both neighbours are already final when a cell needs them. The bottom-right cell is the answer.</p>
-      <p>Then notice what each row reads: only the row directly above it, and the cell just to its left in the same row. So one row can be reused. If <code>row[c]</code> still holds the value from the row above when we do <code>row[c] += row[c − 1]</code>, the sum is exactly "above plus left".</p>
+      <p>I fill the table row by row, left to right, so both neighbours are final when a cell needs them. The bottom-right cell is the answer.</p>
+      <p>I then see that each row reads only the row above it and the cell to its left. So I can reuse one row. If <code>row[c]</code> still holds the value from above when I do <code>row[c] += row[c − 1]</code>, the sum is exactly “above plus left”.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -257,7 +257,7 @@
       <ul>
         <li><code>row = [1] * n</code> — the first row of the table: one route to every cell.</li>
         <li><code>for _ in range(1, m)</code> — build rows 1 through <code>m − 1</code>; the seed already is row 0.</li>
-        <li><code>for c in range(1, n)</code> — column 0 stays 1, so start at column 1.</li>
+        <li><code>for c in range(1, n)</code> — column 0 stays 1, so I begin at column 1.</li>
         <li><code>row[c] += row[c − 1]</code> — old <code>row[c]</code> is "from above", <code>row[c − 1]</code> is already "from the left".</li>
         <li><code>return row[n − 1]</code> — the bottom-right cell after the last row.</li>
       </ul>
@@ -274,7 +274,7 @@
       <div class="n">STEP 6</div>
       <h2>Trace it: row 1</h2>
       <p>First pass of the outer loop. <code>c = 1</code>: <code>row[1] = 1 + row[0] = 1 + 1 = 2</code>. <code>c = 2</code>: <code>row[2] = 1 + row[1] = 1 + 2 = 3</code>. <code>c = 3</code>: <code>1 + 3 = 4</code>. And so on: each cell takes the 1 it already held (the route from above) and adds the cell to its left.</p>
-      <p>After the pass, <code>row = [1, 2, 3, 4, 5, 6, 7]</code>. Check one by hand: cell <code>(1, 2)</code> is reached by DRR, RDR, RRD — three routes.</p>
+      <p>After the pass, <code>row = [1, 2, 3, 4, 5, 6, 7]</code>. I can check cell <code>(1, 2)</code> by hand: DRR, RDR, and RRD give its three routes.</p>
     </section>
 
     <section class="step" data-state="t3">
@@ -288,7 +288,7 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: one row too many, or zeros</h2>
-      <p><strong>Looping <code>range(m)</code> instead of <code>range(1, m)</code>.</strong> The seed row already <em>is</em> row 0, so the outer loop must run <code>m − 1</code> times. Run it <code>m</code> times and you compute a fourth row: <code>[1, 4, 10, 20, 35, 56, 84]</code>. The function returns <strong>84</strong> — the answer for a 4 × 7 grid — instead of 28. It is a plausible-looking number, which is what makes it nasty.</p>
+      <p><strong>Looping <code>range(m)</code> instead of <code>range(1, m)</code>.</strong> The seed row already <em>is</em> row 0, so the outer loop must run <code>m − 1</code> times. If I run it <code>m</code> times, I compute a fourth row: <code>[1, 4, 10, 20, 35, 56, 84]</code>. The function returns <strong>84</strong>—the answer for a 4 × 7 grid—instead of 28. It is a plausible-looking number, which is what makes it nasty.</p>
       <p><strong>Seeding with zeros.</strong> <code>row = [0] * n</code> gives the table no starting routes. Every <code>row[c] += row[c − 1]</code> adds zero to zero and the function returns <strong>0</strong>.</p>
       <p><strong>Starting the inner loop at <code>c = 0</code>.</strong> <code>row[0] += row[−1]</code> silently reads the <em>last</em> cell in Python and corrupts column 0, which must stay 1.</p>
       <div class="callout warn">Count the outer iterations for <code>m = 1</code>: there must be zero, and the seed row is returned untouched.</div>
@@ -297,7 +297,7 @@
     <section class="step" data-state="complexity">
       <div class="n">STEP 9</div>
       <h2>Time and space</h2>
-      <p>One addition per cell of the grid: <strong>O(m × n) time</strong>. One row of length n: <strong>O(n) space</strong> — or O(min(m, n)) if you roll along the shorter side.</p>
+      <p>I do one addition per cell of the grid: <strong>O(m × n) time</strong>. I keep one row of length n: <strong>O(n) space</strong>—or O(min(m, n)) if I roll along the shorter side.</p>
       <table>
         <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
         <tr><td>Plain recursion</td><td>O(2^(m+n))</td><td>O(m + n) stack</td></tr>

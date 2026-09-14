@@ -216,7 +216,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Backtracking · LeetCode #90</div>
   <h1>Subsets II, narrated</h1>
-  <p>Scroll through the thinking, from generating every subset and deduplicating afterwards to a recursion that never builds a duplicate in the first place, with the path, the recursion tree, and the answers shown alongside.</p>
+  <p>I will first create every index-based subset and deduplicate afterward, then I skip equal sibling choices before duplicate subsets are built.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/backtracking.html">Backtracking</a> <span class="how">sort, then at each level skip a value equal to the previous sibling choice; every node is an answer</span></p>
 </header>
 
@@ -234,16 +234,16 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: generate everything, then deduplicate</h2>
-      <p>Run the ordinary Subsets recursion, which treats the two <code>2</code>s as different elements, and throw the results into a set of sorted tuples:</p>
-      <pre class="code"><span class="ln">seen = set()</span><span class="ln">for subset in all_subsets(nums):        # 2^n of them</span><span class="ln">    seen.add(tuple(sorted(subset)))</span><span class="ln">return [list(t) for t in seen]</span></pre>
-      <p style="margin-top:14px">It works. It is also <strong>O(n log n · 2ⁿ)</strong> for the sorting plus the memory of a set holding up to <code>2ⁿ</code> tuples, and for an input like <code>[2, 2, 2, 2, 2]</code> it builds 32 subsets to keep 6. The duplicates are not a rare edge case; when values repeat, most of the work is producing things that will be thrown away.</p>
-      <p>The better question is: <em>at which moment</em> does the recursion first commit to building something it has already built? If we can name that moment, we can skip it with one <code>continue</code>.</p>
+      <p>I can generate every subset by index, I sort each selected value list, and use a set to remove equal subsets caused by duplicate values.</p>
+      <pre class="code"><span class="ln">def subsetsWithDup(nums):</span><span class="ln">    seen = set()</span><span class="ln">    for mask in range(1 &lt;&lt; len(nums)):</span><span class="ln">        subset = [nums[i] for i in range(len(nums)) if mask &gt;&gt; i &amp; 1]</span><span class="ln">        seen.add(tuple(sorted(subset)))</span><span class="ln">    return [list(subset) for subset in seen]</span></pre>
+      <p style="margin-top:14px">This is correct. It creates <code>2ⁿ</code> index subsets and sorts up to <code>n</code> values in each, so the time complexity is O(n log n · 2ⁿ). The deduplication set has O(n · 2ⁿ) space complexity in the worst case.</p>
+      <p>I sort the input once and skip a value when it repeats a sibling choice at the same recursion depth. Then duplicate subsets are never constructed.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>Key insight: a repeated value is only a duplicate as a <em>sibling</em> choice</h2>
-      <p>Sort first, so equal values are adjacent: <code>[1, 2, 2]</code>. Now look at one level of the recursion, the loop <code>for i in range(start, len(nums))</code> inside a single call. Each iteration is a sibling branch: "extend the current path with <code>nums[i]</code>". If two consecutive iterations offer the same value, the second one would rebuild exactly the subtree the first one already built, with the same prefix. That is the duplicate, and it is safe to skip.</p>
+      <p>I sort first, so equal values are adjacent: <code>[1, 2, 2]</code>. I look at one level of the recursion, the loop <code>for i in range(start, len(nums))</code> inside a single call. Each iteration is a sibling branch: "extend the current path with <code>nums[i]</code>". If two consecutive iterations offer the same value, the second one would rebuild exactly the subtree the first one already built, with the same prefix. That is the duplicate, and it is safe to skip.</p>
       <ul>
         <li>The condition is <code>if i &gt; start and nums[i] == nums[i − 1]: continue</code>.</li>
         <li><code>nums[i] == nums[i − 1]</code> says the value repeats. <code>i &gt; start</code> says index <code>i − 1</code> was a sibling choice at <em>this</em> level, not the element the parent call just placed.</li>
@@ -260,8 +260,8 @@
         <li><code>result = []</code>, <code>path = []</code>: the answers and the subset under construction.</li>
         <li><code>backtrack(start)</code> records <code>path[:]</code> on entry, because every prefix is a subset.</li>
         <li><code>for i in range(start, len(nums))</code>: only later elements.</li>
-        <li><code>if i &gt; start and nums[i] == nums[i − 1]: continue</code>: skip a repeated sibling.</li>
-        <li><code>path.append(nums[i])</code>, <code>backtrack(i + 1)</code>, <code>path.pop()</code>: choose, recurse past it, undo.</li>
+        <li><code>if i &gt; start and nums[i] == nums[i − 1]: continue</code>: I skip a repeated sibling.</li>
+        <li><code>path.append(nums[i])</code>, <code>backtrack(i + 1)</code>, <code>path.pop()</code>: I choose, recurse past it, undo.</li>
         <li><code>backtrack(0)</code> and <code>return result</code>.</li>
       </ul>
       <p>Two lines differ from Subsets: the sort and the <code>continue</code>. Everything the panel shows in the next three steps is the ordinary recursion tree with two branches pruned off.</p>
@@ -270,24 +270,24 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: down the left edge to <code>[1, 2, 2]</code></h2>
-      <p><code>backtrack(0)</code> records <code>[]</code>. <code>i = 0</code>: no previous sibling to compare with (<code>0 &gt; 0</code> is false), push <code>1</code>, call <code>backtrack(1)</code>, record <code>[1]</code>. <code>i = 1</code>: <code>1 &gt; 1</code> is false, so no skip; push <code>2</code>, call <code>backtrack(2)</code>, record <code>[1, 2]</code>.</p>
-      <p>Now <code>i = 2</code> with <code>start = 2</code>: <code>nums[2] == nums[1]</code> is true, but <code>2 &gt; 2</code> is false, so the check does <em>not</em> fire. This is the second copy stacked after the first. Push <code>2</code>, call <code>backtrack(3)</code>, record <code>[1, 2, 2]</code>, empty loop, return.</p>
+      <p><code>backtrack(0)</code> records <code>[]</code>. <code>i = 0</code>: no previous sibling to compare with (<code>0 &gt; 0</code> is false), I push <code>1</code>, call <code>backtrack(1)</code>, I record <code>[1]</code>. <code>i = 1</code>: <code>1 &gt; 1</code> is false, so no skip; I push <code>2</code>, call <code>backtrack(2)</code>, I record <code>[1, 2]</code>.</p>
+      <p>Now <code>i = 2</code> with <code>start = 2</code>: <code>nums[2] == nums[1]</code> is true, but <code>2 &gt; 2</code> is false, so the check does <em>not</em> fire. This is the second copy stacked after the first. I push <code>2</code>, call <code>backtrack(3)</code>, I record <code>[1, 2, 2]</code>, empty loop, I return.</p>
       <p>Four calls, four answers, all distinct, and the <code>i &gt; start</code> half of the condition has just earned its keep by letting <code>[1, 2, 2]</code> through.</p>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: the first skip, under <code>[1]</code></h2>
-      <p>Pop back to <code>[1, 2]</code>; its loop is done. Pop back to <code>[1]</code>, whose loop continues with <code>i = 2</code> and <code>start = 1</code>. Now <code>nums[2] == nums[1]</code> and <code>2 &gt; 1</code>: both halves true, <code>continue</code>.</p>
+      <p>I pop back to <code>[1, 2]</code>; its loop is done. I pop back to <code>[1]</code>, whose loop continues with <code>i = 2</code> and <code>start = 1</code>. Now <code>nums[2] == nums[1]</code> and <code>2 &gt; 1</code>: both halves true, <code>continue</code>.</p>
       <p>What was skipped? Pushing the second <code>2</code> onto <code>[1]</code> would give <code>[1, 2]</code> again, and its subtree would be a copy of the one just explored from index 1, minus the branches that index 1 could reach. Everything it could produce, <code>[1, 2]</code> and nothing more, is already in <code>result</code>. The panel draws that pruned branch dashed.</p>
-      <p>Pop back to the root: <code>path = []</code>, the loop moves on to <code>i = 1</code>.</p>
+      <p>I pop back to the root: <code>path = []</code>, the loop moves on to <code>i = 1</code>.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: <code>[2]</code>, <code>[2, 2]</code>, and the second skip</h2>
-      <p>At the root, <code>i = 1</code>: <code>nums[1] = 2</code>, <code>nums[0] = 1</code>, different, no skip. Push <code>2</code>, call <code>backtrack(2)</code>, record <code>[2]</code>. Inside, <code>i = 2 == start</code>: the second copy after the first, allowed. Push, record <code>[2, 2]</code>, return, pop.</p>
-      <p>Back at the root, <code>i = 2</code> with <code>start = 0</code>: <code>nums[2] == nums[1]</code> and <code>2 &gt; 0</code>, skip. That would have been a second <code>[2]</code> and, under it, nothing new. The loop ends.</p>
+      <p>At the root, <code>i = 1</code>: <code>nums[1] = 2</code>, <code>nums[0] = 1</code>, different, no skip. I push <code>2</code>, call <code>backtrack(2)</code>, I record <code>[2]</code>. Inside, <code>i = 2 == start</code>: the second copy after the first, allowed. I push, I record <code>[2, 2]</code>, I return, I pop.</p>
+      <p>Back at the root, <code>i = 2</code> with <code>start = 0</code>: <code>nums[2] == nums[1]</code> and <code>2 &gt; 0</code>, I skip. That would have been a second <code>[2]</code> and, under it, nothing new. The loop ends.</p>
       <p><code>result</code> is <code>[[], [1], [1,2], [1,2,2], [2], [2,2]]</code>: six calls, six answers, two skips. The brute force made eight calls and then threw two away.</p>
       <div class="callout">Every skipped branch is a sibling that repeats the value of the sibling just before it. Never a child that repeats its parent.</div>
     </section>
@@ -298,7 +298,7 @@
       <p><strong>Writing <code>i &gt; 0</code> instead of <code>i &gt; start</code>.</strong> The check now also fires when <code>i == start</code>, so the second copy is <em>never</em> placed, not even after the first. <code>[1, 2, 2]</code> and <code>[2, 2]</code> vanish and the output is <strong><code>[[], [1], [1, 2], [2]]</code></strong>, four subsets instead of six. The panel shows the tree with those two branches missing. The comparison must be against <code>start</code>, because that is what separates "sibling" from "child".</p>
       <p><strong>Dropping the sort.</strong> With input <code>[2, 1, 2]</code> the two <code>2</code>s are not adjacent, the neighbour check never sees them, and the output has eight entries including <code>[2]</code> twice and both <code>[2, 1]</code> and <code>[1, 2]</code>.</p>
       <p><strong>Dropping the skip entirely.</strong> That is plain Subsets: eight entries for <code>[1, 2, 2]</code>, with <code>[1, 2]</code> and <code>[2]</code> duplicated.</p>
-      <div class="callout warn">Sort, then skip only when <code>i &gt; start</code>: a repeated value is a duplicate as a sibling, never as a child.</div>
+      <div class="callout warn">I sort, then I skip only when <code>i &gt; start</code>: a repeated value is a duplicate as a sibling, never as a child.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -322,10 +322,10 @@
         <li><code>result.append(path[:])</code> on entry: every node is a subset.</li>
         <li><code>for i in range(start, len(nums))</code>: only later elements.</li>
         <li><code>if i &gt; start and nums[i] == nums[i − 1]: continue</code>: a repeated sibling would rebuild an explored subtree.</li>
-        <li><code>path.append(nums[i])</code>, <code>backtrack(i + 1)</code>, <code>path.pop()</code>: choose, recurse past it, undo.</li>
+        <li><code>path.append(nums[i])</code>, <code>backtrack(i + 1)</code>, <code>path.pop()</code>: I choose, recurse past it, undo.</li>
         <li><code>backtrack(0)</code>; <code>return result</code>.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>sort, and at each level skip a value equal to the one the previous sibling already tried.</em></div>
+      <div class="callout">One-line summary to remember: <em>I sort, and at each level skip a value equal to the one the previous sibling already tried.</em></div>
     </section>
 
     <div class="code-final">

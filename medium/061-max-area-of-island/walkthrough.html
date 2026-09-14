@@ -198,8 +198,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Graph · LeetCode #695</div>
   <h1>Max Area of Island, narrated</h1>
-  <p>Scroll through the thinking, from counting land cells to a flood fill that measures each island the first time it is touched, with the state of the algorithm shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph Traversal</a> <span class="how">scan cells, on unvisited land flood-fill it, count the pops, keep the max</span></p>
+  <p>I will first flood-fill anew from every land cell, then mark an island as I measure it so I never count it twice.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph Traversal</a> <span class="how">I scan cells, flood-fill each unvisited land cell, count its pops, and keep the maximum</span></p>
 </header>
 
 <div class="layout">
@@ -214,14 +214,12 @@
       <p>Unlike Number of Islands, the count of islands is irrelevant. What matters is the size of each one, and only the biggest survives to the return.</p>
     </section>
 
-    <section class="step" data-state="naive">
-      <div class="n">STEP 2</div>
-      <h2>First instinct: count the land, or grow from every cell</h2>
-      <p>Counting <code>1</code> cells gives 8 for the example, which is the total land, not the biggest island. The question is about pieces, not the sum.</p>
-      <p>The next idea is honest but wasteful: from <em>every</em> land cell, run a flood fill on a fresh copy of the grid and measure what it reaches:</p>
-      <pre class="code"><span class="ln">best = 0</span><span class="ln">for r in range(rows):</span><span class="ln">    for c in range(cols):</span><span class="ln">        if grid[r][c] == 1:</span><span class="ln">            best = max(best, fill(copy.deepcopy(grid), r, c))</span></pre>
-      <p style="margin-top:14px">Every cell of a 4-cell island starts its own fill and rediscovers the same 4 cells, so the island is measured four times. With a 50 × 50 grid of all land that is 2,500 fills of 2,500 cells each: <strong>O((m × n)²)</strong>, plus a grid copy per fill.</p>
-      <div class="callout warn">The waste is that a fill from any cell of an island visits exactly the same cells as a fill from any other cell of it. One measurement per island is enough.</div>
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 2</div><h2>First instinct: flood-fill from every land cell</h2>
+      <p>I can start a fresh flood fill from each land cell and keep the largest area it reaches.</p>
+      <pre class="code"><span class="ln">def maxAreaOfIsland(grid):</span><span class="ln">    def area(r, c, seen):</span><span class="ln">        if not (0 &lt;= r &lt; len(grid) and 0 &lt;= c &lt; len(grid[0])) or grid[r][c] == 0 or (r, c) in seen: return 0</span><span class="ln">        seen.add((r, c)); return 1 + area(r+1,c,seen) + area(r-1,c,seen) + area(r,c+1,seen) + area(r,c-1,seen)</span><span class="ln">    return max([area(r, c, set()) for r in range(len(grid)) for c in range(len(grid[0])) if grid[r][c]] or [0])</span></pre>
+      <p style="margin-top:14px">This is correct, but an island of <code>k</code> cells is rediscovered <code>k</code> times. The worst-case time complexity is O((m · n)²), and the fresh visited sets use O(m · n) space per fill.</p>
+      <p>Sharing visited information between fills removes the repeated work. Once I measure one land cell's island, I mark all of its cells and never start from them again.</p>
     </section>
 
     <section class="step" data-state="reframe">
@@ -235,11 +233,11 @@
     <section class="step" data-state="idea">
       <div class="n">STEP 4</div>
       <h2>The key idea: sink the island as you measure it</h2>
-      <p>Scan the grid row by row. When the scan lands on a <code>1</code>:</p>
+      <p>I scan the grid row by row. When I land on a <code>1</code>:</p>
       <ul>
-        <li>Set <code>grid[r][c] = 0</code> right away, push the cell, and reset <code>area = 0</code> for this island.</li>
-        <li>Loop <code>while stack</code>: pop a cell, do <code>area += 1</code>, and for each of its four neighbours that is in bounds and still <code>1</code>, sink it with <code>grid[nr][nc] = 0</code> and push it.</li>
-        <li>When the stack empties, <code>best = max(best, area)</code>.</li>
+        <li>I set <code>grid[r][c] = 0</code> right away, push the cell, and reset <code>area = 0</code> for this island.</li>
+        <li>Inside <code>while stack</code>, I pop a cell, do <code>area += 1</code>, and sink and push each in-bounds neighbouring <code>1</code>.</li>
+        <li>When the stack empties, I update <code>best = max(best, area)</code>.</li>
       </ul>
       <p>Overwriting to <code>0</code> is the visited set. It costs no extra memory, and it guarantees the outer scan passes over the rest of this island without starting a second fill. Sink on <em>push</em>, not on pop, so no cell is pushed twice and no cell is counted twice.</p>
       <p>Counting on <em>pop</em> is what makes the seed cell count: it is pushed before the loop, popped first, and counted like every other cell.</p>
@@ -248,23 +246,23 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: the first island, area 3</h2>
-      <p>The scan crosses <code>(0, 0)</code> and <code>(0, 1)</code>, both water, and lands on <code>(0, 2)</code>, which is land. Sink it, push it, <code>area = 0</code>.</p>
-      <p>Pop <code>(0, 2)</code>: <code>area = 1</code>. Its neighbours are <code>(1, 2)</code> below (land: sink and push), nothing above, <code>(0, 3)</code> water, <code>(0, 1)</code> water. Pop <code>(1, 2)</code>: <code>area = 2</code>. Below is <code>(2, 2)</code>, water; above is already sunk; right is <code>(1, 3)</code>, water; left is <code>(1, 1)</code>, land, so sink and push. Pop <code>(1, 1)</code>: <code>area = 3</code>, and all four of its neighbours are water or sunk.</p>
+      <p>I scan past water at <code>(0, 0)</code> and <code>(0, 1)</code>, then reach land at <code>(0, 2)</code>. I sink and push it with <code>area = 0</code>.</p>
+      <p>I pop <code>(0, 2)</code>, making <code>area = 1</code>, and sink and push its land neighbour <code>(1, 2)</code>. I next pop <code>(1, 2)</code> for <code>area = 2</code>, then discover, sink, and push <code>(1, 1)</code>. Popping <code>(1, 1)</code> brings the area to <code>3</code>; its neighbours are all water or sunk.</p>
       <p>The stack is empty, so <code>best = max(0, 3) = 3</code>. When the scan later reaches <code>(1, 1)</code> and <code>(1, 2)</code> it sees <code>0</code> and skips them; this island is never measured a second time.</p>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: the second island, area 4</h2>
-      <p>More water, then <code>(2, 3)</code>. Sink it, push it, reset <code>area = 0</code>. Pop <code>(2, 3)</code>: <code>area = 1</code>; only <code>(3, 3)</code> below is land, so sink and push it.</p>
-      <p>Pop <code>(3, 3)</code>: <code>area = 2</code>. Below is out of bounds, above is sunk, right is <code>(3, 4)</code> (land: sink, push), left is <code>(3, 2)</code> (land: sink, push). The stack is now <code>[(3, 4), (3, 2)]</code>; the panel shows both pushed cells sunk and <code>(3, 3)</code> as the cell being explored.</p>
-      <p>Pop <code>(3, 2)</code>: <code>area = 3</code>, no live neighbours. Pop <code>(3, 4)</code>: <code>area = 4</code>, no live neighbours. Stack empty, so <code>best = max(3, 4) = 4</code>.</p>
+      <p>After more water, I reach <code>(2, 3)</code>, sink and push it, and reset <code>area = 0</code>. I pop it for <code>area = 1</code> and find only <code>(3, 3)</code> below, so I sink and push that cell.</p>
+      <p>I pop <code>(3, 3)</code> for <code>area = 2</code>. Its live neighbours <code>(3, 4)</code> and <code>(3, 2)</code> both go onto my stack, which is now <code>[(3, 4), (3, 2)]</code>.</p>
+      <p>I pop <code>(3, 2)</code> for <code>area = 3</code>, then <code>(3, 4)</code> for <code>area = 4</code>; neither has a live neighbour. With the stack empty, I set <code>best = max(3, 4) = 4</code>.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: the lone cell, and the answer</h2>
-      <p>The scan reaches row 3. <code>(3, 0)</code> is land: sink, push, <code>area = 0</code>. Pop it: <code>area = 1</code>. Every neighbour is water, out of bounds, or already sunk, so the fill ends immediately.</p>
+      <p>In row 3, I reach land at <code>(3, 0)</code>, sink and push it, and set <code>area = 0</code>. I pop it for <code>area = 1</code>; every neighbour is water, out of bounds, or already sunk, so this fill ends immediately.</p>
       <p><code>best = max(4, 1) = 4</code>. The record does not move. The scan finishes the row over cells that are all <code>0</code> now, and <code>return best</code> gives <strong>4</strong>.</p>
       <div class="callout">Three islands, three fills, eight pops in total. Each land cell was pushed once and popped once, which is the whole cost of the algorithm.</div>
     </section>
@@ -272,10 +270,10 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: where the counting happens</h2>
-      <p><strong>Counting on push.</strong> Move <code>area += 1</code> into the neighbour loop, next to <code>stack.append</code>. Now the seed cell, which is pushed before the loop, is never counted, and every island is one short: the running example returns <strong>3</strong> instead of 4. The panel shows the second island with three cells counted and its seed <code>(2, 3)</code> left out.</p>
-      <p><strong>Not resetting the counter.</strong> Put <code>area = 0</code> once before the scan instead of once per island. The fills then share one counter: after the three fills it holds <code>3 + 4 + 1 = 8</code>, and <code>best</code> ends as <strong>8</strong>, the total land, not the largest island.</p>
+      <p><strong>Counting on push.</strong> If I move <code>area += 1</code> into the neighbour loop beside <code>stack.append</code>, the seed cell is never counted because I push it before that loop. Every island is then one short, so the running example returns <strong>3</strong> instead of 4.</p>
+      <p><strong>Not resetting the counter.</strong> If I place <code>area = 0</code> before the scan instead of before each island, all fills share one counter. It reaches <code>3 + 4 + 1 = 8</code>, and <code>best</code> incorrectly becomes <strong>8</strong>.</p>
       <p><strong>Sinking on pop instead of push.</strong> A cell with two live neighbours is pushed twice before either pop reaches it, so it is popped and counted twice. A 2 × 2 block comes out as 5 or 6.</p>
-      <div class="callout warn">Mark on push, count on pop, reset per island. Each of the three rules fixes exactly one of the bugs above.</div>
+      <div class="callout warn">I mark on push, count on pop, and reset per island. Each rule prevents one of the bugs above.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -288,7 +286,7 @@
         <tr><td>Fill once per island, separate visited set</td><td>O(m × n)</td><td>O(m × n) set + stack</td></tr>
         <tr><td>Fill once per island, sink in place</td><td>O(m × n)</td><td>O(m × n) stack, nothing else</td></tr>
       </table>
-      <p>Sinking in place trades the caller's grid for the visited set. If the grid must survive, keep a <code>set</code> of <code>(r, c)</code> instead; the time is unchanged.</p>
+      <p>Sinking in place trades the caller's grid for the visited set. If I need the grid to survive, I keep a <code>set</code> of <code>(r, c)</code> instead; the time is unchanged.</p>
     </section>
 
     <section class="step" data-state="final">
@@ -304,7 +302,7 @@
         <li><code>grid[nr][nc] = 0</code> before <code>stack.append((nr, nc))</code> is the mark-on-push rule.</li>
         <li><code>best = max(best, area)</code> after the loop keeps the record; <code>return best</code> hands it back.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>flood-fill each island once, sinking cells as you push them, count the pops, keep the max.</em></div>
+      <div class="callout">My rule is simple: <em>I flood-fill each island once, sink cells as I push them, count the pops, and keep the max.</em></div>
     </section>
 
     <div class="code-final">

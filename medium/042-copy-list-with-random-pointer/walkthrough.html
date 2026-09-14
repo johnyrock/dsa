@@ -227,7 +227,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Hash Map · LeetCode #138</div>
   <h1>Copy List with Random Pointer, narrated</h1>
-  <p>Scroll through the thinking, from a copy that quietly points back into the original to a two-pass map from every old node to its new twin, with the state of the algorithm shown alongside.</p>
+  <p>I will first locate each random target by position, then replace those repeated searches with a direct map from every original node to its copy.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/hash-map.html">Hash Map</a> <span class="how">old node → new node, so any pointer can be translated in O(1)</span></p>
 </header>
 
@@ -245,21 +245,21 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instinct: copy in one pass, resolve random by searching</h2>
-      <p>Walk the list once, creating a new node per original and linking <code>next</code> as you go. That handles <code>val</code> and <code>next</code>. For <code>random</code>, you need to know <em>which copy</em> corresponds to the target — so first find the target's position in the original list, then walk that many steps in the copy:</p>
-      <pre class="code"><span class="ln">for each original node (index i):</span><span class="ln">    j = position of node.random in the original list   # O(n) scan</span><span class="ln">    copy_i.random = j-th node of the copied list          # O(n) walk</span></pre>
-      <p style="margin-top:14px">Because random can point forward, this has to be a second pass after every copy exists. Each node then costs two linear walks, one to find <code>j</code> and one to reach the <code>j</code>-th copy, so the total is <strong>O(n²)</strong> time with O(1) extra space. On the example, resolving 11's random means scanning to find that node 1 is at index 4, then walking four steps down the copy.</p>
-      <p>The repeated work is the "find the position" step. We are doing a linear search to answer a question, "what is the copy of this node?", that a dictionary answers in O(1).</p>
+      <h2>First instinct: copy nodes, then find each random target</h2>
+      <p>I can make all copied nodes in one pass. For each original node in a second pass, I can scan the original list for its random target and walk to the same position in the copy.</p>
+      <pre class="code"><span class="ln">def copyRandomList(head):</span><span class="ln">    originals, copies = [], []</span><span class="ln">    node = head</span><span class="ln">    while node:</span><span class="ln">        originals.append(node); copies.append(Node(node.val)); node = node.next</span><span class="ln">    for i, node in enumerate(originals):</span><span class="ln">        copies[i].next = copies[i + 1] if i + 1 &lt; len(copies) else None</span><span class="ln">        copies[i].random = copies[originals.index(node.random)] if node.random else None</span><span class="ln">    return copies[0] if copies else None</span></pre>
+      <p style="margin-top:14px">This is correct because each random pointer is translated to the copy at the same index. Calling <code>index</code> for every node makes the time complexity O(n²). The two lists use O(n) extra space.</p>
+      <p>I map each original node directly to its copy as I create it. Then both <code>next</code> and <code>random</code> pointers can be translated in O(1) time.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>The key idea: a map from old node to new node</h2>
-      <p>Keep a dictionary <code>old_to_new</code> whose keys are the <em>original node objects</em> and whose values are their copies. Once it is filled, translating any pointer is one lookup: the copy of <code>node.random</code> is <code>old_to_new[node.random]</code>, whatever direction it points.</p>
-      <p>Because random can point forward, fill the map completely <em>before</em> wiring anything. That splits the job into two passes:</p>
+      <p>I keep a dictionary <code>old_to_new</code> whose keys are the <em>original node objects</em> and whose values are their copies. Once it is filled, translating any pointer is one lookup: the copy of <code>node.random</code> is <code>old_to_new[node.random]</code>, whatever direction it points.</p>
+      <p>Because random can point forward, I fill the map completely <em>before</em> wiring anything. That splits the job into two passes:</p>
       <ul>
-        <li>Pass 1: for every original node, create <code>Node(node.val)</code> and store it in the map.</li>
-        <li>Pass 2: for every original node, set its copy's <code>next</code> and <code>random</code> by translating the original's targets through the map.</li>
+        <li>Pass 1: for every original node, I create <code>Node(node.val)</code> and store it in the map.</li>
+        <li>Pass 2: for every original node, I set its copy's <code>next</code> and <code>random</code> by translating the original's targets through the map.</li>
       </ul>
       <div class="callout">Seed the map with <code>{None: None}</code>. Then a null <code>next</code> (at the tail) or a null <code>random</code> translates to <code>None</code> through the same lookup, with no special case.</div>
       <p>The keys are node objects, not values. Python dicts hash objects by identity by default, so two nodes with equal <code>val</code> are different keys — exactly what a deep copy needs.</p>
@@ -276,15 +276,15 @@
         <li><code>copy.random = old_to_new[node.random]</code> — same translation, same lookup.</li>
         <li><code>return old_to_new[head]</code> — the copy of the head; for an empty list this is <code>old_to_new[None]</code>, i.e. <code>None</code>.</li>
       </ul>
-      <p>Both loops are the same <code>node = head; while node is not None: …; node = node.next</code> walk. Only the body differs.</p>
+      <p>Both loops are the same <code>node = head; while node is not None: …; node = node.next</code> I walk. Only the body differs.</p>
     </section>
 
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: pass 1 creates the copies</h2>
-      <p>Start at 7: <code>old_to_new[7] = Node(7)</code>. Its <code>next</code> and <code>random</code> are both still <code>None</code>; we are not wiring anything yet. Move to 13, create <code>Node(13)</code>. Then 11, 10, 1.</p>
+      <p>I start at 7: <code>old_to_new[7] = Node(7)</code>. Its <code>next</code> and <code>random</code> are both still <code>None</code>; I am not wiring anything yet. I move to 13, I create <code>Node(13)</code>. Then 11, 10, 1.</p>
       <p>After the pass the map has six entries: the <code>None → None</code> seed plus five originals, each mapped to a fresh node holding only a value. The panel draws each copy under its original with a dashed line for the map entry.</p>
-      <p>Nothing about the <code>random</code> pointers has been read yet. That is deliberate: when we get to 11, whose random points forward to 1, the copy of 1 will already exist because pass 1 finished first.</p>
+      <p>Nothing about the <code>random</code> pointers has been read yet. That is deliberate: when I get to 11, whose random points forward to 1, the copy of 1 will already exist because pass 1 finished first.</p>
     </section>
 
     <section class="step" data-state="t2">
@@ -306,8 +306,8 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: random into the original, and the missing seed</h2>
-      <p><strong>Copying the pointer instead of translating it.</strong> Write <code>copy.random = node.random</code> and every copy's random points into the <em>original</em> list. Serialising the copy by index still finds the right positions if you look up positions in the original, so a careless test prints <strong>[[7,null],[13,0],[11,4],[10,2],[1,0]]</strong> and passes — but the copy shares five nodes with the input, and mutating one list corrupts the other. The panel shows the crossed pointers.</p>
-      <p><strong>Forgetting <code>{None: None}</code>.</strong> Start with <code>old_to_new = {}</code> and the very first node in pass 2, 7, does <code>old_to_new[node.random]</code> with <code>node.random = None</code>: <code>KeyError: None</code>. Even if every random were non-null, the tail's <code>next</code> would hit the same error.</p>
+      <p><strong>Copying the pointer instead of translating it.</strong> I write <code>copy.random = node.random</code> and every copy's random points into the <em>original</em> list. Serialising the copy by index still finds the right positions if I look up positions in the original, so a careless test prints <strong>[[7,null],[13,0],[11,4],[10,2],[1,0]]</strong> and passes — but the copy shares five nodes with the input, and mutating one list corrupts the other. The panel shows the crossed pointers.</p>
+      <p><strong>Forgetting <code>{None: None}</code>.</strong> I start with <code>old_to_new = {}</code> and the very first node in pass 2, 7, does <code>old_to_new[node.random]</code> with <code>node.random = None</code>: <code>KeyError: None</code>. Even if every random were non-null, the tail's <code>next</code> would hit the same error.</p>
       <p><strong>Keying by value.</strong> <code>old_to_new[node.val]</code> collapses equal values into one key. On <code>[[3,null],[3,0],[3,null]]</code> only one copy survives and the result is the single node <strong>[[3,null]]</strong>.</p>
       <div class="callout warn">Every pointer on a copy must come out of the map. If a line assigns <code>node.something</code> directly to a copy, the copy is not deep.</div>
     </section>
@@ -322,7 +322,7 @@
         <tr><td>Two passes with old → new map</td><td>O(n)</td><td>O(n)</td></tr>
         <tr><td>Interleave copies (A → A′ → B → B′), then split</td><td>O(n)</td><td>O(1)</td></tr>
       </table>
-      <p>The interleaving trick is the classic follow-up: put each copy right after its original so <code>node.next</code> <em>is</em> the map, then set <code>node.next.random = node.random.next</code> and unzip the two lists. Same idea, with the list itself standing in for the dictionary.</p>
+      <p>The interleaving trick is the classic follow-up: I put each copy right after its original so <code>node.next</code> <em>is</em> the map, then I set <code>node.next.random = node.random.next</code> and unzip the two lists. Same idea, with the list itself standing in for the dictionary.</p>
     </section>
 
     <section class="step" data-state="final">
@@ -337,7 +337,7 @@
         <li><code>copy.random = old_to_new[node.random]</code> — translate random, forward or backward.</li>
         <li><code>return old_to_new[head]</code> — the new head (or <code>None</code> for an empty list).</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>create all the copies first, then wire every pointer through the old-to-new map — never assign an original node to a copy.</em></div>
+      <div class="callout">One-line summary to remember: <em>I create all the copies first, then wire every pointer through the old-to-new map — never assign an original node to a copy.</em></div>
     </section>
 
     <div class="code-final">

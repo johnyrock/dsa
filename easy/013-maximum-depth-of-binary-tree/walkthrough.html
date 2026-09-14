@@ -229,7 +229,7 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Tree · LeetCode #104</div>
   <h1>Maximum Depth of Binary Tree, narrated</h1>
-  <p>Scroll through the path-listing instinct, the one base case that makes the recursion work, and a node-by-node trace of the three-line solution, with the tree and the returned depths shown alongside.</p>
+  <p>I’ll start by listing every root-to-leaf path, then use a recursive depth calculation that returns only the one number each parent needs.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/tree-traversal.html">Tree</a> <span class="how">A tree is empty at a missing child, so its depth is 0. Every real node contributes one level plus the larger child depth.</span></p>
 </header>
 
@@ -246,9 +246,11 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: list every path and measure each</h2>
-      <p>The definition talks about paths, so a literal approach is to enumerate them. Walk from the root, carrying the list of nodes seen so far; whenever you reach a leaf, record the path. Then take the longest.</p>
+      <p>My first instinct is to follow the definition literally. I enumerate every root-to-leaf path, record each one at a leaf, and return the largest path length.</p>
+      <pre class="code"><span class="ln">paths = []</span><span class="ln">def visit(node, path):</span><span class="ln">    if node is None: return</span><span class="ln">    path.append(node.val)</span><span class="ln">    if not node.left and not node.right: paths.append(path[:])</span><span class="ln">    else: visit(node.left, path); visit(node.right, path)</span><span class="ln">    path.pop()</span><span class="ln">visit(root, [])</span><span class="ln">return max((len(path) for path in paths), default=0)</span></pre>
       <p>On the running example that produces three paths, exactly what the panel shows: <code>[3,9]</code> with length 2, <code>[3,20,15]</code> with length 3 and <code>[3,20,7]</code> with length 3. The maximum is 3, and the answer is correct.</p>
-      <p>The trouble is what it costs. Every path shares its prefix with its neighbours; here <code>3 → 20</code> is walked (and copied into a list) twice, once for leaf 15 and once for leaf 7. On a bushy tree with many leaves each edge is copied once per leaf below it, and the path lists alone take <strong>O(n · h)</strong> memory, where <code>h</code> is the height. That is a lot of bookkeeping to remember a single integer.</p>
+      <p>This baseline copies a path at each leaf. In the worst case those copies take <strong>O(n · h) time</strong> and <strong>O(n · h) extra space</strong>, where <code>h</code> is the tree height.</p>
+      <p>Neighboring paths repeat their shared prefixes. A parent only needs the larger child depth, so I do not need to keep every full path.</p>
     </section>
 
     <section class="step" data-state="insight">
@@ -285,7 +287,7 @@
       <h2>Trace it: node 20</h2>
       <p>Node 20 has two children, and they finish first. Node 15 is a leaf: both its children are <code>None</code>, so it returns <code>1 + max(0, 0) = 1</code>. Node 7 does exactly the same and returns <code>1</code>.</p>
       <p>Node 20 then has <code>left = 1</code> and <code>right = 1</code>, and returns <code>1 + max(1, 1) = 2</code>: the badge <code>→2</code>. Two nodes on the longest path below and including 20, which is right: <code>20 → 15</code> or <code>20 → 7</code>.</p>
-      <p>Notice that the tie between 15 and 7 does not matter. <code>max</code> only cares about the larger value, and both children are equally deep.</p>
+      <p>The tie between 15 and 7 does not matter. <code>max</code> only needs the larger value, and both children are equally deep.</p>
     </section>
 
     <section class="step" data-state="trace3">
@@ -300,9 +302,9 @@
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the base case</h2>
       <p>Almost every bug in this problem is a wrong value for the empty tree.</p>
-      <p><strong>Returning 1 for <code>None</code>.</strong> It is tempting to think "a node counts as one level, so return 1 at the bottom". But the bottom of the recursion is the empty child, not the leaf. With <code>if root is None: return 1</code>, leaf 9 computes <code>1 + max(1, 1) = 2</code>, node 20 computes <code>3</code>, and the root reports <strong>4</strong> instead of 3. The panel marks the ghost child with <code>1</code> and node 9 with <code>→2 ?</code> to show the inflation starting at the leaf.</p>
+      <p><strong>Returning 1 for <code>None</code>.</strong> It is tempting to think a node counts as one level and make the bottom return 1. But the bottom of the recursion is the empty child, not the leaf. With <code>if root is None: return 1</code>, leaf 9 computes <code>1 + max(1, 1) = 2</code>, node 20 computes <code>3</code>, and the root reports <strong>4</strong> instead of 3.</p>
       <p><strong>Special-casing leaves and forgetting empty input.</strong> Writing <code>if root.left is None and root.right is None: return 1</code> as the base case, without a <code>None</code> check first, crashes with <code>AttributeError</code> on an empty tree (<code>root = []</code>), and also on any node with exactly one child, because the recursion is then called on the missing child. The <code>None</code> base case covers all of those at once and makes the leaf case fall out for free.</p>
-      <div class="callout warn">Test with a single node: the answer must be 1. If you get 2, the empty tree is being counted as a level.</div>
+      <div class="callout warn">I test a single node: the answer must be 1. An answer of 2 means the empty tree is being counted as a level.</div>
     </section>
 
     <section class="step" data-state="complexity">

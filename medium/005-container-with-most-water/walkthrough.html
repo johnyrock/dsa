@@ -193,7 +193,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Two Pointers · LeetCode #11</div>
   <h1>Container With Most Water, narrated</h1>
-  <p>Scroll through the thinking, from checking every pair of lines to two pointers that start at the ends and always move the shorter line inward, with the state of the algorithm shown alongside.</p>
+  <p>I’ll start by checking every pair of lines, then discard hopeless pairs by moving only the shorter wall inward.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/two-pointers.html">Two Pointers</a> <span class="how">start at the ends, always move the shorter wall</span></p>
 </header>
 
@@ -211,9 +211,10 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: try every pair</h2>
-      <p>Compute the area for every pair of lines and keep the largest.</p>
+      <p>My first instinct is to compute the area for every pair of lines and keep the largest.</p>
       <pre class="code"><span class="ln">best = 0</span><span class="ln">for i in range(n):</span><span class="ln">    for j in range(i + 1, n):</span><span class="ln">        best = max(best, (j - i) * min(height[i], height[j]))</span></pre>
-      <p style="margin-top:14px">Correct and <strong>O(n²)</strong>. At n = 100,000 that is five billion pairs, too slow. Most of those pairs are hopeless, and there is a way to know which ones without computing them.</p>
+      <p style="margin-top:14px">This search takes <strong>O(n²) time</strong> and uses <strong>O(1) extra space</strong>.</p>
+      <p>The shorter wall limits the area. Moving the taller wall cannot remove that limit, so I only move the shorter one.</p>
     </section>
 
     <section class="step" data-state="reframe">
@@ -221,18 +222,18 @@
       <h2>Reframe: start wide and only give up width for height</h2>
       <p>The widest possible container uses the two outermost lines. Every other pair is narrower. So a narrower pair can only win if it is <em>taller</em>, and "taller" means its shorter wall is higher than the current shorter wall.</p>
       <p>That points at the shorter wall. Suppose the left line is the shorter one. Any container that keeps the left line and moves the right line inward is narrower and still capped at the left line's height, so it is strictly worse. The left line is finished; nothing it pairs with going forward can beat what it already made.</p>
-      <div class="callout">Retire the shorter line. Keep the taller one, because it might still form a bigger container with something taller further in.</div>
+      <div class="callout">I retire the shorter line and keep the taller one, because it might still form a bigger container with something taller further in.</div>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 4</div>
       <h2>The key idea: two pointers, move the shorter one</h2>
-      <p>Put <code>left = 0</code> and <code>right = n - 1</code>. Repeat until they meet:</p>
+      <p>I put <code>left = 0</code> and <code>right = n - 1</code>, then repeat until they meet:</p>
       <ul>
-        <li>Compute the area between them and update <code>best</code>.</li>
-        <li>If <code>height[left] &lt; height[right]</code>, move <code>left</code> in. Otherwise move <code>right</code> in.</li>
+        <li>I compute the area between them and update <code>best</code>.</li>
+        <li>If <code>height[left] &lt; height[right]</code>, I move <code>left</code> in. Otherwise I move <code>right</code> in.</li>
       </ul>
-      <p>Each step retires one line for good. After at most n − 1 steps the pointers meet and every pair that could possibly have been the best has been looked at. The pairs that were skipped were all provably beaten by a pair we did compute.</p>
+      <p>Each step retires one line for good. After at most n − 1 steps the pointers meet, and I have considered every pair that could still be best. Each skipped pair is provably beaten by one I did compute.</p>
     </section>
 
     <section class="step" data-state="t1">
@@ -253,7 +254,7 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 7</div>
       <h2>The pitfall: moving the taller line</h2>
-      <p>Run the running example with the opposite rule: always move the <em>taller</em> wall. Index 0, height 1, is never the taller one, so it never moves. <code>right</code> walks in from 8 to 1, and every area it produces is width × 1: 8, 7, 6, and so on down. The rule reports <strong>8</strong>. The real answer is 49, and reaching it required retiring index 0.</p>
+      <p>I test the opposite rule on the running example: always move the <em>taller</em> wall. Index 0, height 1, is never taller, so it never moves. <code>right</code> walks in from 8 to 1, and every area is width × 1: 8, 7, 6, and so on. That rule reports <strong>8</strong>; the correct answer is 49 and requires retiring index 0.</p>
       <div class="callout warn">Moving the taller wall gives up width without any chance of gaining height, because the shorter wall still sets the level. It can only lose. Moving both pointers at once has the same flaw plus skipped pairs.</div>
       <p>Two smaller traps: using <code>max</code> instead of <code>min</code> for the height, and looping while <code>left &lt;= right</code> instead of <code>&lt;</code>, since a single line has zero width and is not a container.</p>
     </section>
@@ -281,7 +282,7 @@
         <li><code>if height[left] &lt; height[right]: left += 1 else: right -= 1</code> retires the shorter line.</li>
         <li><code>return best</code> after the pointers meet.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>start at the ends and always move the shorter wall.</em></div>
+      <div class="callout">I remember this as: <em>I start at the ends and always move the shorter wall.</em></div>
     </section>
 
     <div class="code-final">

@@ -225,7 +225,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Heap · LeetCode #215</div>
   <h1>Kth Largest Element in an Array, narrated</h1>
-  <p>Scroll from sorting the whole array to a min-heap that never holds more than k values, with the heap’s layout shown alongside as each number is pushed and the smallest survivor is evicted.</p>
+  <p>I will first sort the entire array, then I keep only the largest values that can affect the kth answer.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/heap.html">Heap</a> <span class="how">A min-heap capped at k keeps the k largest values seen so far; its root is the smallest of them, which is the kth largest.</span></p>
 </header>
 
@@ -243,16 +243,16 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: sort, then index</h2>
-      <p>Sort descending and read position <code>k - 1</code>, or sort ascending and read position <code>len(nums) - k</code>:</p>
-      <pre class="code"><span class="ln">nums.sort()</span><span class="ln">return nums[len(nums) - k]</span></pre>
-      <p style="margin-top:14px">Two lines, obviously correct, and <strong>O(n log n)</strong>. For <code>n = 10⁵</code> it is fast enough in practice, which is why the interviewer adds "without sorting". The point of the follow-up is to notice how much of the sort is wasted: after sorting, positions 0 through 3 of <code>[1, 2, 3, 4, 5, 6]</code> are fully ordered relative to each other, and none of that order was ever needed. Only "which two are on top, and which of those two is smaller" matters.</p>
-      <p>The panel shows the sorted array with the answer slot highlighted. Every dimmed cell was placed by the sort and then ignored.</p>
+      <p>I can sort the values and read the value at index <code>len(nums) - k</code>.</p>
+      <pre class="code"><span class="ln">def findKthLargest(nums, k):</span><span class="ln">    ordered = sorted(nums)</span><span class="ln">    return ordered[len(ordered) - k]</span></pre>
+      <p style="margin-top:14px">This is correct. Sorting takes O(n log n) time, and the sorted copy uses O(n) space.</p>
+      <p>Values below the largest <code>k</code> never affect the result. A min-heap capped at <code>k</code> keeps only the values that still matter.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: keep only the k largest, in a min-heap</h2>
-      <p>Imagine a box that can hold <code>k</code> numbers. Walk the array; every time you see a number, put it in the box. If the box now has <code>k + 1</code> numbers, throw out the <em>smallest</em>. When you reach the end, the box holds exactly the <code>k</code> largest values of the array, and the smallest of those is the <code>k</code>th largest.</p>
+      <p>Imagine a box that can hold <code>k</code> numbers. I walk the array; every time I see a number, I put it in the box. If the box now has <code>k + 1</code> numbers, throw out the <em>smallest</em>. When I reach the end, the box holds exactly the <code>k</code> largest values of the array, and the smallest of those is the <code>k</code>th largest.</p>
       <p>The box needs two fast operations: insert, and remove-the-smallest. That is precisely what a <strong>min-heap</strong> offers, in O(log k) each. Python's <code>heapq</code> is already a min-heap, so unlike the max-heap problems there is no negation at all: <code>heapq.heappush(heap, num)</code> and <code>heapq.heappop(heap)</code> do exactly what the box needs.</p>
       <div class="callout">After every step, <code>heap[0]</code> is the smallest of the largest <code>k</code> values seen so far. At the end of the array, that is the answer: <code>return heap[0]</code>.</div>
       <p>The heap never grows beyond <code>k + 1</code>, so every operation costs O(log k) rather than O(log n). With <code>k = 2</code> the heap in the panel has at most three nodes.</p>
@@ -267,28 +267,28 @@
         <li><code>if len(heap) &gt; k: heapq.heappop(heap)</code>: after a push the heap may hold <code>k + 1</code>; evict the root, the smallest.</li>
         <li><code>return heap[0]</code>: the root of the final heap is the smallest of the <code>k</code> largest.</li>
       </ul>
-      <p>The order of push and pop matters. Push first, and the newcomer competes against the current root inside the heap. Pop first, and the newcomer walks in unchallenged even if it is smaller than everything that was just evicted. The panel shows the empty heap and the six numbers waiting to be pushed.</p>
+      <p>The order of push and pop matters. I push first, and the newcomer competes against the current root inside the heap. I pop first, and the newcomer walks in unchallenged even if it is smaller than everything that was just evicted. The panel shows the empty heap and the six numbers waiting to be pushed.</p>
     </section>
 
     <section class="step" data-state="trace1">
       <div class="n">STEP 5</div>
       <h2>Trace it: 3, 2, 1</h2>
-      <p>Push <code>3</code>: heap <code>[3]</code>, size 1, no pop. Push <code>2</code>: it is smaller than 3 so it sifts up, heap <code>[2, 3]</code>, size 2, still not more than <code>k</code>, no pop.</p>
-      <p>Push <code>1</code>: it sifts to the root, heap <code>[1, 3, 2]</code>. Now <code>len(heap) = 3 &gt; 2</code>, so pop the root. The 1 is gone, and the heap re-settles to <code>[2, 3]</code>. That is right: of the three numbers seen, the two largest are 2 and 3, and the smaller of those, <code>heap[0] = 2</code>, is the 2nd largest so far.</p>
+      <p>I push <code>3</code>: heap <code>[3]</code>, size 1, no pop. I push <code>2</code>: it is smaller than 3 so it sifts up, heap <code>[2, 3]</code>, size 2, still not more than <code>k</code>, no pop.</p>
+      <p>I push <code>1</code>: it sifts to the root, heap <code>[1, 3, 2]</code>. Now <code>len(heap) = 3 &gt; 2</code>, so I pop the root. The 1 is gone, and the heap re-settles to <code>[2, 3]</code>. That is right: of the three numbers seen, the two largest are 2 and 3, and the smaller of those, <code>heap[0] = 2</code>, is the 2nd largest so far.</p>
     </section>
 
     <section class="step" data-state="trace2">
       <div class="n">STEP 6</div>
       <h2>Trace it: 5, then 6</h2>
-      <p>Push <code>5</code>: it is larger than everything, so it lands at index 2 as a leaf, heap <code>[2, 3, 5]</code>. Size 3 again, so pop the root <code>2</code>. The heap re-settles to <code>[3, 5]</code>: the two largest so far are 3 and 5.</p>
-      <p>Push <code>6</code>: heap <code>[3, 5, 6]</code>, size 3, pop the root <code>3</code>, leaving <code>[5, 6]</code>. Each of those two pushes evicted the previous root because the newcomer was bigger than every survivor. Notice the heap did not need to know that <code>6 &gt; 5</code>; it only needed to know that 3 was the smallest of the three.</p>
+      <p>I push <code>5</code>: it is larger than everything, so it lands at index 2 as a leaf, heap <code>[2, 3, 5]</code>. Size 3 again, so I pop the root <code>2</code>. The heap re-settles to <code>[3, 5]</code>: the two largest so far are 3 and 5.</p>
+      <p>I push <code>6</code>: heap <code>[3, 5, 6]</code>, size 3, then I pop the root <code>3</code>, leaving <code>[5, 6]</code>. Each of those two pushes evicted the previous root because the newcomer was bigger than every survivor. The heap does not need to know that <code>6 &gt; 5</code>; it only needs to know that 3 is the smallest of the three.</p>
       <div class="callout">The values 1, 2, 3 were each evicted the moment a third value outranked them. They were never sorted against each other.</div>
     </section>
 
     <section class="step" data-state="trace3">
       <div class="n">STEP 7</div>
       <h2>Trace it: 4, and the answer</h2>
-      <p>Push <code>4</code>: it is smaller than both survivors, so it sifts up to the root, heap <code>[4, 6, 5]</code>. Size 3, pop the root, and the <code>4</code> is evicted straight back out. Heap: <code>[5, 6]</code>.</p>
+      <p>I push <code>4</code>: it is smaller than both survivors, so it sifts up to the root, heap <code>[4, 6, 5]</code>. Size 3, I pop the root, and the <code>4</code> is evicted straight back out. Heap: <code>[5, 6]</code>.</p>
       <p>That was the last number. The heap holds the two largest values of the array, 5 and 6, and its root <code>heap[0] = 5</code> is the smaller of them: the 2nd largest. <code>return heap[0]</code> gives <strong>5</strong>.</p>
       <p>Note that 4 cost one push and one pop and changed nothing, which is the common case once the heap is full of large values: most numbers bounce straight off.</p>
     </section>
@@ -296,10 +296,10 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the wrong heap, the wrong bound</h2>
-      <p><strong>Negating out of habit.</strong> Many heap problems store <code>-num</code> to fake a max-heap. Do that here, with the same size-<code>k</code> cap, and the heap keeps the <code>k</code> <em>smallest</em> values instead: on the example it ends as <code>[-2, -1]</code>, i.e. values 2 and 1, and <code>-heap[0]</code> returns <strong>2</strong>, the 2nd smallest. The eviction always removes the root; the root must be the value you want gone, and here that is the smallest survivor, which a plain min-heap already exposes.</p>
+      <p><strong>Negating out of habit.</strong> Many heap problems store <code>-num</code> to fake a max-heap. Do that here, with the same size-<code>k</code> cap, and the heap keeps the <code>k</code> <em>smallest</em> values instead: on the example it ends as <code>[-2, -1]</code>, i.e. values 2 and 1, and <code>-heap[0]</code> returns <strong>2</strong>, the 2nd smallest. The eviction always removes the root; the root must be the value I want gone, and here that is the smallest survivor, which a plain min-heap already exposes.</p>
       <p><strong>Trimming with <code>&gt;=</code>.</strong> <code>if len(heap) &gt;= k</code> pops as soon as the heap reaches <code>k</code>, so it can never hold <code>k</code> survivors. On the example the heap ends as <code>[6]</code> and the function returns 6, the 1st largest.</p>
       <p><strong>Reading the wrong slot.</strong> <code>heap[-1]</code> is just the last leaf, not the maximum; after the last step it is 6, which is wrong for <code>k = 2</code>. Only <code>heap[0]</code> has a guaranteed meaning in a heap.</p>
-      <div class="callout warn">Decide what should be evicted, then make that the root. To keep the k largest, evict the smallest, so use a min-heap and do not negate.</div>
+      <div class="callout warn">Decide what should be evicted, then I make that the root. To keep the k largest, evict the smallest, so I use a min-heap and do not negate.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -327,7 +327,7 @@
         <li><code>if len(heap) &gt; k: heapq.heappop(heap)</code> evicts the smallest whenever the heap overflows.</li>
         <li><code>return heap[0]</code> is the smallest of the <code>k</code> largest, which is the <code>k</code>th largest.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>keep the k largest in a min-heap; the root is the kth largest.</em></div>
+      <div class="callout">One-line summary to remember: <em>I keep the k largest in a min-heap; the root is the kth largest.</em></div>
     </section>
 
     <div class="code-final">

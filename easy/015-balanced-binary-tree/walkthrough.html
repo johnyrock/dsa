@@ -229,8 +229,8 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Tree · LeetCode #110</div>
   <h1>Balanced Binary Tree, narrated</h1>
-  <p>Scroll from the O(n²) height-at-every-node check to a single post-order pass that returns -1 as an imbalance sentinel, with each node's returned height shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/tree-traversal.html">Tree</a> <span class="how">A tree is balanced only when every node's child heights differ by at most one. Return a height, but use -1 to carry an unbalanced result upward.</span></p>
+  <p>I’ll start by measuring heights again at every node, then combine the height and balance checks in one post-order pass.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/tree-traversal.html">Tree</a> <span class="how">bottom-up heights, with -1 carrying an unbalanced result upward</span></p>
 </header>
 
 <div class="layout">
@@ -247,11 +247,10 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: a height function plus a check at every node</h2>
-      <p>Write the definition straight into code. First a helper that computes the height of a subtree:</p>
-      <pre class="code"><span class="ln">def height(node):</span><span class="ln">    if node is None:</span><span class="ln">        return 0</span><span class="ln">    return 1 + max(height(node.left), height(node.right))</span></pre>
-      <p style="margin-top:14px">Then a second recursive function that, at each node, computes <code>abs(height(node.left) - height(node.right))</code>, rejects if it is greater than 1, and otherwise recurses into both children to check them too.</p>
-      <p>This is correct, and it is the version most people write first. The problem is that <code>height</code> is called from scratch at every node. On the running example the root calls <code>height</code> on the whole 20-subtree, and then when the check moves down to node 20, it walks that same subtree again. The panel's <code>h?</code> badges on 9 and 20 mark those two full height walks the root alone triggers.</p>
-      <p>On a bushy tree the repeated work is tolerable, but on a chain (every node has only one child) the node at depth <code>k</code> re-walks the <code>n - k</code> nodes below it, and the total is 1 + 2 + … + n, which is <strong>O(n²)</strong>. With up to 5000 nodes, that is around 12 million visits for a job that needs 5000.</p>
+      <p>My first instinct is to write the definition directly: compute each node’s two child heights, reject a gap above one, then recurse into both children.</p>
+      <pre class="code"><span class="ln">def is_balanced(node):</span><span class="ln">    if node is None: return True</span><span class="ln">    if abs(height(node.left) - height(node.right)) &gt; 1:</span><span class="ln">        return False</span><span class="ln">    return is_balanced(node.left) and is_balanced(node.right)</span><span class="ln">def height(node):</span><span class="ln">    if node is None: return 0</span><span class="ln">    return 1 + max(height(node.left), height(node.right))</span></pre>
+      <p style="margin-top:14px">This finds every imbalance. On a skewed tree it recomputes heights below many ancestors, so it takes <strong>O(n²) time</strong>; its recursive calls use <strong>O(h) extra space</strong>, where <code>h</code> is the tree height.</p>
+      <p>The height walk already reaches every node needed for the balance check. I can return a sentinel when a subtree is unbalanced instead of starting another height walk.</p>
     </section>
 
     <section class="step" data-state="insight">
@@ -280,7 +279,7 @@
     <section class="step" data-state="trace1">
       <div class="n">STEP 5</div>
       <h2>Trace it: the leaves</h2>
-      <p>Start at the root, node 3. It calls <code>height(node.left)</code>, which is node 9. Node 9 in turn calls <code>height</code> on its left child, which is <code>None</code>, and gets <code>0</code> back from the base case; the same happens on the right. So at node 9, <code>left = 0</code>, <code>right = 0</code>, the gap <code>abs(0 - 0)</code> is 0, and it returns <code>1 + max(0, 0) = 1</code>.</p>
+      <p>I start at the root, node 3. It calls <code>height(node.left)</code>, which is node 9. Node 9 in turn calls <code>height</code> on its left child, which is <code>None</code>, and gets <code>0</code> back from the base case; the same happens on the right. So at node 9, <code>left = 0</code>, <code>right = 0</code>, the gap <code>abs(0 - 0)</code> is 0, and it returns <code>1 + max(0, 0) = 1</code>.</p>
       <p>The panel marks that with <code>→1</code> next to node 9, and draws the ghost <code>0</code> below it to show where the base-case value came from. Leaves 15 and 7 go through exactly the same steps later in the walk and each return height 1, which is why they carry <code>→1</code> badges too.</p>
       <p>Back at the root, <code>left_height</code> is now <code>1</code>. It is not <code>-1</code>, so the root proceeds to <code>right_height = height(node.right)</code> and the walk moves to node 20.</p>
     </section>
@@ -307,7 +306,7 @@
       <p>The panel switches to the README's second example, <code>[1,2,2,3,3,null,null,4,4]</code>. The two 4s hang below the left-hand 3s and are not drawn, but they are why the left 2 has height 3 while the right 2 has height 1. Only the root has a gap of 2; every other node in that tree is individually balanced.</p>
       <p><strong>Checking the gap only at the root.</strong> Writing <code>abs(height(root.left) - height(root.right)) &lt;= 1</code> and returning happens to give the right answer here (3 − 1 = 2, so <strong>false</strong>), which is what makes it dangerous: it passes this test and fails any tree whose imbalance sits below a root with two equally tall arms. The check must run at every node, which is why it lives inside the recursive <code>height</code> rather than in <code>is_balanced</code>.</p>
       <p><strong>Dropping the gap test from the sentinel version.</strong> If the rejection line is shortened to <code>if right_height == -1: return -1</code>, no node ever produces a <code>-1</code> in the first place. The root computes <code>1 + max(3, 1) = 4</code>, <code>4 != -1</code> is true, and the function returns <strong>true</strong> for a tree that is plainly unbalanced. Both halves of that <code>or</code> are needed: one forwards a child's verdict, the other makes this node's own verdict.</p>
-      <p><strong>Forgetting to forward the sentinel.</strong> Skip the <code>if left_height == -1: return -1</code> guard and a <code>-1</code> from below gets fed into <code>abs(-1 - 0) = 1</code>, which passes, and then into <code>1 + max(-1, 0) = 1</code>, which looks like a perfectly healthy leaf. The imbalance is laundered into a valid height and the final answer is wrongly <strong>true</strong>.</p>
+      <p><strong>Forgetting to forward the sentinel.</strong> Without the <code>if left_height == -1: return -1</code> guard, a <code>-1</code> from below feeds into <code>abs(-1 - 0) = 1</code> and then <code>1 + max(-1, 0) = 1</code>, where it looks like a healthy leaf. The imbalance is laundered into a valid height and the final answer becomes wrongly <strong>true</strong>.</p>
       <div class="callout warn">And the brute force from step 2 is not <em>wrong</em>, only slow: recomputing heights at every node still returns false here, but on a 5000-node chain it does roughly 12 million node visits where the sentinel version does 5000.</div>
     </section>
 

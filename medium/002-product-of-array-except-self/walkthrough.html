@@ -186,7 +186,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Prefix Sum · LeetCode #238</div>
   <h1>Product of Array Except Self, narrated</h1>
-  <p>Scroll through the thinking, from the nested loop through the division trick that breaks on zeros to the two-sweep prefix and suffix products, with the state of the algorithm shown alongside.</p>
+  <p>I’ll start by multiplying every other value for each slot, then reuse left and right products in two sweeps without division.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/prefix-sum.html">Prefix Sum</a> <span class="how">left products in one sweep, right products multiplied on top, no division</span></p>
 </header>
 
@@ -205,17 +205,18 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: multiply everything else, per slot</h2>
-      <p>For each index <code>i</code>, loop over the whole array and multiply together every element whose index is not <code>i</code>.</p>
+      <p>My first instinct is to loop over the whole array for each index <code>i</code> and multiply every value except <code>nums[i]</code>.</p>
       <pre class="code"><span class="ln">result = []</span><span class="ln">for i in range(len(nums)):</span><span class="ln">    p = 1</span><span class="ln">    for j in range(len(nums)):</span><span class="ln">        if j != i:</span><span class="ln">            p *= nums[j]</span><span class="ln">    result.append(p)</span></pre>
-      <p style="margin-top:14px">Correct, and it needs no division. But each slot rescans the whole array, so it is <strong>O(n²)</strong>. At n = 100,000 that is ten billion multiplications, and the statement demands O(n).</p>
+      <p style="margin-top:14px">Each slot rescans the array, so this takes <strong>O(n²) time</strong>; the result list uses <strong>O(n) space</strong>.</p>
+      <p>Each answer is only the product to its left times the product to its right. I carry those products across two linear sweeps instead of rebuilding them for every slot.</p>
     </section>
 
     <section class="step" data-state="division">
       <div class="n">STEP 3</div>
       <h2>The tempting shortcut, and why it is banned</h2>
       <p>Compute the product of everything once, then each slot is <code>total / nums[i]</code>. One pass, O(n). Except the problem forbids division, and there is a real reason: zeros.</p>
-      <p>With <code>nums = [-1, 1, 0, -3, 3]</code> the total is 0, and dividing by <code>nums[2] = 0</code> is undefined. You can patch it by counting zeros: one zero means only that slot is non-zero, two or more means everything is zero. It works, but it is three special cases stacked on a trick.</p>
-      <div class="callout warn">Division is not a building block here. It is a way of <em>undoing</em> a multiplication you did not need to do. The clean solution never multiplies <code>nums[i]</code> into its own answer in the first place.</div>
+      <p>With <code>nums = [-1, 1, 0, -3, 3]</code>, the total is 0 and division by <code>nums[2] = 0</code> is undefined. I could count zeros and split into cases, but that piles special cases onto a shortcut.</p>
+      <div class="callout warn">I do not use division here. It would only undo a multiplication that the final solution never performs: <code>nums[i]</code> never enters its own answer.</div>
     </section>
 
     <section class="step" data-state="reframe">
@@ -230,14 +231,14 @@
     <section class="step" data-state="prefix">
       <div class="n">STEP 5</div>
       <h2>Sweep 1: prefix products, stored in the output</h2>
-      <p>Start <code>prefix = 1</code>, the product of nothing. At each index, first write the current <code>prefix</code> into <code>result[i]</code>, and only then multiply <code>nums[i]</code> into <code>prefix</code>. The order matters: slot <code>i</code> must see the product of what came <em>before</em> it, not including itself.</p>
+      <p>I start with <code>prefix = 1</code>, the product of nothing. At each index, I first write the current <code>prefix</code> into <code>result[i]</code>, and only then multiply <code>nums[i]</code> into <code>prefix</code>. That order leaves <code>nums[i]</code> out of its own answer.</p>
       <p>After the sweep, <code>result</code> is <code>[1, 1, 2, 6]</code>: the product of the empty left side, then 1, then 1·2, then 1·2·3.</p>
     </section>
 
     <section class="step" data-state="suffix">
       <div class="n">STEP 6</div>
       <h2>Sweep 2: suffix products, multiplied on top</h2>
-      <p>Now walk from the right end with <code>suffix = 1</code>. At each index, multiply <code>result[i]</code> by <code>suffix</code>, then fold <code>nums[i]</code> into <code>suffix</code> for the slots further left.</p>
+      <p>I then walk from the right end with <code>suffix = 1</code>. At each index, I multiply <code>result[i]</code> by <code>suffix</code>, then fold <code>nums[i]</code> into <code>suffix</code> for the slots further left.</p>
       <p>Slot 3 gets 6·1 = 6. Slot 2 gets 2·4 = 8. Slot 1 gets 1·12 = 12. Slot 0 gets 1·24 = 24. Each slot ends up as left product times right product, which is everything except itself.</p>
       <div class="callout">The output array was the only storage. No prefix array, no suffix array, no division, two passes.</div>
     </section>
@@ -245,7 +246,7 @@
     <section class="step" data-state="zeros">
       <div class="n">STEP 7</div>
       <h2>Zeros fall out for free</h2>
-      <p>Run the same two sweeps on <code>[-1, 1, 0, -3, 3]</code>. The prefix products are <code>[1, -1, -1, 0, 0]</code>: once the zero has been folded in, every later prefix is 0. The suffix products, read left to right, are <code>[0, 0, -9, 3, 1]</code>: every slot left of the zero has a 0 on its right.</p>
+      <p>I run the same two sweeps on <code>[-1, 1, 0, -3, 3]</code>. The prefix products are <code>[1, -1, -1, 0, 0]</code>: once the zero is folded in, every later prefix is 0. Reading left to right, I get suffix products <code>[0, 0, -9, 3, 1]</code>, because every slot left of the zero has a 0 on its right.</p>
       <p>Multiply them slot by slot and only index 2, the zero itself, survives: −1 · −9 = 9. Everything else is 0, exactly the expected <code>[0, 0, 9, 0, 0]</code>.</p>
       <p>No zero counting, no special cases. Because <code>nums[i]</code> was never multiplied into its own slot, there was nothing to undo.</p>
     </section>

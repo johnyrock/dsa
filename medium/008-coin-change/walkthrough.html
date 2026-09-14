@@ -189,7 +189,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Dynamic Programming · LeetCode #322</div>
   <h1>Coin Change, narrated</h1>
-  <p>Scroll through the thinking, from the greedy that fails through the exponential recursion to the bottom-up table over amounts, with the state of the algorithm shown alongside.</p>
+  <p>I’ll start with a correct recursive search through coin choices, then reuse those answers in a bottom-up table.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">dp[a] = 1 + min(dp[a - c]), table over amounts</span></p>
 </header>
 
@@ -206,16 +206,17 @@
 
     <section class="step" data-state="greedy">
       <div class="n">STEP 2</div>
-      <h2>First instinct: greedy, largest coin first</h2>
-      <p>Take as many of the biggest coin as fit, then the next biggest, and so on. For 11 with <code>[1, 2, 5]</code> that gives 5, 5, 1: three coins, correct.</p>
-      <p>Now try <code>coins = [1, 3, 4]</code>, <code>amount = 6</code>. Greedy takes a 4, then cannot fit another 4 or a 3, so it takes 1 and 1: <strong>three coins</strong>. But 3 + 3 is two coins.</p>
-      <div class="callout warn">Greedy happens to work for coin systems designed for it, like real currencies. It has no guarantee in general, because grabbing a big coin now can leave a remainder that needs many small coins.</div>
+      <h2>First instinct: try every possible next coin</h2>
+      <p>My first instinct is to try every coin that fits and recursively keep the smallest number of coins among those choices.</p>
+      <pre class="code"><span class="ln">def fewest(remaining):</span><span class="ln">    if remaining == 0: return 0</span><span class="ln">    best = float("inf")</span><span class="ln">    for coin in coins:</span><span class="ln">        if coin &lt;= remaining:</span><span class="ln">            best = min(best, 1 + fewest(remaining - coin))</span><span class="ln">    return best</span><span class="ln">answer = fewest(amount)</span><span class="ln">return answer if answer != float("inf") else -1</span></pre>
+      <p style="margin-top:14px">This recursion repeatedly solves the same remainders. It takes <strong>O(c^amount) time</strong> for <code>c</code> coin choices and uses <strong>O(amount) extra space</strong> for the call stack.</p>
+      <p>The answer for a remainder does not depend on how I reached it, so I store the best answer for each amount once in a table. The panel’s greedy example also shows why choosing the largest coin alone is not enough.</p>
     </section>
 
     <section class="step" data-state="recursion">
       <div class="n">STEP 3</div>
       <h2>Reframe: the last coin</h2>
-      <p>Look at any optimal pile for amount <code>a</code>. Its last coin is some denomination <code>c</code>. Take it away and what remains must be an optimal pile for <code>a − c</code>; if it were not, we could swap in a better one and beat the "optimal" pile.</p>
+      <p>I look at any optimal pile for amount <code>a</code>. Its last coin is some denomination <code>c</code>. After I take it away, what remains must be an optimal pile for <code>a − c</code>; otherwise I could swap in a better one and beat the “optimal” pile.</p>
       <div class="callout"><code>fewest(a) = 1 + min over coins c ≤ a of fewest(a − c)</code>, with <code>fewest(0) = 0</code>.</div>
       <p>Written as plain recursion this is correct but explodes: <code>fewest(11)</code> calls <code>fewest(10)</code>, <code>fewest(9)</code> and <code>fewest(6)</code>, each of which calls three more, and the same amounts get recomputed over and over. Roughly <strong>O(coins<sup>amount</sup>)</strong> without a cache.</p>
     </section>
@@ -223,26 +224,26 @@
     <section class="step" data-state="idea">
       <div class="n">STEP 4</div>
       <h2>The key idea: fill a table from 0 upward</h2>
-      <p>There are only <code>amount + 1</code> distinct subproblems: fewest(0) through fewest(amount). Compute them in increasing order and store them in an array <code>dp</code>. When we reach <code>dp[a]</code>, every <code>dp[a − c]</code> it needs is already final.</p>
+      <p>There are only <code>amount + 1</code> distinct subproblems: fewest(0) through fewest(amount). I compute them in increasing order and store them in <code>dp</code>. When I reach <code>dp[a]</code>, every <code>dp[a − c]</code> it needs is already final.</p>
       <ul>
-        <li>Start every slot at a sentinel meaning "unreachable". <code>amount + 1</code> works: no real answer needs more coins than that.</li>
+        <li>I start every slot at a sentinel meaning “unreachable.” <code>amount + 1</code> works because no real answer needs more coins than that.</li>
         <li><code>dp[0] = 0</code>: making nothing takes no coins.</li>
-        <li>For each <code>a</code> from 1 to amount, for each coin that fits, <code>dp[a] = min(dp[a], dp[a − c] + 1)</code>.</li>
-        <li>If <code>dp[amount]</code> is still the sentinel, return −1.</li>
+        <li>For each <code>a</code> from 1 to amount, I try each coin that fits and set <code>dp[a] = min(dp[a], dp[a − c] + 1)</code>.</li>
+        <li>If <code>dp[amount]</code> is still the sentinel, I return −1.</li>
       </ul>
     </section>
 
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: the small amounts</h2>
-      <p><code>dp[1]</code>: only the 1 fits, <code>dp[0] + 1 = 1</code>. <code>dp[2]</code>: the 1 gives <code>dp[1] + 1 = 2</code>, the 2 gives <code>dp[0] + 1 = 1</code>. Take 1. <code>dp[3]</code>: <code>dp[2] + 1 = 2</code> or <code>dp[1] + 1 = 2</code>. Either way 2. <code>dp[4]</code>: 2. <code>dp[5]</code>: the 5 gives <code>dp[0] + 1 = 1</code>.</p>
+      <p>For <code>dp[1]</code>, only the 1 fits, giving <code>dp[0] + 1 = 1</code>. For <code>dp[2]</code>, the 1 gives <code>dp[1] + 1 = 2</code> and the 2 gives <code>dp[0] + 1 = 1</code>, so I choose 1. Both choices for <code>dp[3]</code> give 2; <code>dp[4]</code> is 2; for <code>dp[5]</code>, the 5 gives <code>dp[0] + 1 = 1</code>.</p>
       <p>Each slot tries three coins and takes the best. No slot is ever revisited.</p>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: reaching 11</h2>
-      <p>By the time we get to <code>a = 11</code> the table reads <code>[0, 1, 1, 2, 2, 1, 2, 2, 3, 3, 2]</code> for amounts 0 to 10. Try each coin as the last one:</p>
+      <p>By the time I get to <code>a = 11</code>, the table reads <code>[0, 1, 1, 2, 2, 1, 2, 2, 3, 3, 2]</code> for amounts 0 to 10. I try each coin as the last one:</p>
       <ul>
         <li>coin 1: <code>dp[10] + 1 = 3</code></li>
         <li>coin 2: <code>dp[9] + 1 = 4</code></li>
@@ -284,7 +285,7 @@
         <li>The inner loop tries each coin as the last coin, guarded by <code>c &lt;= a</code>.</li>
         <li><code>return dp[amount] if dp[amount] != INF else -1</code> maps the sentinel back.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>fewest for a is one more than the fewest for a minus some coin; build the table upward.</em></div>
+      <div class="callout">I remember that <em>fewest for a is one more than the fewest for a minus some coin, so I build the table upward.</em></div>
     </section>
 
     <div class="code-final">

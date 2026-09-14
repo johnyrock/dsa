@@ -204,8 +204,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Backtracking · LeetCode #131</div>
   <h1>Palindrome Partitioning, narrated</h1>
-  <p>Scroll through the thinking, from trying every set of cut positions to a recursion that only extends the current piece while it is a palindrome, with the state of the algorithm shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/backtracking.html">Backtracking</a> <span class="how">choose where the piece at <code>start</code> ends, recurse from <code>end + 1</code>, pop</span></p>
+  <p>I will first try every set of cut positions, then reject a cut as soon as the piece it creates is not a palindrome.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/backtracking.html">Backtracking</a> <span class="how">choose where the piece at <code>start</code> ends, recurse from <code>end + 1</code>, I pop</span></p>
 </header>
 
 <div class="layout">
@@ -221,18 +221,18 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>Brute force: every cut set, then check every piece</h2>
-      <p>Use a bitmask over the <code>n - 1</code> gaps: bit <code>i</code> set means "cut after index <code>i</code>". Split the string accordingly, then test each piece with <code>p == p[::-1]</code>, and keep the partition only if all pieces pass.</p>
-      <pre class="code"><span class="ln">for mask in range(1 &lt;&lt; (len(s) - 1)):</span><span class="ln">    pieces, prev = [], 0</span><span class="ln">    for i in range(len(s) - 1):</span><span class="ln">        if mask &gt;&gt; i &amp; 1:</span><span class="ln">            pieces.append(s[prev:i + 1]); prev = i + 1</span><span class="ln">    pieces.append(s[prev:])</span><span class="ln">    if all(p == p[::-1] for p in pieces): result.append(pieces)</span></pre>
-      <p style="margin-top:14px">That is <strong>O(2ⁿ · n)</strong>: every one of the <code>2^(n-1)</code> cut sets is materialised and checked, even when its very first piece is already not a palindrome. For <code>"abcdefghijklmnop"</code> only one partition is valid (all singles), yet the brute force builds all 32,768.</p>
-      <p>The waste is in the order of the work: we cut everything first and validate afterwards, when a failed first piece should have thrown away every cut set that starts with it.</p>
+      <h2>First instinct: every cut set, then check every piece</h2>
+      <p>I can use a bitmask over the gaps, I build the resulting pieces, and retain that partition only when every piece is a palindrome.</p>
+      <pre class="code"><span class="ln">def partition(s):</span><span class="ln">    result = []</span><span class="ln">    for mask in range(1 &lt;&lt; (len(s) - 1)):</span><span class="ln">        pieces, start = [], 0</span><span class="ln">        for i in range(len(s) - 1):</span><span class="ln">            if mask &gt;&gt; i &amp; 1: pieces.append(s[start:i + 1]); start = i + 1</span><span class="ln">        pieces.append(s[start:])</span><span class="ln">        if all(piece == piece[::-1] for piece in pieces): result.append(pieces)</span><span class="ln">    return result</span></pre>
+      <p style="margin-top:14px">This is correct. There are <code>2^(n-1)</code> cut sets, and building and checking their pieces takes O(n) work, so the time complexity is O(n · 2ⁿ). The result and built partitions use O(n · 2ⁿ) space.</p>
+      <p>I choose one piece at a time and test it before making the next cut. A failed early piece then prunes every partition that would extend it.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>Key insight: choose the end of the current piece, and only if it is a palindrome</h2>
-      <p>Build the partition left to right. At any moment, <code>path</code> holds palindrome pieces covering <code>s[:start]</code>, and the only decision left is where the piece beginning at <code>start</code> ends. Try each <code>end</code> from <code>start</code> to <code>len(s) - 1</code>.</p>
-      <p>Before recursing, test <code>is_palindrome(start, end)</code> by walking two indices inward. If the test fails, skip that <code>end</code>: no later cut can repair a piece that is already not a palindrome, so the entire subtree beneath it is gone in one comparison.</p>
+      <p>I build the partition left to right. At any moment, <code>path</code> holds palindrome pieces covering <code>s[:start]</code>, and the only decision left is where the piece beginning at <code>start</code> ends. I try each <code>end</code> from <code>start</code> to <code>len(s) - 1</code>.</p>
+      <p>Before recursing, test <code>is_palindrome(start, end)</code> by walking two indices inward. If the test fails, I skip that <code>end</code>: no later cut can repair a piece that is already not a palindrome, so the entire subtree beneath it is gone in one comparison.</p>
       <div class="callout">When <code>start == len(s)</code>, every character is inside some palindrome piece and <code>path</code> is a complete answer. Copy it with <code>path[:]</code>, since <code>path</code> keeps changing after the return.</div>
     </section>
 
@@ -240,8 +240,8 @@
       <div class="n">STEP 4</div>
       <h2>The approach, line by line</h2>
       <ul>
-        <li><code>is_palindrome(left, right)</code> — while <code>left &lt; right</code>, compare <code>s[left]</code> with <code>s[right]</code>; any mismatch returns <code>False</code>.</li>
-        <li><code>backtrack(start)</code> — if <code>start == len(s)</code>, record <code>path[:]</code> and return.</li>
+        <li><code>is_palindrome(left, right)</code> — while <code>left &lt; right</code>, I compare <code>s[left]</code> with <code>s[right]</code>; any mismatch returns <code>False</code>.</li>
+        <li><code>backtrack(start)</code> — if <code>start == len(s)</code>, I record <code>path[:]</code> and return.</li>
         <li><code>for end in range(start, len(s))</code> — every possible end of the piece that begins at <code>start</code>.</li>
         <li><code>if is_palindrome(start, end)</code> — prune before recursing.</li>
         <li><code>path.append(s[start:end + 1])</code>, <code>backtrack(end + 1)</code>, <code>path.pop()</code> — choose, recurse, undo. The <code>+ 1</code> in the slice is because <code>end</code> is inclusive.</li>
@@ -253,8 +253,8 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace: single characters all the way, ["a","a","b"]</h2>
-      <p><code>backtrack(0)</code>: <code>end = 0</code>, piece <code>"a"</code>. A single character is trivially a palindrome (<code>left &lt; right</code> is false immediately), so push <code>"a"</code> and call <code>backtrack(1)</code>.</p>
-      <p><code>backtrack(1)</code>: <code>end = 1</code>, piece <code>"a"</code>, palindrome. Push it, call <code>backtrack(2)</code>. There, <code>end = 2</code>, piece <code>"b"</code>, palindrome. Push it, call <code>backtrack(3)</code>.</p>
+      <p><code>backtrack(0)</code>: <code>end = 0</code>, piece <code>"a"</code>. A single character is trivially a palindrome (<code>left &lt; right</code> is false immediately), so I push <code>"a"</code> and call <code>backtrack(1)</code>.</p>
+      <p><code>backtrack(1)</code>: <code>end = 1</code>, piece <code>"a"</code>, palindrome. I push it, call <code>backtrack(2)</code>. There, <code>end = 2</code>, piece <code>"b"</code>, palindrome. I push it, call <code>backtrack(3)</code>.</p>
       <div class="callout"><code>start == 3 == len(s)</code>, so <code>["a", "a", "b"]</code> is copied into <code>result</code>. On the way back, <code>backtrack(2)</code> pops <code>"b"</code>; its loop had only that one <code>end</code>, so it returns too.</div>
     </section>
 
@@ -269,8 +269,8 @@
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace: "aa" then "b", and "aab" rejected</h2>
-      <p><code>backtrack(0)</code> moves to <code>end = 1</code>: piece <code>s[0..1] = "aa"</code>. <code>is_palindrome(0, 1)</code> compares <code>s[0]</code> with <code>s[1]</code>, both <code>"a"</code>, then <code>left</code> and <code>right</code> cross: <code>True</code>. Push <code>"aa"</code>, call <code>backtrack(2)</code>, which pushes <code>"b"</code> and reaches <code>start == 3</code>.</p>
-      <p><code>["aa", "b"]</code> is recorded. Pop back to <code>backtrack(0)</code>, <code>end = 2</code>: piece <code>"aab"</code>. <code>s[0] = "a"</code> versus <code>s[2] = "b"</code>: <code>False</code>, skipped. The loop is exhausted and the top-level call returns.</p>
+      <p><code>backtrack(0)</code> moves to <code>end = 1</code>: piece <code>s[0..1] = "aa"</code>. <code>is_palindrome(0, 1)</code> compares <code>s[0]</code> with <code>s[1]</code>, both <code>"a"</code>, then <code>left</code> and <code>right</code> cross: <code>True</code>. I push <code>"aa"</code>, call <code>backtrack(2)</code>, which pushes <code>"b"</code> and reaches <code>start == 3</code>.</p>
+      <p><code>["aa", "b"]</code> is recorded. I pop back to <code>backtrack(0)</code>, <code>end = 2</code>: piece <code>"aab"</code>. <code>s[0] = "a"</code> versus <code>s[2] = "b"</code>: <code>False</code>, skipped. The loop is exhausted and the top-level call returns.</p>
       <div class="callout">Six calls to <code>backtrack</code> and seven palindrome checks, producing exactly the two answers with no filtering step.</div>
     </section>
 
@@ -310,7 +310,7 @@
         <li><code>path.pop()</code> — undo, so the next <code>end</code> starts from the same prefix.</li>
         <li><code>backtrack(0)</code> and <code>return result</code>.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>for the piece starting at <code>start</code>, try every end that makes a palindrome, recurse from <code>end + 1</code>, and record when <code>start</code> reaches the end of the string.</em></div>
+      <div class="callout">One-line summary to remember: <em>for the piece starting at <code>start</code>, I try every end that makes a palindrome, recurse from <code>end + 1</code>, and record when <code>start</code> reaches the end of the string.</em></div>
     </section>
 
     <div class="code-final">

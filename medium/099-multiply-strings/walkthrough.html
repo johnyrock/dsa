@@ -220,7 +220,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Math · LeetCode #43</div>
   <h1>Multiply Strings, narrated</h1>
-  <p>Scroll through the thinking, from the one-line <code>int()</code> cheat to the schoolbook grid where every digit pair has a fixed home in the result array, with the digit cells shown alongside.</p>
+  <p>I’ll start with ordinary partial products, then place every digit pair directly into its result cells.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/math.html">Math</a> <span class="how">digit i of num1 times digit j of num2 lands at result[i + j + 1], carry into result[i + j]</span></p>
 </header>
 
@@ -239,11 +239,12 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: cheat, or build partial products as strings</h2>
-      <p>In Python the cheat is one line, and it is worth writing down so you know what you are replacing:</p>
+      <p>My first thought in Python is the one-line shortcut, but it is disallowed. The complete baseline is the paper method below: I build each partial product and add it to a running string total.</p>
       <pre class="code"><span class="ln">return str(int(num1) * int(num2))</span></pre>
-      <p style="margin-top:14px">It is disallowed, and in C++ or Java it would overflow anyway. The honest naive version imitates paper: for each digit of <code>num2</code> from the right, multiply all of <code>num1</code> by it to get a partial product string, pad it with the right number of trailing zeros, then add all those strings together with a string-addition helper.</p>
+      <p style="margin-top:14px">The <code>int()</code> shortcut is disallowed and can overflow in fixed-width languages. My baseline instead follows the paper method: for each digit of <code>num2</code>, I build a padded partial product and add it to the running total.</p>
       <pre class="code"><span class="ln">total = "0"</span><span class="ln">for j in range(len(num2) - 1, -1, -1):</span><span class="ln">    partial = multiply_by_digit(num1, num2[j]) + "0" * (len(num2) - 1 - j)</span><span class="ln">    total = add_strings(total, partial)</span></pre>
-      <p style="margin-top:14px">That is <strong>O(m · n)</strong> arithmetic plus <strong>O(n · (m + n))</strong> for the repeated string additions, and two helper functions to get right. It works, but the partial products are built only to be immediately dissolved into a sum. The better approach skips them entirely.</p>
+      <p style="margin-top:14px">This takes <strong>O(m · n + n · (m + n)) time</strong> and <strong>O(m + n) space</strong> for partial strings. It works, but I build each partial product only to dissolve it into the sum.</p>
+      <p>By adding every digit pair directly into its final two result cells, I never build partial-product strings.</p>
     </section>
 
     <section class="step" data-state="insight">
@@ -259,12 +260,12 @@
       <div class="n">STEP 4</div>
       <h2>The approach, line by line</h2>
       <ul>
-        <li><code>if num1 == "0" or num2 == "0": return "0"</code> — a zero factor is the only case where the whole array stays 0, and we want <code>"0"</code>, not a run of zeros.</li>
+        <li><code>if num1 == "0" or num2 == "0": return "0"</code> — a zero factor is the only case where the whole array stays 0, and I return <code>"0"</code>, not a run of zeros.</li>
         <li><code>result = [0] * (len(num1) + len(num2))</code> — one cell per possible output digit.</li>
         <li>Two nested loops, both <code>range(len(...) - 1, -1, -1)</code>, walking right to left so that carries move into cells that have not been finalised yet.</li>
         <li><code>total = int(num1[i]) * int(num2[j]) + result[i + j + 1]</code> — the digit product plus whatever earlier pairs already left in the ones cell.</li>
         <li><code>result[i + j + 1] = total % 10</code> keeps the ones digit; <code>result[i + j] += total // 10</code> pushes the carry left.</li>
-        <li>After the loops, skip leading zeros with <code>while start &lt; len(result) - 1 and result[start] == 0</code>, then join.</li>
+        <li>After the loops, I skip leading zeros with <code>while start &lt; len(result) - 1 and result[start] == 0</code>, then join.</li>
       </ul>
       <p>The panel starts with all six cells at 0 and the two pointers on the rightmost digits, <code>i = 2</code> and <code>j = 2</code>.</p>
     </section>
@@ -274,7 +275,7 @@
       <h2>Trace it: i = 2, j = 2</h2>
       <p>The first pair is the two rightmost digits: <code>num1[2] = 3</code> and <code>num2[2] = 6</code>. Their product is <code>18</code>, and <code>result[5]</code> is still 0, so <code>total = 18 + 0 = 18</code>.</p>
       <p>Split it: <code>18 % 10 = 8</code> goes into <code>result[5]</code>, and <code>18 // 10 = 1</code> is added into <code>result[4]</code>. The array is now <code>[0, 0, 0, 0, 1, 8]</code>.</p>
-      <p>Notice this matches paper arithmetic exactly. Multiplying 123 by the 6 of 456, the first thing you write is the 8 in the ones column and carry the 1.</p>
+      <p>I can see this matches paper arithmetic exactly. Multiplying 123 by the 6 of 456, I write 8 in the ones column and carry 1.</p>
     </section>
 
     <section class="step" data-state="trace2">
@@ -298,10 +299,10 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: dropping the cell, or the wrong cell</h2>
-      <p><strong>Overwriting instead of accumulating.</strong> Write <code>total = int(num1[i]) * int(num2[j])</code> without the <code>+ result[i + j + 1]</code> and every carry from an earlier pair is stomped on by the next pair's ones digit. On the running example the array finishes as <code>[0, 4, 5, 6, 2, 8]</code> and the function returns <strong>"45628"</strong> instead of "56088".</p>
+      <p><strong>Overwriting instead of accumulating.</strong> If I write <code>total = int(num1[i]) * int(num2[j])</code> without the <code>+ result[i + j + 1]</code>, every carry from an earlier pair is stomped on by the next pair's ones digit. On the running example the array finishes as <code>[0, 4, 5, 6, 2, 8]</code> and the function returns <strong>"45628"</strong> instead of "56088".</p>
       <p><strong>Off-by-one on the address.</strong> Using <code>result[i + j]</code> for the ones digit and <code>result[i + j - 1]</code> for the carry shifts everything one place left, and at <code>i = j = 0</code> the carry index is <code>-1</code>, which Python quietly treats as the last cell. The example comes out as <strong>"560880"</strong>: an extra trailing digit with the leading 5 wrapped around to the end.</p>
-      <p><strong>Forgetting the zero guard.</strong> <code>"0" × "12345"</code> leaves six zero cells. The strip loop is deliberately bounded by <code>len(result) - 1</code> so it keeps one cell and returns <code>"0"</code>; drop the bound and it returns the empty string.</p>
-      <div class="callout warn">The ones cell is <code>i + j + 1</code>, the carry cell is <code>i + j</code>, and the ones cell is read before it is written. Check the pair <code>i = j = 0</code>: its carry must land at index 0, not index −1.</div>
+      <p><strong>Forgetting the zero guard.</strong> <code>"0" × "12345"</code> leaves six zero cells. The strip loop is deliberately bounded by <code>len(result) - 1</code> so it keeps one cell and returns <code>"0"</code>; without that bound it returns the empty string.</p>
+      <div class="callout warn">The ones cell is <code>i + j + 1</code>, the carry cell is <code>i + j</code>, and I read the ones cell before writing it. For <code>i = j = 0</code>, its carry must land at index 0, not index −1.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -328,7 +329,7 @@
         <li><code>result[i + j + 1] = total % 10</code> and <code>result[i + j] += total // 10</code> — keep the ones digit, carry the rest.</li>
         <li>The <code>while</code> strip and <code>"".join(...)</code> — drop leading zeros but keep at least one digit.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>digit i times digit j lives at result[i + j + 1], with its carry at result[i + j]; walk right to left and the cells add themselves up.</em></div>
+      <div class="callout">One-line summary to remember: <em>digit i times digit j lives at result[i + j + 1], with its carry at result[i + j]; I walk right to left and the cells add themselves up.</em></div>
     </section>
 
     <div class="code-final">

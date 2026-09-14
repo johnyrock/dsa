@@ -220,7 +220,7 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Bit Manipulation · LeetCode #136</div>
   <h1>Single Number, narrated</h1>
-  <p>Scroll through the pairwise scan, the set that costs memory, and the XOR identity that cancels every pair in one pass, with the accumulator's bits shown alongside.</p>
+  <p>I’ll start by searching for each value’s partner, then use XOR to cancel every pair in one pass.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/bit-manipulation.html">Bit Manipulation</a> <span class="how">XOR is associative, and <code>x ^ x</code> is zero. Every duplicated value cancels regardless of order, leaving the sole unpaired number.</span></p>
 </header>
 
@@ -238,10 +238,10 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: look for each value's partner</h2>
-      <p>The most literal approach is to take each value in turn and scan the rest of the array for a second copy. If none is found, that value is the answer:</p>
+      <p>My first instinct is to take each value in turn and scan the rest of the array for a second copy. If I find none, that value is the answer.</p>
       <pre class="code"><span class="ln">for i, candidate in enumerate(nums):</span><span class="ln">    if all(nums[j] != candidate for j in range(len(nums)) if j != i):</span><span class="ln">        return candidate</span></pre>
-      <p style="margin-top:14px">The panel highlights 4 as the current candidate with the other four values dimmed: that is one full scan of the remainder. Doing that for every one of n values is <strong>O(n²)</strong> time. At 30,000 elements that is hundreds of millions of comparisons.</p>
-      <p>The next idea is a hash set: walk the array once, adding a value on first sight and removing it on second sight; whatever remains at the end is the single number. That is O(n) time, but the set can hold up to n/2 values at once, so it is O(n) extra space, and the problem said constant. Sorting first and looking for the pair that is not there is O(n log n) and still not constant space in most implementations.</p>
+      <p style="margin-top:14px">This baseline scans the array for each candidate, so it takes <strong>O(n²) time</strong> and uses <strong>O(1) extra space</strong>.</p>
+      <p>I only need pairs to cancel, not to be located. XOR removes equal pairs without storing a set or sorting the array.</p>
     </section>
 
     <section class="step" data-state="insight">
@@ -253,7 +253,7 @@
         <li><code>x ^ 0 == x</code> — zero is the identity.</li>
         <li>XOR is associative and commutative, so the order of operands does not matter.</li>
       </ul>
-      <p>Look at the panel. Starting from 4 (<code>00000100</code>), XORing in a 1 turns bit 0 on: <code>4 ^ 1 = 5</code> (<code>00000101</code>). XORing in the second 1 turns bit 0 back off: <code>5 ^ 1 = 4</code>. The pair of 1s has vanished, and it did not matter that 4 was sitting in between.</p>
+      <p>I look at the panel. Starting from 4 (<code>00000100</code>), XORing in a 1 turns bit 0 on: <code>4 ^ 1 = 5</code> (<code>00000101</code>). XORing in the second 1 turns bit 0 back off: <code>5 ^ 1 = 4</code>. The pair of 1s has vanished, and it did not matter that 4 was sitting in between.</p>
       <div class="callout">XOR every element of the array together. Because order does not matter, every pair cancels to 0 no matter how far apart the two copies sit, and the lone value is the only thing that survives.</div>
     </section>
 
@@ -276,7 +276,7 @@
       <div class="n">STEP 6</div>
       <h2>Trace it: the first pair cancels</h2>
       <p>Index 2 folds in the first 2: <code>5 ^ 2 = 7</code>, or <code>00000111</code> — three unpaired values, three bits set.</p>
-      <p>Index 3 brings the second 1. <code>7 ^ 1 = 6</code>, or <code>00000110</code>. Bit 0 flipped back off; the two 1s have cancelled even though a 2 arrived between them. Check: <code>6 == 4 ^ 2</code>, which is exactly the XOR of the values still unpaired, the 4 and the first 2.</p>
+      <p>Index 3 brings the second 1. <code>7 ^ 1 = 6</code>, or <code>00000110</code>. Bit 0 flipped back off; the two 1s have cancelled even though a 2 arrived between them. I can verify that <code>6 == 4 ^ 2</code>, exactly the XOR of the values still unpaired: the 4 and the first 2.</p>
       <p>The panel's current pointer is on index 3 and the accumulator shows <code>unique = 6 (00000110)</code>.</p>
     </section>
 

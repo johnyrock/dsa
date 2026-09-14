@@ -204,7 +204,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Dynamic Programming · LeetCode #91</div>
   <h1>Decode Ways, narrated</h1>
-  <p>Scroll through the thinking, from the exponential "one digit or two" recursion to a two-variable count with the zero rules, with the state of the algorithm shown alongside.</p>
+  <p>I will first recurse over one-digit and two-digit choices, then store the number of ways for each suffix.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">dp[i+1] = dp[i] if the digit is a code, plus dp[i−1] if the pair is a code; Climbing Stairs with switches</span></p>
 </header>
 
@@ -219,18 +219,18 @@
       <p>We are asked for a <em>count</em>, not the decodings themselves. That is the hint that a table of counts will do, and that we never need to build a single decoded string.</p>
     </section>
 
-    <section class="step" data-state="brute">
-      <div class="n">STEP 2</div>
-      <h2>First instinct: recurse on "one digit or two"</h2>
-      <p>The first code is either the first digit alone or the first two digits together. Try both, and recurse on whatever is left.</p>
-      <pre class="code"><span class="ln">def count(i):</span><span class="ln">    if i == len(s): return 1</span><span class="ln">    if s[i] == "0": return 0</span><span class="ln">    ways = count(i + 1)</span><span class="ln">    if i + 1 &lt; len(s) and int(s[i:i + 2]) &lt;= 26:</span><span class="ln">        ways += count(i + 2)</span><span class="ln">    return ways</span></pre>
-      <p style="margin-top:14px">This is correct and reads like the problem statement. It is also <strong>O(2ⁿ)</strong>: <code>count(0)</code> calls <code>count(1)</code> and <code>count(2)</code>, and <code>count(1)</code> calls <code>count(2)</code> again, so every suffix is recomputed once per path that reaches it. On a string of 100 ones that is on the order of 10<sup>20</sup> calls.</p>
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 2</div><h2>First instinct: recurse on one digit or two</h2>
+      <p>I can decode a valid first digit alone, optionally decode a valid first two-digit number, and recurse on the remaining suffix.</p>
+      <pre class="code"><span class="ln">def numDecodings(s):</span><span class="ln">    def count(i):</span><span class="ln">        if i == len(s): return 1</span><span class="ln">        if s[i] == "0": return 0</span><span class="ln">        ways = count(i + 1)</span><span class="ln">        if i + 1 &lt; len(s) and int(s[i:i+2]) &lt;= 26: ways += count(i + 2)</span><span class="ln">        return ways</span><span class="ln">    return count(0)</span></pre>
+      <p style="margin-top:14px">This is correct. The same suffix is reached through many choices, so the time complexity is O(2ⁿ). The recursive call stack has O(n) space complexity.</p>
+      <p>Keeping each suffix count once removes the repeated recursion. The next count depends only on the previous two counts and whether the one- and two-digit choices are valid.</p>
     </section>
 
     <section class="step" data-state="reframe">
       <div class="n">STEP 3</div>
       <h2>Reframe: look at the last code, not the first</h2>
-      <p>Call <code>dp[k]</code> the number of decodings of the first <code>k</code> digits. Take any decoding of the prefix ending at digit <code>i</code> and look at its last code. It is one of two things:</p>
+      <p>I call <code>dp[k]</code> the number of decodings of the first <code>k</code> digits. Looking at a prefix ending at digit <code>i</code>, its last code has one of two forms:</p>
       <ul>
         <li>the single digit <code>s[i]</code>, in which case the rest is a decoding of <code>s[:i]</code>, and there are <code>dp[i]</code> of those, but only if <code>s[i] != "0"</code>;</li>
         <li>the pair <code>s[i-1]s[i]</code>, in which case the rest is a decoding of <code>s[:i-1]</code>, and there are <code>dp[i-1]</code> of those, but only if the pair is 10 through 26.</li>
@@ -266,7 +266,7 @@
       <h2>Trace it: i = 2, the "6", the answer</h2>
       <p>Digit <code>s[2] = "6"</code> is not zero, so every decoding of <code>"22"</code> extends with an F: <code>ways = 0 + one_back = 2</code>. The pair <code>s[1:3] = "26"</code> is Z, in range, so every decoding of <code>"2"</code> extends with a Z: <code>ways = 2 + two_back = 2 + 1 = 3</code>.</p>
       <p><code>dp[3] = 3</code>, and the loop is done. <code>one_back</code> now holds 3, which is what <code>return one_back</code> gives back.</p>
-      <div class="callout">Check against the list: BBF and VF come from the single-digit switch (2 decodings of <code>"22"</code>, each plus F); BZ comes from the pair switch (1 decoding of <code>"2"</code>, plus Z). 2 + 1 = 3.</div>
+      <div class="callout">I can match this against the list: BBF and VF come from the single-digit switch (2 decodings of <code>"22"</code>, each plus F); BZ comes from the pair switch (1 decoding of <code>"2"</code>, plus Z). 2 + 1 = 3.</div>
     </section>
 
     <section class="step" data-state="t3">
@@ -313,7 +313,7 @@
         <li><code>two_back, one_back = one_back, ways</code> slides the window without a temporary.</li>
         <li><code>return one_back</code> is <code>dp[n]</code>.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>a decoding ends with one digit or two; add the count for each ending that is a legal code, keeping only the last two counts.</em></div>
+      <div class="callout">My rule is: <em>a decoding ends with one digit or two, so I add the count for each legal ending and keep only the last two counts.</em></div>
     </section>
 
     <div class="code-final">

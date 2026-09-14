@@ -196,7 +196,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Trie · LeetCode #208</div>
   <h1>Implement Trie (Prefix Tree), narrated</h1>
-  <p>Scroll from a set of strings plus prefix scans to a tree of characters with an end-of-word flag, with the trie's contents shown after every operation.</p>
+  <p>I will begin with a set of complete words, then I store shared prefixes directly in a character tree.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/trie.html">Trie</a> <span class="how">One node per character along a path; words that share a prefix share the path, and a flag marks where a word ends.</span></p>
 </header>
 
@@ -214,10 +214,10 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: a set of words</h2>
-      <p>A Python <code>set</code> gives <code>insert</code> and <code>search</code> for free: <code>self.words.add(word)</code> and <code>word in self.words</code>, both O(L) for the hash. The trouble is <code>starts_with</code>, which has to look at every stored word:</p>
-      <pre class="code"><span class="ln">class Trie:</span><span class="ln">    def __init__(self):</span><span class="ln">        self.words = set()</span><span class="ln">    def insert(self, word):</span><span class="ln">        self.words.add(word)</span><span class="ln">    def search(self, word):</span><span class="ln">        return word in self.words</span><span class="ln">    def starts_with(self, prefix):</span><span class="ln">        return any(w.startswith(prefix) for w in self.words)</span></pre>
-      <p style="margin-top:14px">That <code>any</code> scans all <code>n</code> stored words and compares up to <code>L</code> characters of each: <strong>O(n · L)</strong> per prefix query. With 10⁴ stored words and 10⁴ queries it is 10⁸ character comparisons, and it gets worse the more you store, which is the opposite of what a data structure should do.</p>
-      <p>You could patch it with a second set holding every prefix of every inserted word, which makes <code>starts_with</code> O(L) but turns <code>insert</code> into O(L²) and stores 2000 strings for a single 2000-character word. The scan moved, it did not go away.</p>
+      <p>I can store complete words in a set. Exact lookup is direct, while a prefix query checks each stored word.</p>
+      <pre class="code"><span class="ln">class Trie:</span><span class="ln">    def __init__(self): self.words = set()</span><span class="ln">    def insert(self, word): self.words.add(word)</span><span class="ln">    def search(self, word): return word in self.words</span><span class="ln">    def startsWith(self, prefix):</span><span class="ln">        return any(word.startswith(prefix) for word in self.words)</span></pre>
+      <p style="margin-top:14px">This is correct. For a word length of <code>L</code>, insertion and exact search take O(L) time, while <code>startsWith</code> takes O(n · L) time across <code>n</code> stored words. The set uses O(total characters) space.</p>
+      <p>I shorten prefix queries by sharing the work between words with the same opening characters. A trie follows only the prefix path, so the query depends on prefix length instead of how many words I stored.</p>
     </section>
 
     <section class="step" data-state="insight">
@@ -235,11 +235,11 @@
       <ul>
         <li><code>self.root = TrieNode()</code> — the empty prefix; never a word, parent of every first letter.</li>
         <li><code>insert</code>: for each <code>ch</code>, <code>if ch not in node.children: node.children[ch] = TrieNode()</code>, then <code>node = node.children[ch]</code>. After the loop, <code>node.is_word = True</code>.</li>
-        <li><code>_walk(s)</code>: for each <code>ch</code>, <code>node = node.children.get(ch)</code>; <code>if node is None: return None</code>. Return the node reached.</li>
+        <li><code>_walk(s)</code>: for each <code>ch</code>, <code>node = node.children.get(ch)</code>; <code>if node is None: return None</code>. I return the node reached.</li>
         <li><code>search(word)</code>: <code>node = self._walk(word)</code>, then <code>return node is not None and node.is_word</code>.</li>
         <li><code>starts_with(prefix)</code>: <code>return self._walk(prefix) is not None</code>.</li>
       </ul>
-      <p>Notice that <code>insert</code> creates nodes only when they are missing. That is what lets a later <code>insert("app")</code> reuse the a-p-p nodes that "apple" built instead of overwriting them.</p>
+      <p>I create nodes in <code>insert</code> only when they are missing. That lets a later <code>insert("app")</code> reuse the a-p-p nodes that "apple" built instead of overwriting them.</p>
     </section>
 
     <section class="step" data-state="t1">
@@ -269,9 +269,9 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong</h2>
-      <p><strong>Forgetting the flag in <code>search</code>.</strong> Write <code>return self._walk(word) is not None</code> for <code>search</code>, the same body as <code>starts_with</code>. After <code>insert("apple")</code>, <code>search("app")</code> reaches the second <code>p</code> node and returns <strong>true</strong> instead of false. Every prefix of every stored word now counts as a word. The panel shows that state: the walk lands on an unflagged node and the method says yes anyway.</p>
-      <p><strong>Overwriting children in <code>insert</code>.</strong> Write <code>node.children[ch] = TrieNode()</code> without the <code>if ch not in node.children</code> guard. Then <code>insert("app")</code> replaces the root's <code>a</code> node with a fresh one, and the <code>p-p-l-e</code> chain under the old one is gone; <code>search("apple")</code> returns <strong>false</strong> after the second insert.</p>
-      <p><strong>Flagging every node on the path.</strong> Move <code>node.is_word = True</code> inside the loop and after <code>insert("apple")</code>, <code>search("a")</code>, <code>search("ap")</code>, and <code>search("app")</code> all return true.</p>
+      <p><strong>Forgetting the flag in <code>search</code>.</strong> I write <code>return self._walk(word) is not None</code> for <code>search</code>, the same body as <code>starts_with</code>. After <code>insert("apple")</code>, <code>search("app")</code> reaches the second <code>p</code> node and returns <strong>true</strong> instead of false. Every prefix of every stored word now counts as a word. The panel shows that state: the walk lands on an unflagged node and the method says yes anyway.</p>
+      <p><strong>Overwriting children in <code>insert</code>.</strong> I write <code>node.children[ch] = TrieNode()</code> without the <code>if ch not in node.children</code> guard. Then <code>insert("app")</code> replaces the root's <code>a</code> node with a fresh one, and the <code>p-p-l-e</code> chain under the old one is gone; <code>search("apple")</code> returns <strong>false</strong> after the second insert.</p>
+      <p><strong>Flagging every node on the path.</strong> I move <code>node.is_word = True</code> inside the loop and after <code>insert("apple")</code>, <code>search("a")</code>, <code>search("ap")</code>, and <code>search("app")</code> all return true.</p>
       <div class="callout warn">Reaching a node means "this is a prefix". Only the flag means "this is a word". <code>search</code> needs both; <code>starts_with</code> needs only the first.</div>
     </section>
 

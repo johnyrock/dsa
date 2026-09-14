@@ -225,7 +225,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Heap · LeetCode #621</div>
   <h1>Task Scheduler, narrated</h1>
-  <p>Scroll from trying every ordering to a max-heap of remaining counts plus a cooldown queue that simulates the CPU tick by tick, with the heap, the queue and the growing timeline shown alongside.</p>
+  <p>I will first test every distinct task ordering, then I choose the available task with the largest remaining count at each CPU tick.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/heap.html">Heap</a> <span class="how">At every tick run the available task with the most copies left; a max-heap on counts finds it, and a FIFO cooldown queue holds tasks until n ticks have passed.</span></p>
 </header>
 
@@ -237,16 +237,16 @@
       <h2>The problem</h2>
       <p>A CPU is given a list of tasks, each an uppercase letter, and a cooldown <code>n</code>. Every tick it runs one task or idles. Two runs of the <em>same</em> letter must be at least <code>n</code> ticks apart, meaning <code>n</code> other ticks (other letters or idles) sit between them. The order is up to you. Return the fewest ticks needed to finish everything.</p>
       <div class="callout">Running example: <code>tasks = ["A","A","A","B","B","B"]</code>, <code>n = 2</code>. The best schedule is <code>A B idle A B idle A B</code>: <strong>8</strong> ticks. Each A needs two ticks before the next A, and there is only one other letter to fill the gap, so one idle per gap is unavoidable.</div>
-      <p>The answer is a single number, the length of the schedule, not the schedule itself. Idles count as ticks. Notice also that the letters themselves are irrelevant: only <em>how many copies</em> of each letter exist matters, and there are at most 26 distinct letters.</p>
+      <p>The answer is a single number, the length of the schedule, not the schedule itself. Idles count as ticks. Only <em>how many copies</em> of each letter exist matters; the letters themselves are irrelevant, and there are at most 26 distinct letters.</p>
     </section>
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: try every ordering</h2>
-      <p>Generate every permutation of the tasks, insert the minimum idles each one forces, and keep the shortest:</p>
-      <pre class="code"><span class="ln">best = inf</span><span class="ln">for order in permutations(tasks):</span><span class="ln">    last = {}; t = 0</span><span class="ln">    for task in order:</span><span class="ln">        t = max(t + 1, last.get(task, -inf) + n + 1)</span><span class="ln">        last[task] = t</span><span class="ln">    best = min(best, t)</span></pre>
-      <p style="margin-top:14px">Six tasks have 720 orderings, which is fine. Ten thousand tasks have <code>10⁴!</code>, which is not: <strong>O(T! · T)</strong>. Even collapsing duplicate letters leaves an astronomical number of distinct schedules.</p>
-      <p>The waste is that almost every ordering makes the same avoidable mistake somewhere: it runs a rare letter while a common letter is available, and pays for it later with idles the common letter forces at the end. A schedule is only good when it keeps the biggest pile shrinking.</p>
+      <p>I can generate each distinct order of the tasks, simulate the cooldown delays it requires, and keep the shortest resulting schedule.</p>
+      <pre class="code"><span class="ln">from itertools import permutations</span><span class="ln">def leastInterval(tasks, n):</span><span class="ln">    best = float("inf")</span><span class="ln">    for order in set(permutations(tasks)):</span><span class="ln">        last, time = {}, 0</span><span class="ln">        for task in order:</span><span class="ln">            time = max(time + 1, last.get(task, -n - 1) + n + 1)</span><span class="ln">            last[task] = time</span><span class="ln">        best = min(best, time)</span><span class="ln">    return best</span></pre>
+      <p style="margin-top:14px">This is correct because it examines every possible task order and calculates the idles forced by its cooldowns. With <code>T</code> tasks, the time complexity is O(T! · T), and storing the generated orderings uses O(T! · T) space.</p>
+      <p>I choose the available task with the most copies left. A max-heap chooses the available task with the most copies left, while a cooldown queue tells me when a task can return.</p>
     </section>
 
     <section class="step" data-state="insight">
@@ -254,7 +254,7 @@
       <h2>The key insight: always run the most-remaining available task</h2>
       <p>The letter with the most copies left is the one that will force idles at the end if it falls behind, so at every tick it should run <em>if it is allowed to</em>. That is a greedy rule with two halves:</p>
       <ul>
-        <li><strong>Which task has the most copies left?</strong> A max-heap of counts answers that in O(log 26). <code>heapq</code> is a min-heap, so store <code>-count</code>; the root is then the largest pile.</li>
+        <li><strong>Which task has the most copies left?</strong> A max-heap of counts answers that in O(log 26). <code>heapq</code> is a min-heap, so I store <code>-count</code>; the root is then the largest pile.</li>
         <li><strong>Which tasks are allowed right now?</strong> A task that ran at tick <code>t</code> may not run again until tick <code>t + n + 1</code>. Between those ticks it must be <em>out</em> of the heap, otherwise the greedy would pick it again immediately. Park it in a queue tagged with the tick it becomes ready: <code>(time + n, remaining)</code>.</li>
       </ul>
       <div class="callout">Every parked task waits exactly <code>n</code> ticks, so the queue is sorted by ready time for free. Only its front ever needs checking: <code>cooldown[0][0] == time</code>.</div>
@@ -267,9 +267,9 @@
       <ul>
         <li><code>heap = [-count for count in Counter(tasks).values()]</code>, then <code>heapq.heapify(heap)</code>: the negated counts, largest pile at the root.</li>
         <li><code>cooldown = deque()</code>, <code>time = 0</code>: an empty parking queue and the clock.</li>
-        <li><code>while heap or cooldown</code>: keep ticking while anything is runnable <em>or</em> still cooling down.</li>
+        <li><code>while heap or cooldown</code>: I keep ticking while anything is runnable <em>or</em> still cooling down.</li>
         <li><code>time += 1</code>: a tick passes whether or not a task runs.</li>
-        <li><code>if heap: remaining = heapq.heappop(heap) + 1</code>: run the biggest pile. <code>-3 + 1 = -2</code> means one copy done, two left.</li>
+        <li><code>if heap: remaining = heapq.heappop(heap) + 1</code>: I run the biggest pile. <code>-3 + 1 = -2</code> means one copy done, two left.</li>
         <li><code>if remaining: cooldown.append((time + n, remaining))</code>: unless that letter is finished, park it until <code>time + n</code>.</li>
         <li><code>if cooldown and cooldown[0][0] == time: heapq.heappush(heap, cooldown.popleft()[1])</code>: the oldest parked task, if its ready tick is now, goes back into the heap.</li>
         <li><code>return time</code>: when both are empty, the clock is the answer.</li>
@@ -280,8 +280,8 @@
     <section class="step" data-state="trace1">
       <div class="n">STEP 5</div>
       <h2>Trace it: ticks 1 and 2, A then B</h2>
-      <p><strong>Tick 1.</strong> Pop <code>-3</code> (call it A): <code>remaining = -3 + 1 = -2</code>, nonzero, so append <code>(1 + 2, -2) = (3, -2)</code> to <code>cooldown</code>. The heap is <code>[-3]</code>, B only. Nothing in the queue is ready at tick 1.</p>
-      <p><strong>Tick 2.</strong> Pop <code>-3</code> (B): <code>remaining = -2</code>, append <code>(4, -2)</code>. The heap is now <strong>empty</strong>: both letters are cooling down. The queue is <code>[(3, A:-2), (4, B:-2)]</code>. The front is ready at 3, not 2, so nothing comes back yet.</p>
+      <p><strong>Tick 1.</strong> I pop <code>-3</code> (call it A): <code>remaining = -3 + 1 = -2</code>, nonzero, so I append <code>(1 + 2, -2) = (3, -2)</code> to <code>cooldown</code>. The heap is <code>[-3]</code>, B only. Nothing in the queue is ready at tick 1.</p>
+      <p><strong>Tick 2.</strong> I pop <code>-3</code> (B): <code>remaining = -2</code>, I append <code>(4, -2)</code>. The heap is now <strong>empty</strong>: both letters are cooling down. The queue is <code>[(3, A:-2), (4, B:-2)]</code>. The front is ready at 3, not 2, so nothing comes back yet.</p>
       <p>Timeline so far: <code>A B</code>. Two ticks, two tasks run, and the CPU is about to have nothing to do.</p>
     </section>
 
@@ -289,23 +289,23 @@
       <div class="n">STEP 6</div>
       <h2>Trace it: tick 3 idles, tick 4 runs A again</h2>
       <p><strong>Tick 3.</strong> The heap is empty, so <code>if heap</code> is false and nothing runs: an <em>idle</em>. But the tick still counted, and now <code>cooldown[0][0] == 3 == time</code>, so A's <code>-2</code> is popped from the front of the queue and pushed back into the heap. Heap <code>[-2]</code>, queue <code>[(4, B:-2)]</code>.</p>
-      <p><strong>Tick 4.</strong> Pop A's <code>-2</code>: <code>remaining = -1</code>, append <code>(4 + 2, -1) = (6, -1)</code>. Then the front of the queue is B with ready tick 4, which equals <code>time</code>, so B's <code>-2</code> re-enters the heap. Heap <code>[-2]</code> (B), queue <code>[(6, A:-1)]</code>.</p>
+      <p><strong>Tick 4.</strong> I pop A's <code>-2</code>: <code>remaining = -1</code>, I append <code>(4 + 2, -1) = (6, -1)</code>. Then the front of the queue is B with ready tick 4, which equals <code>time</code>, so B's <code>-2</code> re-enters the heap. Heap <code>[-2]</code> (B), queue <code>[(6, A:-1)]</code>.</p>
       <p>Timeline: <code>A B idle A</code>. The idle at tick 3 was forced: A ran at tick 1 and could not run before tick 4, and B ran at tick 2 and could not run before tick 5. The heap being empty <em>is</em> the signal that an idle is unavoidable.</p>
     </section>
 
     <section class="step" data-state="trace3">
       <div class="n">STEP 7</div>
       <h2>Trace it: ticks 5 to 8, the last copies</h2>
-      <p><strong>Tick 5.</strong> Pop B's <code>-2</code>, <code>remaining = -1</code>, append <code>(7, -1)</code>. Heap empty, queue <code>[(6, A:-1), (7, B:-1)]</code>. <strong>Tick 6.</strong> Idle; A's <code>-1</code> is released at exactly 6. <strong>Tick 7.</strong> Pop A's <code>-1</code>: <code>remaining = -1 + 1 = 0</code>, which is falsy, so A is <em>finished</em> and nothing is appended. B's <code>-1</code> is released. <strong>Tick 8.</strong> Pop B's <code>-1</code>, <code>remaining = 0</code>, finished.</p>
+      <p><strong>Tick 5.</strong> I pop B's <code>-2</code>, <code>remaining = -1</code>, I append <code>(7, -1)</code>. Heap empty, queue <code>[(6, A:-1), (7, B:-1)]</code>. <strong>Tick 6.</strong> Idle; A's <code>-1</code> is released at exactly 6. <strong>Tick 7.</strong> I pop A's <code>-1</code>: <code>remaining = -1 + 1 = 0</code>, which is falsy, so A is <em>finished</em> and nothing is appended. B's <code>-1</code> is released. <strong>Tick 8.</strong> I pop B's <code>-1</code>, <code>remaining = 0</code>, finished.</p>
       <p>Now <code>heap</code> is empty and <code>cooldown</code> is empty, so <code>while heap or cooldown</code> ends. <code>return time</code> gives <strong>8</strong>, and the timeline reads <code>A B idle A B idle A B</code>.</p>
-      <div class="callout">Notice the last B did not pay a trailing cooldown. Once a letter's count hits zero it is simply dropped, so the clock stops the moment the last task runs.</div>
+      <div class="callout">The last B does not pay a trailing cooldown. Once a letter's count hits zero I simply drop it, so the clock stops the moment the last task runs.</div>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the loop condition, and the ready tick</h2>
-      <p><strong>Looping only while the heap is nonempty.</strong> Write <code>while heap:</code> instead of <code>while heap or cooldown:</code>. On the example, after tick 2 the heap is empty while both A and B sit in the queue. The loop exits and returns <strong>2</strong>. The heap being empty means "idle this tick", not "done"; done is when the queue is empty too.</p>
-      <p><strong>Off by one on the ready tick.</strong> Append <code>(time + n - 1, remaining)</code> and A that ran at tick 1 is released at tick 2 and runs again at tick 3, with only one tick between: the schedule <code>A B A B A B</code> is produced and 6 is returned, which violates the cooldown. The rule is <code>n</code> ticks <em>between</em> runs, so a task that runs at <code>t</code> is ready at <code>t + n</code> and runs at <code>t + n + 1</code>.</p>
+      <p><strong>Looping only while the heap is nonempty.</strong> I write <code>while heap:</code> instead of <code>while heap or cooldown:</code>. On the example, after tick 2 the heap is empty while both A and B sit in the queue. The loop exits and returns <strong>2</strong>. The heap being empty means "idle this tick", not "done"; done is when the queue is empty too.</p>
+      <p><strong>Off by one on the ready tick.</strong> I append <code>(time + n - 1, remaining)</code> and A that ran at tick 1 is released at tick 2 and runs again at tick 3, with only one tick between: the schedule <code>A B A B A B</code> is produced and 6 is returned, which violates the cooldown. The rule is <code>n</code> ticks <em>between</em> runs, so a task that runs at <code>t</code> is ready at <code>t + n</code> and runs at <code>t + n + 1</code>.</p>
       <p><strong>Skipping the queue.</strong> Pushing <code>remaining</code> straight back into the heap in the same tick makes every letter eligible every tick; the answer collapses to <code>len(tasks) = 6</code>.</p>
       <div class="callout warn">The loop runs while <em>anything</em> is left, in the heap or in the queue. An empty heap is an idle tick, not the end.</div>
     </section>
@@ -320,7 +320,7 @@
         <tr><td>Heap + cooldown simulation</td><td>O(T · log 26) ≈ O(T)</td><td>O(26)</td></tr>
         <tr><td>Closed form on counts</td><td>O(len(tasks))</td><td>O(26)</td></tr>
       </table>
-      <p>The closed form <code>max(len(tasks), (max_count - 1) * (n + 1) + count_of_max)</code> is what the simulation computes implicitly: the most frequent letter fixes a frame of <code>max_count - 1</code> gaps of width <code>n + 1</code>, the other letters fill the gaps, and if there are more tasks than the frame has room for, no idles happen at all. The simulation is the version you can derive live in an interview; the formula is the one to mention afterwards.</p>
+      <p>The closed form <code>max(len(tasks), (max_count - 1) * (n + 1) + count_of_max)</code> is what the simulation computes implicitly: the most frequent letter fixes a frame of <code>max_count - 1</code> gaps of width <code>n + 1</code>, the other letters fill the gaps, and if there are more tasks than the frame has room for, no idles happen at all. I can derive the simulation live in an interview, then mention the formula afterwards.</p>
     </section>
 
     <section class="step" data-state="final">
@@ -331,12 +331,12 @@
         <li><code>heap = [-count for count in Counter(tasks).values()]</code> and <code>heapq.heapify(heap)</code>: the piles, largest at the root.</li>
         <li><code>cooldown = deque()</code>: parked tasks, oldest first, tagged with their ready tick.</li>
         <li><code>while heap or cooldown</code>: tick until nothing is runnable or waiting.</li>
-        <li><code>time += 1</code> then <code>if heap:</code> run the biggest pile; <code>remaining = heapq.heappop(heap) + 1</code>.</li>
+        <li><code>time += 1</code> then <code>if heap:</code> I run the biggest pile; <code>remaining = heapq.heappop(heap) + 1</code>.</li>
         <li><code>if remaining: cooldown.append((time + n, remaining))</code>: park it unless finished.</li>
         <li><code>if cooldown and cooldown[0][0] == time:</code> release the front back into the heap.</li>
         <li><code>return time</code>: the clock when everything is done.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>each tick, run the available letter with the most copies left; park it for n ticks; the clock when both containers empty is the answer.</em></div>
+      <div class="callout">One-line summary to remember: <em>each tick, I run the available letter with the most copies left; park it for n ticks; the clock when both containers empty is the answer.</em></div>
     </section>
 
     <div class="code-final">

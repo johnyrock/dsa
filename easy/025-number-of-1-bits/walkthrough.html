@@ -220,7 +220,7 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Bit Manipulation · LeetCode #191</div>
   <h1>Number of 1 Bits, narrated</h1>
-  <p>Scroll through the 32-round shift-and-mask loop, the subtraction trick that clears exactly one bit, and a three-round trace of the faster loop, with the bit patterns shown alongside.</p>
+  <p>I’ll start by testing all 32 bit positions, then clear one set bit per loop so the work follows the answer.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/bit-manipulation.html">Bit Manipulation</a> <span class="how">Subtracting one flips bits through the lowest set bit, so <code>n &amp; (n - 1)</code> clears exactly that lowest one bit.</span></p>
 </header>
 
@@ -238,10 +238,10 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: test every bit position</h2>
-      <p>Walk all 32 positions. At each one, test the lowest bit with <code>n &amp; 1</code>, add it to the count, then shift the number right so the next bit moves into position 0:</p>
-      <pre class="code"><span class="ln">count = 0</span><span class="ln">for _ in range(32):</span><span class="ln">    count += n &amp; 1</span><span class="ln">    n &gt;&gt;= 1</span></pre>
-      <p style="margin-top:14px">The panel shows the first few shifts for the example: <code>n = 11</code> (<code>00001011</code>), then <code>n &gt;&gt; 1 = 5</code>, <code>n &gt;&gt; 2 = 2</code>, <code>n &gt;&gt; 3 = 1</code>. The low bit is tested each time. It is correct, and it is O(32), which is constant.</p>
-      <p>The cost is that it always does 32 rounds. A number with a single 1 bit, like <code>n = 1</code> or <code>n = 2³¹</code>, still pays for 31 rounds of testing zeros. In Python you could also write <code>bin(n).count("1")</code>, which is the same idea with a string allocated in the middle. An interviewer asking this question wants the loop whose work depends on the answer, not on the width.</p>
+      <p>My first instinct is to walk all 32 positions. I test the lowest bit with <code>n &amp; 1</code>, add it to the count, then shift right.</p>
+      <pre class="code"><span class="ln">count = 0</span><span class="ln">for _ in range(32):</span><span class="ln">    count += n &amp; 1</span><span class="ln">    n &gt;&gt;= 1</span><span class="ln">return count</span></pre>
+      <p style="margin-top:14px">This counts every set bit. The width is fixed, so 32 rounds take <strong>O(1) time</strong>, and the counter uses <strong>O(1) extra space</strong>.</p>
+      <p>For sparse numbers, my loop still tests zeros. Clearing one set bit per round makes the number of rounds equal the number of 1 bits.</p>
     </section>
 
     <section class="step" data-state="insight">
@@ -250,13 +250,13 @@
       <p>Think about what subtracting 1 does to a binary number. It borrows through every trailing 0 until it reaches the lowest 1, flips that 1 to 0, and turns all the trailing 0s below it into 1s. Every bit above the lowest 1 is unchanged.</p>
       <p>The panel shows it for the example: <code>n = 11</code> is <code>00001011</code>, and <code>n - 1 = 10</code> is <code>00001010</code>. Only bit 0 changed, because bit 0 was the lowest set bit and there were no trailing zeros below it.</p>
       <p>Now AND the two together. Above the lowest set bit, both numbers agree, so those bits survive. At the lowest set bit, <code>n</code> has 1 and <code>n - 1</code> has 0, so it is cleared. Below it, <code>n</code> has all 0s, so nothing survives. Result: <code>n &amp; (n - 1) = 10</code>, which is <code>n</code> with exactly its lowest 1 removed.</p>
-      <div class="callout"><code>n &amp;= n - 1</code> removes exactly one set bit per call, always the lowest, and never touches anything else. Count how many times you can do it before reaching 0 and you have counted the set bits.</div>
+      <div class="callout"><code>n &amp;= n - 1</code> removes exactly one set bit per call, always the lowest, and never touches anything else. I count how many times I can do it before reaching 0.</div>
     </section>
 
     <section class="step" data-state="approach">
       <div class="n">STEP 4</div>
       <h2>The approach: strip and count</h2>
-      <p>Start with <code>count = 0</code> and <code>n = 11 (00001011)</code>. Then loop <code>while n:</code>, and inside do <code>n &amp;= n - 1</code> followed by <code>count += 1</code>. Each pass through the body removes one set bit and records that it did so.</p>
+      <p>I start with <code>count = 0</code> and <code>n = 11 (00001011)</code>. I loop with <code>while n:</code>, then run <code>n &amp;= n - 1</code> followed by <code>count += 1</code>. Each pass through the body removes one set bit and records that it did so.</p>
       <p>The loop condition is the bits themselves: as long as any bit is still set, <code>n</code> is non-zero and truthy. Once the last bit is stripped, <code>n</code> is 0 and the loop ends. For the example that is three rounds, not 32.</p>
     </section>
 
@@ -286,7 +286,7 @@
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the loop condition</h2>
       <p><strong>Testing <code>n &gt;= 0</code> instead of <code>n</code>.</strong> The panel shows the state after the last strip: <code>n = 0</code>, <code>count = 3</code>. With <code>while n &gt;= 0:</code> the loop does not stop here. It computes <code>n &amp;= n - 1</code> with <code>n = 0</code>, which is <code>0 &amp; -1 = 0</code>, so <code>n</code> stays 0, <code>count</code> keeps climbing, and the condition <code>0 &gt;= 0</code> stays true forever. The function never returns. The condition must be the truthiness of the remaining bits, <code>while n:</code>, which is false exactly when there is nothing left to count.</p>
-      <p><strong>Testing <code>n &gt; 0</code> in a language with signed 32-bit integers.</strong> In Python, <code>while n &gt; 0</code> happens to work because the input is a non-negative Python int. In Java or C, the same 32-bit input with bit 31 set is a negative number, so <code>n &gt; 0</code> is false on the first check and the function returns <strong>0</strong> for an input like <code>0xFFFFFFFF</code>, whose correct answer is 32. Use <code>n != 0</code> there, which is what Python's <code>while n</code> means.</p>
+      <p><strong>A signed 32-bit <code>n &gt; 0</code> test.</strong> In Python, <code>while n &gt; 0</code> happens to work because the input is a non-negative Python int. In Java or C, the same 32-bit input with bit 31 set is a negative number, so <code>n &gt; 0</code> is false on the first check and the function returns <strong>0</strong> for an input like <code>0xFFFFFFFF</code>, whose correct answer is 32. There I use <code>n != 0</code>, which is what Python's <code>while n</code> means.</p>
       <div class="callout warn">Test with <code>n = 0</code> (answer 0, loop must not run) and with the all-ones input (answer 32). Both are one-liners and each catches a different loop-condition bug.</div>
     </section>
 
@@ -314,7 +314,7 @@
         <li><code>count += 1</code> records that one bit was removed.</li>
         <li><code>return count</code> — the number of strips it took to reach zero, which is the number of 1 bits there were.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em><code>n &amp; (n - 1)</code> removes the lowest 1 bit; count how many times you can do it before hitting zero.</em></div>
+      <div class="callout">One-line summary: <em><code>n &amp; (n - 1)</code> removes the lowest 1 bit; I count how many times I can do it before hitting zero.</em></div>
     </section>
 
     <div class="code-final">

@@ -183,7 +183,7 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Binary Search · LeetCode #704</div>
   <h1>Binary Search, narrated</h1>
-  <p>Scroll through the thinking, from the linear scan to the loop that throws away half the array per comparison, with the state of the algorithm shown alongside.</p>
+  <p>I’ll start with a linear scan, then use the sorted order to discard half the remaining array after each comparison.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/binary-search.html">Binary Search</a> <span class="how">inclusive bounds, `lo <= hi`</span></p>
 </header>
 
@@ -193,7 +193,7 @@
     <section class="step" data-state="problem">
       <div class="n">STEP 1</div>
       <h2>The problem</h2>
-      <p>You get an array of integers <code>nums</code>, already sorted in ascending order, and an integer <code>target</code>. Return the index where <code>target</code> sits, or <code>-1</code> if it is not in the array.</p>
+      <p>Given an array of integers <code>nums</code> sorted in ascending order and an integer <code>target</code>, return the index of <code>target</code>, or <code>-1</code> when it is absent.</p>
       <p>Two details matter: the values are distinct, so there is at most one right answer, and the array is <strong>sorted</strong>, which is the only reason this problem is interesting.</p>
       <div class="callout">Running example: <code>nums = [-1, 0, 3, 5, 9, 12]</code>, <code>target = 9</code>. The answer is <code>4</code> because <code>nums[4] == 9</code>.</div>
       <p>The question asks for the <em>index</em>, not whether the value is present. So whatever we do, we have to keep track of where we are looking.</p>
@@ -202,17 +202,18 @@
     <section class="step" data-state="linear">
       <div class="n">STEP 2</div>
       <h2>First instinct: walk the array</h2>
-      <p>The most direct idea is to look at every element from left to right and stop when one equals the target.</p>
+      <p>My first instinct is to inspect every element from left to right and stop when one equals the target.</p>
       <pre class="code"><span class="ln">for i, n in enumerate(nums):</span><span class="ln">    if n == target:</span><span class="ln">        return i</span><span class="ln">return -1</span></pre>
       <p style="margin-top:14px">This is correct and takes about ten seconds to write. But it looks at every element in the worst case, so the running time is <strong>O(n)</strong>. At n = 10,000 that is up to ten thousand comparisons, and the problem explicitly asks for better.</p>
-      <p>Notice what this loop ignores: it never uses the fact that the array is sorted. It treats <code>[-1, 0, 3, 5, 9, 12]</code> exactly the same as a shuffled bag of the same numbers. That is the waste.</p>
+      <p>This baseline may inspect every element, so it takes <strong>O(n) time</strong> and uses <strong>O(1) extra space</strong>.</p>
+      <p>The sorted order is unused by this scan. A middle comparison identifies an entire half that cannot contain the target.</p>
     </section>
 
     <section class="step" data-state="reframe">
       <div class="n">STEP 3</div>
       <h2>Reframe: what does one comparison buy?</h2>
-      <p>In an unsorted array, comparing one element with the target tells you about that element and nothing else. One comparison, one element ruled out.</p>
-      <p>In a <em>sorted</em> array the same comparison says much more. Look at the middle element, <code>nums[2] = 3</code>. It is smaller than 9. Because the array ascends, everything to the <em>left</em> of it is also smaller than 9.</p>
+      <p>In an unsorted array, one comparison only rules out the element I inspected.</p>
+      <p>In a <em>sorted</em> array the same comparison says much more. I inspect the middle element, <code>nums[2] = 3</code>. It is smaller than 9, so everything to its <em>left</em> is also smaller than 9.</p>
       <div class="callout">One comparison in the middle rules out three cells at once: indices 0, 1 and 2 are all too small to be 9.</div>
       <p>So the reframed question is not "is this the target?" but <em>"which half is the target in?"</em>. Sorted means one comparison throws away half the array.</p>
     </section>
@@ -220,15 +221,15 @@
     <section class="step" data-state="loop">
       <div class="n">STEP 4</div>
       <h2>The key idea: shrink a window</h2>
-      <p>Keep two indices, <code>lo</code> and <code>hi</code>, marking the slice of the array that could still contain the target. Start with the whole thing: <code>lo = 0</code>, <code>hi = len(nums) - 1</code>. Then repeat:</p>
+      <p>I keep two indices, <code>lo</code> and <code>hi</code>, for the slice that could still contain the target. I begin with <code>lo = 0</code> and <code>hi = len(nums) - 1</code>, then repeat:</p>
       <ul>
         <li><code>mid = (lo + hi) // 2</code> is the middle of the current window.</li>
-        <li>If <code>nums[mid] == target</code>, return <code>mid</code>. Done.</li>
+        <li>If <code>nums[mid] == target</code>, I return <code>mid</code>.</li>
         <li>If <code>nums[mid] &lt; target</code>, the target is to the right, so <code>lo = mid + 1</code>.</li>
         <li>Otherwise the target is to the left, so <code>hi = mid - 1</code>.</li>
       </ul>
       <p>Two pieces of that are worth saying out loud. First, the loop condition is <code>while lo &lt;= hi</code>, not <code>&lt;</code>. Since <code>hi</code> is a real index rather than one past the end, <code>lo == hi</code> means the window still holds exactly one unchecked candidate, and it deserves a look.</p>
-      <p>Second, the moves are <code>mid + 1</code> and <code>mid - 1</code>, never plain <code>mid</code>. We already compared <code>nums[mid]</code> and it was not the answer, so excluding it is safe — and it is what guarantees the window gets strictly smaller every pass, which is why the loop terminates.</p>
+      <p>Second, I move to <code>mid + 1</code> or <code>mid - 1</code>, never plain <code>mid</code>. I already compared <code>nums[mid]</code>, so excluding it safely shrinks the window every pass.</p>
     </section>
 
     <section class="step" data-state="t1">
@@ -236,36 +237,36 @@
       <h2>Trace it: first probe</h2>
       <p>The window starts as the whole array: <code>lo = 0</code>, <code>hi = 5</code>. The middle is <code>mid = (0 + 5) // 2 = 2</code>. Integer division floors, so with six cells <code>mid</code> leans left.</p>
       <p><code>nums[2] = 3</code>. That is not 9, and it is <em>less</em> than 9, so 9 must live to the right of index 2 if it exists at all.</p>
-      <p>We move <code>lo = mid + 1 = 3</code>. Indices 0, 1 and 2 are gone for good — three cells eliminated by one comparison.</p>
+      <p>I move <code>lo = mid + 1 = 3</code>. Indices 0, 1, and 2 are gone for good.</p>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: the window has halved</h2>
       <p>The live window is now <code>nums[3 .. 5]</code>, which is <code>[5, 9, 12]</code>. Three candidates left out of six.</p>
-      <p>The condition <code>lo &lt;= hi</code> holds (3 ≤ 5), so we go round again and recompute the middle of the <em>new</em> window: <code>mid = (3 + 5) // 2 = 4</code>.</p>
+      <p>The condition <code>lo &lt;= hi</code> holds (3 ≤ 5), so I recompute the middle of the new window: <code>mid = (3 + 5) // 2 = 4</code>.</p>
       <div class="callout"><code>mid</code> is always recomputed from the current <code>lo</code> and <code>hi</code>. It is not a pointer that walks; it is derived state.</div>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: found</h2>
-      <p><code>nums[4] = 9</code>, which equals the target. We return <code>mid</code>, so the answer is <code>4</code>.</p>
+      <p><code>nums[4] = 9</code>, which equals the target. I return <code>mid</code>, so the answer is <code>4</code>.</p>
       <p>Two comparisons on a six-element array. The linear scan would have taken five. The gap widens fast: at a thousand elements it is about ten comparisons instead of a thousand.</p>
-      <div class="callout">We never looked at indices 0, 1, 3 or 5. They were eliminated in bulk, not one at a time.</div>
+      <div class="callout">I never inspect indices 0, 1, 3, or 5; the sorted order eliminates them in bulk.</div>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>When the target is not there</h2>
-      <p>Now run the same array with <code>target = 2</code>, which is missing. The window shrinks the same way, it just never lands on a match:</p>
+      <p>I run the same array with missing <code>target = 2</code>. The window shrinks the same way, but never lands on a match:</p>
       <ul>
         <li><code>lo = 0, hi = 5, mid = 2</code>: <code>nums[2] = 3 &gt; 2</code>, so <code>hi = 1</code>.</li>
         <li><code>lo = 0, hi = 1, mid = 0</code>: <code>nums[0] = -1 &lt; 2</code>, so <code>lo = 1</code>.</li>
         <li><code>lo = 1, hi = 1, mid = 1</code>: <code>nums[1] = 0 &lt; 2</code>, so <code>lo = 2</code>.</li>
       </ul>
-      <p>Now <code>lo = 2</code> is greater than <code>hi = 1</code>. The window is empty, the loop condition fails, and we fall out to <code>return -1</code>. <em>lo crossing hi is the proof of absence.</em></p>
-      <div class="callout warn">This is where <code>while lo &lt; hi</code> bites. Look at the third bullet: the window was one cell wide, <code>lo == hi == 1</code>. With <code>&lt;</code> the loop would have exited right there and never checked index 1. Search that same array for <code>target = 0</code> and the buggy version returns <code>-1</code> even though <code>nums[1]</code> is 0.</div>
+      <p>Now <code>lo = 2</code> is greater than <code>hi = 1</code>. The window is empty, the loop ends, and I reach <code>return -1</code>. <em><code>lo</code> crossing <code>hi</code> proves absence.</em></p>
+      <div class="callout warn">This is where <code>while lo &lt; hi</code> bites. In the third bullet the window is one cell wide, <code>lo == hi == 1</code>. With <code>&lt;</code> the loop exits there and never checks index 1. When I search that array for <code>target = 0</code>, the buggy version returns <code>-1</code> even though <code>nums[1]</code> is 0.</div>
       <p>The rule: <code>hi</code> is an inclusive index, so the comparison must be inclusive too.</p>
     </section>
 
@@ -295,7 +296,7 @@
         <li><code>lo = mid + 1</code> and <code>hi = mid - 1</code> discard the impossible half, excluding <code>mid</code> so the window always shrinks.</li>
         <li><code>return -1</code> is what falling out of the loop means: lo crossed hi, the window is empty.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>sorted means one comparison throws away half the array, so keep halving the window until it is empty.</em></div>
+      <div class="callout">I remember this as: <em>sorted means one comparison throws away half the array, so I keep halving the window until it is empty.</em></div>
     </section>
 
     <div class="code-final">

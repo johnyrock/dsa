@@ -189,7 +189,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Two Pointers · LeetCode #5</div>
   <h1>Longest Palindromic Substring, narrated</h1>
-  <p>Scroll through the thinking, from testing every substring to expanding outward from each of the 2n − 1 centres, with the state of the algorithm shown alongside.</p>
+  <p>I’ll start by testing every substring, then expand outward from each possible center instead of rechecking its inside.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/two-pointers.html">Two Pointers</a> <span class="how">expand outward from each of the 2n - 1 centres while the ends match</span></p>
 </header>
 
@@ -207,31 +207,32 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: test every substring</h2>
-      <p>For every start and every end, check whether that slice is a palindrome, and keep the longest that passes.</p>
+      <p>My first instinct is to test every start and end, check that slice for palindrome symmetry, and keep the longest hit.</p>
       <pre class="code"><span class="ln">best = ""</span><span class="ln">for i in range(n):</span><span class="ln">    for j in range(i, n):</span><span class="ln">        sub = s[i:j + 1]</span><span class="ln">        if sub == sub[::-1] and len(sub) &gt; len(best):</span><span class="ln">            best = sub</span></pre>
-      <p style="margin-top:14px">There are n² / 2 substrings and each palindrome check is O(n), so this is <strong>O(n³)</strong>. At n = 1000 that is on the order of a hundred million character comparisons, and most of them re-check the same inner characters over and over.</p>
+      <p style="margin-top:14px">There are <code>n² / 2</code> substrings and each check can take <code>O(n)</code>, so this takes <strong>O(n³) time</strong> and stores a slice of up to <strong>O(n) extra space</strong>.</p>
+      <p>Neighboring palindrome checks repeat the same inner comparisons. Every palindrome has a center, so I expand from that center until the ends stop matching.</p>
     </section>
 
     <section class="step" data-state="reframe">
       <div class="n">STEP 3</div>
       <h2>Reframe: every palindrome has a centre</h2>
       <p>A palindrome is symmetric, so it has a middle. For odd length the middle is a character: <code>"bab"</code> is centred on the <code>a</code>. For even length the middle is the gap between two characters: <code>"bb"</code> in <code>"cbbd"</code> is centred between the two b's.</p>
-      <p>In a string of length n there are n character-centres and n − 1 gap-centres, so <strong>2n − 1 centres</strong> in total. Instead of choosing a start and an end, choose a centre and grow outward.</p>
+      <p>In a string of length n there are n character-centres and n − 1 gap-centres, so <strong>2n − 1 centres</strong> in total. I choose a centre and grow outward instead of choosing a start and an end.</p>
       <div class="callout">If <code>s[left+1 .. right-1]</code> is a palindrome and <code>s[left] == s[right]</code>, then <code>s[left .. right]</code> is a palindrome too. Each outward step reuses everything already confirmed.</div>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 4</div>
       <h2>The key idea: expand around each centre</h2>
-      <p>For each index <code>centre</code>, run two expansions: one starting with <code>left = right = centre</code> (odd length) and one with <code>left = centre, right = centre + 1</code> (even length). In each, move the pointers apart while both are in bounds and <code>s[left] == s[right]</code>.</p>
-      <p>When the loop stops, the pointers have gone one step too far on each side, so the palindrome is <code>s[left+1 : right]</code> and its length is <code>right − left − 1</code>. Compare that with the best so far, remembering only a start and a length, and slice once at the very end.</p>
+      <p>For each index <code>centre</code>, I run two expansions: one starts with <code>left = right = centre</code> for odd length and one with <code>left = centre, right = centre + 1</code> for even length. In each, I move the pointers apart while both are in bounds and <code>s[left] == s[right]</code>.</p>
+      <p>When the loop stops, the pointers have gone one step too far on each side, so the palindrome is <code>s[left+1 : right]</code> and its length is <code>right − left − 1</code>. I compare that with the best length, retain only a start and length, and slice once at the end.</p>
     </section>
 
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: centre 1, the first "a"</h2>
       <p>Odd expansion from index 1: <code>left = right = 1</code>, <code>s[1] == s[1]</code>, so step out to 0 and 2. <code>s[0] = b</code> and <code>s[2] = b</code> match, step out to −1 and 3. Now <code>left</code> is out of bounds, stop.</p>
-      <p>Length <code>3 − (−1) − 1 = 3</code>, start <code>−1 + 1 = 0</code>. That is <code>"bab"</code>, and <code>best_len</code> becomes 3.</p>
+      <p>I get length <code>3 − (−1) − 1 = 3</code> and start <code>−1 + 1 = 0</code>. That is <code>"bab"</code>, and <code>best_len</code> becomes 3.</p>
       <p>The even expansion from the same centre compares <code>s[1] = a</code> with <code>s[2] = b</code>, which fails immediately: length <code>2 − 1 − 1 = 0</code>, nothing to record.</p>
     </section>
 
@@ -239,16 +240,16 @@
       <div class="n">STEP 6</div>
       <h2>Trace it: centre 2, the middle "b"</h2>
       <p>Odd expansion from index 2: <code>s[1] = a</code> and <code>s[3] = a</code> match, step out. <code>s[0] = b</code> and <code>s[4] = d</code> do not. Stop with <code>left = 0, right = 4</code>. Length <code>4 − 0 − 1 = 3</code>, which is <code>"aba"</code>.</p>
-      <p>3 is not greater than the current best of 3, so <code>"bab"</code> is kept. The remaining centres produce nothing longer. Return <strong><code>"bab"</code></strong>.</p>
+      <p>Because 3 is not greater than the current best of 3, I keep <code>"bab"</code>. The remaining centres produce nothing longer, so I return <strong><code>"bab"</code></strong>.</p>
       <div class="callout">The even expansions all fail on the first comparison in this string, which is why there is no even-length palindrome in <code>"babad"</code>.</div>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 7</div>
       <h2>The pitfall: skipping the even centres</h2>
-      <p>Take <code>s = "cbbd"</code>. Every odd expansion stops at length 1: no character has matching neighbours on both sides. The answer <code>"bb"</code> is centred on the <em>gap</em> between indices 1 and 2, and only the even expansion with <code>left = 1, right = 2</code> finds it.</p>
-      <div class="callout warn">Two expansions per index, not one. Drop the even one and every even-length palindrome is missed. The other classic slip is <code>right − left + 1</code> for the length, which is off by two because the pointers have already overshot.</div>
-      <p>Check bounds <em>before</em> comparing characters. In Python <code>s[-1]</code> silently reads the last character instead of raising, which can make a palindrome appear to wrap around the string.</p>
+      <p>I test <code>s = "cbbd"</code>. Every odd expansion stops at length 1 because no character has matching neighbours on both sides. The answer <code>"bb"</code> is centred on the <em>gap</em> between indices 1 and 2, and only the even expansion with <code>left = 1, right = 2</code> finds it.</p>
+      <div class="callout warn">I run two expansions per index, not one. Without the even one, every even-length palindrome is missed. I also use <code>right − left + 1</code> for the length because the pointers have already overshot by one position on each side.</div>
+      <p>I check bounds <em>before</em> comparing characters. In Python <code>s[-1]</code> silently reads the last character instead of raising, which can make a palindrome appear to wrap around the string.</p>
     </section>
 
     <section class="step" data-state="complexity">
@@ -278,7 +279,7 @@
         <li><code>length = right - left - 1</code> corrects for the overshoot.</li>
         <li><code>return s[best_start:best_start + best_len]</code>.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>every palindrome has a centre; try all 2n − 1 of them and grow outward.</em></div>
+      <div class="callout">I remember this as: <em>every palindrome has a centre, so I try all 2n − 1 and grow outward.</em></div>
     </section>
 
     <div class="code-final">

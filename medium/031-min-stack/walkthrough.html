@@ -205,7 +205,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Stack · LeetCode #155</div>
   <h1>Min Stack, narrated</h1>
-  <p>Scroll through the thinking, from scanning the whole stack on every getMin to a second stack that remembers each minimum as it was set, with the contents of both stacks shown after every operation.</p>
+  <p>I will start by scanning the whole stack whenever I need its minimum, then show why I keep a second stack that remembers each minimum as it appears.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/stack.html">Stack</a> <span class="how">a parallel min_stack whose top is always the current minimum</span></p>
 </header>
 
@@ -224,18 +224,18 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: scan on demand</h2>
-      <p>Keep one list. <code>push</code>, <code>pop</code>, and <code>top</code> are the list's own operations, and <code>get_min</code> just looks through everything.</p>
-      <pre class="code"><span class="ln">def get_min(self):</span><span class="ln">    return min(self.stack)</span></pre>
-      <p style="margin-top:14px">Correct, and <strong>O(n)</strong> per call. With 30,000 operations and a stack that grows to thousands of entries, the scans dominate everything else. The problem statement rules it out explicitly by requiring O(1).</p>
-      <p>A single <code>current_min</code> variable is the next thought, and it handles <code>push</code> fine: <code>current_min = min(current_min, val)</code>. It fails on <code>pop</code>. When <code>-3</code> leaves the running example, what should <code>current_min</code> become? The variable has forgotten that <code>-2</code> was ever the minimum, and the only way to find out again is another scan.</p>
+      <p>I can keep one list. Its <code>push</code>, <code>pop</code>, and <code>top</code> operations are direct, and I can scan it whenever <code>getMin</code> is called.</p>
+      <pre class="code"><span class="ln">class MinStack:</span><span class="ln">    def __init__(self): self.stack = []</span><span class="ln">    def push(self, val): self.stack.append(val)</span><span class="ln">    def pop(self): self.stack.pop()</span><span class="ln">    def top(self): return self.stack[-1]</span><span class="ln">    def getMin(self): return min(self.stack)</span></pre>
+      <p style="margin-top:14px">This is correct. <code>push</code>, <code>pop</code>, and <code>top</code> I take O(1) time, while <code>getMin</code> takes O(n) time to scan the stack. The stack uses O(n) space.</p>
+      <p>I avoid the slow minimum lookup by recording enough history to recover the previous minimum after a pop. A second stack gives me that history, so every operation can stay O(1).</p>
     </section>
 
     <section class="step" data-state="reframe">
       <div class="n">STEP 3</div>
       <h2>Reframe: remember every minimum, in order</h2>
-      <p>Look at when the minimum actually changes. It goes <em>down</em> only when a value at or below the current minimum is pushed. It goes back <em>up</em> only when that exact value is popped, and at that moment it returns to whatever it was just before that push.</p>
+      <p>I look at when the minimum actually changes. It goes <em>down</em> only when a value at or below the current minimum is pushed. It goes back <em>up</em> only when that exact value is popped, and at that moment it returns to whatever it was just before that push.</p>
       <p>That is last-in, first-out behaviour. The minimums form their own stack: each new minimum sits on top of the one it replaced, and popping it reveals the previous one.</p>
-      <div class="callout">Keep a second list, <code>min_stack</code>. Its top is always the minimum of the main stack. <code>get_min</code> becomes <code>min_stack[-1]</code>, one read.</div>
+      <div class="callout">I keep a second list, <code>min_stack</code>. Its top is always the minimum of the main stack. <code>get_min</code> becomes <code>min_stack[-1]</code>, one read.</div>
       <p>The invariant to hold onto: <code>min_stack[-1]</code> equals <code>min(stack)</code> after every operation. Both <code>push</code> and <code>pop</code> have to preserve it, and nothing else touches it.</p>
     </section>
 
@@ -282,7 +282,7 @@
       <p><strong>Popping only the main stack.</strong> If <code>pop</code> is just <code>self.stack.pop()</code>, the running example ends with <code>stack = [-2, 0]</code> but <code>min_stack = [-2, -3]</code>. The final <code>get_min()</code> returns <strong>-3</strong>, a value that is no longer in the stack, instead of -2. The second stack has to shrink in step with the first.</p>
       <p><strong>Strict comparison on push.</strong> With <code>val &lt; min_stack[-1]</code>, the sequence <code>push(1)</code>, <code>push(1)</code>, <code>pop()</code>, <code>get_min()</code> puts only the first <code>1</code> on <code>min_stack</code>. The <code>pop</code> removes a <code>1</code> that equals <code>min_stack[-1]</code>, so <code>min_stack</code> empties, and <code>get_min</code> on a stack that still holds a <code>1</code> raises <strong>IndexError</strong>. With <code>&lt;=</code> both copies are recorded and the second survives.</p>
       <p><strong>Comparing in pop with <code>&lt;</code> or <code>&gt;</code>.</strong> The only correct test is equality: a value that came off the main stack is on <code>min_stack</code> exactly when it equals the top there.</p>
-      <div class="callout warn">Two rules: push to <code>min_stack</code> on <code>&lt;=</code>, and pop from <code>min_stack</code> on <code>==</code>. Together they keep <code>min_stack[-1]</code> equal to the true minimum.</div>
+      <div class="callout warn">Two rules: I push to <code>min_stack</code> on <code>&lt;=</code>, and pop from <code>min_stack</code> on <code>==</code>. Together they keep <code>min_stack[-1]</code> equal to the true minimum.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -305,11 +305,11 @@
       <ul>
         <li><code>self.stack = []</code> and <code>self.min_stack = []</code>: the values, and the history of minimums.</li>
         <li><code>self.stack.append(val)</code>: every push lands on the main stack.</li>
-        <li><code>if not self.min_stack or val &lt;= self.min_stack[-1]: self.min_stack.append(val)</code>: record a new (or tied) minimum.</li>
+        <li><code>if not self.min_stack or val &lt;= self.min_stack[-1]: self.min_stack.append(val)</code>: I record a new (or tied) minimum.</li>
         <li><code>if self.stack.pop() == self.min_stack[-1]: self.min_stack.pop()</code>: retire the minimum when the value that set it leaves.</li>
         <li><code>return self.stack[-1]</code> for <code>top</code>, <code>return self.min_stack[-1]</code> for <code>get_min</code>: both single reads.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>the minimums change in stack order, so keep them on a stack of their own and read its top.</em></div>
+      <div class="callout">One-line summary to remember: <em>the minimums change in stack order, so I keep them on a stack of their own and read its top.</em></div>
     </section>
 
     <div class="code-final">

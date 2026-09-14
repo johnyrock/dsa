@@ -196,7 +196,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Graph · LeetCode #200</div>
   <h1>Number of Islands, narrated</h1>
-  <p>Scroll through the thinking, from counting land cells to a flood fill that sinks each island the first time it is touched, with the state of the algorithm shown alongside.</p>
+  <p>I’ll start by marking each discovered island in a separate visited set, then reuse the grid itself to mark land as I flood-fill it.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph Traversal</a> <span class="how">scan cells, on unvisited land count one and flood-fill it to water</span></p>
 </header>
 
@@ -213,27 +213,28 @@
 
     <section class="step" data-state="naive">
       <div class="n">STEP 2</div>
-      <h2>First instinct: count the land</h2>
-      <p>The tempting shortcut is to count <code>'1'</code> cells. The example has 7 of them and 3 islands, so that is not it. The question is not "how much land" but "how many separate pieces".</p>
-      <p>A second instinct is to look at each land cell and ask whether it has a land neighbour above or to the left already counted. That handles simple blobs but fails on shapes like a U, where the two arms are first seen as separate and only join lower down.</p>
-      <div class="callout warn">Local rules do not work because connectivity is a global property. A cell belongs to whichever island it can <em>reach</em>, and reaching may take a long winding path.</div>
+      <h2>First instinct: flood-fill with a visited set</h2>
+      <p>My first instinct is to scan the grid. When I find unvisited land, I count one island and run a depth-first search that records every reachable land cell in a set.</p>
+      <pre class="code"><span class="ln">seen, islands = set(), 0</span><span class="ln">for r in range(rows):</span><span class="ln">    for c in range(cols):</span><span class="ln">        if grid[r][c] == "1" and (r, c) not in seen:</span><span class="ln">            islands += 1; stack = [(r, c)]; seen.add((r, c))</span><span class="ln">            while stack:</span><span class="ln">                cr, cc = stack.pop()</span><span class="ln">                for nr, nc in ((cr+1,cc),(cr-1,cc),(cr,cc+1),(cr,cc-1)):</span><span class="ln">                    if 0 &lt;= nr &lt; rows and 0 &lt;= nc &lt; cols and grid[nr][nc] == "1" and (nr,nc) not in seen: seen.add((nr,nc)); stack.append((nr,nc))</span><span class="ln">return islands</span></pre>
+      <p style="margin-top:14px">Every cell is scanned and each land cell is visited once, so this takes <strong>O(rows · cols) time</strong>; the visited set and stack use <strong>O(rows · cols) extra space</strong>.</p>
+      <p>The input grid is allowed to change, so I can save memory. I sink visited land to <code>"0"</code> instead of storing every coordinate in a separate set.</p>
     </section>
 
     <section class="step" data-state="reframe">
       <div class="n">STEP 3</div>
       <h2>Reframe: the grid is a graph</h2>
       <p>Every land cell is a node. Every pair of orthogonally adjacent land cells is an edge. An island is a <strong>connected component</strong> of this graph, and counting islands is counting components.</p>
-      <p>Counting components has a standard recipe: visit nodes in any order; whenever you meet a node you have not visited, that is a new component, so count it and then traverse everything reachable from it, marking each node visited so it is never counted as the start of another component.</p>
+      <p>For each unvisited land node I meet, I have found a new component. I count it, then traverse everything reachable from it and mark each node so it cannot start another component.</p>
       <div class="callout">The traversal is a flood fill: depth-first or breadth-first, it does not matter for counting. Both visit exactly the cells of one island.</div>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 4</div>
       <h2>The key idea: sink the island as you go</h2>
-      <p>Scan the grid row by row. When the scan lands on a <code>'1'</code>:</p>
+      <p>I scan the grid row by row. When I land on a <code>'1'</code>:</p>
       <ul>
-        <li>Increment the count. This cell is the first touch of a new island.</li>
-        <li>Flood fill from it with an explicit stack. Pop a cell, look at its four neighbours, and for each in-bounds neighbour that is still <code>'1'</code>, overwrite it with <code>'0'</code> and push it.</li>
+        <li>I increment the count. This cell is the first touch of a new island.</li>
+        <li>I flood fill from it with an explicit stack. I pop a cell, inspect its four neighbours, and overwrite and push each in-bounds <code>'1'</code> neighbour.</li>
       </ul>
       <p>Overwriting to <code>'0'</code> is the visited set. It costs no extra memory, and it guarantees the outer scan will pass over the rest of this island without counting it again. Mark on push, not on pop, so no cell is pushed twice.</p>
       <p>An explicit stack rather than recursion matters at the limits: a 300 × 300 grid of all land is one island 90,000 cells deep, well past Python's recursion limit.</p>
@@ -242,7 +243,7 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: the first island</h2>
-      <p>The scan starts at (0, 0), which is land. <code>count = 1</code>. Sink it and push it. Pop (0, 0): neighbours (1, 0) and (0, 1) are land, sink both, push both. Pop (0, 1): (1, 1) is land, sink and push. Pop (1, 1): its neighbours are now all water or out of bounds. Pop (1, 0): same. Stack empty.</p>
+      <p>I start at (0, 0), which is land, and set <code>count = 1</code>. I sink and push it. From (0, 0), I find land at (1, 0) and (0, 1), sink both, and push both. I then find and sink (1, 1); the remaining pops see only water or bounds. The stack becomes empty.</p>
       <p>The whole 2 × 2 block is now <code>'0'</code>. When the scan continues to (0, 1), (1, 0) and (1, 1) it sees water and skips them. The island was counted exactly once.</p>
     </section>
 
@@ -250,7 +251,7 @@
       <div class="n">STEP 6</div>
       <h2>Trace it: the rest of the grid</h2>
       <p>The scan crosses water until (2, 2), a lone land cell. <code>count = 2</code>. Sink it; its flood fill finds no land neighbours and ends immediately.</p>
-      <p>More water, then (3, 3). <code>count = 3</code>. Sink it, push it, pop it, find (3, 4) is land, sink and push, pop it, nothing more. The scan reaches (3, 4), sees water, and finishes.</p>
+      <p>After more water, I reach (3, 3) and set <code>count = 3</code>. I sink, push, and pop it, find land at (3, 4), then sink and process that cell too. The scan later sees water at (3, 4) and finishes.</p>
       <div class="callout">Every cell was scanned once and every land cell was pushed once. Final answer: <strong>3</strong>.</div>
     </section>
 
@@ -287,7 +288,7 @@
         <li>The <code>while stack</code> loop pops a cell, checks four neighbours with a full bounds test, sinks and pushes each land one.</li>
         <li><code>return count</code>.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>scan every cell; on unvisited land, count one and flood-fill it away.</em></div>
+      <div class="callout">I remember this as: <em>I scan every cell; on unvisited land, I count one and flood-fill it away.</em></div>
     </section>
 
     <div class="code-final">

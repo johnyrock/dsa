@@ -229,7 +229,7 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Tree · LeetCode #572</div>
   <h1>Subtree of Another Tree, narrated</h1>
-  <p>Scroll through why a substring search on values is wrong, and the search that tries an exact same-tree comparison at every node of root, with both trees shown alongside.</p>
+  <p>I’ll start with a shape-preserving serialization search, then walk the tree and test exact matches at candidate roots.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/tree-traversal.html">Tree</a> <span class="how">A subtree must match all values and all missing-child positions. Search each root position, then perform an exact same-tree comparison only where a match could begin.</span></p>
 </header>
 
@@ -246,16 +246,17 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: flatten both and look for a substring</h2>
-      <p>Serialize both trees with a traversal and see whether the small list occurs inside the big one. For the running example <code>preorder(root) = [3,4,1,2,5]</code> and <code>preorder(subRoot) = [4,1,2]</code>. The second is a contiguous run inside the first, so this says yes, and here yes is correct.</p>
-      <p>It is fast, but it is wrong, for the same reason a plain traversal cannot tell two trees apart. Take <code>[3,4,5,1,2,null,null,null,null,0]</code>: the same tree as <code>root</code> except that node 2 now has a left child 0. Its preorder is <code>[3,4,1,2,0,5]</code>, which still contains the run <code>4,1,2</code>, so the substring test says <strong>true</strong>. But the subtree at node 4 is now <code>[4,1,2,null,null,0]</code>, not <code>[4,1,2]</code>, and the correct answer is <strong>false</strong>.</p>
-      <p>The traversal recorded the values but lost where the <code>None</code> children were. The missing children are part of the shape, and the shape has to match too.</p>
+      <p>My first instinct is to serialize both trees in preorder, including a marker for each <code>None</code>, then search for the smaller serialization inside the larger one.</p>
+      <pre class="code"><span class="ln">def serialized(node):</span><span class="ln">    values = []</span><span class="ln">    def visit(node):</span><span class="ln">        if node is None: values.append("#"); return</span><span class="ln">        values.append(str(node.val)); visit(node.left); visit(node.right)</span><span class="ln">    visit(node)</span><span class="ln">    return "," + ",".join(values) + ","</span><span class="ln">return serialized(sub_root) in serialized(root)</span></pre>
+      <p style="margin-top:14px">The null markers make this baseline correct: an extra child changes the serialization. It takes <strong>O(n + m) time</strong> to build and search the strings and uses <strong>O(n + m) extra space</strong>.</p>
+      <p>I do not need to materialize either tree. I can try a same-tree comparison at each node of <code>root</code> and return as soon as one matches.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: every node is a candidate start</h2>
-      <p>If <code>subRoot</code> is a subtree of <code>root</code>, then its root coincides with some node of <code>root</code>. There are only <code>n</code> nodes, so try each one: for every node of <code>root</code>, ask whether the tree hanging from that node is the <em>same tree</em> as <code>subRoot</code>.</p>
-      <div class="callout">That splits the problem into two pieces you already know how to do. A tree walk that visits every candidate <code>3, 4, 5, 1, 2</code>, and at each candidate an exact same-tree comparison, <code>_same_tree(node, sub_root)</code>, which checks values and gaps together.</div>
+      <p>If <code>subRoot</code> is a subtree of <code>root</code>, its root coincides with some node of <code>root</code>. I visit each of the <code>n</code> possible roots and ask whether the tree there is the <em>same tree</em> as <code>subRoot</code>.</p>
+      <div class="callout">That splits the problem into two familiar pieces for me: a tree walk that visits every candidate <code>3, 4, 5, 1, 2</code>, and an exact same-tree comparison at each candidate, <code>_same_tree(node, sub_root)</code>, which checks values and gaps together.</div>
       <p>Most candidates die instantly. A node whose value differs from <code>subRoot</code>'s root value fails on the very first comparison inside <code>_same_tree</code>, so the expensive full comparison only happens where a match could actually begin.</p>
     </section>
 
@@ -265,7 +266,7 @@
       <p>Two functions. <code>is_subtree</code> is the search; <code>_same_tree</code> is the comparison.</p>
       <ul>
         <li><code>if sub_root is None: return True</code> — an empty tree is a subtree of everything.</li>
-        <li><code>if root is None: return False</code> — we ran out of candidates without a match.</li>
+        <li><code>if root is None: return False</code> — I ran out of candidates without a match.</li>
         <li><code>return self._same_tree(root, sub_root) or self.is_subtree(root.left, sub_root) or self.is_subtree(root.right, sub_root)</code> — try an exact match at this node; if it fails, search the left subtree, then the right.</li>
       </ul>
       <p>The <code>or</code> chain short-circuits, so the first successful candidate ends the search and nothing to its right is examined. The panel shows the search at the first candidate, <code>root = 3</code>, with <code>_same_tree(3, 4)</code> not yet evaluated and the rest of <code>root</code> dimmed.</p>
@@ -301,7 +302,7 @@
       <p>The panel switches to comparing the tree <code>[4,1,2,0]</code> against <code>[4,1,2]</code>. On the left, node 1 has a left child 0; on the right, node 1 has none. The correct answer to "is the second the same tree as the first" is <strong>false</strong>.</p>
       <p><strong>Checking only the root value.</strong> A shortcut like <code>if root.val == sub_root.val: return True</code> in place of <code>_same_tree</code> accepts <code>[4,1,2,0]</code> as a match for <code>[4,1,2]</code> because the roots are both 4, and returns <strong>true</strong>. The values match at 4 and at 1, which the panel marks with <code>=</code>, and only then does the pair <code>(0, None)</code> appear. That pair is where <code>first is second</code> is false, and only a full same-tree comparison ever gets there.</p>
       <p><strong>Using <code>is_subtree</code> inside the comparison.</strong> If <code>_same_tree</code> recurses into <code>self.is_subtree(first.left, second.left)</code> instead of <code>self._same_tree(...)</code>, the pair <code>(0, None)</code> hits <code>if sub_root is None: return True</code> and the extra node 0 is quietly accepted. The function returns <strong>true</strong> for a tree that is not the same. The two functions have different base cases on purpose: "empty pattern matches anything" is right for the search and wrong for the exact comparison.</p>
-      <p><strong>Swapping the two guards in <code>is_subtree</code>.</strong> Checking <code>if root is None: return False</code> before <code>if sub_root is None: return True</code> makes an empty <code>subRoot</code> fail against an empty <code>root</code>, when an empty tree is a subtree of everything, including the empty tree. Keep the <code>sub_root</code> check first.</p>
+      <p><strong>Swapping the two guards in <code>is_subtree</code>.</strong> Checking <code>if root is None: return False</code> before <code>if sub_root is None: return True</code> makes an empty <code>subRoot</code> fail against an empty <code>root</code>. I put the <code>sub_root</code> check first because an empty tree is a subtree of every tree.</p>
       <div class="callout warn">Value equality at a node is only permission to start comparing. The match is decided at the <code>None</code> pairs below, and every one of them has to line up.</div>
     </section>
 
@@ -332,7 +333,7 @@
         <li><code>if first is None or second is None: return first is second</code> — in the comparison, a gap on one side must be a gap on the other.</li>
         <li><code>first.val == second.val and self._same_tree(first.left, second.left) and self._same_tree(first.right, second.right)</code> — equal values, then matching left pairs, then matching right pairs, all the way down.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>try an exact same-tree comparison at every node of <code>root</code>; a value match only starts the comparison, the <code>None</code> positions finish it.</em></div>
+      <div class="callout">I remember this as: <em>I try an exact same-tree comparison at every node of <code>root</code>; values and <code>None</code> positions both finish the match.</em></div>
     </section>
 
     <div class="code-final">

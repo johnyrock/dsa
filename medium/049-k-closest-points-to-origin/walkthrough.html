@@ -225,7 +225,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Heap · LeetCode #973</div>
   <h1>K Closest Points to Origin, narrated</h1>
-  <p>Scroll from sorting every point by distance to a max-heap that never holds more than k points, with the heap’s layout shown alongside as each point is pushed and the farthest one is evicted.</p>
+  <p>I will sort every point by distance first, then I keep only the closest candidates needed for the answer.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/heap.html">Heap</a> <span class="how">Keep the k closest points seen so far in a max-heap on distance; the root is the farthest of them, which is exactly the one to drop when a closer point arrives.</span></p>
 </header>
 
@@ -237,22 +237,22 @@
       <h2>The problem</h2>
       <p>You are given a list of points on the plane and an integer <code>k</code>. Return the <code>k</code> points nearest to the origin <code>(0, 0)</code>, measured by ordinary Euclidean distance. The answer is guaranteed to be unique as a set, and you may return it in any order.</p>
       <div class="callout">Running example: <code>points = [[3,3],[5,-1],[-2,4]]</code>, <code>k = 2</code>. The squared distances are <code>3² + 3² = 18</code>, <code>5² + 1² = 26</code>, <code>2² + 4² = 20</code>. The two smallest are 18 and 20, so the answer is <strong>[[3,3],[-2,4]]</strong>.</div>
-      <p>Two things to notice before writing anything. First, "closest" only needs a <em>comparison</em> of distances, never the distance itself, so the square root can be skipped: if <code>a² &lt; b²</code> then <code>a &lt; b</code> for non-negative numbers. Second, the output is a set of <code>k</code> points, not a single value, so we need a structure that can hold <code>k</code> things while deciding what to keep.</p>
+      <p>Two details simplify the task. First, "closest" only needs a <em>comparison</em> of distances, never the distance itself, so the square root can be skipped: if <code>a² &lt; b²</code> then <code>a &lt; b</code> for non-negative numbers. Second, the output is a set of <code>k</code> points, so a structure must hold <code>k</code> candidates while deciding what to keep.</p>
     </section>
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: sort by distance, take the first k</h2>
-      <p>The direct approach is to compute a distance for every point, sort by it, and slice off the first <code>k</code>:</p>
-      <pre class="code"><span class="ln">points.sort(key=lambda p: p[0] * p[0] + p[1] * p[1])</span><span class="ln">return points[:k]</span></pre>
-      <p style="margin-top:14px">It is correct and short, and in an interview it is worth saying first. But sorting establishes the full order of all <code>n</code> points when the question only asks which <code>k</code> are smallest. With <code>n = 10⁴</code> and <code>k = 2</code>, the sort does <strong>O(n log n)</strong> work to learn something a single pass with two slots could have told us.</p>
-      <p>The panel shows the sorted view: three distances in order, with the first two highlighted. The sort had to place 26 correctly too, even though 26 was never going to be in the answer.</p>
+      <p>I can calculate each point's squared distance, I sort every point by it, and return the first <code>k</code> points.</p>
+      <pre class="code"><span class="ln">def kClosest(points, k):</span><span class="ln">    ordered = sorted(points, key=lambda point: point[0] * point[0] + point[1] * point[1])</span><span class="ln">    return ordered[:k]</span></pre>
+      <p style="margin-top:14px">This is correct. Sorting all <code>n</code> points takes O(n log n) time, and the sorted copy uses O(n) space.</p>
+      <p>I only need the closest <code>k</code> points, not the full ordering. A max-heap of size <code>k</code> discards the farthest current candidate as I scan.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: a max-heap capped at k</h2>
-      <p>Keep a heap holding the <code>k</code> closest points seen so far. When a new point arrives, push it, so the heap briefly holds <code>k + 1</code> entries, then throw away the <em>farthest</em> of those. That is the one at the root of a <strong>max-heap on distance</strong>. Every eviction discards a point that is farther than <code>k</code> others, so it can never belong to the answer.</p>
+      <p>I keep a heap holding the <code>k</code> closest points seen so far. When a new point arrives, I push it, so the heap briefly holds <code>k + 1</code> entries, then throw away the <em>farthest</em> of those. That is the one at the root of a <strong>max-heap on distance</strong>. Every eviction discards a point that is farther than <code>k</code> others, so it can never belong to the answer.</p>
       <p>Python's <code>heapq</code> is a min-heap, so the distance is stored negated: <code>(-(x * x + y * y), x, y)</code>. The most negative number, i.e. the largest distance, sits at the root. The coordinates ride along in the tuple so the point can be rebuilt at the end.</p>
       <div class="callout">The root of the heap is always the point most likely to be evicted next. Nothing below it needs to be in order, which is why a push or pop costs only O(log k).</div>
       <p>Because the heap never grows past <code>k + 1</code>, each operation costs O(log k) rather than O(log n). For small <code>k</code> that is nearly constant.</p>
@@ -265,23 +265,23 @@
       <ul>
         <li><code>heap = []</code>: starts empty, will hold at most <code>k</code> entries between iterations.</li>
         <li><code>heapq.heappush(heap, (-(x * x + y * y), x, y))</code>: negated squared distance first so the tuple orders by distance, farthest at the root.</li>
-        <li><code>if len(heap) &gt; k: heapq.heappop(heap)</code>: after the push there may be <code>k + 1</code> entries; drop the farthest.</li>
+        <li><code>if len(heap) &gt; k: heapq.heappop(heap)</code>: after the push there may be <code>k + 1</code> entries; I drop the farthest.</li>
         <li><code>return [[x, y] for _, x, y in heap]</code>: the survivors are the answer, in heap order, which is allowed.</li>
       </ul>
-      <p>Push <em>then</em> pop, in that order. The new point must be compared against the current root, and the only way a heap does that comparison is by having both inside it. The panel shows the empty heap and the three tuples about to be pushed.</p>
+      <p>I push <em>then</em> I pop, in that order. The new point must be compared against the current root, and the only way a heap does that comparison is by having both inside it. The panel shows the empty heap and the three tuples about to be pushed.</p>
     </section>
 
     <section class="step" data-state="trace1">
       <div class="n">STEP 5</div>
       <h2>Trace it: push (3,3), then (5,-1)</h2>
-      <p>Point <code>(3, 3)</code>: distance <code>3·3 + 3·3 = 18</code>, so push <code>(-18, 3, 3)</code>. The heap is <code>[(-18, 3, 3)]</code>, size 1, which is not more than <code>k = 2</code>, so nothing is popped.</p>
-      <p>Point <code>(5, -1)</code>: distance <code>25 + 1 = 26</code>, push <code>(-26, 5, -1)</code>. Because <code>-26 &lt; -18</code> it sifts up past the first entry, and the heap becomes <code>[(-26, 5, -1), (-18, 3, 3)]</code>. The root is now the farthest point kept so far, which is exactly what the max-heap promises. Size is 2, still not over <code>k</code>, so again no pop.</p>
+      <p>Point <code>(3, 3)</code>: distance <code>3·3 + 3·3 = 18</code>, so I push <code>(-18, 3, 3)</code>. The heap is <code>[(-18, 3, 3)]</code>, size 1, which is not more than <code>k = 2</code>, so nothing is popped.</p>
+      <p>Point <code>(5, -1)</code>: distance <code>25 + 1 = 26</code>, I push <code>(-26, 5, -1)</code>. Because <code>-26 &lt; -18</code> it sifts up past the first entry, and the heap becomes <code>[(-26, 5, -1), (-18, 3, 3)]</code>. The root is now the farthest point kept so far, which is exactly what the max-heap promises. Size is 2, still not over <code>k</code>, so again no pop.</p>
     </section>
 
     <section class="step" data-state="trace2">
       <div class="n">STEP 6</div>
       <h2>Trace it: push (-2,4), heap overflows</h2>
-      <p>Point <code>(-2, 4)</code>: distance <code>4 + 16 = 20</code>, push <code>(-20, -2, 4)</code>. It lands at index 2 as the right child of the root: <code>[(-26, 5, -1), (-18, 3, 3), (-20, -2, 4)]</code>. Its parent <code>-26</code> is already smaller, so it stays put.</p>
+      <p>Point <code>(-2, 4)</code>: distance <code>4 + 16 = 20</code>, I push <code>(-20, -2, 4)</code>. It lands at index 2 as the right child of the root: <code>[(-26, 5, -1), (-18, 3, 3), (-20, -2, 4)]</code>. Its parent <code>-26</code> is already smaller, so it stays put.</p>
       <p>Now <code>len(heap) = 3 &gt; 2</code>, so the guard fires and <code>heappop</code> removes the root <code>(-26, 5, -1)</code>. That is the point at distance 26, the farthest of the three, and it is gone for good. The heap re-settles to <code>[(-20, -2, 4), (-18, 3, 3)]</code> with the new farthest survivor, distance 20, at the root.</p>
       <div class="callout">The eviction never had to look at the whole list. It compared the new point against the current worst survivor, and the heap did that in O(log k).</div>
     </section>
@@ -296,10 +296,10 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the sign, and the tuple order</h2>
-      <p><strong>Forgetting the negation.</strong> Push <code>(x * x + y * y, x, y)</code> with a positive distance and the heap is a min-heap on distance, so its root is the <em>closest</em> point. The overflow pop then evicts the best candidate every time. On the example, pushing <code>(-2, 4)</code> makes the heap <code>[(18, 3, 3), (26, 5, -1), (20, -2, 4)]</code>, the pop removes <code>(18, 3, 3)</code>, and the function returns <code>[[-2,4],[5,-1]]</code>, which contains the farthest point of all. The sign of the key decides which end of the ranking the heap exposes.</p>
-      <p><strong>Distance not first in the tuple.</strong> Push <code>(x, y, -dist)</code> and tuples compare on <code>x</code> first: the root becomes the point with the largest <code>x</code>, and distance is only a tiebreaker. Always put the sort key in position 0.</p>
+      <p><strong>Forgetting the negation.</strong> I push <code>(x * x + y * y, x, y)</code> with a positive distance and the heap is a min-heap on distance, so its root is the <em>closest</em> point. The overflow pop then evicts the best candidate every time. On the example, pushing <code>(-2, 4)</code> makes the heap <code>[(18, 3, 3), (26, 5, -1), (20, -2, 4)]</code>, the pop removes <code>(18, 3, 3)</code>, and the function returns <code>[[-2,4],[5,-1]]</code>, which contains the farthest point of all. The sign of the key decides which end of the ranking the heap exposes.</p>
+      <p><strong>Distance not first in the tuple.</strong> I push <code>(x, y, -dist)</code> and tuples compare on <code>x</code> first: the root becomes the point with the largest <code>x</code>, and distance is only a tiebreaker. Always put the sort key in position 0.</p>
       <p><strong>Trimming with <code>&gt;=</code>.</strong> <code>if len(heap) &gt;= k</code> pops as soon as the heap reaches <code>k</code>, so at most <code>k - 1</code> points can ever survive and the result is one short.</p>
-      <div class="callout warn">The root is what gets evicted. Store whatever should be evicted first as the <em>smallest</em> tuple, which for "keep the closest" means the negated distance.</div>
+      <div class="callout warn">The root is what gets evicted. I store whatever should be evicted first as the <em>smallest</em> tuple, which for "keep the closest" means the negated distance.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -327,7 +327,7 @@
         <li><code>if len(heap) &gt; k: heapq.heappop(heap)</code> evicts that farthest point whenever the heap overflows.</li>
         <li><code>return [[x, y] for _, x, y in heap]</code> rebuilds the surviving pairs.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>keep the k best in a heap whose root is the worst of them, and evict the root whenever a newcomer makes it k + 1.</em></div>
+      <div class="callout">One-line summary to remember: <em>I keep the k best in a heap whose root is the worst of them, and evict the root whenever a newcomer makes it k + 1.</em></div>
     </section>
 
     <div class="code-final">

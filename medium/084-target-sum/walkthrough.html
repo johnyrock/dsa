@@ -205,7 +205,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Dynamic Programming · LeetCode #494</div>
   <h1>Target Sum, narrated</h1>
-  <p>Scroll through the thinking, from trying all 2ⁿ sign assignments to a subset-sum reduction and a single dp row walked backwards, with the state of the algorithm shown alongside.</p>
+  <p>I turn the sign choices into a subset target, then count how many subsets reach that target.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">0/1 knapsack: P = (total + target) / 2, count subsets that sum to P</span></p>
 </header>
 
@@ -222,10 +222,11 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instinct: try every sign</h2>
-      <p>Recurse over the array, branching into <code>+nums[i]</code> and <code>−nums[i]</code> at each index, and count the leaves whose running total equals the target.</p>
+<h2>First instinct: try every sign</h2>
+      <p>My first instinct is to recurse through the array, try <code>+nums[i]</code> and <code>−nums[i]</code> at each index, and count the totals that reach the target.</p>
       <pre class="code"><span class="ln">def ways(i, running):</span><span class="ln">    if i == len(nums):</span><span class="ln">        return 1 if running == target else 0</span><span class="ln">    return ways(i + 1, running + nums[i]) + ways(i + 1, running - nums[i])</span></pre>
-      <p style="margin-top:14px">That is <strong>O(2ⁿ)</strong>. With <code>n ≤ 20</code> it is about a million leaves and actually passes, which is why this problem is famous for having a brute force that works. Memoizing on <code>(i, running)</code> gives O(n × total), but the running total can be negative and ranges over <code>2 × total + 1</code> values, so the table is awkward. The reduction in the next step makes it clean.</p>
+      <p style="margin-top:14px">This uses <strong>O(2ⁿ) time</strong> and <strong>O(n) space</strong> for the call stack. With <code>n ≤ 20</code>, it is about a million leaves and can pass.</p>
+      <p>Changing the question avoids storing possibly negative running totals. I turn the sign choices into one subset-sum count.</p>
     </section>
 
     <section class="step" data-state="idea">
@@ -236,9 +237,9 @@
         <li><code>P − N = target</code>, because that is what the expression evaluates to.</li>
         <li><code>P + N = total</code>, because every number is in one group or the other.</li>
       </ul>
-      <p>Add the two equations: <code>2P = total + target</code>, so <code>P = (total + target) / 2</code>. Choosing a sign assignment is exactly the same as choosing which subset gets the plus sign, and that subset must sum to <code>P</code>.</p>
-      <div class="callout">The question becomes: <em>how many subsets of <code>nums</code> sum to <code>goal = (total + target) / 2</code>?</em> For the running example, <code>goal = (5 + 3) / 2 = 4</code>: pick four of the five ones for the plus side. That is a 0/1 knapsack count, every number used at most once.</div>
-      <p>Two things fall out of the formula. If <code>total + target</code> is odd, <code>P</code> is not an integer and the answer is 0. If <code>|target| &gt; total</code>, no assignment can reach it, and <code>goal</code> would be negative or too large; return 0 before building the table.</p>
+      <p>I add the two equations: <code>2P = total + target</code>, so <code>P = (total + target) / 2</code>. Choosing a sign assignment is exactly the same as choosing which subset gets the plus sign, and that subset must sum to <code>P</code>.</p>
+      <div class="callout">The question becomes: <em>how many subsets of <code>nums</code> sum to <code>goal = (total + target) / 2</code>?</em> For the running example, <code>goal = (5 + 3) / 2 = 4</code>: I choose four of the five ones for the plus side. That is a 0/1 knapsack count, with every number used at most once.</div>
+      <p>Two things fall out of the formula. If <code>total + target</code> is odd, <code>P</code> is not an integer and the answer is 0. If <code>|target| &gt; total</code>, no assignment can reach it, and <code>goal</code> would be negative or too large; I return 0 before building the table.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -258,8 +259,8 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: the first number</h2>
-      <p>The row starts as <code>dp = [1, 0, 0, 0, 0]</code> for sums 0 through 4. Add the first 1, walking <code>s</code> from 4 down to 1: <code>dp[4] += dp[3]</code>, <code>dp[3] += dp[2]</code>, <code>dp[2] += dp[1]</code> all add 0, and finally <code>dp[1] += dp[0]</code> gives <code>0 + 1 = 1</code>.</p>
-      <p>After the first number: <code>dp = [1, 1, 0, 0, 0]</code>. One subset sums to 0 (the empty one) and one sums to 1 (just this number). Because the walk went downward, <code>dp[2]</code> read <code>dp[1]</code> <em>before</em> it became 1, so "this number twice" was never counted.</p>
+      <p>The row starts as <code>dp = [1, 0, 0, 0, 0]</code> for sums 0 through 4. I add the first 1 while walking <code>s</code> from 4 down to 1: <code>dp[4] += dp[3]</code>, <code>dp[3] += dp[2]</code>, <code>dp[2] += dp[1]</code> all add 0, and finally <code>dp[1] += dp[0]</code> gives <code>0 + 1 = 1</code>.</p>
+      <p>After the first number, I have <code>dp = [1, 1, 0, 0, 0]</code>. One subset sums to 0 (the empty one) and one sums to 1 (just this number). Because my walk went downward, <code>dp[2]</code> read <code>dp[1]</code> <em>before</em> it became 1, so "this number twice" was never counted.</p>
     </section>
 
     <section class="step" data-state="t2">
@@ -274,16 +275,16 @@
       <div class="n">STEP 7</div>
       <h2>Trace it: the last number, the answer</h2>
       <p>After the fourth 1 the row is <code>[1, 4, 6, 4, 1]</code>. The fifth 1 walks down once more: <code>dp[4] += dp[3]</code> gives <code>1 + 4 = 5</code>, <code>dp[3] += dp[2]</code> gives <code>4 + 6 = 10</code>, <code>dp[2] += dp[1]</code> gives 10, <code>dp[1] += dp[0]</code> gives 5.</p>
-      <p>Final row: <code>[1, 5, 10, 10, 5]</code>. Return <code>dp[4] = 5</code>: five subsets of four ones, each one a sign assignment with a single minus.</p>
+      <p>The final row is <code>[1, 5, 10, 10, 5]</code>. I return <code>dp[4] = 5</code>: five subsets of four ones, each one a sign assignment with a single minus.</p>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: loop direction and parity</h2>
-      <p><strong>Walking the sums upward.</strong> Write the inner loop as <code>for s in range(num, goal + 1)</code> and <code>dp[s - num]</code> has already been bumped by this same number, so the number can be reused any number of times. The row for the running example becomes <code>[1, 5, 15, 35, 70]</code> and the function returns <strong>70, not 5</strong>. That is the unlimited-supply row from Coin Change II; here every number is a single physical item that gets exactly one sign.</p>
+      <p><strong>Walking the sums upward.</strong> If I write the inner loop as <code>for s in range(num, goal + 1)</code>, <code>dp[s - num]</code> has already been bumped by this same number, so the number can be reused any number of times. The row for the running example becomes <code>[1, 5, 15, 35, 70]</code> and the function returns <strong>70, not 5</strong>. That is the unlimited-supply row from Coin Change II; here every number is a single physical item that gets exactly one sign.</p>
       <p><strong>Skipping the parity check.</strong> <code>(total + target) // 2</code> rounds down silently. For <code>nums = [1, 2, 3]</code>, <code>target = 1</code> the true <code>P</code> would be 3.5, no subset works, and the answer is 0; the floor gives <code>goal = 3</code> and the function returns <strong>2</strong>.</p>
       <p><strong>Skipping the range check.</strong> <code>nums = [100]</code>, <code>target = −200</code> gives <code>goal = −50</code>, <code>[0] * (goal + 1)</code> is empty, and <code>dp[0] = 1</code> raises <code>IndexError</code>.</p>
-      <div class="callout warn">Each number is used once, so the inner loop runs from <code>goal</code> down to <code>num</code>. Check with <code>[1, 1]</code>, <code>target = 2</code>: the answer is 1 (both plus), and a 3 means a number was reused.</div>
+      <div class="callout warn">I use each number once, so my inner loop runs from <code>goal</code> down to <code>num</code>. With <code>[1, 1]</code>, <code>target = 2</code>, I get 1 (both plus); a 3 means a number was reused.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -296,7 +297,7 @@
         <tr><td>Memoized on (index, running total)</td><td>O(n × total)</td><td>O(n × total), offset for negatives</td></tr>
         <tr><td>Subset-sum row, downward</td><td>O(n × goal)</td><td>O(goal)</td></tr>
       </table>
-      <p>With <code>n ≤ 20</code> the brute force is about a million leaves and passes; the reduction is what you want when <code>n</code> is 50 and <code>total</code> is still small.</p>
+      <p>With <code>n ≤ 20</code> the brute force is about a million leaves and passes; I use the reduction when <code>n</code> is 50 and <code>total</code> is still small.</p>
     </section>
 
     <section class="step" data-state="final">

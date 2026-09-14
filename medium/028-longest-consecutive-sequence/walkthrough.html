@@ -225,8 +225,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Hash Set · LeetCode #128</div>
   <h1>Longest Consecutive Sequence, narrated</h1>
-  <p>Scroll through the thinking, from sorting the array to a set that lets every run be walked exactly once from its smallest value, with the state of the algorithm shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/hash-map.html">Hash Set</a> <span class="how">a value with no predecessor in the set starts a run; walk upward only from those starts</span></p>
+  <p>I’ll start by sorting and scanning, then I use a set to walk each consecutive run only from its smallest value.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/hash-map.html">Hash Set</a> <span class="how">a value with no predecessor in the set starts a run; I walk upward only from those starts</span></p>
 </header>
 
 <div class="layout">
@@ -244,18 +244,18 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: sort and scan</h2>
-      <p>Sort the array, then walk it once, extending a counter while each value is exactly one more than the previous and resetting on a gap. Equal neighbours are skipped so duplicates do not count.</p>
+      <p>My first instinct is to sort the array, then extend a counter while each value is one more than the previous one.</p>
       <pre class="code"><span class="ln">nums.sort()</span><span class="ln">best = run = 0</span><span class="ln">for i in range(len(nums)):</span><span class="ln">    if i &gt; 0 and nums[i] == nums[i - 1]: continue</span><span class="ln">    run = run + 1 if i &gt; 0 and nums[i] == nums[i - 1] + 1 else 1</span><span class="ln">    best = max(best, run)</span></pre>
-      <p style="margin-top:14px">On the running example the sorted array is <code>[1, 2, 3, 4, 100, 200]</code>, the counter climbs to 4 and resets at 100. Correct, and easy to get right. But the sort is <strong>O(n log n)</strong>, and the problem said linear.</p>
-      <p>The sort does more than we need. We do not care about the order of 100 relative to 200; we only care, for each value, whether its immediate neighbours <code>num - 1</code> and <code>num + 1</code> exist. That is a membership question, not an ordering question.</p>
+      <p style="margin-top:14px">Sorting takes <strong>O(n log n) time</strong>, and in-place sorting uses <strong>O(1) extra space</strong>.</p>
+      <p>A set gives me exactly the predecessor and successor membership I need. A set answers those questions directly without putting unrelated values into order.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: only walk from the start of a run</h2>
-      <p>Put every value in a set. Now <code>x in seen</code> is O(1), so from any value we can step upward, <code>num + 1</code>, <code>num + 2</code>, and so on, for as long as the next integer is present. That measures the run that contains <code>num</code> from <code>num</code> upward.</p>
-      <p>Doing that from <em>every</em> value is wasteful: the run 1–4 would be walked from 1, again from 2, again from 3, and again from 4. The fix is to notice that a value is the <strong>start</strong> of its run exactly when <code>num - 1</code> is not in the set.</p>
-      <div class="callout">Walk upward only from values whose predecessor is missing. Then every run is walked exactly once, from its smallest member, and each value is stepped over by exactly one walk. The <code>while</code> inside the <code>for</code> is O(n) in total, not O(n²).</div>
+      <p>I put every value in a set. Now <code>x in seen</code> is O(1), so from any value I can step upward, <code>num + 1</code>, <code>num + 2</code>, and so on, for as long as the next integer is present. That measures the run that contains <code>num</code> from <code>num</code> upward.</p>
+      <p>Doing that from <em>every</em> value is wasteful: the run 1–4 would be walked from 1, again from 2, again from 3, and again from 4. The fix is to recognize that a value is the <strong>start</strong> of its run exactly when <code>num - 1</code> is not in the set.</p>
+      <div class="callout">I walk upward only from values whose predecessor is missing. Then every run is walked exactly once, from its smallest member, and each value is stepped over by exactly one walk. The <code>while</code> inside the <code>for</code> is O(n) in total, not O(n²).</div>
       <p>In the running example only 1, 100, and 200 have no predecessor in the set. Those are the three runs, and only those three walks happen.</p>
     </section>
 
@@ -266,7 +266,7 @@
         <li><code>seen = set(nums)</code> — O(1) membership, and duplicates collapse.</li>
         <li><code>best = 0</code> — the longest run so far; 0 is correct for an empty input.</li>
         <li><code>for num in seen</code> — visit each distinct value once.</li>
-        <li><code>if num - 1 in seen: continue</code> — not the start of its run, skip it.</li>
+        <li><code>if num - 1 in seen: continue</code> — not the start of its run, I skip it.</li>
         <li><code>length = 1</code> — the start itself counts.</li>
         <li><code>while num + length in seen: length += 1</code> — step upward while the next integer exists.</li>
         <li><code>best = max(best, length)</code> — record the finished run.</li>
@@ -279,7 +279,7 @@
       <div class="n">STEP 5</div>
       <h2>Trace it: 1 is a start, walk to 4</h2>
       <p>Python happens to hand the set out as 1, 2, 3, 100, 4, 200, but the order does not matter for correctness. The first value is <code>num = 1</code>. Is <code>0</code> in the set? No, so 1 is the start of a run.</p>
-      <p>Set <code>length = 1</code>. Is <code>1 + 1 = 2</code> in the set? Yes, <code>length = 2</code>. Is <code>3</code> in? Yes, <code>length = 3</code>. Is <code>4</code> in? Yes, <code>length = 4</code>. Is <code>5</code> in? No, the walk stops.</p>
+      <p>I set <code>length = 1</code>. Is <code>1 + 1 = 2</code> in the set? Yes, <code>length = 2</code>. Is <code>3</code> in? Yes, <code>length = 3</code>. Is <code>4</code> in? Yes, <code>length = 4</code>. Is <code>5</code> in? No, the walk stops.</p>
       <p><code>best = max(0, 4) = 4</code>. The whole run 1–4 has been measured in a single pass from its bottom.</p>
     </section>
 
@@ -296,7 +296,7 @@
       <h2>Trace it: 100 and 200, then the answer</h2>
       <p><code>num = 100</code>: is <code>99</code> in the set? No, so it is a start. <code>length = 1</code>; is <code>101</code> in? No. The run has length 1. <code>best = max(4, 1) = 4</code>, unchanged.</p>
       <p><code>num = 200</code>: <code>199</code> is absent, so it is a start; <code>201</code> is absent, so its run is also length 1. <code>best</code> stays 4.</p>
-      <p>The loop is over and we return <strong>4</strong>. Count the membership tests: 6 predecessor checks, plus 4 + 1 + 1 = 6 upward steps. Twelve O(1) operations for six values, which is the linear bound in action.</p>
+      <p>The loop is over and I return <strong>4</strong>. Count the membership tests: 6 predecessor checks, plus 4 + 1 + 1 = 6 upward steps. Twelve O(1) operations for six values, which is the linear bound in action.</p>
       <div class="callout">Each value was stepped over by exactly one walk, the one from its run's start. That is the invariant that makes the nested loop O(n).</div>
     </section>
 
@@ -307,7 +307,7 @@
       <p><strong>Inverting the skip: <code>if num - 1 not in seen: continue</code>.</strong> Now the starts are thrown away and only the non-starts walk. 2 walks to 4 for a length of 3, 3 gets 2, 4 gets 1, and 1, 100, 200 are never measured: <strong>3 instead of 4</strong>.</p>
       <p><strong>Dropping the skip entirely.</strong> The answer is still right, but every member walks its own run: 12 steps instead of 6 here, and O(n²) on one long run, which is a timeout at <code>10^5</code> values.</p>
       <p><strong>Starting <code>best = 1</code>.</strong> The empty array then returns 1 instead of 0.</p>
-      <div class="callout warn">The start of a run is the value with no predecessor. Check <code>num - 1 in seen</code> and skip when it is <em>present</em>, then walk upward with <code>num + length</code>.</div>
+      <div class="callout warn">The start of a run is the value with no predecessor. I check <code>num - 1 in seen</code> and skip when it is <em>present</em>, then I walk upward with <code>num + length</code>.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -336,7 +336,7 @@
         <li><code>length = 1</code> then <code>while num + length in seen: length += 1</code> measures the run from its bottom.</li>
         <li><code>best = max(best, length)</code> and <code>return best</code>.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>a value with no predecessor starts a run; walk upward only from those, and every run is measured once.</em></div>
+      <div class="callout">One-line summary to remember: <em>a value with no predecessor starts a run; I walk upward only from those, and every run is measured once.</em></div>
     </section>
 
     <div class="code-final">

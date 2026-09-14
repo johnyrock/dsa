@@ -204,7 +204,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Stack · LeetCode #739</div>
   <h1>Daily Temperatures, narrated</h1>
-  <p>Scroll through the thinking, from scanning forward for every day to a decreasing stack of unresolved days, with the state of the algorithm shown alongside.</p>
+  <p>I will first scan forward from every day, then I keep unresolved days in a decreasing stack so each day is handled once.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/stack.html">Stack</a> <span class="how">monotonic stack of indices; today resolves every cooler day on top</span></p>
 </header>
 
@@ -223,23 +223,23 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: look ahead from every day</h2>
-      <p>For each day <code>i</code>, walk forward until you find a day <code>j</code> with <code>temperatures[j] &gt; temperatures[i]</code>, and record <code>j − i</code>. If the walk falls off the end, leave 0.</p>
-      <pre class="code"><span class="ln">answer = [0] * n</span><span class="ln">for i in range(n):</span><span class="ln">    for j in range(i + 1, n):</span><span class="ln">        if temperatures[j] &gt; temperatures[i]:</span><span class="ln">            answer[i] = j - i</span><span class="ln">            break</span></pre>
-      <p style="margin-top:14px">Correct, and <strong>O(n²)</strong> in the worst case: a strictly falling list like <code>[100, 99, 98, …]</code> makes every day scan all the way to the end and find nothing. At n = 100,000 that is five billion comparisons.</p>
-      <p>The waste is that day 3 walks past day 4, and then day 4 starts its own walk over the same territory. Each day forgets what the previous day already learned about the future.</p>
+      <p>I can start at each day and walk forward until I find a warmer temperature. If I reach the end, that day keeps its default answer of zero.</p>
+      <pre class="code"><span class="ln">def dailyTemperatures(temperatures):</span><span class="ln">    answer = [0] * len(temperatures)</span><span class="ln">    for i in range(len(temperatures)):</span><span class="ln">        for j in range(i + 1, len(temperatures)):</span><span class="ln">            if temperatures[j] &gt; temperatures[i]:</span><span class="ln">                answer[i] = j - i</span><span class="ln">                break</span><span class="ln">    return answer</span></pre>
+      <p style="margin-top:14px">This is correct. In a strictly falling list, every inner loop reaches the end, so the time complexity is O(n²). The answer array uses O(n) space, with O(1) extra working space.</p>
+      <p>I remember the earlier days that are still waiting for something warmer. A monotonic stack lets one warm day resolve several of them without rescanning the future.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>Key insight: keep the unresolved days on a stack</h2>
       <p>Flip the direction of the question. Instead of each day looking <em>forward</em> for its answer, let each new day look <em>backward</em> and ask: "which earlier days have I just become the answer for?"</p>
-      <p>Keep a <code>stack</code> of the indices whose warmer day has not arrived yet. When today's temperature <code>temp</code> arrives, any day on the stack that is cooler than <code>temp</code> is resolved right now: its wait is <code>i − j</code>. Pop it, write the answer, and check the next one.</p>
+      <p>I keep a <code>stack</code> of the indices whose warmer day has not arrived yet. When today's temperature <code>temp</code> arrives, any day on the stack that is cooler than <code>temp</code> is resolved right now: its wait is <code>i − j</code>. I pop it, I write the answer, and check the next one.</p>
       <div class="callout">The stack is always <strong>decreasing</strong> in temperature from bottom to top. Why: a day only stays on the stack if it was not cooler than every day pushed after it. So the cooler unresolved days are on top, and the popping stops at the first day that today cannot beat.</div>
       <ul>
         <li><code>answer = [0] * len(temperatures)</code>: everything defaults to "never".</li>
         <li><code>for i, temp in enumerate(temperatures)</code>: one pass.</li>
-        <li><code>while stack and temperatures[stack[-1]] &lt; temp</code>: today beats the top, so pop it and set <code>answer[j] = i − j</code>.</li>
-        <li><code>stack.append(i)</code>: today now waits its turn. Push <em>after</em> popping.</li>
+        <li><code>while stack and temperatures[stack[-1]] &lt; temp</code>: today beats the top, so I pop it and set <code>answer[j] = i − j</code>.</li>
+        <li><code>stack.append(i)</code>: today now waits its turn. I push <em>after</em> popping.</li>
         <li>Whatever remains on the stack at the end keeps its 0.</li>
       </ul>
       <p>The stack holds <em>indices</em>, not temperatures, because the answer is a distance in days; the temperature is one lookup away as <code>temperatures[stack[-1]]</code>.</p>
@@ -248,15 +248,15 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 4</div>
       <h2>Trace it: days 0, 1, 2 — a warming run</h2>
-      <p>Day 0 (73): the stack is empty, nothing to pop. Push 0. Day 1 (74): the top is day 0 at 73, and <code>73 &lt; 74</code>, so pop it and write <code>answer[0] = 1 − 0 = 1</code>. The stack is empty; push 1.</p>
-      <p>Day 2 (75): the top is day 1 at 74, <code>74 &lt; 75</code>, pop and write <code>answer[1] = 2 − 1 = 1</code>. Push 2.</p>
+      <p>Day 0 (73): the stack is empty, nothing to pop. I push 0. Day 1 (74): the top is day 0 at 73, and <code>73 &lt; 74</code>, so I pop it and write <code>answer[0] = 1 − 0 = 1</code>. The stack is empty; I push 1.</p>
+      <p>Day 2 (75): the top is day 1 at 74, <code>74 &lt; 75</code>, I pop and write <code>answer[1] = 2 − 1 = 1</code>. I push 2.</p>
       <p>Each rising day resolves the one before it immediately, so the stack never holds more than one entry during this run. The panel shows <code>stack = [2]</code> and <code>answer = [1, 1, 0, 0, 0, 0, 0, 0]</code>.</p>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 5</div>
       <h2>Trace it: days 3 and 4 — a cooling run piles up</h2>
-      <p>Day 3 (71): the top is day 2 at 75, and <code>75 &lt; 71</code> is false. Nothing is resolved; push 3. Day 4 (69): the top is day 3 at 71, <code>71 &lt; 69</code> is false; push 4.</p>
+      <p>Day 3 (71): the top is day 2 at 75, and <code>75 &lt; 71</code> is false. Nothing is resolved; I push 3. Day 4 (69): the top is day 3 at 71, <code>71 &lt; 69</code> is false; I push 4.</p>
       <p>Now the stack is <code>[2, 3, 4]</code>, temperatures 75, 71, 69 from bottom to top, decreasing as promised. All three are waiting, and none of the answers have changed since step 4.</p>
       <p>This is where the brute force would have started three separate forward scans. The stack instead just records the three open questions in the order they will be answered.</p>
     </section>
@@ -264,7 +264,7 @@
     <section class="step" data-state="t3">
       <div class="n">STEP 6</div>
       <h2>Trace it: day 5 resolves two days at once</h2>
-      <p>Day 5 (72). Top is day 4 at 69: <code>69 &lt; 72</code>, pop, <code>answer[4] = 5 − 4 = 1</code>. New top is day 3 at 71: <code>71 &lt; 72</code>, pop, <code>answer[3] = 5 − 3 = 2</code>. New top is day 2 at 75: <code>75 &lt; 72</code> is false, stop. Push 5.</p>
+      <p>Day 5 (72). Top is day 4 at 69: <code>69 &lt; 72</code>, I pop, <code>answer[4] = 5 − 4 = 1</code>. New top is day 3 at 71: <code>71 &lt; 72</code>, I pop, <code>answer[3] = 5 − 3 = 2</code>. New top is day 2 at 75: <code>75 &lt; 72</code> is false, stop. I push 5.</p>
       <p>The <code>while</code> ran twice. That is the whole reason it is a <code>while</code> and not an <code>if</code>: one warm day can close out an entire cooling run.</p>
       <p>The stack is now <code>[2, 5]</code> (75, 72). Day 2 is still waiting for something above 75.</p>
     </section>
@@ -272,8 +272,8 @@
     <section class="step" data-state="t4">
       <div class="n">STEP 7</div>
       <h2>Trace it: days 6 and 7 — the answer</h2>
-      <p>Day 6 (76). Top is day 5 at 72: <code>72 &lt; 76</code>, pop, <code>answer[5] = 6 − 5 = 1</code>. Top is day 2 at 75: <code>75 &lt; 76</code>, pop, <code>answer[2] = 6 − 2 = 4</code>. Empty; push 6.</p>
-      <p>Day 7 (73). Top is day 6 at 76: <code>76 &lt; 73</code> is false; push 7. The loop ends with <code>stack = [6, 7]</code>. Those two days never found a warmer day, and their entries in <code>answer</code> were never written, so they keep the default <code>0</code>.</p>
+      <p>Day 6 (76). Top is day 5 at 72: <code>72 &lt; 76</code>, I pop, <code>answer[5] = 6 − 5 = 1</code>. Top is day 2 at 75: <code>75 &lt; 76</code>, I pop, <code>answer[2] = 6 − 2 = 4</code>. Empty; I push 6.</p>
+      <p>Day 7 (73). Top is day 6 at 76: <code>76 &lt; 73</code> is false; I push 7. The loop ends with <code>stack = [6, 7]</code>. Those two days never found a warmer day, and their entries in <code>answer</code> were never written, so they keep the default <code>0</code>.</p>
       <div class="callout">Final answer: <code>[1, 1, 4, 2, 1, 1, 0, 0]</code>. Eight pushes, six pops, one pass.</div>
     </section>
 
@@ -282,8 +282,8 @@
       <h2>Where this goes wrong: if instead of while, and the comparison</h2>
       <p><strong><code>if</code> instead of <code>while</code>.</strong> Day 5 pops day 4 and stops. Day 3 is left buried under day 5, and nothing later pops it correctly. Day 6 then pops day 5 only, leaving day 2 buried too. The output for the running example becomes <strong><code>[1, 1, 0, 0, 1, 1, 0, 0]</code></strong>: the two "long wait" answers, 4 and 2, are lost.</p>
       <p><strong><code>&lt;=</code> instead of <code>&lt;</code>.</strong> Equal is not warmer. On <code>[70, 70, 70]</code> the correct answer is <code>[0, 0, 0]</code>; with <code>&lt;=</code> each day pops the previous one and the output is <code>[1, 1, 0]</code>.</p>
-      <p><strong>Pushing before popping.</strong> Move <code>stack.append(i)</code> above the loop and today compares against itself; <code>temperatures[i] &lt; temperatures[i]</code> is false, nothing is ever popped, and every answer stays 0.</p>
-      <div class="callout warn">Pop while the top is cooler, then push. The loop must be able to pop more than once per day.</div>
+      <p><strong>Pushing before popping.</strong> I move <code>stack.append(i)</code> above the loop and today compares against itself; <code>temperatures[i] &lt; temperatures[i]</code> is false, nothing is ever popped, and every answer stays 0.</p>
+      <div class="callout warn">I pop while the top is cooler, then I push. The loop must be able to pop more than once per day.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -306,7 +306,7 @@
       <ul>
         <li><code>answer = [0] * len(temperatures)</code>: the default for days that never resolve.</li>
         <li><code>stack = []</code>: indices waiting for a warmer day, temperatures decreasing toward the top.</li>
-        <li><code>while stack and temperatures[stack[-1]] &lt; temp</code>: pop every waiting day that today beats.</li>
+        <li><code>while stack and temperatures[stack[-1]] &lt; temp</code>: I pop every waiting day that today beats.</li>
         <li><code>answer[j] = i - j</code>: the wait is a difference of indices.</li>
         <li><code>stack.append(i)</code> after the loop: today joins the queue of open questions.</li>
         <li><code>return answer</code>.</li>

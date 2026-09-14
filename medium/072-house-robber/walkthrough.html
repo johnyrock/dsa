@@ -206,7 +206,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Dynamic Programming · LeetCode #198</div>
   <h1>House Robber, narrated</h1>
-  <p>Scroll through the thinking, from trying every subset of houses to a loop with two rolling variables, with the best haul per house shown alongside.</p>
+  <p>I will first recurse on rob-or-skip choices, then remember the best answer for each starting house.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">best[i] = max(best[i-1], best[i-2] + nums[i]), kept in two variables</span></p>
 </header>
 
@@ -222,19 +222,18 @@
       <p>We are asked only for the amount, not the set of houses. That is a hint that we can keep running totals rather than sets.</p>
     </section>
 
-    <section class="step" data-state="brute">
-      <div class="n">STEP 2</div>
-      <h2>First instinct: recurse on rob-or-skip</h2>
-      <p>Stand at house <code>i</code>. Either you rob it, in which case house <code>i + 1</code> is off limits and you continue from <code>i + 2</code>, or you skip it and continue from <code>i + 1</code>. Take the better of the two:</p>
-      <pre class="code"><span class="ln">def best_from(i):</span><span class="ln">    if i &gt;= len(nums):</span><span class="ln">        return 0</span><span class="ln">    return max(nums[i] + best_from(i + 2), best_from(i + 1))</span></pre>
-      <p style="margin-top:14px">This is correct and it is the recurrence we will keep. It is also exponential: every call branches into two, so the call tree is roughly <strong>O(2ⁿ)</strong>. <code>best_from(2)</code> is reached from <code>best_from(0)</code> and again from <code>best_from(1)</code>, and each of those recomputes it from scratch.</p>
-      <p>The waste is the repeated subproblems. There are only <code>n</code> distinct values of <code>i</code>, yet the recursion evaluates them thousands of times.</p>
+    <section class="step" data-state="insight">
+      <div class="n">STEP 2</div><h2>First instinct: recurse on rob-or-skip</h2>
+      <p>I can either rob the current house and skip the next, or skip the current one, then take the better result.</p>
+      <pre class="code"><span class="ln">def rob(nums):</span><span class="ln">    def best_from(i):</span><span class="ln">        if i &gt;= len(nums): return 0</span><span class="ln">        return max(nums[i] + best_from(i + 2), best_from(i + 1))</span><span class="ln">    return best_from(0)</span></pre>
+      <p style="margin-top:14px">This is correct. The recursion branches repeatedly over the same suffixes, giving O(2ⁿ) time complexity. Its call stack has O(n) space complexity.</p>
+      <p>Keeping the result for each suffix removes repeated choices. There are only n starting indices, and the final version needs only the previous two values.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: the best haul up to house i needs only the two before it</h2>
-      <p>Define <code>best[i]</code> as the most you can rob from houses <code>0..i</code>. To rob house <code>i</code> you must have left house <code>i - 1</code> alone, so your total is <code>best[i-2] + nums[i]</code>. To skip it, your total is simply <code>best[i-1]</code>. Hence:</p>
+      <p>I define <code>best[i]</code> as the most I can rob from houses <code>0..i</code>. If I rob house <code>i</code>, I must leave house <code>i - 1</code> alone, so the total is <code>best[i-2] + nums[i]</code>. If I skip it, the total is <code>best[i-1]</code>. Hence:</p>
       <div class="callout"><code>best[i] = max(best[i-1], best[i-2] + nums[i])</code></div>
       <p>Filling that table left to right computes each entry once: O(n). And since only <code>best[i-1]</code> and <code>best[i-2]</code> are ever read, the table collapses to two variables. Call them <code>take</code> (best up to the previous house) and <code>skip</code> (best up to two houses back).</p>
       <p>This is the Climbing Stairs shape exactly, with <code>max</code> where that problem had <code>+</code>. The base cases are even simpler: with no houses considered, both totals are 0.</p>
@@ -280,7 +279,7 @@
       <p><strong>Two statements instead of one tuple.</strong> Writing <code>skip = take</code> and then <code>take = max(take, skip + money)</code> looks equivalent. It is not: the second line now reads the <em>new</em> <code>skip</code>, which equals <code>take</code>, so it computes <code>take + money</code> every time and simply sums the street. On the example the totals run 2, 9, 18, 21, 22 and the function returns <strong>22</strong> instead of 12, robbing every house. The panel shows that run.</p>
       <p><strong>Forcing alternation.</strong> <code>take = skip + money</code> without the <code>max</code> always robs the current house. It happens to return 12 here, which is what makes it dangerous, but on <code>[4, 1, 1, 4, 1]</code> it returns <strong>6</strong> (houses 0, 2, 4) instead of 8 (houses 0 and 3).</p>
       <p><strong>Returning <code>skip</code>.</strong> After the loop <code>skip</code> is the best total <em>excluding</em> the last house: <strong>11</strong> instead of 12.</p>
-      <div class="callout warn">Keep the update as one tuple assignment so the right-hand side sees the old values, and keep the <code>max</code> so skipping any number of houses stays allowed.</div>
+      <div class="callout warn">I keep the update as one tuple assignment so its right-hand side sees the old values, and I keep the <code>max</code> so skipping any number of houses stays allowed.</div>
     </section>
 
     <section class="step" data-state="complexity">

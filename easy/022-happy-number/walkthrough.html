@@ -218,7 +218,7 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Fast & Slow Pointers · LeetCode #202</div>
   <h1>Happy Number, narrated</h1>
-  <p>Scroll through the digit-square chain as a linked list, with the slow and fast pointers shown alongside until one reaches 1 or they meet.</p>
+  <p>I’ll start by remembering every value in the digit-square chain, then detect its cycle with two moving pointers.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/fast-slow-pointers.html">Fast & Slow Pointers</a> <span class="how">The repeated digit-square transformation is a linked sequence of numbers. It either reaches 1 or loops forever, which makes Floyd's two-speed cycle detection applicable.</span></p>
 </header>
 
@@ -235,17 +235,17 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: remember every value</h2>
-      <p>Keep a set of every number seen so far. Transform, check the set, stop on 1 or on a repeat:</p>
+      <p>My first instinct is to keep a set of every number I have seen. I transform, check the set, and stop on 1 or a repeat.</p>
       <pre class="code"><span class="ln">seen = set()</span><span class="ln">while n != 1 and n not in seen:</span><span class="ln">    seen.add(n)</span><span class="ln">    n = self._next(n)</span><span class="ln">return n == 1</span></pre>
-      <p style="margin-top:14px">For 19 the set grows to <code>{19, 82, 68, 100}</code> and then <code>n</code> becomes 1, so it returns <code>True</code>. This is correct, and it is a perfectly good first answer. Its cost is the set: it holds one entry per value in the chain, so the space is <strong>O(length of the chain)</strong> before it terminates or repeats.</p>
-      <p>In practice the chain is short, so the set is small. The interview follow-up is still "can you do it in O(1) space?", and the answer is yes, by noticing what kind of structure the chain is.</p>
+      <p style="margin-top:14px">This baseline visits each value in the chain at most once, so it takes <strong>O(length of the chain) time</strong>. Its set holds those visited values, so it uses <strong>O(length of the chain) extra space</strong>.</p>
+      <p>This repeated transformation forms a linked sequence that either reaches 1 or cycles. I can detect that cycle with fast and slow pointers instead of storing every value.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: the chain is a linked list</h2>
-      <p>Look at <code>_next</code> on lines 10 to 15. It is a pure function: <code>_next(19)</code> is always 82, <code>_next(82)</code> is always 68. So every number has exactly one successor, which is precisely the shape of a singly linked list where <code>_next(value)</code> plays the role of <code>node.next</code>.</p>
-      <div class="callout">A linked list built this way has only two possible shapes. Either it reaches 1, and since <code>_next(1) = 1</code> that is a dead end you can treat as the tail. Or it never reaches 1, in which case, because the values are bounded, it must revisit a value and loop forever.</div>
+      <p>I look at <code>_next</code> on lines 10 to 15. It is a pure function: <code>_next(19)</code> is always 82, <code>_next(82)</code> is always 68. So every number has exactly one successor, precisely the shape of a singly linked list where <code>_next(value)</code> plays the role of <code>node.next</code>.</p>
+      <div class="callout">A linked list built this way has only two possible shapes. Either it reaches 1, and since <code>_next(1) = 1</code> that is a dead end I treat as the tail. Or it never reaches 1, in which case, because the values are bounded, it must revisit a value and loop forever.</div>
       <p>"Does this linked list terminate or does it have a cycle?" is exactly the question Floyd's slow and fast pointers answer with no memory at all. A pointer here is just an integer, and "follow the pointer" is just "call <code>_next</code>".</p>
       <p>Why bounded: each digit contributes at most <code>9² = 81</code>. A 10-digit number maps to at most 810, and anything below 1000 maps to at most 243. The chain plunges into a small range within a step or two and can only wander among a few hundred values after that, so it <em>must</em> repeat if it does not hit 1.</p>
     </section>
@@ -265,16 +265,16 @@
     <section class="step" data-state="trace1">
       <div class="n">STEP 5</div>
       <h2>Trace it: turn 1</h2>
-      <p>Check the condition: <code>fast</code> is 82, not 1, and <code>slow</code> is 19, not equal to 82. Enter the loop.</p>
+      <p>I check the condition: <code>fast</code> is 82, not 1, and <code>slow</code> is 19, not equal to 82. I enter the loop.</p>
       <p><code>slow = self._next(19) = 82</code>. Then <code>fast</code> takes two hops from 82: <code>_next(82) = 64 + 4 = 68</code>, and <code>_next(68) = 36 + 64 = 100</code>. So after turn 1, <code>slow = 82</code> and <code>fast = 100</code>. The panel has now discovered the chain up to 100 and shows the fifth value still unknown.</p>
-      <p>Check again: <code>fast</code> is 100, not 1; <code>slow</code> is 82, not 100. Loop once more.</p>
+      <p>I check again: <code>fast</code> is 100, not 1; <code>slow</code> is 82, not 100. I loop once more.</p>
     </section>
 
     <section class="step" data-state="trace2">
       <div class="n">STEP 6</div>
       <h2>Trace it: turn 2, <code>fast</code> reaches 1</h2>
       <p><code>slow = self._next(82) = 68</code>. Then <code>fast</code> hops twice from 100: <code>_next(100) = 1 + 0 + 0 = 1</code>, and <code>_next(1) = 1</code> again. So <code>slow = 68</code> and <code>fast = 1</code>.</p>
-      <p>Notice that <code>_next(1) = 1</code> did not hurt: once the chain hits 1 it stays at 1, so a double hop cannot overshoot the target. That is why the loop condition can check <code>fast</code> alone for the happy case.</p>
+      <p><code>_next(1) = 1</code> does not hurt: once the chain hits 1 it stays at 1, so my double hop cannot overshoot the target. That is why the loop condition can check <code>fast</code> alone for the happy case.</p>
       <div class="callout">The panel highlights 1 in green. The full chain is <code>19 → 82 → 68 → 100 → 1</code>, and the fast pointer covered it in two turns while the slow pointer is still back at 68.</div>
     </section>
 
@@ -288,9 +288,9 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the unhappy case</h2>
-      <p>The panel switches to <code>n = 2</code>, which is not happy. Its chain is <code>2 → 4 → 16 → 37 → 58 → 89 → 145 → 42 → 20 → 4 → …</code>: after the first hop it enters a loop of eight values that never includes 1. Run the real algorithm: <code>slow</code> starts at 2, <code>fast</code> at 4, and after 7 turns both sit on <strong>42</strong>. <code>slow == fast</code> ends the loop, and since <code>fast</code> is 42 and not 1, line 8 returns <code>False</code>. Correct.</p>
-      <p><strong>Bug 1: a fixed step budget.</strong> It is tempting to skip cycle detection and write <code>for _ in range(100): n = self._next(n)</code> then <code>return n == 1</code>. It happens to work for small inputs, but it is a guess: you are betting the chain always settles within your budget, and you are doing 100 transformations even for 19, which needs four. Worse, shrink the budget to 4 and <code>n = 7</code> (<code>7 → 49 → 97 → 130 → 10 → 1</code>) returns <strong>False</strong> for a happy number.</p>
-      <p><strong>Bug 2: starting both pointers at <code>n</code>.</strong> Write <code>slow = fast = n</code> and keep the loop as is: <code>slow != fast</code> is <code>False</code> on the first check, the loop never runs, and <code>return fast == 1</code> yields <strong>False</strong> for 19. If you want both to start at <code>n</code>, you need a <code>do-while</code> shape that advances before comparing, which Python does not have; starting <code>fast</code> one hop ahead is the cleaner fix.</p>
+      <p>The panel switches to <code>n = 2</code>, which is not happy. Its chain is <code>2 → 4 → 16 → 37 → 58 → 89 → 145 → 42 → 20 → 4 → …</code>: after the first hop it enters a loop of eight values that never includes 1. When I run the real algorithm, <code>slow</code> starts at 2, <code>fast</code> at 4, and after 7 turns both sit on <strong>42</strong>. <code>slow == fast</code> ends the loop, and since <code>fast</code> is 42 and not 1, line 8 returns <code>False</code>. Correct.</p>
+      <p><strong>Bug 1: a fixed step budget.</strong> I might be tempted to skip cycle detection and write <code>for _ in range(100): n = self._next(n)</code> then <code>return n == 1</code>. It works for small inputs, but it is a guess: I am betting the chain always settles within my budget, and I am doing 100 transformations even for 19, which needs four. Worse, a budget of 4 makes <code>n = 7</code> (<code>7 → 49 → 97 → 130 → 10 → 1</code>) return <strong>False</strong> for a happy number.</p>
+      <p><strong>Bug 2: starting both pointers at <code>n</code>.</strong> If I write <code>slow = fast = n</code> and keep the loop as is, <code>slow != fast</code> is <code>False</code> on the first check, the loop never runs, and <code>return fast == 1</code> yields <strong>False</strong> for 19. Starting both at <code>n</code> needs a <code>do-while</code> shape that advances before comparing, which Python does not have; starting <code>fast</code> one hop ahead is the cleaner fix.</p>
       <div class="callout warn">Detect the cycle, do not guess its length. The meeting of <code>slow</code> and <code>fast</code> is the only stopping condition that works for every unhappy input.</div>
     </section>
 
@@ -317,7 +317,7 @@
         <li><code>return fast == 1</code> tells the two exits apart: <code>True</code> for happy, <code>False</code> when the loop ended by a meeting on some other value.</li>
         <li><code>_next</code>: <code>total = 0</code>, then <code>while value:</code> peel digits with <code>value, digit = divmod(value, 10)</code> and add <code>digit * digit</code>. The loop ends when <code>value</code> reaches 0, and it returns the sum of squared digits.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>the digit-square chain is a linked list that either ends at 1 or cycles, so run slow and fast pointers and check whether fast hit 1.</em></div>
+      <div class="callout">One-line summary to remember: <em>I treat the digit-square chain as a linked list that either reaches 1 or cycles, then use slow and fast pointers to see whether fast reaches 1.</em></div>
     </section>
 
     <div class="code-final">

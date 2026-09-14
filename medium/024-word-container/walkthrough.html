@@ -195,8 +195,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Trie · Custom problem</div>
   <h1>Word Container, narrated</h1>
-  <p>Scroll through the thinking, from comparing every pair of words to a single shared trie walked from every starting index, with the state of the search shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/trie.html">Trie</a> <span class="how">insert every word once, then walk from each index looking for a completed word</span></p>
+  <p>I’ll start by comparing every pair of words, then share their prefixes in a trie and search each word from every start position.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/trie.html">Trie</a> <span class="how">insert every word once, then I walk from each index looking for a completed word</span></p>
 </header>
 
 <div class="layout">
@@ -213,22 +213,23 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: compare every pair</h2>
-      <p>For each word, check it against every other word with the <code>in</code> operator:</p>
+      <p>My first instinct is to check every word against every other word with the <code>in</code> operator.</p>
       <pre class="code"><span class="ln">result = []</span><span class="ln">for word in words:</span><span class="ln">    for other in words:</span><span class="ln">        if other is not word and other in word:</span><span class="ln">            result.append(word)</span><span class="ln">            break</span></pre>
-      <p style="margin-top:14px">Correct, and fine for small lists. But this is <strong>O(n² · L)</strong> — for each of n words, scan up to n others, each substring check costing up to O(L). With 10,000 words that is 100 million substring scans.</p>
+      <p style="margin-top:14px">For <code>n</code> words of length up to <code>L</code>, it takes <strong>O(n² · L) time</strong> and uses <strong>O(n) extra space</strong> for the result.</p>
+      <p>Shared prefixes remove repeated work because many candidate words begin alike. A trie stores shared prefixes once and lets me stop a search as soon as no word can continue.</p>
     </section>
 
     <section class="step" data-state="reframe">
       <div class="n">STEP 3</div>
       <h2>Reframe: stop comparing pairs, index once</h2>
-      <p>The n² cost comes from re-scanning the whole word list for every single word. But the word list itself never changes while we search — so build one shared structure over it, and query that structure instead of the raw list.</p>
+      <p>The n² cost comes from re-scanning the whole word list for every single word. But the word list itself never changes while I search — so build one shared structure over it, and query that structure instead of the raw list.</p>
       <div class="callout">A <strong>trie</strong> stores every word as a path from the root, one character per edge, with the end of each word marked. Checking "does any word in the list equal this substring?" becomes a walk of that substring's length, regardless of how many words are stored.</div>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 4</div>
       <h2>The key idea: walk from every starting index</h2>
-      <p>Insert every word into one trie. Then, for a given word <code>W</code> of length <code>n</code>, try each starting index <code>0..n-1</code>: follow the trie one character at a time from that index, and stop the moment either the trie has no such branch, or a completed word is found.</p>
+      <p>Insert every word into one trie. Then, for a given word <code>W</code> of length <code>n</code>, I try each starting index <code>0..n-1</code>: I follow the trie one character at a time from that index, and stop the moment either the trie has no such branch, or a completed word is found.</p>
       <ul>
         <li>If a completed word is found <em>and</em> it isn't <code>W</code> matching itself in full — that's a hit.</li>
         <li>If the branch dead-ends, abandon only that starting index and try the next one.</li>
@@ -239,21 +240,21 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: checking "apple"</h2>
-      <p>Trie holds: apple, app, banana, nana. Start at index 0 of "apple": a → p → p is already a completed word ("app"), and this is not a full self-match (end=2, n-1=4) — hit.</p>
+      <p>Trie holds: apple, app, banana, nana. I start at index 0 of "apple": a → p → p is already a completed word ("app"), and this is not a full self-match (end=2, n-1=4) — hit.</p>
       <div class="callout">"apple" contains "app". No need to try the other starting indices — one hit is enough.</div>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: checking "app"</h2>
-      <p>Start at index 0: a → p → p reaches the end of "app" itself — but start=0, end=2=n-1, so this is excluded as a self-match. No other starting index (1: "pp", 2: "p") completes a word in the trie.</p>
+      <p>I start at index 0: a → p → p reaches the end of "app" itself — but start=0, end=2=n-1, so this is excluded as a self-match. No other starting index (1: "pp", 2: "p") completes a word in the trie.</p>
       <div class="callout">"app" is correctly left out of the answer.</div>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: checking "banana"</h2>
-      <p>Try starting indices in turn. At index 2 ("nana"): n → a → n → a reaches the end of "nana", and this is not <code>W</code> itself (start=2, not a full-length match) — hit.</p>
+      <p>I try starting indices in turn. At index 2 ("nana"): n → a → n → a reaches the end of "nana", and this is not <code>W</code> itself (start=2, not a full-length match) — hit.</p>
       <div class="callout">"banana" contains "nana", found from a starting index other than 0 — this is exactly why every starting index has to be tried.</div>
     </section>
 

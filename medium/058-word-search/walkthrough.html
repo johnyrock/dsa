@@ -214,8 +214,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Backtracking · LeetCode #79</div>
   <h1>Word Search, narrated</h1>
-  <p>Scroll through the thinking, from enumerating every path on the board to a depth-first search that marks cells in place and unmarks them on the way back, with the state of the algorithm shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/backtracking.html">Backtracking</a> <span class="how">DFS from every cell; mark <code>#</code>, try four neighbours, restore</span></p>
+  <p>I will first enumerate every simple board path of the needed length, then I compare letters during the search so a mismatch stops a path immediately.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/backtracking.html">Backtracking</a> <span class="how">DFS from every cell; mark <code>#</code>, I try four neighbours, restore</span></p>
 </header>
 
 <div class="layout">
@@ -231,18 +231,18 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>Brute force: every path of the right length</h2>
-      <p>Enumerate every simple path of <code>len(word)</code> cells, from every start, going in any of the four directions at each step, and compare the letters along it to the word at the end.</p>
-      <pre class="code"><span class="ln">def paths(r, c, used, k):          # every simple path of length len(word) from (r, c)</span><span class="ln">    if k == len(word): yield used; return</span><span class="ln">    for nr, nc in neighbours(r, c):</span><span class="ln">        if (nr, nc) not in used:</span><span class="ln">            yield from paths(nr, nc, used + [(nr, nc)], k + 1)</span><span class="ln">any("".join(board[r][c] for r, c in p) == word for start in cells for p in paths(*start, [start], 1))</span></pre>
-      <p style="margin-top:14px">There are up to <code>m · n</code> starts and up to <code>4 · 3^(L-1)</code> paths from each, so this is <strong>O(m · n · 4 · 3^(L-1) · L)</strong> with the final comparison. On a 6 × 6 board with a 15-letter word that is tens of millions of paths, almost all of which have the wrong first or second letter and could have been abandoned immediately.</p>
-      <p>The wasted work is obvious once named: a path whose second cell is <code>S</code> cannot spell <code>"AB…"</code>, yet the brute force keeps walking it for thirteen more steps.</p>
+      <h2>First instinct: enumerate every path of the right length</h2>
+      <p>I can generate every simple path with the word's length, I build its string at the end, and compare that string with <code>word</code>.</p>
+      <pre class="code"><span class="ln">def exist(board, word):</span><span class="ln">    rows, cols = len(board), len(board[0])</span><span class="ln">    def paths(r, c, used, path):</span><span class="ln">        if len(path) == len(word): yield path; return</span><span class="ln">        for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):</span><span class="ln">            nr, nc = r + dr, c + dc</span><span class="ln">            if 0 &lt;= nr &lt; rows and 0 &lt;= nc &lt; cols and (nr, nc) not in used:</span><span class="ln">                yield from paths(nr, nc, used | {(nr, nc)}, path + [(nr, nc)])</span><span class="ln">    return any("".join(board[r][c] for r, c in path) == word for r in range(rows) for c in range(cols) for path in paths(r, c, {(r, c)}, [(r, c)]))</span></pre>
+      <p style="margin-top:14px">This is correct. There are up to O(m · n · 4 · 3^(L-1)) simple paths of length <code>L</code>, and comparing each path adds O(L), so the time complexity is O(m · n · 4 · 3^(L-1) · L). Stored paths and recursion use O(L) space per branch.</p>
+      <p>I check the next board letter before extending a path. A depth-first search then abandons a path at its first mismatch instead of completing it.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>Key insight: check one letter at a time, and mark the board itself</h2>
-      <p>Turn the enumeration into a recursion that fails <em>early</em>: <code>dfs(r, c, k)</code> asks "can <code>word[k:]</code> be spelled starting at <code>(r, c)</code>?". If <code>(r, c)</code> is off the board or <code>board[r][c] != word[k]</code>, the answer is <code>False</code> at once; no deeper path is ever built.</p>
-      <p>To stop the path from reusing a cell, overwrite it: set <code>board[r][c] = "#"</code> before recursing into the neighbours. Because <code>"#"</code> is never a letter of <code>word</code>, any neighbour call that lands back on this cell fails the letter check automatically. No visited set, no extra memory.</p>
+      <p>I turn the enumeration into a recursion that fails <em>early</em>: <code>dfs(r, c, k)</code> asks "can <code>word[k:]</code> be spelled starting at <code>(r, c)</code>?". If <code>(r, c)</code> is off the board or <code>board[r][c] != word[k]</code>, the answer is <code>False</code> at once; no deeper path is ever built.</p>
+      <p>To stop the path from reusing a cell, overwrite it: I set <code>board[r][c] = "#"</code> before recursing into the neighbours. Because <code>"#"</code> is never a letter of <code>word</code>, any neighbour call that lands back on this cell fails the letter check automatically. No visited set, no extra memory.</p>
       <div class="callout">The mark must be temporary. After the four neighbour calls return, restore <code>board[r][c] = saved</code>. A cell that sat on a failed path is still perfectly usable by a different path, and the restore is what makes it available again.</div>
     </section>
 
@@ -255,7 +255,7 @@
         <li><code>saved = board[r][c]; board[r][c] = "#"</code> — mark.</li>
         <li><code>found = dfs(r + 1, c, k + 1) or dfs(r - 1, c, k + 1) or dfs(r, c + 1, k + 1) or dfs(r, c - 1, k + 1)</code> — down, up, right, left. The <code>or</code> short-circuits on the first success.</li>
         <li><code>board[r][c] = saved</code> — restore, then <code>return found</code>.</li>
-        <li>Outer loop: <code>dfs(r, c, 0)</code> from every cell; return <code>True</code> on the first hit, <code>False</code> if none.</li>
+        <li>Outer loop: <code>dfs(r, c, 0)</code> from every cell; I return <code>True</code> on the first hit, <code>False</code> if none.</li>
       </ul>
       <p>The panel shows the board with green cells on the current path, the blue cell being examined, a dashed cell for a neighbour that just failed, and the word with its matched prefix.</p>
     </section>
@@ -272,7 +272,7 @@
       <div class="n">STEP 6</div>
       <h2>Trace: C, then the second C</h2>
       <p>From <code>B</code> at <code>(0, 1)</code>, looking for <code>word[2] = "C"</code>: down is <code>(1, 1) = F</code>, fail; up is off the board; right is <code>(0, 2) = C</code>, match. Mark it and look for <code>word[3] = "C"</code> again.</p>
-      <p>From <code>(0, 2)</code>, the very first direction, down, is <code>(1, 2) = C</code>. Match on the first try; mark it, and now four of six letters are on the path. Left from here would be <code>(1, 1) = F</code> and up would be <code>(0, 2) = #</code>, but we never get to test them because the successful branch returns first.</p>
+      <p>From <code>(0, 2)</code>, the very first direction, down, is <code>(1, 2) = C</code>. Match on the first try; mark it, and now four of six letters are on the path. Left from here would be <code>(1, 1) = F</code> and up would be <code>(0, 2) = #</code>, but I never get to test them because the successful branch returns first.</p>
       <p>The path so far is <code>(0,0) (0,1) (0,2) (1,2)</code>, all four showing <code>#</code> on the real board, though the panel keeps the letters visible in green.</p>
     </section>
 
@@ -287,7 +287,7 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong</h2>
-      <p><strong>Forgetting the restore.</strong> Drop <code>board[r][c] = saved</code> and every cell touched by a failed attempt stays <code>#</code>. Search the same board for <code>"CCB"</code>: the scan reaches <code>(0, 2) = C</code> first, marks it, steps down to <code>(1, 2) = C</code>, marks that, finds no <code>B</code> beside it, and gives up with both cells still <code>#</code>. The real path <code>(1,2) → (0,2) → (0,1)</code> is now unreachable, and <code>exist</code> returns <strong>false instead of true</strong>. The panel shows the two dead cells struck through.</p>
+      <p><strong>Forgetting the restore.</strong> I drop <code>board[r][c] = saved</code> and every cell touched by a failed attempt stays <code>#</code>. Search the same board for <code>"CCB"</code>: the scan reaches <code>(0, 2) = C</code> first, marks it, steps down to <code>(1, 2) = C</code>, marks that, finds no <code>B</code> beside it, and gives up with both cells still <code>#</code>. The real path <code>(1,2) → (0,2) → (0,1)</code> is now unreachable, and <code>exist</code> returns <strong>false instead of true</strong>. The panel shows the two dead cells struck through.</p>
       <p><strong>Not marking at all.</strong> Without the <code>#</code>, a path may step back onto a cell it already used. <code>"ABCB"</code> goes <code>A → B → C → B</code> by returning to <code>(0, 1)</code> and the function returns <strong>true instead of false</strong>.</p>
       <p><strong>Bounds check before the base case.</strong> If <code>k == len(word)</code> is tested after the bounds check, a word whose last letter sits where every neighbour is off the board or already used can only be confirmed by a call that gets rejected first. Test completion first.</p>
       <div class="callout warn">Mark before the neighbour calls, restore after them, and test <code>k == len(word)</code> before anything else.</div>
@@ -317,7 +317,7 @@
         <li><code>board[r][c] = saved</code> and <code>return found</code> — restore and report.</li>
         <li><code>for r … for c … if dfs(r, c, 0): return True</code>, then <code>return False</code>.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>from every cell, match one letter, mark, try four neighbours, unmark — the board is its own visited set.</em></div>
+      <div class="callout">One-line summary to remember: <em>from every cell, match one letter, mark, I try four neighbours, unmark — the board is its own visited set.</em></div>
     </section>
 
     <div class="code-final">

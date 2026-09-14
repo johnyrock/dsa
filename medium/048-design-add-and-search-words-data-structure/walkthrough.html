@@ -196,7 +196,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Trie · LeetCode #211</div>
   <h1>Design Add and Search Words Data Structure, narrated</h1>
-  <p>Scroll from matching the pattern against every stored word to a trie whose search branches at each dot, with the trie's contents shown after every operation.</p>
+  <p>I will first compare a pattern with every stored word, then I use trie branches to rule out impossible prefixes immediately.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/trie.html">Trie</a> <span class="how">A literal letter follows one child; a dot tries every child. Recursion with any() does the branching.</span></p>
 </header>
 
@@ -213,17 +213,17 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instinct: keep a list and test each word against the pattern</h2>
-      <p>Store the words in a list. To search, compare the pattern against every stored word of the same length, letter by letter, treating a dot as a free pass:</p>
-      <pre class="code"><span class="ln">def search(self, word):</span><span class="ln">    for w in self.words:</span><span class="ln">        if len(w) == len(word) and all(</span><span class="ln">            p == "." or p == c for p, c in zip(word, w)</span><span class="ln">        ):</span><span class="ln">            return True</span><span class="ln">    return False</span></pre>
-      <p style="margin-top:14px">It is correct, and for a handful of words it is fine. But every <code>search</code> touches every stored word: <strong>O(n · L)</strong> per query, where <code>n</code> is the number of words stored so far. With 10⁴ adds followed by 10⁴ searches that is on the order of 10⁸ character comparisons, and a pattern like <code>"pad"</code>, which no word could ever match, still scans everything.</p>
-      <p>Bucketing the list by length helps only when lengths vary. What we want is to rule out whole groups of words after reading one letter of the pattern: on <code>"pad"</code>, the first letter <code>p</code> should end the search immediately.</p>
+      <h2>First instinct: keep a list and test each word</h2>
+      <p>I can store the words in a list and compare a search pattern with every same-length word, allowing a dot to match any character.</p>
+      <pre class="code"><span class="ln">class WordDictionary:</span><span class="ln">    def __init__(self): self.words = []</span><span class="ln">    def addWord(self, word): self.words.append(word)</span><span class="ln">    def search(self, word):</span><span class="ln">        return any(len(saved) == len(word) and all(p == "." or p == c for p, c in zip(word, saved))</span><span class="ln">                   for saved in self.words)</span></pre>
+      <p style="margin-top:14px">This is correct. <code>addWord</code> takes O(1) time, and a search can compare <code>L</code> characters for each of <code>n</code> words, so its time complexity is O(n · L). The word list uses O(total characters) space.</p>
+      <p>I focus the search by grouping words according to their prefixes. A trie lets a literal character follow one edge and a dot branch only among matching prefix candidates.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: a trie, with the search branching at dots</h2>
-      <p>Put the words in a trie, exactly as in Implement Trie. Now a literal letter in the pattern means "follow this one child, or fail if it is missing", which kills <code>"pad"</code> at the root: there is no <code>p</code> branch. Words that do not share the pattern's prefix are never visited.</p>
+      <p>I put the words in a trie, exactly as in Implement Trie. Now a literal letter in the pattern means "follow this one child, or fail if it is missing", which kills <code>"pad"</code> at the root: there is no <code>p</code> branch. Words that do not share the pattern's prefix are never visited.</p>
       <div class="callout">A <code>.</code> means "follow <em>every</em> child, and succeed if any of them works". That is a recursion, not a loop: <code>match(node, i)</code> answers whether <code>word[i:]</code> can be matched starting at <code>node</code>, and at a dot it returns <code>any(match(child, i + 1) for child in node.children.values())</code>.</div>
       <p>The base case is the part people get wrong. When <code>i == len(word)</code> the pattern is used up, and the answer is <code>node.is_word</code>, not <code>True</code>. Reaching a node only proves a prefix exists; the flag proves a word ends there. For <code>"b."</code> the walk reaches the <code>a</code> under <code>b</code>, which is not flagged, so the answer is false even though "bad" is stored.</p>
       <p>The panel shows the trie after the three adds: three branches from the root, each a chain <code>a → d</code> with a flag on the <code>d</code>.</p>
@@ -235,7 +235,7 @@
       <ul>
         <li><code>add_word</code>: for each <code>ch</code>, <code>if ch not in node.children: node.children[ch] = TrieNode()</code>, step down, and after the loop <code>node.is_word = True</code>.</li>
         <li><code>if i == len(word): return node.is_word</code> — pattern consumed; a match only if a word ends exactly here.</li>
-        <li><code>if ch == ".": return any(match(child, i + 1) for child in node.children.values())</code> — wildcard: try every child, stop at the first success.</li>
+        <li><code>if ch == ".": return any(match(child, i + 1) for child in node.children.values())</code> — wildcard: I try every child, stop at the first success.</li>
         <li><code>child = node.children.get(ch)</code> then <code>return child is not None and match(child, i + 1)</code> — literal: one child or nothing.</li>
         <li><code>return match(self.root, 0)</code> — start at the root with the whole pattern ahead.</li>
       </ul>
@@ -261,7 +261,7 @@
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: search("b..")</h2>
-      <p><code>match(root, 0)</code>: literal <code>b</code>, found, recurse to <code>match(b, 1)</code>. Index 1 is a dot, so try every child of <code>b</code>. It has one, <code>a</code>: <code>match(a, 2)</code>. Index 2 is also a dot, so try every child of <code>a</code>. It has one, <code>d</code>: <code>match(d, 3)</code>. The pattern is consumed and <code>d.is_word</code> is <code>True</code>.</p>
+      <p><code>match(root, 0)</code>: literal <code>b</code>, found, recurse to <code>match(b, 1)</code>. Index 1 is a dot, so I try every child of <code>b</code>. It has one, <code>a</code>: <code>match(a, 2)</code>. Index 2 is also a dot, so I try every child of <code>a</code>. It has one, <code>d</code>: <code>match(d, 3)</code>. The pattern is consumed and <code>d.is_word</code> is <code>True</code>.</p>
       <p>So <code>match(a, 2)</code> returns <code>True</code>, <code>match(b, 1)</code> returns <code>True</code>, and the top-level <code>and</code> returns <strong>true</strong>. Two dots, but each had only one child to try, so the whole search visited four nodes.</p>
       <div class="callout">The four searches returned <code>false, true, true, true</code>. Every one of them touched only the nodes on paths that could still match; the list scan from step 2 would have compared the pattern against all three words every time.</div>
     </section>
@@ -269,7 +269,7 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong</h2>
-      <p><strong>Returning <code>True</code> at the end of the pattern.</strong> Write <code>if i == len(word): return True</code> instead of <code>return node.is_word</code>. Then <code>search("b.")</code> on this dictionary walks <code>b → a</code>, runs out of pattern, and answers <strong>true</strong>, although no stored word is two letters long. The panel shows that: the walk ends on the unflagged <code>a</code> and the bug says yes anyway. The same bug makes <code>search("ba")</code> true.</p>
+      <p><strong>Returning <code>True</code> at the end of the pattern.</strong> I write <code>if i == len(word): return True</code> instead of <code>return node.is_word</code>. Then <code>search("b.")</code> on this dictionary walks <code>b → a</code>, runs out of pattern, and answers <strong>true</strong>, although no stored word is two letters long. The panel shows that: the walk ends on the unflagged <code>a</code> and the bug says yes anyway. The same bug makes <code>search("ba")</code> true.</p>
       <p><strong>Treating the dot as a letter.</strong> Leave out the <code>if ch == "."</code> branch, and <code>search(".ad")</code> does <code>root.children.get(".")</code>, gets <code>None</code>, and returns <strong>false</strong>. A dot is never a key in <code>children</code>; it has to be handled before the literal lookup.</p>
       <p><strong><code>all</code> instead of <code>any</code> at the dot.</strong> On this dictionary it happens to work, because every branch of <code>".ad"</code> matches. But <code>search(".")</code> on an <em>empty</em> dictionary returns <strong>true</strong>, since <code>all()</code> of nothing is <code>True</code>, and any dictionary where one child branch fails turns a valid match into <code>False</code>.</p>
       <div class="callout warn">The end of the pattern is not the end of the check: ask <code>node.is_word</code>. And a dot is a branching point, not a character to look up.</div>

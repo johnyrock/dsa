@@ -208,7 +208,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Dynamic Programming · LeetCode #416</div>
   <h1>Partition Equal Subset Sum, narrated</h1>
-  <p>Scroll through the thinking, from trying every subset to a one-row table of reachable sums filled from the top down, with the state of the algorithm shown alongside.</p>
+  <p>I reduce the two-group question to one target sum, then track which totals are reachable as I add numbers.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">0/1 knapsack on sums: dp[s] |= dp[s − num], sums descending</span></p>
 </header>
 
@@ -218,7 +218,7 @@
     <section class="step" data-state="problem">
       <div class="n">STEP 1</div>
       <h2>The problem</h2>
-      <p>Split <code>nums</code> into two groups so that both groups have the same sum. Every element goes into exactly one group. Return whether it can be done.</p>
+      <p>Split <code>nums</code> into two groups with the same sum. Every element goes into exactly one group. Return whether that is possible.</p>
       <div class="callout">Running example: <code>nums = [1, 5, 11, 5]</code>. The total is 22, so each half must sum to 11. <code>{1, 5, 5}</code> and <code>{11}</code> both do — the answer is <strong>True</strong>.</div>
       <p>The first simplification is free: if the total is odd there is no way to halve it, so return <code>False</code> at once. <code>[1, 2, 3, 5]</code> totals 11 and is out immediately.</p>
       <p>The second is the reframing. You do not need to build two groups. Find <em>one</em> subset that sums to <code>total // 2</code>; everything you left out is the other group, and it sums to the other half automatically.</p>
@@ -226,19 +226,20 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instinct: try every subset</h2>
-      <p>Each element is either in the subset or not, so recurse index by index with the remaining sum still needed.</p>
+<h2>First instinct: try every subset</h2>
+      <p>My first instinct is to decide for each element whether it belongs in one target subset, while I track the remaining sum I need.</p>
       <pre class="code"><span class="ln">def reach(i, remaining):</span><span class="ln">    if remaining == 0:</span><span class="ln">        return True</span><span class="ln">    if i == len(nums) or remaining &lt; 0:</span><span class="ln">        return False</span><span class="ln">    return reach(i + 1, remaining - nums[i]) or reach(i + 1, remaining)</span></pre>
-      <p style="margin-top:14px">Two branches per element means <strong>O(2ⁿ)</strong> calls. At <code>n = 200</code> that is beyond astronomical. The waste is the usual one: <code>reach(3, 6)</code> — "from index 3, still need 6" — is the same question no matter which of the earlier elements produced the 6, yet the recursion answers it afresh every time.</p>
+      <p style="margin-top:14px">Two branches per element mean <strong>O(2ⁿ) time</strong> and <strong>O(n) space</strong> for the call stack. At <code>n = 200</code>, that is far too slow.</p>
+      <p><code>reach(3, 6)</code> is the same question no matter which earlier choices left me needing 6. I record which sums are reachable and reuse that work.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>The key idea: track which sums are reachable</h2>
-      <p>The sums are small: at most <code>200 × 100 / 2 = 10,000</code>. So keep one boolean per sum. <code>dp[s]</code> means "some subset of the numbers processed so far adds up to exactly <code>s</code>".</p>
+      <p>The sums are small: at most <code>200 × 100 / 2 = 10,000</code>. I keep one boolean per sum. <code>dp[s]</code> means “some subset of the numbers processed so far adds up to exactly <code>s</code>.”</p>
       <p>Before any number, only the empty subset exists, so <code>dp[0] = True</code>. Processing a number <code>num</code> creates new reachable sums: every already-reachable <code>s − num</code> now also reaches <code>s</code>.</p>
-      <div class="callout">For each <code>num</code>, for each sum <code>s</code>: <code>if dp[s − num]: dp[s] = True</code>. After all numbers, return <code>dp[target]</code>.</div>
-      <p>The subtle part is the direction of the inner loop. Walking <code>s</code> <em>downward</em> from <code>target</code> means <code>dp[s − num]</code> is always read before this same <code>num</code> could have written it. Walk upward and the number gets used twice — which is fine for coins with unlimited supply, and wrong here.</p>
+      <div class="callout">For each <code>num</code>, I visit each sum <code>s</code> and apply <code>if dp[s − num]: dp[s] = True</code>. After all numbers, I return <code>dp[target]</code>.</div>
+      <p>The subtle part is the direction of the inner loop. I walk <code>s</code> <em>downward</em> from <code>target</code>, so <code>dp[s − num]</code> is read before this same <code>num</code> could have written it. An upward walk would use the number twice, which is fine for unlimited coins and wrong here.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -261,7 +262,7 @@
       <p><code>total = 22</code>, even, <code>target = 11</code>. The table has 12 slots and only <code>dp[0]</code> is True.</p>
       <p><code>num = 1</code>: <code>s</code> runs 11 down to 1. Only <code>s = 1</code> finds <code>dp[0]</code> True, so <code>dp[1] = True</code>. Reachable: <code>{0, 1}</code>.</p>
       <p><code>num = 5</code>: <code>s</code> runs 11 down to 5. <code>s = 6</code> reads <code>dp[1]</code> True → <code>dp[6] = True</code>. <code>s = 5</code> reads <code>dp[0]</code> True → <code>dp[5] = True</code>. Reachable: <code>{0, 1, 5, 6}</code>.</p>
-      <p>Notice the order at <code>num = 5</code>: 6 was marked before 5. Had we gone upward, marking 5 first, then <code>s = 10</code> would read <code>dp[5]</code> and mark 10 — using the single 5 twice.</p>
+      <p>I pay attention to the order at <code>num = 5</code>: 6 was marked before 5. Had I gone upward, marking 5 first, then <code>s = 10</code> would read <code>dp[5]</code> and mark 10 — using the single 5 twice.</p>
     </section>
 
     <section class="step" data-state="t2">
@@ -275,7 +276,7 @@
       <div class="n">STEP 7</div>
       <h2>Trace it: the second 5, then the answer</h2>
       <p><code>num = 5</code> again: <code>s</code> runs 11 down to 5. <code>s = 11</code> reads <code>dp[6]</code> True → already True. <code>s = 10</code> reads <code>dp[5]</code> True → <code>dp[10] = True</code>. <code>s = 6</code> reads <code>dp[1]</code> → already True. <code>s = 5</code> reads <code>dp[0]</code> → already True.</p>
-      <p>Final reachable sums: <code>{0, 1, 5, 6, 10, 11}</code>. <code>dp[11]</code> is True, so return <strong>True</strong>. Reading the chain back: 11 ← 6 (via the first 5) ← 1 (via the 1) ← 0, giving <code>{1, 5, 5}</code>; or simply 11 ← 0 via the 11.</p>
+      <p>Final reachable sums: <code>{0, 1, 5, 6, 10, 11}</code>. <code>dp[11]</code> is True, so I return <strong>True</strong>. I can read one chain back as 11 ← 6 ← 1 ← 0, giving <code>{1, 5, 5}</code>; <code>{11}</code> also works on its own.</p>
       <div class="callout">Sixteen subsets were possible; the table marked six sums with four short passes.</div>
     </section>
 
@@ -283,9 +284,9 @@
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the seed and the loop direction</h2>
       <p><strong>Forgetting <code>dp[0] = True</code>.</strong> The condition <code>if dp[s - num]</code> can then never fire, because nothing is reachable to begin with. Every slot stays False and <code>[1, 5, 11, 5]</code> returns <strong>False</strong> instead of True.</p>
-      <p><strong>Ascending inner loop.</strong> Write <code>range(num, target + 1)</code> and each number can be used more than once. <code>[1, 2, 5]</code> has total 8, target 4, and no subset sums to 4 — but ascending, the 1 marks <code>dp[1]</code>, then <code>dp[2]</code> from <code>dp[1]</code>, then <code>dp[3]</code>, then <code>dp[4]</code>, so it returns <strong>True</strong>. That is the unbounded knapsack of <code>medium/008-coin-change</code>, not this problem.</p>
+      <p><strong>Ascending inner loop.</strong> If I write <code>range(num, target + 1)</code>, each number can be used more than once. <code>[1, 2, 5]</code> has total 8, target 4, and no subset sums to 4, but an upward loop lets the 1 mark <code>dp[1]</code> through <code>dp[4]</code> and returns <strong>True</strong>.</p>
       <p><strong>Looping all the way to 0.</strong> <code>range(target, -1, -1)</code> reads <code>dp[s - num]</code> with a negative index for <code>s &lt; num</code>. Python wraps that to the end of the list, so a reachable high sum can leak into a low slot.</p>
-      <div class="callout warn">Descending sums = each element used at most once. Ascending sums = unlimited copies. Pick the direction to match the problem.</div>
+      <div class="callout warn">I use descending sums for one use per element. Ascending sums allow unlimited copies, so they solve a different problem.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -307,14 +308,14 @@
       <p>Twelve lines. Every one of them maps to a step above.</p>
       <ul>
         <li><code>total = sum(nums)</code> and <code>if total % 2: return False</code> — odd totals cannot halve.</li>
-        <li><code>target = total // 2</code> — the subset sum we need, as an int.</li>
+        <li><code>target = total // 2</code> — the subset sum I need, as an int.</li>
         <li><code>dp = [False] * (target + 1)</code> and <code>dp[0] = True</code> — reachable sums, seeded with the empty subset.</li>
         <li><code>for num in nums</code> — offer each element once.</li>
         <li><code>for s in range(target, num - 1, -1)</code> — descending, and never below <code>num</code>.</li>
         <li><code>if dp[s - num]: dp[s] = True</code> — a reachable sum plus this element is reachable.</li>
         <li><code>return dp[target]</code> — half the total reachable means the other half is the rest.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>find a subset summing to half the total; walk the reachable-sums row from the top down so each element is used once.</em></div>
+      <div class="callout">My rule is: <em>I look for half the total and walk the reachable-sums row from the top down so each element is used once.</em></div>
     </section>
 
     <div class="code-final">

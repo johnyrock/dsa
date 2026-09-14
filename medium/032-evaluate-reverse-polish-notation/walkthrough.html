@@ -205,7 +205,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Stack · LeetCode #150</div>
   <h1>Evaluate Reverse Polish Notation, narrated</h1>
-  <p>Scroll through the thinking, from rewriting the token list in place to a single pass with a stack of pending operands, with the state of the algorithm shown alongside.</p>
+  <p>I will first reduce the token list in place, then I turn that repeated work into one pass with a stack of pending operands.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/stack.html">Stack</a> <span class="how">push numbers; an operator pops two, applies, pushes the result</span></p>
 </header>
 
@@ -224,17 +224,17 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: rewrite the list in place</h2>
-      <p>Scan for the first operator, apply it to the two tokens immediately before it, splice the result back into the list, and repeat until one token is left.</p>
-      <pre class="code"><span class="ln">while len(tokens) &gt; 1:</span><span class="ln">    i = next(k for k, t in enumerate(tokens) if t in "+-*/")</span><span class="ln">    a, b = int(tokens[i - 2]), int(tokens[i - 1])</span><span class="ln">    tokens[i - 2:i + 1] = [str(apply(tokens[i], a, b))]</span></pre>
-      <p style="margin-top:14px">This gives the right answer because in valid RPN the first operator's operands are always the two tokens right before it. But every round rescans from the start and every splice shifts the rest of the list, so it is <strong>O(n²)</strong> on 10,000 tokens, and converting numbers to strings and back each time is clumsy.</p>
-      <p>The rescanning is the waste. After a splice, the next operator is never far from where we just were, and the values it needs are the ones we most recently produced.</p>
+      <p>I can repeatedly find the first operator, replace it and its two operands with their result, and stop when one token remains.</p>
+      <pre class="code"><span class="ln">def evalRPN(tokens):</span><span class="ln">    def apply(op, a, b):</span><span class="ln">        return {"+": a + b, "-": a - b, "*": a * b, "/": int(a / b)}[op]</span><span class="ln">    while len(tokens) &gt; 1:</span><span class="ln">        i = next(k for k, token in enumerate(tokens) if token in "+-*/")</span><span class="ln">        tokens[i - 2:i + 1] = [str(apply(tokens[i], int(tokens[i - 2]), int(tokens[i - 1])))]</span><span class="ln">    return int(tokens[0])</span></pre>
+      <p style="margin-top:14px">This is correct because the first operator in valid RPN always uses the two tokens before it. Repeated scans and list splices make the time complexity O(n²), and the shrinking token list uses O(n) space.</p>
+      <p>I keep the values that have not found an operator yet. A stack preserves exactly that pending work and removes the repeated scans and splices.</p>
     </section>
 
     <section class="step" data-state="reframe">
       <div class="n">STEP 3</div>
       <h2>Reframe: an operator always takes the two most recent values</h2>
-      <p>Read the tokens left to right and think about what an operator needs at the moment it appears: the two values produced most recently before it, whether those are literal numbers or results of earlier operators. Everything older is untouched.</p>
-      <p>"Most recent first" is a stack. Push each number as it arrives. When an operator arrives, pop twice, compute, and push the result so it can be an operand for a later operator.</p>
+      <p>I read the tokens left to right and think about what an operator needs at the moment it appears: the two values produced most recently before it, whether those are literal numbers or results of earlier operators. Everything older is untouched.</p>
+      <p>"Most recent first" is a stack. I push each number as it arrives. When an operator arrives, I pop twice, compute, and push the result so it can be an operand for a later operator.</p>
       <div class="callout">The first pop is the <strong>right</strong> operand (it was pushed last) and the second pop is the <strong>left</strong> operand. For <code>+</code> and <code>*</code> the order is irrelevant; for <code>-</code> and <code>/</code> it decides the answer.</div>
       <p>When the tokens run out, the stack holds one value, the result. Nothing was ever rescanned.</p>
     </section>
@@ -245,7 +245,7 @@
       <ul>
         <li><code>stack = []</code>: the pending operands.</li>
         <li>For each <code>token</code>: if it is <code>"+"</code>, <code>"-"</code>, <code>"*"</code> or <code>"/"</code>, do <code>b, a = stack.pop(), stack.pop()</code> and push <code>a op b</code>.</li>
-        <li>For <code>"/"</code> push <code>int(a / b)</code>, which truncates toward zero, rather than <code>a // b</code>, which floors.</li>
+        <li>For <code>"/"</code> I push <code>int(a / b)</code>, which truncates toward zero, rather than <code>a // b</code>, which floors.</li>
         <li>Otherwise the token is a number, possibly negative like <code>"-11"</code>: <code>stack.append(int(token))</code>.</li>
         <li>After the loop, <code>return stack[-1]</code>.</li>
       </ul>
@@ -262,14 +262,14 @@
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: "/" pops 5 then 13</h2>
-      <p>The token is <code>"/"</code>. The first pop returns the top, <code>b = 5</code>; the second returns <code>a = 13</code>. The expression is <code>a / b = 13 / 5 = 2.6</code>, and <code>int(2.6) = 2</code>. Push it: <code>stack = [4, 2]</code>.</p>
-      <p>Read the tokens again with that in mind: <code>13 5 /</code> is <code>13 / 5</code>, left operand first in the token order, which is exactly why the <em>second</em> pop is the left operand.</p>
+      <p>The token is <code>"/"</code>. The first pop returns the top, <code>b = 5</code>; the second returns <code>a = 13</code>. The expression is <code>a / b = 13 / 5 = 2.6</code>, and <code>int(2.6) = 2</code>. I push it: <code>stack = [4, 2]</code>.</p>
+      <p>I read the tokens again with that in mind: <code>13 5 /</code> is <code>13 / 5</code>, left operand first in the token order, which is exactly why the <em>second</em> I pop is the left operand.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: "+" pops 2 then 4, the answer</h2>
-      <p>The token is <code>"+"</code>. Pop <code>b = 2</code>, then <code>a = 4</code>. Push <code>4 + 2 = 6</code>: <code>stack = [6]</code>.</p>
+      <p>The token is <code>"+"</code>. I pop <code>b = 2</code>, then <code>a = 4</code>. I push <code>4 + 2 = 6</code>: <code>stack = [6]</code>.</p>
       <p>That was the last token, and one value remains. <code>stack[-1]</code> is <strong>6</strong>. The <code>4</code> pushed at the very start finally met its operator two tokens later, after the division it depended on was resolved.</p>
       <div class="callout">Five tokens, five constant-time steps, no rescans and no parentheses.</div>
     </section>
@@ -277,10 +277,10 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: operand order and floor division</h2>
-      <p><strong>Popping in the wrong order.</strong> Write <code>a, b = stack.pop(), stack.pop()</code> and then <code>a / b</code>. Now <code>a</code> is the top (<code>5</code>) and <code>b</code> is the one below (<code>13</code>), so the division computes <code>int(5 / 13) = 0</code> and the final sum is <code>4 + 0 = </code><strong>4</strong> instead of 6. Addition and multiplication hide this bug completely, which is why tests need a <code>-</code> or a <code>/</code>.</p>
+      <p><strong>Popping in the wrong order.</strong> I write <code>a, b = stack.pop(), stack.pop()</code> and then <code>a / b</code>. Now <code>a</code> is the top (<code>5</code>) and <code>b</code> is the one below (<code>13</code>), so the division computes <code>int(5 / 13) = 0</code> and the final sum is <code>4 + 0 = </code><strong>4</strong> instead of 6. Addition and multiplication hide this bug completely, which is why tests need a <code>-</code> or a <code>/</code>.</p>
       <p><strong>Floor division.</strong> <code>a // b</code> rounds toward negative infinity, but the problem truncates toward zero. On the third LeetCode example, <code>6 // -132</code> is <code>-1</code> where <code>int(6 / -132)</code> is <code>0</code>, and the final answer comes out as <strong>12</strong> instead of 22.</p>
-      <p><strong>Mistaking a negative number for an operator.</strong> Testing <code>token[0] == "-"</code> or <code>not token.isdigit()</code> treats <code>"-11"</code> as subtraction and pops two values that were not meant for it. Compare against the four operator strings exactly and let <code>int()</code> parse the rest.</p>
-      <div class="callout warn">Pop the right operand first, then the left; use <code>int(a / b)</code> for truncation; and the only operators are the four exact strings.</div>
+      <p><strong>Mistaking a negative number for an operator.</strong> Testing <code>token[0] == "-"</code> or <code>not token.isdigit()</code> treats <code>"-11"</code> as subtraction and pops two values that were not meant for it. I compare against the four operator strings exactly and let <code>int()</code> parse the rest.</p>
+      <div class="callout warn">I pop the right operand first, then the left; I use <code>int(a / b)</code> for truncation; and the only operators are the four exact strings.</div>
     </section>
 
     <section class="step" data-state="complexity">

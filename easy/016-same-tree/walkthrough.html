@@ -229,7 +229,7 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Tree · LeetCode #100</div>
   <h1>Same Tree, narrated</h1>
-  <p>Scroll through why flattening to a value list is not enough, and the lockstep recursion that compares values and missing children together, with both trees shown alongside.</p>
+  <p>I’ll first serialize both trees with missing-child markers, then compare corresponding nodes directly in lockstep.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/tree-traversal.html">Tree</a> <span class="how">Corresponding nodes must agree in both value and shape. The missing-child positions are part of the tree, not just formatting.</span></p>
 </header>
 
@@ -246,15 +246,16 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: flatten both trees and compare the lists</h2>
-      <p>The obvious shortcut is to turn each tree into a list with a traversal, say preorder, and check the lists for equality. For the running example <code>preorder(p) = [1,2,3]</code> and <code>preorder(q) = [1,2,3]</code>; the lists are equal, and the answer is right.</p>
-      <p>It is even linear time. The problem is that it is <em>wrong</em>. A traversal records values but not where the missing children were. The tree <code>[1,2]</code> (2 is the left child) and the tree <code>[1,null,2]</code> (2 is the right child) both flatten to <code>[1,2]</code>, so this approach calls them the same when they are not.</p>
-      <p>You can patch it by writing a marker like <code>#</code> into the list for every <code>None</code>, which does make preorder unambiguous. But then you are building two lists of size n just to compare them position by position, when you could compare the trees position by position directly and stop at the first mismatch.</p>
+      <p>My first instinct is preorder serialization with a marker for every missing child. The markers preserve shape as well as values.</p>
+      <pre class="code"><span class="ln">def serialize(node, values):</span><span class="ln">    if node is None:</span><span class="ln">        values.append("#"); return</span><span class="ln">    values.append(node.val)</span><span class="ln">    serialize(node.left, values); serialize(node.right, values)</span><span class="ln">left, right = [], []</span><span class="ln">serialize(p, left); serialize(q, right)</span><span class="ln">return left == right</span></pre>
+      <p style="margin-top:14px"><code>#</code> distinguishes a missing left child from a missing right child, so the comparison is reliable. It takes <strong>O(n) time</strong> and stores two serializations, so it uses <strong>O(n) extra space</strong>.</p>
+      <p>I only need matching positions, not complete lists. I can compare the two trees as I visit each corresponding pair and stop at the first difference.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: walk both trees in lockstep</h2>
-      <p>Instead of flattening, visit the two trees together. At every position you hold a <em>pair</em> <code>(p, q)</code>: the node of the first tree and the node in the same position of the second tree. The trees are the same if every pair agrees.</p>
+      <p>Instead of flattening, I visit the two trees together. At every position I hold a <em>pair</em> <code>(p, q)</code>: the node of the first tree and the node in the same position of the second tree. The trees are the same if every pair agrees.</p>
       <div class="callout">A pair agrees when either both nodes are <code>None</code>, or both are present with equal values and their left pairs and right pairs agree in turn. A <code>None</code> on one side must be matched by a <code>None</code> on the other; that is where the shape is checked.</div>
       <p>The highlighted lines are the base case that does the shape check: <code>if p is None or q is None: return p is q</code>. If either side ran out, the pair is fine only when both did, and <code>p is q</code> is true precisely when both are <code>None</code>.</p>
     </section>
@@ -329,7 +330,7 @@
         <li><code>and self.is_same_tree(p.left, q.left)</code> — the left pairs must agree, checked recursively.</li>
         <li><code>and self.is_same_tree(p.right, q.right)</code> — and so must the right pairs. Any false along the chain stops the rest.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>walk both trees together; every pair must match in value, and a missing child must be missing on both sides.</em></div>
+      <div class="callout">I remember this as: <em>I walk both trees together; every pair matches in value, and a missing child is missing on both sides.</em></div>
     </section>
 
     <div class="code-final">

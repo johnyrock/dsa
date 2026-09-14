@@ -204,7 +204,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Backtracking · LeetCode #22</div>
   <h1>Generate Parentheses, narrated</h1>
-  <p>Scroll through the thinking, from enumerating every bracket string to a recursion that only ever builds valid prefixes, with the state of the algorithm shown alongside.</p>
+  <p>I will begin by enumerating every bracket string, then prune impossible prefixes while I build the answer.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/backtracking.html">Backtracking</a> <span class="how">choose a bracket, recurse, undo; two guards prune every invalid prefix</span></p>
 </header>
 
@@ -223,22 +223,22 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: generate everything, then filter</h2>
-      <p>Each of the <code>2n</code> positions is either <code>(</code> or <code>)</code>, so there are <code>2^(2n)</code> candidate strings. Build them all and keep the ones a bracket checker accepts.</p>
-      <pre class="code"><span class="ln">from itertools import product</span><span class="ln">result = []</span><span class="ln">for chars in product("()", repeat=2 * n):</span><span class="ln">    depth = 0</span><span class="ln">    for ch in chars:</span><span class="ln">        depth += 1 if ch == "(" else -1</span><span class="ln">        if depth &lt; 0: break</span><span class="ln">    else:</span><span class="ln">        if depth == 0: result.append("".join(chars))</span></pre>
-      <p style="margin-top:14px">For <code>n = 3</code> that is 64 candidates for 5 answers. For <code>n = 8</code> it is 65,536 candidates for 1,430 answers, each checked in O(n): <strong>O(2^(2n) · n)</strong>. The ratio of waste grows exponentially, and every rejected candidate was doomed from its first bad character.</p>
-      <p>That last observation is the whole insight. A string that starts with <code>)</code> can never be fixed by what follows. The brute force builds sixteen strings beginning with <code>))</code> before noticing.</p>
+      <p>I can make every length-<code>2n</code> string of parentheses and keep only the balanced ones.</p>
+      <pre class="code"><span class="ln">from itertools import product</span><span class="ln">def generateParenthesis(n):</span><span class="ln">    result = []</span><span class="ln">    for chars in product("()", repeat=2 * n):</span><span class="ln">        depth = 0</span><span class="ln">        for ch in chars:</span><span class="ln">            depth += 1 if ch == "(" else -1</span><span class="ln">            if depth &lt; 0: break</span><span class="ln">        if depth == 0: result.append("".join(chars))</span><span class="ln">    return result</span></pre>
+      <p style="margin-top:14px">This produces every valid answer. There are <code>2^(2n)</code> candidates, each checked in O(n) time, so the time complexity is O(2^(2n) · n). The space complexity is O(2^(2n) · n) for the result and candidate work.</p>
+      <p>I reject a prefix as soon as it has more closing than opening parentheses. Backtracking with counts avoids constructing strings that can never become valid.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>Key insight: only extend a prefix that can still succeed</h2>
-      <p>Build the string one character at a time and ask, before adding each bracket, whether the resulting prefix could still become a valid string. Two counters answer that: <code>open_count</code> and <code>close_count</code>, the number of each bracket placed so far.</p>
+      <p>I build the string one character at a time and ask, before adding each bracket, whether the resulting prefix could still become a valid string. Two counters answer that: <code>open_count</code> and <code>close_count</code>, the number of each bracket placed so far.</p>
       <ul>
         <li>Adding <code>(</code> is fine as long as <code>open_count &lt; n</code>. There is no other constraint on openers.</li>
         <li>Adding <code>)</code> is fine only if <code>close_count &lt; open_count</code>: there must be an unmatched opener for it to close.</li>
       </ul>
-      <div class="callout">Any prefix that obeys both rules can be completed: close every open bracket and you have a valid string. So no path is ever a dead end, and the recursion never wastes a step.</div>
-      <p>This is backtracking: choose a character, recurse into the longer prefix, then <em>undo</em> the choice with <code>path.pop()</code> so the other branch starts from the same prefix. The <code>path</code> list is shared across all calls, which is why the undo matters.</p>
+      <div class="callout">Any prefix that obeys both rules can be completed: close every open bracket and I have a valid string. So no path is ever a dead end, and the recursion never wastes a step.</div>
+      <p>This is backtracking: I choose a character, recurse into the longer prefix, then <em>undo</em> the choice with <code>path.pop()</code> so the other branch starts from the same prefix. The <code>path</code> list is shared across all calls, which is why the undo matters.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -247,9 +247,9 @@
       <ul>
         <li><code>result = []</code> and <code>path = []</code>: the answers, and the one string under construction.</li>
         <li><code>backtrack(open_count, close_count)</code> extends <code>path</code> from its current state.</li>
-        <li>Base case: <code>if len(path) == 2 * n</code>, join the path into a string, append it, return. No validity check is needed.</li>
-        <li>Branch 1: <code>if open_count &lt; n</code>, push <code>(</code>, recurse with <code>open_count + 1</code>, pop.</li>
-        <li>Branch 2: <code>if close_count &lt; open_count</code>, push <code>)</code>, recurse with <code>close_count + 1</code>, pop.</li>
+        <li>Base case: <code>if len(path) == 2 * n</code>, join the path into a string, I append it, I return. No validity check is needed.</li>
+        <li>Branch 1: <code>if open_count &lt; n</code>, I push <code>(</code>, recurse with <code>open_count + 1</code>, I pop.</li>
+        <li>Branch 2: <code>if close_count &lt; open_count</code>, I push <code>)</code>, recurse with <code>close_count + 1</code>, I pop.</li>
         <li>Kick off with <code>backtrack(0, 0)</code> and return <code>result</code>.</li>
       </ul>
       <p>Because branch 1 is tried before branch 2 at every level, the output comes out in a fixed order: the most deeply nested string first, <code>()()()</code> last.</p>
@@ -259,15 +259,15 @@
       <div class="n">STEP 5</div>
       <h2>Trace it: the leftmost path, <code>((()))</code></h2>
       <p>From the empty path, branch 1 fires three times in a row: <code>open_count</code> goes 0 → 1 → 2 → 3 and <code>path</code> becomes <code>(((</code>. Now <code>open_count &lt; n</code> is <code>3 &lt; 3</code>, false, so no more openers.</p>
-      <p>Branch 2 checks <code>close_count &lt; open_count</code>: <code>0 &lt; 3</code>, true. Push <code>)</code>. Then <code>1 &lt; 3</code>, push again. Then <code>2 &lt; 3</code>, push again. The path is <code>((()))</code> with length 6, which equals <code>2 * n</code>, so the base case records it as the first answer.</p>
+      <p>Branch 2 checks <code>close_count &lt; open_count</code>: <code>0 &lt; 3</code>, true. I push <code>)</code>. Then <code>1 &lt; 3</code>, I push again. Then <code>2 &lt; 3</code>, I push again. The path is <code>((()))</code> with length 6, which equals <code>2 * n</code>, so the base case records it as the first answer.</p>
       <p>The panel shows the counters at that moment: <code>open_count = 3</code>, <code>close_count = 3</code>. Every call on this path was forced, because at each step only one guard was true.</p>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: backtrack and find <code>(()())</code></h2>
-      <p>The base case returns, and each frame runs its <code>path.pop()</code>. The three closers come off, then the frame that pushed the third opener pops it too. We are back at <code>((</code> with <code>open_count = 2</code>, <code>close_count = 0</code>, and that frame's branch 1 is finished, so it tries branch 2: <code>0 &lt; 2</code>, push <code>)</code>. The path is <code>(()</code>.</p>
-      <p>From <code>(()</code>, branch 1 first: <code>2 &lt; 3</code>, push <code>(</code> to get <code>(()(</code> with <code>open_count = 3</code>. Openers are exhausted, so two closers follow: <code>(()()</code>, then <code>(()())</code>. Length 6, record the second answer.</p>
+      <p>The base case returns, and each frame runs its <code>path.pop()</code>. The three closers come off, then the frame that pushed the third opener pops it too. I am back at <code>((</code> with <code>open_count = 2</code>, <code>close_count = 0</code>, and that frame's branch 1 is finished, so it tries branch 2: <code>0 &lt; 2</code>, I push <code>)</code>. The path is <code>(()</code>.</p>
+      <p>From <code>(()</code>, branch 1 first: <code>2 &lt; 3</code>, I push <code>(</code> to get <code>(()(</code> with <code>open_count = 3</code>. Openers are exhausted, so two closers follow: <code>(()()</code>, then <code>(()())</code>. Length 6, I record the second answer.</p>
       <p>Unwind again to <code>(()</code>, and its branch 2 gives <code>(())</code>, then <code>(())(</code>, then <code>(())()</code>: the third answer. Only after both branches under <code>((</code> are exhausted does the pop reach <code>(</code>, and the whole right half of the tree, starting <code>()</code>, begins.</p>
     </section>
 
@@ -283,7 +283,7 @@
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the close guard</h2>
       <p><strong>Symmetric guards.</strong> It is tempting to write the second guard to mirror the first: <code>if close_count &lt; n</code>. That only limits the <em>total</em> closers, not their position. Every arrangement of three <code>(</code> and three <code>)</code> now reaches length 6, so the function returns <strong>20 strings instead of 5</strong>, and the last one is <code>)))(((</code>. The guard must compare against <code>open_count</code>, not <code>n</code>.</p>
-      <p><strong>Forgetting the undo.</strong> Drop a <code>path.pop()</code> and the second branch appends to a path that still contains the first branch's characters. Lengths overshoot, the base case fires on garbage, and the list is filled with nonsense or nothing at all.</p>
+      <p><strong>Forgetting the undo.</strong> I drop a <code>path.pop()</code> and the second branch appends to a path that still contains the first branch's characters. Lengths overshoot, the base case fires on garbage, and the list is filled with nonsense or nothing at all.</p>
       <p><strong>Reversing the comparison.</strong> <code>if open_count &lt; close_count</code> is never true from a fresh start, so the recursion pushes three openers and stops. The result is an empty list.</p>
       <div class="callout warn">Say the rule in words before writing it: "I may close only if something is open." That is <code>close_count &lt; open_count</code>, and nothing else.</div>
     </section>
@@ -307,12 +307,12 @@
       <p>One nested function, two guards, one shared list.</p>
       <ul>
         <li><code>result = []</code>, <code>path = []</code>: answers and the working string.</li>
-        <li><code>if len(path) == 2 * n</code>: record <code>"".join(path)</code> and return.</li>
-        <li><code>if open_count &lt; n</code>: push <code>(</code>, recurse with <code>open_count + 1</code>, pop.</li>
-        <li><code>if close_count &lt; open_count</code>: push <code>)</code>, recurse with <code>close_count + 1</code>, pop.</li>
+        <li><code>if len(path) == 2 * n</code>: I record <code>"".join(path)</code> and return.</li>
+        <li><code>if open_count &lt; n</code>: I push <code>(</code>, recurse with <code>open_count + 1</code>, I pop.</li>
+        <li><code>if close_count &lt; open_count</code>: I push <code>)</code>, recurse with <code>close_count + 1</code>, I pop.</li>
         <li><code>backtrack(0, 0)</code> starts from the empty string; <code>return result</code>.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>open while you have openers left, close while something is open, and undo after each recursive call.</em></div>
+      <div class="callout">One-line summary to remember: <em>open while I have openers left, close while something is open, and undo after each recursive call.</em></div>
     </section>
 
     <div class="code-final">

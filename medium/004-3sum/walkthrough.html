@@ -187,7 +187,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Two Pointers · LeetCode #15</div>
   <h1>3Sum, narrated</h1>
-  <p>Scroll through the thinking, from the triple loop through sorting to fixing one number and closing two pointers on the rest, with the state of the algorithm shown alongside.</p>
+  <p>I’ll start with three nested loops, then sort and fix one value while two pointers search the remainder.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/two-pointers.html">Two Pointers</a> <span class="how">sort, fix i, close left/right on the rest, skip duplicates</span></p>
 </header>
 
@@ -205,16 +205,16 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: three nested loops</h2>
-      <p>Try every <code>i &lt; j &lt; k</code>, check whether the three values sum to zero, and drop the sorted triplet into a set to kill duplicates.</p>
+      <p>My first instinct is to try every <code>i &lt; j &lt; k</code>, test the sum, and store sorted hits in a set to remove duplicates.</p>
       <pre class="code"><span class="ln">found = set()</span><span class="ln">for i in range(n):</span><span class="ln">    for j in range(i + 1, n):</span><span class="ln">        for k in range(j + 1, n):</span><span class="ln">            if nums[i] + nums[j] + nums[k] == 0:</span><span class="ln">                found.add(tuple(sorted((nums[i], nums[j], nums[k]))))</span></pre>
-      <p style="margin-top:14px">Correct, but <strong>O(n³)</strong>. With n = 3000 that is roughly 4.5 billion triples. And the duplicate handling is bolted on with a set rather than understood.</p>
-      <p>Two Sum turned O(n²) into O(n) by remembering complements in a hash map. The same trick here gives O(n²), but deduplicating hash-map hits is messy. Sorting gives a cleaner O(n²).</p>
+      <p style="margin-top:14px">This search takes <strong>O(n³) time</strong>, and its result set can use <strong>O(n²) extra space</strong> in the worst case.</p>
+      <p>Sorting exposes a faster path. After I fix one value, two pointers find the other two in one linear pass while I skip duplicate values directly.</p>
     </section>
 
     <section class="step" data-state="sorted">
       <div class="n">STEP 3</div>
       <h2>Reframe: sort, then fix one number</h2>
-      <p>Sort the array: <code>[-4, -1, -1, 0, 1, 2]</code>. Order is not part of the answer, so nothing is lost, and two things are gained.</p>
+      <p>I sort the array to get <code>[-4, -1, -1, 0, 1, 2]</code>. Order is not part of the answer, so I lose nothing and gain two useful properties.</p>
       <ul>
         <li>For a fixed first value <code>nums[i]</code>, the remaining question is "find two numbers in the sorted suffix that sum to <code>-nums[i]</code>". That is Two Sum on sorted input, which two pointers solve in one linear pass.</li>
         <li>Equal values are now neighbours, so "have I used this value already?" is a comparison with the previous element.</li>
@@ -225,11 +225,11 @@
     <section class="step" data-state="idea">
       <div class="n">STEP 4</div>
       <h2>The key idea: two pointers closing inward</h2>
-      <p>With <code>i</code> fixed, put <code>left = i + 1</code> and <code>right = n - 1</code> and look at <code>total = nums[i] + nums[left] + nums[right]</code>.</p>
+      <p>With <code>i</code> fixed, I put <code>left = i + 1</code> and <code>right = n - 1</code>, then inspect <code>total = nums[i] + nums[left] + nums[right]</code>.</p>
       <ul>
         <li>Too small? The only way up is a bigger left value: <code>left += 1</code>.</li>
         <li>Too big? The only way down is a smaller right value: <code>right -= 1</code>.</li>
-        <li>Exactly zero? Record it, then move <em>both</em> pointers, because the current <code>left</code> cannot pair with any other <code>right</code> to hit zero again.</li>
+        <li>At exactly zero, I record the triplet and move <em>both</em> pointers, because the current <code>left</code> cannot pair with any other <code>right</code> to hit zero again.</li>
       </ul>
       <p>Each step discards one element from consideration for good, so the sweep is O(n). Sorted order is what makes the "only way up / only way down" argument valid.</p>
     </section>
@@ -244,7 +244,7 @@
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: i = 1, the first −1</h2>
-      <p>Fix <code>nums[1] = -1</code>, pointers at 2 (−1) and 5 (2). Total 0: <strong>hit</strong>, record <code>[-1, -1, 2]</code>. Move both: <code>left = 3</code> (0), <code>right = 4</code> (1). Total 0 again: <strong>hit</strong>, record <code>[-1, 0, 1]</code>. Move both and the pointers cross.</p>
+      <p>I fix <code>nums[1] = -1</code>, with pointers at 2 (−1) and 5 (2). The total is 0, so I record <code>[-1, -1, 2]</code> and move both pointers to <code>left = 3</code> (0) and <code>right = 4</code> (1). The total is 0 again, so I record <code>[-1, 0, 1]</code>; moving both pointers makes them cross.</p>
       <p>Next, <code>i = 2</code> is also −1, equal to <code>nums[1]</code>. Every triplet starting with −1 has already been found, so <code>continue</code> skips it. Then <code>i = 3</code> is 0; its sweep compares 0 + 1 + 2, too big, and ends. The outer loop stops there, since the last two slots can only ever be the second and third members of a triplet. (The <code>nums[i] &gt; 0</code> break would fire first on inputs whose positives start earlier.)</p>
       <div class="callout">Two triplets, exactly the expected answer, with no set needed.</div>
     </section>
@@ -252,9 +252,9 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 7</div>
       <h2>The pitfall: skipping the wrong copy</h2>
-      <p>The outer skip must compare with the <em>previous</em> element: <code>nums[i] == nums[i - 1]</code>. Compare with the <em>next</em> one instead and you skip the first −1 in the example, which is the only <code>i</code> that produces <code>[-1, -1, 2]</code>.</p>
-      <div class="callout warn">Skip forward, and <code>[-1, -1, 2]</code> disappears. Skip backward, and the first copy does its work while later copies are ignored.</div>
-      <p>The inner sweep has the same rule after a hit: advance <code>left</code> past values equal to the one just used, guarded by <code>left &lt; right</code> so the pointers cannot run past each other. On <code>[0, 0, 0, 0]</code> this is what keeps the answer to a single <code>[0, 0, 0]</code>.</p>
+      <p>My outer skip compares with the <em>previous</em> element: <code>nums[i] == nums[i - 1]</code>. Comparing with the <em>next</em> element skips the first −1 in the example, the only <code>i</code> that produces <code>[-1, -1, 2]</code>.</p>
+      <div class="callout warn">With a forward comparison, <code>[-1, -1, 2]</code> disappears. My backward comparison lets the first copy do its work and ignores later copies.</div>
+      <p>After a hit, I use the same rule in the inner sweep: I advance <code>left</code> past values equal to the one I just used, while <code>left &lt; right</code> keeps the pointers in bounds. On <code>[0, 0, 0, 0]</code>, that leaves a single <code>[0, 0, 0]</code> in my answer.</p>
     </section>
 
     <section class="step" data-state="complexity">
@@ -281,7 +281,7 @@
         <li>The <code>while left &lt; right</code> loop is Two Sum on sorted input, with the three-way comparison on <code>total</code>.</li>
         <li>On a hit, both pointers move and the inner <code>while</code> hops over duplicate second values.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>sort, fix the smallest, two-pointer the rest, and skip a value you just used.</em></div>
+      <div class="callout">My mental flow is: <em>I sort, fix the smallest value, use two pointers for the rest, and skip a value I just used.</em></div>
     </section>
 
     <div class="code-final">

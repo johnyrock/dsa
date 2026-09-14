@@ -211,7 +211,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Greedy · LeetCode #678</div>
   <h1>Valid Parenthesis String, narrated</h1>
-  <p>Scroll through the thinking, from trying all three readings of every star to one pass that carries the lowest and highest possible open count, with the reachable range shown alongside.</p>
+  <p>I’ll start by trying each reading of every star, then keep the lowest and highest possible open counts as I trace the string.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/greedy.html">Greedy</a> <span class="how">track the range [lo, hi] of possible open counts; valid if hi never goes negative and lo ends at 0</span></p>
 </header>
 
@@ -230,15 +230,16 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: try every reading of every star</h2>
-      <p>Each star has three options. Recurse over the string carrying the current open count, branching three ways at each star, and succeed if any branch ends at zero without ever going negative:</p>
+      <p>My first instinct is to recurse through the string with an open count. At each star, I try its three readings and succeed when one branch ends at zero without going negative.</p>
       <pre class="code"><span class="ln">def ok(i, open_count):</span><span class="ln">    if open_count &lt; 0: return False</span><span class="ln">    if i == len(s): return open_count == 0</span><span class="ln">    if s[i] == '(': return ok(i + 1, open_count + 1)</span><span class="ln">    if s[i] == ')': return ok(i + 1, open_count - 1)</span><span class="ln">    return ok(i + 1, open_count + 1) or ok(i + 1, open_count - 1) or ok(i + 1, open_count)</span></pre>
-      <p style="margin-top:14px">Correct, but with <code>k</code> stars there are <code>3^k</code> readings, so this is <strong>O(3ᵏ · n)</strong>. On <code>"(*))"</code> that is three branches, trivial; on a string of 100 stars it is <code>3^100</code>. Memoizing on <code>(i, open_count)</code> cuts it to O(n²), but there is a much simpler observation waiting.</p>
+      <p style="margin-top:14px">With <code>k</code> stars, this explores <strong>O(3ᵏ · n) time</strong> in the stated form and uses <strong>O(n) space</strong> for the recursion stack. A string of 100 stars makes that unusable.</p>
+      <p>I do not need every reading separately. I only need the range of open counts that remains possible after each character.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: every open count between the extremes is reachable</h2>
-      <p>Instead of asking "what is the open count?" ask "what is the <em>set</em> of open counts some reading could have produced by now?" Two readings bound it: treat every star as <code>')'</code> and you get the lowest count, <code>lo</code>; treat every star as <code>'('</code> and you get the highest, <code>hi</code>.</p>
+      <p>Instead of asking “what is the open count?”, I ask “what is the <em>set</em> of open counts some reading could have produced by now?” Two readings bound it: I treat every star as <code>')'</code> for the lowest count, <code>lo</code>, and as <code>'('</code> for the highest, <code>hi</code>.</p>
       <p>Crucially, every integer in between is also reachable: flipping a single star from <code>')'</code> to empty raises the count by one, and from empty to <code>'('</code> by another one. So the reachable set is a contiguous range <code>[lo, hi]</code>, and two numbers describe it completely.</p>
       <div class="callout">After <code>"(*"</code> the panel shows <code>lo = 0</code> and <code>hi = 2</code>: the star could have closed the bracket (0 open), vanished (1 open), or opened another (2 open). All three counts are live.</div>
       <p>With a range instead of a number, validity has two checks. If <code>hi &lt; 0</code> at any point, even the most generous reading has an unmatched <code>')'</code>, so the answer is false. And at the end, the string is valid exactly when 0 is inside the range, which is <code>lo == 0</code>.</p>
@@ -270,7 +271,7 @@
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: the first <code>')'</code></h2>
-      <p>Index 2 is <code>')'</code>: <code>lo = 0 - 1 = -1</code>, <code>hi = 2 - 1 = 1</code>. <code>hi</code> is not negative, so we continue.</p>
+      <p>Index 2 is <code>')'</code>: <code>lo = 0 - 1 = -1</code>, <code>hi = 2 - 1 = 1</code>. <code>hi</code> is not negative, so I continue.</p>
       <p>Now the clamp: <code>lo = max(-1, 0) = 0</code>. The reading that had the star as <code>')'</code> would now be at <code>-1</code>, meaning <code>"())"</code> with an unmatched close. That reading is dead and the clamp removes it from the range. The live range is <code>[0, 1]</code>: the star was empty (count 0) or the star was <code>'('</code> (count 1).</p>
       <div class="callout">The number line shows <code>-1</code> in amber: a count that some reading would produce, but which is not a real state and is dropped.</div>
     </section>
@@ -279,14 +280,14 @@
       <div class="n">STEP 7</div>
       <h2>Trace it: the second <code>')'</code> and the verdict</h2>
       <p>Index 3 is <code>')'</code>: <code>lo = 0 - 1 = -1</code>, <code>hi = 1 - 1 = 0</code>. <code>hi</code> is still not negative; the reading with the star as <code>'('</code> has just closed its last bracket. Clamp: <code>lo = max(-1, 0) = 0</code>. The range is <code>[0, 0]</code>.</p>
-      <p>End of string. <code>lo == 0</code>, so return <strong>true</strong>. Exactly one reading survived, and it is the one where the star was <code>'('</code>, giving <code>"(())"</code>.</p>
+      <p>At the end of the string, <code>lo == 0</code>, so I return <strong>true</strong>. Exactly one reading survived, and it is the one where the star was <code>'('</code>, giving <code>"(())"</code>.</p>
       <p>Four characters, four constant-time updates. The brute force would have explored three branches; on a longer string it would have explored exponentially many, while this pass stays linear.</p>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: forgetting the clamp</h2>
-      <p><strong>Dropping <code>lo = max(lo, 0)</code>.</strong> Run the same example without it. After <code>'('</code> and <code>'*'</code> the range is <code>[0, 2]</code> as before. The first <code>')'</code> gives <code>[-1, 1]</code>, and the second gives <code>[-2, 0]</code>. Now <code>lo == 0</code> is false and the function returns <strong>false</strong> for a valid string. The dead reading (star as <code>')'</code>) was carried along and dragged <code>lo</code> below zero, even though zero is still reachable via the star-as-<code>'('</code> reading.</p>
+      <p><strong>Dropping <code>lo = max(lo, 0)</code>.</strong> I can run the same example without it. After <code>'('</code> and <code>'*'</code> the range is <code>[0, 2]</code> as before. The first <code>')'</code> gives <code>[-1, 1]</code>, and the second gives <code>[-2, 0]</code>. Now <code>lo == 0</code> is false and the function returns <strong>false</strong> for a valid string. The dead reading (star as <code>')'</code>) was carried along and dragged <code>lo</code> below zero, even though zero is still reachable via the star-as-<code>'('</code> reading.</p>
       <p><strong>Dropping <code>if hi &lt; 0: return False</code>.</strong> On <code>")**"</code>, <code>hi</code> goes <code>-1, 0, 1</code> while <code>lo</code> is clamped to 0 at every step, so the final test says <strong>true</strong>. But a leading <code>')'</code> has nothing before it to match, and no later star can fix that. The <code>hi</code> check catches it at index 0.</p>
       <p><strong>Returning <code>hi == 0</code>.</strong> <code>hi</code> is the reading where every star opened, the most unbalanced reading there is. On <code>"(*)"</code> it ends at 1 and the code returns <strong>false</strong>. Validity asks whether zero is <em>reachable</em>, which is a question about the low end of the range.</p>
       <div class="callout warn">Two integers, two guards: <code>hi &lt; 0</code> means no reading survives; <code>lo = max(lo, 0)</code> discards the readings that already died.</div>

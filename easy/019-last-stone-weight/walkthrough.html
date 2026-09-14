@@ -225,7 +225,7 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Heap · LeetCode #1046</div>
   <h1>Last Stone Weight, narrated</h1>
-  <p>Scroll from re-sorting every round to a negated max-heap, with the heap’s layout shown alongside as stones are smashed.</p>
+  <p>I’ll start by sorting every smash round, then use a negated heap to remove exactly the two heaviest stones.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/heap.html">Heap</a> <span class="how">Every round needs the two heaviest stones, so a max-heap removes precisely the values the next operation needs.</span></p>
 </header>
 
@@ -236,16 +236,16 @@
       <h2>The problem</h2>
       <p>You have a pile of stones, each with a positive weight. Every round, take the two heaviest stones, <code>x &lt;= y</code>, and smash them together. If <code>x == y</code> both are destroyed. Otherwise the lighter one is destroyed and the heavier one shrinks to <code>y - x</code>, which goes back on the pile. Repeat until at most one stone is left, and return its weight, or 0 if none remain.</p>
       <div class="callout">Running example: <code>stones = [2, 7, 4, 1, 8, 1]</code>. Rounds: 8 vs 7 leaves 1; 4 vs 2 leaves 2; 2 vs 1 leaves 1; 1 vs 1 destroys both. One stone of weight <strong>1</strong> survives.</div>
-      <p>Notice the rule always says <em>the two heaviest</em>. That is the whole difficulty: after every smash the pile changes, and you need the new top two immediately. The answer is a single integer, not the sequence of smashes.</p>
+      <p>The rule always asks for <em>the two heaviest</em>. After every smash the pile changes, so the new top two must be available immediately. The answer is a single integer, not the sequence of smashes.</p>
     </section>
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: sort every round</h2>
-      <p>Simulate it literally. Each round, sort the list descending, pop the first two, push back their difference if it is nonzero:</p>
-      <pre class="code"><span class="ln">while len(stones) &gt; 1:</span><span class="ln">    stones.sort(reverse=True)</span><span class="ln">    first, second = stones.pop(0), stones.pop(0)</span><span class="ln">    if first != second:</span><span class="ln">        stones.append(first - second)</span></pre>
-      <p style="margin-top:14px">It is correct and it is fine for 30 stones. But look at what the sort does: after <code>[8, 7, 4, 2, 1, 1]</code> is sorted, only the top two are touched, yet the next round sorts all remaining values again. Every round removes at least one stone, so there are up to <code>n - 1</code> rounds, each costing O(n log n): <strong>O(n² log n)</strong> in total. The <code>pop(0)</code> calls are O(n) each on top of that.</p>
-      <p>The waste is that a full sort establishes the order of <em>every</em> pair of stones, when all you need each round is "which one is heaviest, and which is next".</p>
+      <p>My first instinct is to simulate each round literally. I sort descending, remove the first two stones, and append their difference when it is nonzero.</p>
+      <pre class="code"><span class="ln">while len(stones) &gt; 1:</span><span class="ln">    stones.sort(reverse=True)</span><span class="ln">    first, second = stones.pop(0), stones.pop(0)</span><span class="ln">    if first != second:</span><span class="ln">        stones.append(first - second)</span><span class="ln">return stones[0] if stones else 0</span></pre>
+      <p style="margin-top:14px">This finds the correct last stone. Up to <code>n - 1</code> rounds each sort the remaining list, so it takes <strong>O(n² log n) time</strong> and uses <strong>O(1) extra space</strong> when sorting in place.</p>
+      <p>Each round only needs the heaviest and second-heaviest stones. A heap gives me those removals without repeatedly ordering everything else.</p>
     </section>
 
     <section class="step" data-state="insight">
@@ -254,7 +254,7 @@
       <p>A heap answers exactly one question fast: "what is the extreme element?" Popping it costs O(log n), and pushing a new value costs O(log n), and between operations the rest of the pile stays partially ordered instead of being re-sorted from scratch.</p>
       <p>Python's <code>heapq</code> is a <em>min</em>-heap, and there is no max-heap flag. The standard trick is to store each weight negated: <code>heap = [-stone for stone in stones]</code>. The most negative number is then the smallest, so it sits at the root, and the most negative number corresponds to the heaviest stone.</p>
       <div class="callout">After <code>heapify([-2, -7, -4, -1, -8, -1])</code> the list is laid out as <code>[-8, -7, -4, -1, -2, -1]</code>. The root is <code>-8</code>, which is stone 8, the heaviest. That is what the panel highlights in green.</div>
-      <p>Every time you read a value out of this heap, negate it again to get a weight. Every time you put a weight in, negate it first. Keep that rule in your head; it is where the bug in step 8 lives.</p>
+      <p>Whenever I read a value from this heap, I negate it again to get a weight. Whenever I put a weight in, I negate it first. That rule is where the bug in step 8 lives.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -262,7 +262,7 @@
       <h2>The approach: pop two, smash, push the difference</h2>
       <p>With the negated heap built, the loop on lines 5 to 9 is the smash rule almost word for word:</p>
       <ul>
-        <li><code>while len(heap) &gt; 1</code>: keep going as long as there are two stones to smash.</li>
+        <li><code>while len(heap) &gt; 1</code>: I keep going as long as there are two stones to smash.</li>
         <li><code>first = -heapq.heappop(heap)</code>: the heaviest stone, as a positive weight.</li>
         <li><code>second = -heapq.heappop(heap)</code>: the next heaviest. Because the first pop was the largest, <code>first &gt;= second</code> always.</li>
         <li><code>if first != second: heapq.heappush(heap, second - first)</code>: the surviving weight is <code>first - second</code>, and it must be stored negated, which is <code>second - first</code>.</li>
@@ -274,29 +274,29 @@
       <div class="n">STEP 5</div>
       <h2>Trace it: round 1, 8 vs 7</h2>
       <p>The first pop returns <code>-8</code>, so <code>first = 8</code>. The second pop returns <code>-7</code>, so <code>second = 7</code>. After both pops the heap has settled into <code>[-4, -2, -1, -1]</code>, with the next heaviest stone, 4, at the root.</p>
-      <p><code>8 != 7</code>, so push <code>second - first = 7 - 8 = -1</code>. That represents a stone of weight 1. It is appended at index 4 and stays there, because its parent <code>-2</code> is already smaller. The heap is now <code>[-4, -2, -1, -1, -1]</code>: four stones, one of them the fresh 1 shown in blue.</p>
+      <p><code>8 != 7</code>, so I push <code>second - first = 7 - 8 = -1</code>. That represents a stone of weight 1. It is appended at index 4 and stays there, because its parent <code>-2</code> is already smaller. The heap is now <code>[-4, -2, -1, -1, -1]</code>: four stones, one of them the fresh 1 shown in blue.</p>
     </section>
 
     <section class="step" data-state="trace2">
       <div class="n">STEP 6</div>
       <h2>Trace it: round 2, 4 vs 2</h2>
-      <p>Five values remain, so the loop continues. Pop <code>-4</code>, so <code>first = 4</code>; pop <code>-2</code>, so <code>second = 2</code>. Only <code>[-1, -1, -1]</code> is left in the heap, three stones of weight 1.</p>
-      <p><code>4 != 2</code>, so push <code>2 - 4 = -2</code>. This time the pushed value is smaller than everything present, so <code>heappush</code> sifts it all the way to the root: <code>[-2, -1, -1, -1]</code>. The stone of weight 2 is now the heaviest, and it will be the next <code>first</code>.</p>
+      <p>Five values remain, so the loop continues. I pop <code>-4</code>, making <code>first = 4</code>, then pop <code>-2</code>, making <code>second = 2</code>. Only <code>[-1, -1, -1]</code> is left in the heap, three stones of weight 1.</p>
+      <p><code>4 != 2</code>, so I push <code>2 - 4 = -2</code>. This time the pushed value is smaller than everything present, so <code>heappush</code> sifts it all the way to the root: <code>[-2, -1, -1, -1]</code>. The stone of weight 2 is now the heaviest, and it will be the next <code>first</code>.</p>
       <div class="callout">The heap re-established "heaviest on top" with a single O(log n) sift. The sort-based version would have re-sorted all four values to learn the same thing.</div>
     </section>
 
     <section class="step" data-state="trace3">
       <div class="n">STEP 7</div>
       <h2>Trace it: rounds 3 and 4, the last stone</h2>
-      <p>Round 3: pop <code>-2</code> and <code>-1</code>, so <code>first = 2</code>, <code>second = 1</code>. They differ, so push <code>1 - 2 = -1</code>. Two pops and one push on four stones leaves three: <code>[-1, -1, -1]</code>.</p>
-      <p>Round 4: pop <code>-1</code> and <code>-1</code>, so <code>first = 1</code> and <code>second = 1</code>. Now <code>first != second</code> is false, so nothing is pushed. Both stones are destroyed and the heap is <code>[-1]</code>, a single stone of weight 1, shown in green.</p>
+      <p>In round 3, I pop <code>-2</code> and <code>-1</code>, so <code>first = 2</code> and <code>second = 1</code>. They differ, so I push <code>1 - 2 = -1</code>. Two pops and one push on four stones leaves three: <code>[-1, -1, -1]</code>.</p>
+      <p>In round 4, I pop <code>-1</code> and <code>-1</code>, so <code>first = 1</code> and <code>second = 1</code>. Now <code>first != second</code> is false, so I push nothing. Both stones are destroyed and the heap is <code>[-1]</code>, a single stone of weight 1, shown in green.</p>
       <p><code>len(heap)</code> is 1, so the loop exits. Line 10 returns <code>-heap[0] = 1</code>. The <code>if heap else 0</code> guard covers the case where the last round destroyed both stones and the heap is empty, as with <code>[2, 2]</code>, which returns 0.</p>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the sign of the pushed difference</h2>
-      <p><strong>Pushing <code>first - second</code>.</strong> It reads naturally: the surviving weight is <code>8 - 7 = 1</code>, so push 1. But this heap holds negated weights, and <code>+1</code> is <em>larger</em> than every negative value. The panel shows round 1 with this bug: the heap is <code>[-4, -2, -1, -1, 1]</code>, and the <code>+1</code> at index 4 sorts after everything. It is never chosen as <code>first</code> or <code>second</code> while any other stone remains, and when it is finally the only value left, the function returns <code>-heap[0]</code>, which is <strong>−1</strong> instead of 1. A negative stone weight is the tell.</p>
+      <p><strong>Storing <code>first - second</code>.</strong> It reads naturally: the surviving weight is <code>8 - 7 = 1</code>, so I might store 1. But this heap holds negated weights, and <code>+1</code> is <em>larger</em> than every negative value. The panel shows round 1 with this bug: the heap is <code>[-4, -2, -1, -1, 1]</code>, and the <code>+1</code> at index 4 sorts after everything. It is never chosen as <code>first</code> or <code>second</code> while any other stone remains, and when it is finally the only value left, the function returns <code>-heap[0]</code>, which is <strong>−1</strong> instead of 1. A negative stone weight is the tell.</p>
       <p><strong>Forgetting the negation on the way out.</strong> Writing <code>first = heapq.heappop(heap)</code> without the leading minus makes <code>first = -8</code> and <code>second = -7</code>. Then <code>second - first = 1</code>, positive again, and the same corruption follows. Both directions of the conversion must be explicit.</p>
       <div class="callout warn">Rule for a negated heap: everything that goes in is negated, everything that comes out is negated back. <code>second - first</code> is <code>-(first - second)</code>, which is the negated survivor.</div>
     </section>
@@ -310,7 +310,7 @@
         <tr><td>Re-sort every round</td><td>O(n² log n)</td><td>O(n)</td></tr>
         <tr><td>Max-heap via negated values</td><td>O(n log n)</td><td>O(n)</td></tr>
       </table>
-      <p>With <code>n &lt;= 30</code> the brute force also passes. The heap version is what an interviewer expects because it shows you recognise "repeatedly extract the extreme" as a heap problem.</p>
+      <p>With <code>n &lt;= 30</code>, the brute force also passes. I prefer the heap version because it recognizes "repeatedly extract the extreme" as a heap problem.</p>
     </section>
 
     <section class="step" data-state="final">

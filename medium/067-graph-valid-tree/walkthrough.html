@@ -203,7 +203,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Graph · LeetCode #261</div>
   <h1>Graph Valid Tree, narrated</h1>
-  <p>Scroll through the thinking, from pulling edges out one at a time to see if anything breaks, to a two-part test — the right number of edges and no edge that joins two nodes already in the same set — with the union-find parent array shown alongside.</p>
+  <p>I will first remove each edge and test whether its endpoints remain connected, then track connectivity while adding edges once.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph Traversal</a> <span class="how">union-find: n − 1 edges and every union merges two different roots</span></p>
 </header>
 
@@ -219,13 +219,12 @@
       <p>The edges are undirected, so <code>[0, 1]</code> and <code>[1, 0]</code> would be the same edge. The constraints promise there are no duplicates and no self-loops, which removes two easy ways to smuggle in a cycle.</p>
     </section>
 
-    <section class="step" data-state="brute">
-      <div class="n">STEP 2</div>
-      <h2>First instinct: is every edge load-bearing?</h2>
-      <p>An edge in a tree is essential: remove it and its two endpoints are no longer connected. An edge on a cycle is redundant: remove it and its endpoints can still reach each other the long way round. So test each edge by removing it and running a BFS from one endpoint to see whether the other is still reachable. If any edge is redundant, there is a cycle. Then run one more BFS from node 0 to confirm everything is connected.</p>
-      <pre class="code"><span class="ln">for i, (a, b) in enumerate(edges):</span><span class="ln">    rest = edges[:i] + edges[i + 1:]</span><span class="ln">    if reachable(a, b, rest):      # BFS over the remaining edges</span><span class="ln">        return False               # a, b still connected: this edge closed a cycle</span><span class="ln">return reachable_from_zero_count(edges) == n</span></pre>
-      <p style="margin-top:14px">This is correct, and it says something true about trees that is worth holding on to: <em>every edge of a tree is the only path between its endpoints</em>. But it runs a full BFS per edge, each costing O(n + E), so the whole thing is <strong>O(E × (n + E))</strong>. With 5000 edges that is tens of millions of node visits for a question that should take one pass.</p>
-      <p>The waste is that each BFS rediscovers the same connectivity from scratch. What we want is a structure that remembers "these nodes are already connected" as edges are added, so each new edge is a constant-time question.</p>
+    <section class="step" data-state="insight">
+      <div class="n">STEP 2</div><h2>First instinct: test whether every edge is load-bearing</h2>
+      <p>I can remove each edge in turn, check whether its endpoints still connect through the remaining edges, and finally confirm the graph is connected.</p>
+      <pre class="code"><span class="ln">def validTree(n, edges):</span><span class="ln">    for i, (a, b) in enumerate(edges):</span><span class="ln">        if reachable(a, b, edges[:i] + edges[i + 1:]): return False</span><span class="ln">    return reachable_count(0, edges) == n</span></pre>
+      <p style="margin-top:14px">This is correct when the helper functions run breadth-first search. Each of <code>E</code> tests can traverse O(n + E) graph data, so the time complexity is O(E · (n + E)). The temporary traversal structures use O(n + E) space.</p>
+      <p>Remembering connected components as I process edges lets a union-find report immediately when an edge joins nodes that already share a component.</p>
     </section>
 
     <section class="step" data-state="insight">
@@ -233,7 +232,7 @@
       <h2>The key idea: count the edges, then merge sets</h2>
       <p>Two facts about trees do all the work.</p>
       <p><strong>A tree on <code>n</code> nodes has exactly <code>n - 1</code> edges.</strong> Fewer and it cannot be connected; more and there must be a cycle. So <code>if len(edges) != n - 1: return False</code> is a legitimate first line, not a hack.</p>
-      <p><strong>Given <code>n - 1</code> edges, acyclic implies connected.</strong> Start with <code>n</code> isolated nodes, which is <code>n</code> separate components. Every edge that joins two <em>different</em> components reduces the count by one. If none of the <code>n - 1</code> edges closes a cycle, all of them merged something, and <code>n - (n - 1) = 1</code> component remains. Connected.</p>
+      <p><strong>Given <code>n - 1</code> edges, acyclic implies connected.</strong> I begin with <code>n</code> isolated nodes, then each edge that joins different components reduces the count by one. If no edge closes a cycle, <code>n - (n - 1) = 1</code> component remains.</p>
       <div class="callout">So after the count check, the only remaining question is: <em>does any edge join two nodes that are already in the same component?</em> That is exactly what union-find answers.</div>
       <p>Union-find keeps a <code>parent</code> array. Each component is a small tree of pointers, and <code>find(x)</code> follows them to the root. Two nodes are in the same component when they have the same root. Merging two components is one pointer assignment: point one root at the other.</p>
     </section>
@@ -244,7 +243,7 @@
       <ul>
         <li><code>if len(edges) != n - 1: return False</code> handles both "too few" and "too many" before any traversal.</li>
         <li><code>parent = list(range(n))</code>: every node starts as its own root. <code>rank = [0] * n</code>: an upper bound on each root's tree height.</li>
-        <li><code>find(x)</code>: <code>while parent[x] != x</code>, set <code>parent[x] = parent[parent[x]]</code> (skip a generation, so the chain halves for next time) and step up. Return the root.</li>
+        <li>In <code>find(x)</code>, I use <code>parent[x] = parent[parent[x]]</code> to skip a generation while climbing, then return the root.</li>
         <li>For each edge <code>[a, b]</code>: <code>ra, rb = find(a), find(b)</code>. <code>if ra == rb: return False</code> is the cycle check.</li>
         <li>Union by rank: <code>if rank[ra] &lt; rank[rb]: ra, rb = rb, ra</code>, then <code>parent[rb] = ra</code>, and bump <code>rank[ra]</code> only when the two ranks were equal.</li>
         <li>If the loop finishes, every edge merged two different sets: <code>return True</code>.</li>
@@ -266,13 +265,13 @@
       <p>Edge <code>[0, 3]</code>: roots 0 and 3, different. <code>parent[3] = 0</code>. <code>parent = [0, 0, 0, 0, 4]</code>.</p>
       <p>Edge <code>[1, 4]</code>: <code>find(1)</code> follows <code>parent[1] = 0</code> and <code>parent[0] = 0</code>, so the root is 0. <code>find(4) = 4</code>. Different, so <code>parent[4] = 0</code> (rank 1 beats rank 0, node 4 goes under 0, not under 1). <code>parent = [0, 0, 0, 0, 0]</code>.</p>
       <p>The loop ends without ever seeing <code>ra == rb</code>. Four merges took five components down to one. <code>return True</code>.</p>
-      <div class="callout">Notice that the final <code>parent</code> array is flat: every node points straight at 0. That is union by rank doing its job; <code>find</code> never had to walk more than one step.</div>
+      <div class="callout">The final <code>parent</code> array is flat: every node points straight at 0. That is union by rank doing its job; <code>find</code> never had to walk more than one step.</div>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Contrast: a cycle is caught by the first repeated root</h2>
-      <p>Take <code>n = 5</code>, <code>edges = [[0,1],[1,2],[2,3],[1,3],[1,4]]</code>. That is 5 edges on 5 nodes, so the count check already fails. But suppose it were skipped, to see how the cycle check behaves on its own.</p>
+      <p>I can test <code>n = 5</code>, <code>edges = [[0,1],[1,2],[2,3],[1,3],[1,4]]</code>. That is 5 edges on 5 nodes, so the count check already fails. If I skip it for this illustration, the cycle check still shows its own behaviour.</p>
       <p><code>[0, 1]</code>: merge, <code>parent[1] = 0</code>, <code>rank[0] = 1</code>. <code>[1, 2]</code>: <code>find(1) = 0</code>, <code>find(2) = 2</code>, merge, <code>parent[2] = 0</code>. <code>[2, 3]</code>: <code>find(2) = 0</code>, <code>find(3) = 3</code>, merge, <code>parent[3] = 0</code>. Now <code>parent = [0, 0, 0, 0, 4]</code>.</p>
       <p><code>[1, 3]</code>: <code>find(1) = 0</code> and <code>find(3) = 0</code>. <strong>Same root.</strong> Nodes 1 and 3 were already connected (via 2), so this edge closes the loop 1–2–3–1. <code>return False</code> immediately; edge <code>[1, 4]</code> is never looked at.</p>
     </section>
@@ -281,9 +280,9 @@
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: cycle-free is not the same as tree</h2>
       <p>Two specific bugs live here, and both return a confident wrong answer.</p>
-      <p><strong>Dropping the edge-count guard.</strong> Without <code>if len(edges) != n - 1: return False</code>, take <code>n = 5</code>, <code>edges = [[0,1],[1,2],[3,4]]</code>. Every edge merges two different roots: <code>parent</code> ends as <code>[0, 0, 0, 3, 3]</code>, the loop finishes, and the function returns <strong>True</strong>. But there are two components, {0, 1, 2} and {3, 4}. Union-find only ever detects cycles; connectivity comes from the count.</p>
+      <p><strong>Dropping the edge-count guard.</strong> Without <code>if len(edges) != n - 1: return False</code>, I can use <code>n = 5</code> and <code>edges = [[0,1],[1,2],[3,4]]</code>. Every edge merges, yet two components remain and the function incorrectly returns <strong>True</strong>.</p>
       <p><strong>A <code>find</code> that does not loop.</strong> Writing <code>return parent[x]</code> returns the immediate parent, not the root. On <code>[[0,1],[2,3],[1,3],[0,3]]</code> the third union points root 2 at root 0, so node 3's parent is still 2 while its root is 0. The cycle-closing edge <code>[0, 3]</code> compares 0 with 2, sees "different", and returns <strong>True</strong> for a graph with a cycle and an isolated node 4.</p>
-      <div class="callout warn">Check the count first. Then <code>find</code> must walk all the way to a node whose parent is itself.</div>
+      <div class="callout warn">I check the count first, then make <code>find</code> walk all the way to a node whose parent is itself.</div>
     </section>
 
     <section class="step" data-state="complexity">

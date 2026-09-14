@@ -220,7 +220,7 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Bit Manipulation · LeetCode #268</div>
   <h1>Missing Number, narrated</h1>
-  <p>Scroll through sorting and sets, the XOR trick that cancels every present value against the full range, and a three-step trace over [3,0,1], with the accumulator's bits shown alongside.</p>
+  <p>I’ll start by sorting to find the first gap, then use XOR to cancel the supplied values against the full range.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/bit-manipulation.html">Bit Manipulation</a> <span class="how">XOR cancels equal values. XOR every index and every supplied number against the full range 0 through n, leaving only the absent value.</span></p>
 </header>
 
@@ -238,10 +238,10 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: sort, or use a set</h2>
-      <p>Sort the array and walk it looking for the first index whose value is not equal to the index:</p>
+      <p>My first instinct is to sort the array and find the first index whose value does not equal that index.</p>
       <pre class="code"><span class="ln">nums.sort()</span><span class="ln">for i, v in enumerate(nums):</span><span class="ln">    if v != i:</span><span class="ln">        return i</span><span class="ln">return len(nums)</span></pre>
-      <p style="margin-top:14px">For <code>[3,0,1]</code> that sorts to <code>[0,1,3]</code>, finds <code>nums[2] = 3 != 2</code>, and returns 2. Correct, but the sort is <strong>O(n log n)</strong>, and the trailing <code>return len(nums)</code> is needed for the case where n itself is the missing value.</p>
-      <p>A hash set is faster: put every value in a set, then check each of 0 through n for membership. That is O(n) time but allocates a set of n entries, so <strong>O(n) space</strong>. The panel dims the three present values to make the point: both approaches do more than one integer's worth of work to find one integer.</p>
+      <p style="margin-top:14px">Sorting finds the missing value. It takes <strong>O(n log n) time</strong> and, when done in place, uses <strong>O(1) extra space</strong>.</p>
+      <p>I only need one missing value, not the full order. XOR lets equal range and input values cancel without sorting or allocating a set.</p>
     </section>
 
     <section class="step" data-state="insight">
@@ -256,7 +256,7 @@
     <section class="step" data-state="approach">
       <div class="n">STEP 4</div>
       <h2>The approach: the indices are the range</h2>
-      <p>You do not need to build a second list holding 0 through n. The indices of <code>nums</code> already supply 0 through n − 1, and the one value they do not supply, n itself, is <code>len(nums)</code>. So seed the accumulator with it: <code>missing = len(nums)</code>, which for the example is <code>missing = 3 (00000011)</code>.</p>
+      <p>I do not need to build a second list holding 0 through n. The indices of <code>nums</code> already supply 0 through n − 1, and the one value they do not supply, n itself, is <code>len(nums)</code>. So I seed the accumulator with it: <code>missing = len(nums)</code>, which for the example is <code>missing = 3 (00000011)</code>.</p>
       <p>Then a single pass, <code>for index, number in enumerate(nums):</code>, folds in both the range value and the array value at once: <code>missing ^= index ^ number</code>. After the loop every present value has been XORed in twice and the missing one exactly once.</p>
     </section>
 
@@ -289,8 +289,8 @@
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the sum, the seed, and the index</h2>
       <p>The panel shows the arithmetic alternative: the range 0 through 3 sums to <code>0+1+2+3 = 6</code>, the array sums to <code>3+0+1 = 4</code>, and <code>6 - 4 = 2</code>. It is also O(n) time and O(1) space, and in Python it is fine. In a fixed-width language, though, <code>n * (n + 1) / 2</code> grows quadratically and overflows a 32-bit integer for n around 65,000. The XOR accumulator never produces a value wider than its inputs, so it has no such limit.</p>
-      <p><strong>Forgetting to seed with n.</strong> Write <code>missing = 0</code> instead of <code>missing = len(nums)</code> and the range value n is never XORed in. For <code>[3,0,1]</code> that computes <code>0 ^ (0 ^ 3) ^ (1 ^ 0) ^ (2 ^ 1) = 1</code>: the array's 3 now has no partner and pollutes the result. The function returns <strong>1</strong> instead of 2.</p>
-      <p><strong>Folding in only the numbers.</strong> Write <code>missing ^= number</code> without the <code>index ^</code> and half of the range is missing. For the example that is <code>3 ^ 3 ^ 0 ^ 1 = 1</code>, again returning <strong>1</strong>. Both halves of <code>index ^ number</code> are required: the indices and the seed together are the full range, and the numbers are what gets cancelled against it.</p>
+      <p><strong>No seed for n.</strong> If I write <code>missing = 0</code> instead of <code>missing = len(nums)</code>, the range value n is never XORed in. For <code>[3,0,1]</code> that computes <code>0 ^ (0 ^ 3) ^ (1 ^ 0) ^ (2 ^ 1) = 1</code>: the array's 3 now has no partner and pollutes the result. The function returns <strong>1</strong> instead of 2.</p>
+      <p><strong>Only folding in the numbers.</strong> If I write <code>missing ^= number</code> without the <code>index ^</code>, half of the range is missing. For the example that is <code>3 ^ 3 ^ 0 ^ 1 = 1</code>, again returning <strong>1</strong>. Both halves of <code>index ^ number</code> are required: the indices and the seed together are the full range, and the numbers are what gets cancelled against it.</p>
       <div class="callout warn">Test the two edge placements: <code>[0,1]</code> (answer 2, the missing value is n) and <code>[1,2]</code> (answer 0, the missing value is the smallest). The seed bug returns 0 and 2 for them; the index bug returns 3 and 1. Neither bug survives both.</div>
     </section>
 

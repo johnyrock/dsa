@@ -208,7 +208,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Dynamic Programming · LeetCode #300</div>
   <h1>Longest Increasing Subsequence, narrated</h1>
-  <p>Scroll through the thinking, from enumerating every subsequence to a table of "longest run ending here", with the state of the algorithm shown alongside.</p>
+  <p>I compare each number with earlier endings, keeping the best increasing sequence that can end at each position.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">dp[i] = 1 + max(dp[j]) over j &lt; i with nums[j] &lt; nums[i]</span></p>
 </header>
 
@@ -220,22 +220,23 @@
       <h2>The problem</h2>
       <p>A subsequence keeps some elements of <code>nums</code> in their original order and skips the rest. Find the longest one whose values go strictly up, and return its <em>length</em>.</p>
       <div class="callout">Running example: <code>nums = [10, 9, 2, 5, 3, 7, 101, 18]</code>. The answer is <strong>4</strong>: for instance <code>2, 3, 7, 101</code> or <code>2, 5, 7, 18</code>. There is no increasing pick of five.</div>
-      <p>Two things to fix in your head. "Strictly" means equal values cannot follow each other, so <code>[7, 7, 7]</code> has answer 1. And "subsequence" means gaps are fine: <code>2, 3, 7</code> skips the 5 in between.</p>
-      <p>We are asked for a count, not the elements. That lets us record a single number per position rather than a list.</p>
+      <p>Two details matter. "Strictly" means equal values cannot follow each other, so <code>[7, 7, 7]</code> has answer 1. And "subsequence" means gaps are fine: <code>2, 3, 7</code> skips the 5 in between.</p>
+      <p>Only the length is required, not the elements themselves. One number per position is therefore enough instead of a list.</p>
     </section>
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instinct: try every subsequence</h2>
-      <p>Each element is either in or out, so walk the array once per index deciding to take it (if it is bigger than the last taken value) or skip it, and keep the longest length seen.</p>
+<h2>First instinct: try every subsequence</h2>
+      <p>My first instinct is to decide for each element whether I take it, when it is bigger than the last value, or skip it, then keep the longest length I find.</p>
       <pre class="code"><span class="ln">def longest(i, last):</span><span class="ln">    if i == len(nums):</span><span class="ln">        return 0</span><span class="ln">    skip = longest(i + 1, last)</span><span class="ln">    take = 0</span><span class="ln">    if nums[i] &gt; last:</span><span class="ln">        take = 1 + longest(i + 1, nums[i])</span><span class="ln">    return max(skip, take)</span></pre>
-      <p style="margin-top:14px">Correct, and it doubles at every index: <strong>O(2ⁿ)</strong>. At <code>n = 2500</code> that is hopeless. The repeated work is easy to spot — <code>longest(5, 3)</code> ("from index 5 with last value 3") gets asked once for every different way of reaching the 3, even though the answer never changes.</p>
+      <p style="margin-top:14px">This branches at every index, so it needs <strong>O(2ⁿ) time</strong> and <strong>O(n) space</strong> for its call stack. At <code>n = 2500</code>, that is hopeless.</p>
+      <p><code>longest(5, 3)</code> is the same question every time I reach index 5 with last value 3. I record the best answer for each position instead of recomputing it.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>The key idea: anchor on where the run ends</h2>
-      <p>Define <code>dp[i]</code> as the length of the longest increasing subsequence <em>that ends at index i</em> — it must use <code>nums[i]</code> as its last element. That anchor is what makes the subproblem small enough to reuse.</p>
+      <p>I define <code>dp[i]</code> as the length of the longest increasing subsequence <em>that ends at index i</em>—it uses <code>nums[i]</code> as its last element. That anchor makes the subproblem small enough to reuse.</p>
       <p>Whatever came right before <code>nums[i]</code> in such a run is some earlier <code>nums[j]</code> with <code>j &lt; i</code> and <code>nums[j] &lt; nums[i]</code>; and the run up to that point is a best run ending at <code>j</code>, which is exactly <code>dp[j]</code>.</p>
       <div class="callout"><code>dp[i] = 1 + max(dp[j])</code> over every <code>j &lt; i</code> with <code>nums[j] &lt; nums[i]</code>, or just 1 if no such <code>j</code> exists. The answer is <code>max(dp)</code>, because the best run can end anywhere.</div>
       <p>Filling <code>i</code> left to right makes every <code>dp[j]</code> final before it is read. Seeding every slot with 1 encodes "an element on its own is a run of length 1".</p>
@@ -258,7 +259,7 @@
       <div class="n">STEP 5</div>
       <h2>Trace it: the first four slots</h2>
       <p><code>i = 0</code> (value 10): no earlier index, <code>dp[0]</code> stays 1. <code>i = 1</code> (value 9): the only earlier value is 10, not smaller, so <code>dp[1] = 1</code>. <code>i = 2</code> (value 2): 10 and 9 are both bigger, <code>dp[2] = 1</code>.</p>
-      <p><code>i = 3</code> (value 5): look back at 10, 9, 2. Only <code>2 &lt; 5</code>, at <code>j = 2</code> with <code>dp[2] = 1</code>, so <code>dp[3] = max(1, 1 + 1) = 2</code>. The run is <code>2, 5</code>.</p>
+      <p>At <code>i = 3</code> (value 5), I look back at 10, 9, and 2. Only <code>2 &lt; 5</code> qualifies, so <code>dp[3] = max(1, 1 + 1) = 2</code> for <code>2, 5</code>.</p>
       <p>The table so far: <code>[1, 1, 1, 2]</code>.</p>
     </section>
 
@@ -282,10 +283,10 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the seed, the strictness, the return</h2>
-      <p><strong>Seeding with zeros.</strong> Write <code>dp = [0] * len(nums)</code> and no run can ever start: <code>dp[j] + 1</code> only builds on earlier zeros, and any slot with no smaller predecessor stays 0. On the running example the 2 at index 2 has no predecessor, so its slot is 0, the 5 becomes <code>0 + 1 = 1</code>, and the chain reaches only <strong>3</strong> instead of 4.</p>
+      <p><strong>Seeding with zeros.</strong> If I write <code>dp = [0] * len(nums)</code>, no run can start correctly. On the running example, the chain reaches only <strong>3</strong> instead of 4.</p>
       <p><strong>Using <code>&lt;=</code>.</strong> Then equal values chain, and <code>[7, 7, 7]</code> returns <strong>3</strong> instead of 1. The running example has no duplicates, which is exactly why this bug hides in it.</p>
       <p><strong>Returning <code>dp[-1]</code>.</strong> The best run need not end at the last element. <code>[4, 5, 1]</code> has <code>dp = [1, 2, 1]</code>, so <code>dp[-1]</code> is <strong>1</strong> when the answer is 2.</p>
-      <div class="callout warn"><code>dp[i]</code> is the longest run <em>ending at</em> i. Seed it with 1, compare strictly, and take the max over the whole table.</div>
+      <div class="callout warn"><code>dp[i]</code> is the longest run <em>ending at</em> i. I seed it with 1, compare strictly, and take the maximum over the table.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -313,7 +314,7 @@
         <li><code>dp[i] = max(dp[i], dp[j] + 1)</code> — keep the longest extension.</li>
         <li><code>return max(dp)</code> — the run can end anywhere.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>the longest run ending at i is one more than the longest run ending at any smaller earlier value; the answer is the biggest slot.</em></div>
+      <div class="callout">My rule is: <em>I extend the best run from a smaller earlier value, and the largest table entry is the answer.</em></div>
     </section>
 
     <div class="code-final">

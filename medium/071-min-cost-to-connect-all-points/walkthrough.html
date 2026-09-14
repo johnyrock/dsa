@@ -204,8 +204,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Graph · Prim's Algorithm · LeetCode #1584</div>
   <h1>Min Cost to Connect All Points, narrated</h1>
-  <p>Scroll through the thinking, from sorting every pair of points to growing a minimum spanning tree one cheapest edge at a time, with the tree and the heap shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph</a> <span class="how">Prim's algorithm: pop the cheapest edge leaving the tree, absorb its endpoint, push its edges</span></p>
+  <p>I will first build and sort every possible edge, then grow the tree by choosing its cheapest outgoing edge on demand.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph</a> <span class="how">I grow the tree with its cheapest available edge in Prim's algorithm</span></p>
 </header>
 
 <div class="layout">
@@ -220,21 +220,20 @@
       <p>Note that point 2 at <code>(3, 10)</code> is far from everything. It will be the last point absorbed, and its cheapest link, 9 to point 1, is unavoidable.</p>
     </section>
 
-    <section class="step" data-state="brute">
-      <div class="n">STEP 2</div>
-      <h2>First instinct: sort every pair, take edges that don't form a cycle</h2>
-      <p>Enumerate all <code>n(n-1)/2</code> pairs with their distances, sort them ascending, then walk the list adding any edge whose endpoints are not yet connected. Stop after <code>n - 1</code> edges. That is Kruskal's algorithm, and "not yet connected" needs a union-find:</p>
-      <pre class="code"><span class="ln">edges = sorted((dist(i, j), i, j) for i in range(n) for j in range(i + 1, n))</span><span class="ln">total = 0</span><span class="ln">for d, i, j in edges:</span><span class="ln">    if find(i) != find(j):</span><span class="ln">        union(i, j)</span><span class="ln">        total += d</span></pre>
-      <p style="margin-top:14px">It is correct and it is the right tool for sparse graphs. Here the graph is complete: for <code>n = 1000</code> that is 499,500 edges to build, sort, and mostly discard. The sort alone is <strong>O(n² log n)</strong>, and it materialises every edge up front even though the tree only needs <code>n - 1</code> of them.</p>
-      <p>The alternative is to grow the tree outward from one point and only ever look at edges that leave the tree. That is Prim's algorithm, and a heap gives us the cheapest of those edges on demand.</p>
+    <section class="step" data-state="insight">
+      <div class="n">STEP 2</div><h2>First instinct: sort every pair and avoid cycles</h2>
+      <p>I can create the complete graph, sort its weighted edges, and use union-find to accept only edges that merge components.</p>
+      <pre class="code"><span class="ln">def minCostConnectPoints(points):</span><span class="ln">    edges = sorted((abs(x1-x2) + abs(y1-y2), i, j) for i, (x1,y1) in enumerate(points) for j, (x2,y2) in enumerate(points[:i]))</span><span class="ln">    total, used = 0, 0</span><span class="ln">    for cost, i, j in edges:</span><span class="ln">        if union(i, j): total += cost; used += 1</span><span class="ln">        if used == len(points) - 1: return total</span></pre>
+      <p style="margin-top:14px">This is correct Kruskal's algorithm. The complete graph has O(n²) edges, so sorting gives O(n² log n) time complexity and materializing edges uses O(n²) space.</p>
+      <p>For this complete graph, I avoid materializing every edge first. Prim's algorithm grows one tree and asks for its cheapest outgoing edge only when needed.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: the cheapest edge leaving the tree is always safe</h2>
-      <p>Suppose some points are already in the tree. Among all edges with one endpoint inside and one outside, the cheapest one belongs to some minimum spanning tree. This is the cut property, and it means we never need to reconsider a choice: absorb that edge's outside endpoint, pay its cost, and repeat.</p>
-      <p>To find "the cheapest edge leaving the tree" fast, keep a min-heap of candidate edges as <code>(cost, point)</code>. Whenever a point joins the tree, push an edge from it to every point still outside.</p>
-      <div class="callout">Seed with <code>heap = [(0, 0)]</code>: point 0 joins for free. The heap then contains one entry per (tree point, outside point) pair that has been offered, and the smallest is always on top.</div>
+      <p>Once I have some points in the tree, the cheapest edge with one endpoint inside and one outside belongs to some minimum spanning tree. This cut property means I never need to reconsider a choice: I absorb that edge's outside endpoint, pay its cost, and repeat.</p>
+      <p>To find the cheapest outgoing edge quickly, I keep a min-heap of candidate edges as <code>(cost, point)</code>. Whenever a point joins the tree, I add an edge from it to every point still outside.</p>
+      <div class="callout">I seed <code>heap = [(0, 0)]</code>, so point 0 joins for free. The smallest offered edge remains on top.</div>
       <p>An outside point can be offered several times, once by each tree point that saw it. Only the first pop matters. That is what <code>visited</code> is for: a popped point that is already in the tree is a stale entry, and <code>if visited[i]: continue</code> discards it.</p>
     </section>
 
@@ -245,7 +244,7 @@
       <ul>
         <li><code>while connected &lt; n</code> — stop as soon as every point is in the tree, whatever is left in the heap.</li>
         <li><code>cost, i = heapq.heappop(heap)</code> — the cheapest offered edge.</li>
-        <li><code>if visited[i]: continue</code> — its endpoint is already in the tree, so the edge would close a cycle; skip.</li>
+        <li><code>if visited[i]: continue</code> — I discard an edge whose endpoint is already in the tree.</li>
         <li><code>visited[i] = True; total += cost; connected += 1</code> — absorb the point and pay for the edge that reached it.</li>
         <li><code>for j in range(n): if not visited[j]: heappush(heap, (d, j))</code> — offer an edge from the new point to every point still outside, with <code>d</code> the Manhattan distance.</li>
       </ul>
@@ -255,23 +254,23 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: absorb point 0, then point 1</h2>
-      <p>Pop <code>(0, 0)</code>. Point 0 is new: <code>total = 0</code>, <code>connected = 1</code>. Offer its edges to points 1 to 4: distances <code>|0-2| + |0-2| = 4</code>, <code>3 + 10 = 13</code>, <code>5 + 2 = 7</code>, <code>7 + 0 = 7</code>. After the pushes the heap is <code>[(4, 1), (7, 4), (7, 3), (13, 2)]</code>.</p>
-      <p>Pop <code>(4, 1)</code>. Point 1 is new: <code>total = 4</code>, <code>connected = 2</code>. Offer edges from <code>(2, 2)</code> to the three outside points: to point 2 <code>1 + 8 = 9</code>, to point 3 <code>3 + 0 = 3</code>, to point 4 <code>5 + 2 = 7</code>. The heap becomes <code>[(3, 3), (7, 3), (7, 4), (9, 2), (7, 4), (13, 2)]</code>. Points 3 and 4 now each have two entries, and the cheaper one for point 3, cost 3, has sifted to the top.</p>
+      <p>I pop <code>(0, 0)</code>, giving <code>total = 0</code> and <code>connected = 1</code>. I add the four edges from point 0, producing <code>[(4, 1), (7, 4), (7, 3), (13, 2)]</code>.</p>
+      <p>I next pop <code>(4, 1)</code>, so <code>total = 4</code> and <code>connected = 2</code>. Adding point 1's outside edges puts <code>(3, 3)</code> at the top of the heap.</p>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: absorb points 3 and 4</h2>
-      <p>Pop <code>(3, 3)</code>. Point 3 is new: <code>total = 4 + 3 = 7</code>, <code>connected = 3</code>. From <code>(5, 2)</code>, offer point 2 at <code>2 + 8 = 10</code> and point 4 at <code>2 + 2 = 4</code>. Heap: <code>[(4, 4), (7, 4), (7, 3), (9, 2), (13, 2), (10, 2), (7, 4)]</code>.</p>
-      <p>Pop <code>(4, 4)</code>. Point 4 is new: <code>total = 7 + 4 = 11</code>, <code>connected = 4</code>. Its only outside neighbour is point 2, at <code>4 + 10 = 14</code>. Heap: <code>[(7, 3), (7, 4), (7, 4), (9, 2), (13, 2), (10, 2), (14, 2)]</code>.</p>
-      <p>Look at what sits on top now: three entries for points that are already in the tree. They were offered by point 0 and point 1 before cheaper routes to 3 and 4 were found.</p>
+      <p>I pop <code>(3, 3)</code>, making <code>total = 7</code> and <code>connected = 3</code>, then add edges to points 2 and 4. The next cheapest entry is <code>(4, 4)</code>.</p>
+      <p>I pop <code>(4, 4)</code>, making <code>total = 11</code> and <code>connected = 4</code>. Its only outside neighbour is point 2 at cost 14.</p>
+      <p>At the top now sit three entries for points already in the tree. Point 0 and point 1 offered them before cheaper routes to 3 and 4 were found.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: skip the stale entries, absorb point 2</h2>
-      <p>Pop <code>(7, 3)</code>: <code>visited[3]</code> is true, <code>continue</code>. Pop <code>(7, 4)</code>: stale, skip. Pop <code>(7, 4)</code> again: stale, skip. None of these touched <code>total</code> or <code>connected</code>.</p>
-      <p>Pop <code>(9, 2)</code>. Point 2 is new: <code>total = 11 + 9 = 20</code>, <code>connected = 5</code>. No points remain outside, so nothing is offered. <code>connected &lt; n</code> is now false and the loop ends with <code>(13, 2)</code>, <code>(10, 2)</code> and <code>(14, 2)</code> still sitting in the heap, never examined.</p>
+      <p>I discard <code>(7, 3)</code> and both <code>(7, 4)</code> entries because their points are already visited. None changes <code>total</code> or <code>connected</code>.</p>
+      <p>I then pop <code>(9, 2)</code>, making <code>total = 20</code> and <code>connected = 5</code>. Every point is now connected, so the loop ends.</p>
       <div class="callout">The four edges taken were 0-1 (4), 1-3 (3), 3-4 (4), 1-2 (9). <code>4 + 3 + 4 + 9 = 20</code>.</div>
     </section>
 

@@ -210,7 +210,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Dynamic Programming · LeetCode #647</div>
   <h1>Palindromic Substrings, narrated</h1>
-  <p>Scroll through the thinking, from testing every substring to expanding outward from each of the 2n − 1 centres and counting one palindrome per matching step, with the state of the algorithm shown alongside.</p>
+  <p>I will first test every substring directly, then expand only around centres where a palindrome can grow.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">a palindrome extends the smaller palindrome inside it, so grow outward from every centre and count each step</span></p>
 </header>
 
@@ -225,12 +225,12 @@
       <p>Every single character is a palindrome, so the answer is at least <code>len(s)</code>. The work is in finding the longer ones without testing every slice from scratch.</p>
     </section>
 
-    <section class="step" data-state="brute">
-      <div class="n">STEP 2</div>
-      <h2>First instinct: test every substring</h2>
-      <p>For every start <code>i</code> and every end <code>j</code>, slice, reverse, compare, and bump a counter when they match.</p>
-      <pre class="code"><span class="ln">total = 0</span><span class="ln">for i in range(n):</span><span class="ln">    for j in range(i, n):</span><span class="ln">        sub = s[i:j + 1]</span><span class="ln">        if sub == sub[::-1]:</span><span class="ln">            total += 1</span></pre>
-      <p style="margin-top:14px">There are about <code>n² / 2</code> substrings and each reversal is O(n), so this is <strong>O(n³)</strong>. On <code>"aaa"</code> it checks 6 slices and all 6 pass, which is fine; at <code>n = 1000</code> it is half a billion character comparisons, most of them re-examining the same middle letters.</p>
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 2</div><h2>First instinct: test every substring</h2>
+      <p>I can slice every substring, reverse it, and count it when the two strings match.</p>
+      <pre class="code"><span class="ln">def countSubstrings(s):</span><span class="ln">    total = 0</span><span class="ln">    for i in range(len(s)):</span><span class="ln">        for j in range(i, len(s)):</span><span class="ln">            part = s[i:j + 1]</span><span class="ln">            if part == part[::-1]: total += 1</span><span class="ln">    return total</span></pre>
+      <p style="margin-top:14px">This is correct. There are O(n²) substrings and comparing one can take O(n), so the time complexity is O(n³). The slice has O(n) space complexity.</p>
+      <p>Starting from the middle of each possible palindrome lets me expand outward on matching characters and count it without rebuilding its inner substring.</p>
     </section>
 
     <section class="step" data-state="reframe">
@@ -244,7 +244,7 @@
     <section class="step" data-state="idea">
       <div class="n">STEP 4</div>
       <h2>The key idea: expand and count every matching step</h2>
-      <p>For each <code>centre</code>, run two expansions: <code>left = right = centre</code> for odd lengths and <code>left = centre, right = centre + 1</code> for even lengths. While both pointers are in bounds and <code>s[left] == s[right]</code>, the slice between them is a palindrome, so do <code>total += 1</code>, then step <code>left -= 1</code> and <code>right += 1</code>.</p>
+      <p>For each <code>centre</code>, I run two expansions: <code>left = right = centre</code> for odd lengths and <code>left = centre, right = centre + 1</code> for even lengths. On a match, I increment <code>total</code> and move both pointers outward.</p>
       <ul>
         <li><code>for centre in range(len(s))</code> visits every character.</li>
         <li><code>for left, right in ((centre, centre), (centre, centre + 1))</code> tries the odd and the even centre at that position.</li>
@@ -275,14 +275,14 @@
       <h2>Trace it: centre 2, the answer</h2>
       <p>Odd run from index 2: <code>total = 6</code> for the last <code>"a"</code>. Widen to <code>left = 1, right = 3</code>; <code>right</code> is out of bounds, stop.</p>
       <p>Even run: <code>left = 2, right = 3</code>. <code>right &lt; len(s)</code> fails immediately, so nothing is counted; there is no gap after the last character.</p>
-      <div class="callout">Return <strong>6</strong>. Three centres, five expansions that found something, six matching steps, six palindromes.</div>
+      <div class="callout">I return <strong>6</strong>: three centres, five expansions that found something, six matching steps, and six palindromes.</div>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: even centres and where the counter lives</h2>
-      <p><strong>Skipping the even expansion.</strong> Write <code>for left, right in ((centre, centre),)</code> and every even-length palindrome vanishes. On <code>"aaa"</code> the two <code>"aa"</code>s are lost and the result is <strong>4</strong>, not 6. The panel shows that run: only the character-centres are ever lit, the gaps never are.</p>
-      <p><strong>Counting once per centre.</strong> Move <code>total += 1</code> below the <code>while</code> loop (guarded by "did it expand at all") and each centre contributes at most one. On <code>"aaa"</code> the middle centre finds both <code>"a"</code> and <code>"aaa"</code> but records one, giving <strong>5</strong>.</p>
+      <p><strong>Skipping the even expansion.</strong> If I write <code>for left, right in ((centre, centre),)</code>, every even-length palindrome vanishes. On <code>"aaa"</code>, the two <code>"aa"</code>s are lost and the result is <strong>4</strong>.</p>
+      <p><strong>Counting once per centre.</strong> If I move <code>total += 1</code> below the <code>while</code> loop, each centre contributes at most one. On <code>"aaa"</code>, the middle centre finds both <code>"a"</code> and <code>"aaa"</code> but records one, giving <strong>5</strong>.</p>
       <p><strong>Comparing before the bounds check.</strong> <code>while s[left] == s[right] and left &gt;= 0 ...</code> reads <code>s[-1]</code>, which in Python is the last character, and raises <code>IndexError</code> when <code>right</code> runs off the end. Bounds first.</p>
       <div class="callout warn">Two runs per index, and count inside the loop. Every step outward that still matches is one more palindrome.</div>
     </section>

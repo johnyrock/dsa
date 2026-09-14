@@ -190,8 +190,8 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Linked List · LeetCode #206</div>
   <h1>Reverse Linked List, narrated</h1>
-  <p>Scroll through the thinking, from copying the values out into an array to the in-place three-pointer rewiring, with the state of the list shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/linked-list.html">Linked List</a> <span class="how">three pointers, save next first</span></p>
+  <p>I’ll start by saving the nodes in a stack, then show how I reverse their links in one pass without storing the whole list.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/linked-list.html">Linked List</a> <span class="how">three pointers: I save the next node before I redirect a link</span></p>
 </header>
 
 <div class="layout">
@@ -200,19 +200,19 @@
     <section class="step" data-state="problem">
       <div class="n">STEP 1</div>
       <h2>The problem</h2>
-      <p>You get <code>head</code>, the first node of a singly linked list. Each node holds a value and a single link called <code>next</code>. Return the head of the same list, reversed.</p>
+      <p>Given <code>head</code>, the first node of a singly linked list, return the head of that same list in reverse order. Each node holds a value and one link named <code>next</code>.</p>
       <p>Singly linked means there are no backwards links. From a node you can reach everything after it and nothing before it, and you only ever get one pass in that direction for free.</p>
       <div class="callout">Running example: <code>1 → 2 → 3 → 4</code>. The answer is <code>4 → 3 → 2 → 1</code>, and the node holding 4 becomes the new head.</div>
-      <p>Notice what the answer is: a <em>node</em>, not a list of values. Whatever we do has to leave real nodes wired up in the new order.</p>
+      <p>The answer is a <em>node</em>, not a list of values. The final links must form the reversed list.</p>
     </section>
 
     <section class="step" data-state="naive">
       <div class="n">STEP 2</div>
-      <h2>First instinct: copy the values out</h2>
-      <p>The most direct idea is to walk the list once, push every value into a Python list, reverse that list, then walk the nodes again writing the values back.</p>
-      <pre class="code"><span class="ln">values = []</span><span class="ln">node = head</span><span class="ln">while node:</span><span class="ln">    values.append(node.val)</span><span class="ln">    node = node.next</span><span class="ln"># then walk again, writing values[::-1] back in</span></pre>
-      <p style="margin-top:14px">This works and it is <strong>O(n)</strong> time. But it allocates an array as big as the list, so it costs <strong>O(n) extra space</strong>, and it never actually reverses anything — it shuffles payloads between nodes that stay wired the same way.</p>
-      <p>The links are the thing the problem is really about. So: can we change the links themselves, in place, using only a couple of variables?</p>
+      <h2>First instinct: save the nodes in a stack</h2>
+      <p>My first instinct is to walk the list once and save each node in a Python list. I then pop the nodes back out, linking them in reverse order.</p>
+      <pre class="code"><span class="ln">nodes = []</span><span class="ln">curr = head</span><span class="ln">while curr:</span><span class="ln">    nodes.append(curr)</span><span class="ln">    curr = curr.next</span><span class="ln">if not nodes: return None</span><span class="ln">new_head = tail = nodes.pop()</span><span class="ln">while nodes:</span><span class="ln">    tail.next = nodes.pop()</span><span class="ln">    tail = tail.next</span><span class="ln">tail.next = None</span><span class="ln">return new_head</span></pre>
+      <p style="margin-top:14px">This baseline visits the nodes twice, so it takes <strong>O(n) time</strong>. The stored nodes take <strong>O(n) extra space</strong>.</p>
+      <p>I only need one saved node at a time. That lets me reverse the links in place with a few pointers.</p>
     </section>
 
     <section class="step" data-state="reframe">
@@ -220,8 +220,8 @@
       <h2>Reframe: reversing is just flipping arrows</h2>
       <p>A reversed list is the same four nodes with every arrow turned around. Node 1 should point at <code>None</code>, node 2 at node 1, node 3 at node 2, node 4 at node 3.</p>
       <p>So the whole job is a sequence of single assignments, one per node: <code>curr.next = </code><em>the node before it</em>.</p>
-      <div class="callout warn">But there is a catch. The moment you write <code>curr.next = prev</code>, the old value of <code>curr.next</code> is gone — and that was the only way to reach the rest of the list.</div>
-      <p>Overwrite it blind and the tail becomes unreachable. So the real question is: what do you need to be holding at the instant you flip an arrow?</p>
+      <div class="callout warn">There is a catch: the moment I write <code>curr.next = prev</code>, the old value of <code>curr.next</code> is gone, along with the only route to the rest of the list.</div>
+      <p>If I overwrite it blindly, the tail becomes unreachable. I need to hold the way forward before I flip an arrow.</p>
     </section>
 
     <section class="step" data-state="idea">
@@ -233,16 +233,16 @@
         <li><code>curr</code> — the node being flipped right now. Starts at <code>head</code>.</li>
         <li><code>next_node</code> — a scratch copy of <code>curr.next</code>, saved <em>before</em> the flip so the rest of the list survives it.</li>
       </ul>
-      <p>Each iteration is the same four moves, always in this order: <strong>save</strong> <code>next_node = curr.next</code>, <strong>flip</strong> <code>curr.next = prev</code>, then <strong>advance</strong> both <code>prev = curr</code> and <code>curr = next_node</code>.</p>
+      <p>In each iteration, I save <code>next_node = curr.next</code>, flip <code>curr.next = prev</code>, then advance both <code>prev = curr</code> and <code>curr = next_node</code>.</p>
       <p>Nothing else is allocated, so the extra space is constant no matter how long the list is.</p>
     </section>
 
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: flip node 1</h2>
-      <p>Before the loop: <code>prev = None</code>, <code>curr = </code> node 1. The loop condition <code>while curr</code> is true, so we enter.</p>
-      <p>Save <code>next_node = curr.next</code>, which is node 2 — that is our lifeline to the rest of the list. Then flip: <code>curr.next = prev</code> makes node 1 point at <code>None</code>, which is exactly right, since node 1 is going to be the tail.</p>
-      <p>Advance: <code>prev</code> becomes node 1, <code>curr</code> becomes node 2.</p>
+      <p>Before the loop, I have <code>prev = None</code> and <code>curr = </code> node 1. The condition <code>while curr</code> is true, so I enter.</p>
+      <p>I save <code>next_node = curr.next</code>, which is node 2 — that is my lifeline to the rest of the list. Then I flip <code>curr.next = prev</code>, making node 1 point at <code>None</code>, exactly right because node 1 is going to be the tail.</p>
+      <p>I advance: <code>prev</code> becomes node 1, and <code>curr</code> becomes node 2.</p>
       <div class="callout">The list is now two pieces: the reversed piece <code>None ← 1</code>, and the untouched remainder <code>2 → 3 → 4</code> that <code>curr</code> is standing on.</div>
     </section>
 
@@ -250,25 +250,25 @@
       <div class="n">STEP 6</div>
       <h2>Trace it: flip node 2</h2>
       <p>Now <code>prev</code> is node 1 and <code>curr</code> is node 2. Same four moves.</p>
-      <p>Save <code>next_node = </code> node 3. Flip <code>curr.next = prev</code>, so node 2 now points back at node 1. Advance: <code>prev</code> becomes node 2, <code>curr</code> becomes node 3.</p>
-      <p>The reversed piece has grown to <code>None ← 1 ← 2</code>, and <code>prev</code> is always sitting on its front — which is why <code>prev</code> is the thing we will return.</p>
+      <p>I save <code>next_node = </code> node 3. I flip <code>curr.next = prev</code>, so node 2 now points back at node 1. I advance: <code>prev</code> becomes node 2, and <code>curr</code> becomes node 3.</p>
+      <p>The reversed piece has grown to <code>None ← 1 ← 2</code>, and <code>prev</code> sits at its front. That is why I return <code>prev</code>.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: flip node 3</h2>
-      <p>Save <code>next_node = </code> node 4. Flip node 3 to point at node 2. Advance: <code>prev</code> becomes node 3, <code>curr</code> becomes node 4.</p>
-      <p>One more iteration will flip node 4, save <code>next_node = None</code>, and set <code>curr = None</code>. The <code>while curr</code> test then fails and the loop stops.</p>
+      <p>I save <code>next_node = </code> node 4. I flip node 3 to point at node 2. I advance: <code>prev</code> becomes node 3, and <code>curr</code> becomes node 4.</p>
+      <p>In the final iteration, I save <code>next_node = None</code>, flip node 4 to point toward node 3, set <code>prev = </code> node 4, and advance <code>curr = None</code>. The <code>while curr</code> test then fails and the loop stops.</p>
       <div class="callout">At that moment <code>prev</code> is node 4, the front of the fully reversed list. <code>return prev</code> — not <code>head</code>, which is now the tail.</div>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>The pitfall: flipping before you save</h2>
-      <p>Swap the first two lines of the body so the flip happens first:</p>
+      <p>I can see the failure by swapping the first two lines so the flip happens first:</p>
       <pre class="code"><span class="ln">curr.next = prev        # flip first — wrong</span><span class="ln">next_node = curr.next   # this now reads prev, not the tail</span></pre>
       <p style="margin-top:14px">On the very first node, <code>curr.next = prev</code> sets node 1's link to <code>None</code>. The next line then reads that same link back, so <code>next_node</code> is <code>None</code>, <code>curr</code> becomes <code>None</code>, and the loop exits after one iteration. The function returns a one-node list and <code>2 → 3 → 4</code> is unreachable — with no error, just silently missing data.</p>
-      <div class="callout warn">Save the way forward before you destroy it. That single ordering is the whole trick of the problem.</div>
+      <div class="callout warn">I save the way forward before destroying it. That ordering is the whole trick of the problem.</div>
       <p>The two boundary cases need no special handling. Empty list: <code>curr = head = None</code>, the loop never runs, and <code>prev</code> is still <code>None</code> — the correct answer. Single node: one iteration sets its link to <code>None</code> and returns the same node.</p>
     </section>
 
@@ -283,7 +283,7 @@
         <tr><td>Recursive flip</td><td>O(n)</td><td>O(n) call stack</td></tr>
         <tr><td>Iterative three pointers</td><td>O(n)</td><td>O(1)</td></tr>
       </table>
-      <p>The recursive version reverses the tail first, then does <code>head.next.next = head</code> and <code>head.next = None</code>. It is elegant, but it holds one stack frame per node, so at the 5,000-node constraint it is near Python's recursion limit. Say it as an aside, write the iterative one.</p>
+      <p>The recursive version reverses the tail first, then performs <code>head.next.next = head</code> and <code>head.next = None</code>. It is elegant, but it holds one stack frame per node, so near the 5,000-node constraint I prefer the iterative version.</p>
     </section>
 
     <section class="step" data-state="final">
@@ -293,13 +293,13 @@
       <ul>
         <li><code>prev = None</code> is the empty reversed part, and the <code>None</code> the old head will point at.</li>
         <li><code>curr = head</code> starts the walk.</li>
-        <li><code>while curr</code> stops the moment we fall off the end — and never runs at all for an empty list.</li>
+        <li><code>while curr</code> stops when I fall off the end and never runs for an empty list.</li>
         <li><code>next_node = curr.next</code> is the save, and it must come first.</li>
         <li><code>curr.next = prev</code> is the flip.</li>
         <li><code>prev = curr</code> and <code>curr = next_node</code> step both pointers forward together.</li>
         <li><code>return prev</code> returns the new head, because <code>prev</code> always sits on the front of the reversed part.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>save the next node, flip the arrow backwards, then move both pointers up one.</em></div>
+      <div class="callout">I remember this as: <em>I save the next node, flip the arrow backwards, then move both pointers up one.</em></div>
     </section>
 
     <div class="code-final">

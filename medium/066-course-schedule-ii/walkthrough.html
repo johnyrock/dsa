@@ -202,7 +202,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Topological Sort · LeetCode #210</div>
   <h1>Course Schedule II, narrated</h1>
-  <p>Scroll through the thinking, from trying every permutation of courses to Kahn's algorithm that repeatedly takes a course with nothing left to wait for and writes down the order it took them in, with the state of the algorithm shown alongside.</p>
+  <p>I will first test every possible course order, then repeatedly take a course whose prerequisites are already satisfied.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/topological-sort.html">Topological Sort</a> <span class="how">Kahn's algorithm: BFS from zero-indegree courses, the pop order is the answer</span></p>
 </header>
 
@@ -213,26 +213,25 @@
       <div class="n">STEP 1</div>
       <h2>The problem</h2>
       <p>There are <code>numCourses</code> courses numbered from 0. Each pair <code>[a, b]</code> says course <code>b</code> must be taken before course <code>a</code>. Return an order in which to take all the courses so that every prerequisite comes before the course that needs it. If no such order exists because the prerequisites loop back on themselves, return <code>[]</code>.</p>
-      <p>This is <a href="../018-course-schedule/walkthrough.html">Course Schedule</a> with one extra demand: not just "is it possible?" but "show me one way". Any valid order is accepted, so there is no single right answer to match, only a constraint to satisfy.</p>
+      <p>This is <a href="../018-course-schedule/walkthrough.html">Course Schedule</a> with one extra demand: not just whether an order is possible, but one valid order itself. Any valid order is accepted, so there is no single right answer to match, only a constraint to satisfy.</p>
       <div class="callout">Running example: <code>numCourses = 4</code>, <code>prerequisites = [[1,0],[2,0],[3,1],[3,2]]</code>. Course 0 unlocks 1 and 2; both of those unlock 3. The graph is a diamond. <code>[0, 1, 2, 3]</code> is a valid answer, and so is <code>[0, 2, 1, 3]</code>.</div>
       <p>Read each pair carefully: <code>[1, 0]</code> means "1 needs 0", so 0 comes first. Getting that direction backwards is the most common bug in this problem, and it produces an answer that looks plausible and is completely wrong.</p>
     </section>
 
-    <section class="step" data-state="brute">
-      <div class="n">STEP 2</div>
-      <h2>First instinct: try every order</h2>
-      <p>There are only <code>numCourses!</code> orderings. Generate each one, and for each check that every pair <code>[a, b]</code> has <code>b</code> positioned before <code>a</code>. Return the first order that passes; if none does, return <code>[]</code>.</p>
-      <pre class="code"><span class="ln">for order in permutations(range(num_courses)):</span><span class="ln">    pos = {c: i for i, c in enumerate(order)}</span><span class="ln">    if all(pos[b] &lt; pos[a] for a, b in prerequisites):</span><span class="ln">        return list(order)</span><span class="ln">return []</span></pre>
-      <p style="margin-top:14px">This is correct and it is worth saying out loud, because it states the constraint precisely: <code>pos[b] &lt; pos[a]</code> for every pair. It is also hopeless. Four courses is 24 orders; the constraint allows 2000 courses, and <code>2000!</code> has over 5,700 digits. Each check is another O(E), so the whole thing is <strong>O(n! × E)</strong>.</p>
-      <p>The waste is that a permutation is built blindly and then rejected as a whole. Almost every one fails on the very first pair, and we learn nothing from the failure that stops us generating the next thousand permutations with the same flaw.</p>
+    <section class="step" data-state="insight">
+      <div class="n">STEP 2</div><h2>First instinct: try every order</h2>
+      <p>I can generate each course order and return the first one that places every prerequisite before its dependent course.</p>
+      <pre class="code"><span class="ln">from itertools import permutations</span><span class="ln">def findOrder(numCourses, prerequisites):</span><span class="ln">    for order in permutations(range(numCourses)):</span><span class="ln">        pos = {course: i for i, course in enumerate(order)}</span><span class="ln">        if all(pos[before] &lt; pos[after] for after, before in prerequisites): return list(order)</span><span class="ln">    return []</span></pre>
+      <p style="margin-top:14px">This is correct. There are n! orders and checking one takes O(E) time, so the time complexity is O(n! · E). The generated order and position map use O(n) space.</p>
+      <p>Using the prerequisite counts directly tells me which course is safe to place now, and removing it may expose the next safe course.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key idea: a course is ready when nothing is left to wait for</h2>
-      <p>Instead of guessing an order and checking it, <em>build</em> the order one course at a time, only ever placing a course that is legal to place right now. Which courses are legal? The ones all of whose prerequisites are already in the order. At the very start, that means courses with no prerequisites at all.</p>
-      <p>Count, for each course, how many prerequisites it still has outstanding: its <strong>indegree</strong> in the graph where each pair <code>[a, b]</code> is an edge <code>b → a</code>. When a course is placed, every course it unlocks has one fewer prerequisite outstanding, so decrement their indegree. Whenever a course's indegree hits 0, it becomes legal to place.</p>
-      <div class="callout">Keep a queue of ready courses. Pop one, append it to <code>order</code>, decrement its neighbours, enqueue any that reach 0. The order in which courses are popped <em>is</em> a valid answer. This is Kahn's algorithm.</div>
+      <p>Instead of guessing an order and checking it, I build the order one course at a time, placing only a course that is legal right now. Those courses already have every prerequisite in the order. At the start, that means courses with no prerequisites.</p>
+      <p>I count each course's outstanding prerequisites as its <strong>indegree</strong> in the graph where each pair <code>[a, b]</code> is an edge <code>b → a</code>. When I place a course, I reduce the indegree of every course it unlocks. A course becomes legal when that count reaches 0.</p>
+      <div class="callout">I keep a queue of ready courses. I pop one, append it to <code>order</code>, decrement its neighbours, and enqueue any that reach 0. The order in which courses are popped <em>is</em> a valid answer. This is Kahn's algorithm.</div>
       <p>And it detects cycles for free. A course inside a cycle has a prerequisite inside the same cycle, which has a prerequisite inside the cycle, and so on. None of them can ever reach indegree 0, so none is ever popped, and <code>order</code> ends up shorter than <code>num_courses</code>.</p>
     </section>
 
@@ -243,7 +242,7 @@
         <li><code>graph = [[] for _ in range(num_courses)]</code> and <code>indegree = [0] * num_courses</code>: an adjacency list and a counter per course.</li>
         <li><code>for course, pre in prerequisites: graph[pre].append(course); indegree[course] += 1</code>: the edge runs from the prerequisite to the course it unlocks.</li>
         <li><code>queue = deque(c for c in range(num_courses) if indegree[c] == 0)</code>: everything with no prerequisites is ready immediately. Iterating <code>range(num_courses)</code>, not the pairs, catches courses that appear in no pair at all.</li>
-        <li><code>while queue:</code> pop a course, <code>order.append(course)</code>, then for each <code>nxt in graph[course]</code> do <code>indegree[nxt] -= 1</code> and enqueue <code>nxt</code> only if it is now exactly 0.</li>
+        <li><code>while queue:</code> I pop a course, add it to <code>order</code>, reduce each <code>nxt</code> in <code>graph[course]</code>, and enqueue <code>nxt</code> only when its count becomes exactly 0.</li>
         <li><code>return order if len(order) == num_courses else []</code>: a short order means a cycle swallowed the rest.</li>
       </ul>
       <p>For the running example the build step produces <code>graph = [[1, 2], [3], [3], []]</code> and <code>indegree = [0, 1, 1, 2]</code>. Course 3 has indegree 2 because it waits on both 1 and 2.</p>
@@ -252,25 +251,25 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: seed the queue and take course 0</h2>
-      <p>Scan <code>indegree = [0, 1, 1, 2]</code>. Only course 0 is at 0, so <code>queue = [0]</code> and <code>order = []</code>.</p>
-      <p>Pop 0. <code>order = [0]</code>. Its neighbours are <code>graph[0] = [1, 2]</code>. Decrement course 1: <code>1 - 1 = 0</code>, enqueue it. Decrement course 2: <code>1 - 1 = 0</code>, enqueue it. Now <code>indegree = [0, 0, 0, 2]</code> and <code>queue = [1, 2]</code>.</p>
+      <p>I scan <code>indegree = [0, 1, 1, 2]</code>. Only course 0 is at 0, so <code>queue = [0]</code> and <code>order = []</code>.</p>
+      <p>I pop 0, giving <code>order = [0]</code>. Its neighbours are <code>graph[0] = [1, 2]</code>. I reduce course 1 from <code>1 - 1 = 0</code> and enqueue it, then do the same for course 2. Now <code>indegree = [0, 0, 0, 2]</code> and <code>queue = [1, 2]</code>.</p>
       <p>Course 3 has not moved: it is still waiting on two things. That is the whole mechanism in one step — placing 0 made exactly the courses that depended only on 0 ready, and nothing else.</p>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: take 1, then 2</h2>
-      <p>Pop 1 (the queue is FIFO, and 1 was enqueued before 2). <code>order = [0, 1]</code>. Its only neighbour is 3: <code>indegree[3]</code> goes <code>2 - 1 = 1</code>. That is not 0, so 3 is <em>not</em> enqueued yet. <code>queue = [2]</code>.</p>
-      <p>Pop 2. <code>order = [0, 1, 2]</code>. Its only neighbour is 3 again: <code>indegree[3]</code> goes <code>1 - 1 = 0</code>. Now it is enqueued. <code>queue = [3]</code>, <code>indegree = [0, 0, 0, 0]</code>.</p>
+      <p>I pop 1 first because the queue is FIFO. This gives <code>order = [0, 1]</code>; its only neighbour, 3, drops from <code>2 - 1 = 1</code>, so it is not ready yet. The queue is <code>[2]</code>.</p>
+      <p>I then pop 2, giving <code>order = [0, 1, 2]</code>. Course 3 drops from <code>1 - 1 = 0</code>, so I enqueue it. The result is <code>queue = [3]</code> and <code>indegree = [0, 0, 0, 0]</code>.</p>
       <div class="callout">Course 3 was decremented twice but enqueued once, on the decrement that took it to exactly 0. That <code>== 0</code> test is what stops a course from appearing in the order twice.</div>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: take 3, then check the length</h2>
-      <p>Pop 3. <code>order = [0, 1, 2, 3]</code>. <code>graph[3]</code> is empty, so nothing changes and the queue is now empty; the loop ends.</p>
-      <p><code>len(order) == 4 == num_courses</code>, so return <code>[0, 1, 2, 3]</code>. Check it against the pairs: 0 before 1, 0 before 2, 1 before 3, 2 before 3. All four hold.</p>
-      <p>Contrast a cycle: <code>numCourses = 3</code>, <code>[[1,0],[2,1],[1,2]]</code>. Here <code>indegree = [0, 2, 1]</code>. Pop 0, decrement 1 to <code>2 - 1 = 1</code>, and the queue is empty. <code>order = [0]</code> has length 1, not 3, so the answer is <code>[]</code>. Courses 1 and 2 each wait for the other and neither ever reaches 0.</p>
+      <p>I pop 3 and get <code>order = [0, 1, 2, 3]</code>. Because <code>graph[3]</code> is empty, the queue empties and the loop ends.</p>
+      <p><code>len(order) == 4 == num_courses</code>, so I return <code>[0, 1, 2, 3]</code>. I can verify the pairs directly: 0 precedes 1 and 2, while 1 and 2 both precede 3.</p>
+      <p>For contrast, I use <code>numCourses = 3</code> and <code>[[1,0],[2,1],[1,2]]</code>. Here <code>indegree = [0, 2, 1]</code>. I pop 0, reduce course 1 to <code>2 - 1 = 1</code>, and the queue empties. <code>order = [0]</code> has length 1 rather than 3, so I return <code>[]</code>.</p>
     </section>
 
     <section class="step" data-state="pitfall">
@@ -278,7 +277,7 @@
       <h2>Where this goes wrong: edge direction and the length check</h2>
       <p>Two specific bugs live here, and both produce output that looks like an answer.</p>
       <p><strong>Building the edge backwards.</strong> Writing <code>graph[course].append(pre)</code> and <code>indegree[pre] += 1</code> turns every arrow around. On the running example that gives <code>indegree = [2, 1, 1, 0]</code>, so course 3 is popped first, and the algorithm returns <strong><code>[3, 1, 2, 0]</code></strong>: course 3 before either of its prerequisites, and course 0 last. The pair <code>[a, b]</code> means <code>b</code> first, so the edge is <code>b → a</code>.</p>
-      <p><strong>Returning <code>order</code> without the length check.</strong> With a cycle the queue just runs dry early. On <code>[[1,0],[2,1],[1,2]]</code> the wrong version returns <code>[0]</code>, a partial schedule, instead of <code>[]</code>. Kahn's algorithm never raises an error on a cycle; the only symptom is a short order, so you have to look for it.</p>
+      <p><strong>Returning <code>order</code> without the length check.</strong> With a cycle the queue just runs dry early. On <code>[[1,0],[2,1],[1,2]]</code> the wrong version returns <code>[0]</code>, a partial schedule, instead of <code>[]</code>. Kahn's algorithm never raises an error on a cycle; I identify it from the short order.</p>
       <div class="callout warn">Edge from prerequisite to course, and always compare <code>len(order)</code> to <code>num_courses</code> before returning.</div>
     </section>
 
@@ -307,7 +306,7 @@
         <li><code>indegree[nxt] -= 1</code> and <code>if indegree[nxt] == 0: queue.append(nxt)</code> release a course exactly once, when its last prerequisite is placed.</li>
         <li><code>return order if len(order) == num_courses else []</code> turns a cycle into an empty answer.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>repeatedly take any course with zero unmet prerequisites and record it; if you run out of courses before you run out of numbers, there was a cycle.</em></div>
+      <div class="callout">My rule is: <em>I repeatedly take any course with zero unmet prerequisites and record it; a short order means there was a cycle.</em></div>
     </section>
 
     <div class="code-final">

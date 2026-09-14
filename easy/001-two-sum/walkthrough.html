@@ -183,8 +183,8 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Hash Map · LeetCode #1</div>
   <h1>Two Sum, narrated</h1>
-  <p>Scroll through the thinking, from the obvious brute force to the one-pass hash map, with the state of the algorithm shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/hash-map.html">Hash Map</a> <span class="how">value -> index, look up the complement</span></p>
+  <p>I’ll walk through how I move from my first brute-force idea to a one-pass hash map, while the state of the algorithm stays visible alongside.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/hash-map.html">Hash Map</a> <span class="how">values mapped to indices, with complements as lookup keys</span></p>
 </header>
 
 <div class="layout">
@@ -193,93 +193,93 @@
     <section class="step" data-state="problem">
       <div class="n">STEP 1</div>
       <h2>The problem</h2>
-      <p>You get an array of integers <code>nums</code> and an integer <code>target</code>. Return the indices of the two numbers that add up to <code>target</code>.</p>
-      <p>Two guarantees make life easier: exactly one valid answer exists, and you cannot use the same element twice.</p>
+      <p>Given an array of integers <code>nums</code> and an integer <code>target</code>, return the indices of the two numbers that add up to <code>target</code>.</p>
+      <p>There is exactly one valid answer, and the same element cannot be used twice.</p>
       <div class="callout">Running example: <code>nums = [2, 7, 11, 15]</code>, <code>target = 9</code>. The answer is <code>[0, 1]</code> because 2 + 7 = 9.</div>
-      <p>Notice the question asks for <em>indices</em>, not the values. That detail shapes what we need to remember later.</p>
+      <p>The answer should contain the <em>indices</em>, not the values themselves. That detail determines what needs to be remembered while scanning the array.</p>
     </section>
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: try every pair</h2>
-      <p>The most direct idea is to pick every possible pair and check whether it sums to the target. For each element, loop over every element after it.</p>
+      <p>My first instinct is to try every possible pair. I pick one index, compare it with every index after it, and return as soon as the two values add up to the target.</p>
       <pre class="code"><span class="ln">for i in range(len(nums)):</span><span class="ln">    for j in range(i + 1, len(nums)):</span><span class="ln">        if nums[i] + nums[j] == target:</span><span class="ln">            return [i, j]</span></pre>
-      <p style="margin-top:14px">This is correct, and it is a fine first answer to say out loud. But with n elements there are roughly n² / 2 pairs, so the running time is <strong>O(n²)</strong>. At n = 10,000 that is about fifty million checks.</p>
-      <p>The inner loop is doing something wasteful: it rescans the whole rest of the array to answer one question. What is that question?</p>
+      <p style="margin-top:14px">This first solution is correct. With <code>n</code> elements, I may check roughly <code>n² / 2</code> pairs, so it takes <strong>O(n²)</strong> time. Apart from the returned pair, it needs <strong>O(1)</strong> extra space. At <code>n = 10,000</code>, that can mean about fifty million checks.</p>
+      <p>The repeated work is the complement lookup: the inner loop scans values I already considered. A fast record of earlier values removes those repeated pair checks.</p>
     </section>
 
     <section class="step" data-state="reframe">
       <div class="n">STEP 3</div>
       <h2>Reframe: what am I looking for?</h2>
-      <p>Stand at one element <code>n</code>. There is exactly one value that would complete the pair: <code>target - n</code>. Call it the <strong>complement</strong>.</p>
-      <p>So the inner loop is really asking a yes/no question: <em>"Does the complement exist somewhere else in the array?"</em></p>
+      <p>When I stand at one element <code>n</code>, there is exactly one value that would complete the pair: <code>target - n</code>. I call that value the <strong>complement</strong>.</p>
+      <p>That means my inner loop was really asking one yes-or-no question: <em>“Have I already seen this complement?”</em></p>
       <div class="callout">For 2 the complement is 9 − 2 = 7. For 7 it is 2. For 11 it is −2. For 15 it is −6.</div>
-      <p>The brute force answers that question by scanning, which costs O(n) each time. If we could answer it in O(1), the whole thing collapses to a single pass.</p>
+      <p>My brute-force version answers that question by scanning, which costs <code>O(n)</code> every time. If I can answer it in <code>O(1)</code>, I only need one pass through the array.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 4</div>
       <h2>The key idea: remember what you have seen</h2>
-      <p>A dictionary (hash map) answers "have I seen this value?" in O(1) on average. So as we walk the array, we record each value we pass, mapped to its index.</p>
-      <p>Then at every element we do two things, in this order:</p>
+      <p>I use a dictionary, or hash map, because it answers “have I seen this value?” in <code>O(1)</code> average time. As I walk through the array, I record each value I pass with its index.</p>
+      <p>At every element, I do two things in this order:</p>
       <ul>
-        <li><strong>Check</strong> whether the complement is already in the dictionary. If it is, we are done.</li>
-        <li><strong>Store</strong> the current value and its index, so a later element can find it.</li>
+        <li>I check whether the complement is already in the dictionary. If it is, I am done.</li>
+        <li>I store the current value and its index, so a later element can find it.</li>
       </ul>
-      <p>Why store the index and not just the value? Because the problem asks for indices. The value is the key we look up by, and the index is what we need back.</p>
+      <p>I store the index with the value because the problem asks me to return indices. The value is the key I look up, and the index is what I need to give back.</p>
     </section>
 
     <section class="step" data-state="t0">
       <div class="n">STEP 5</div>
       <h2>Trace it: index 0</h2>
-      <p>Start with an empty dictionary. The first element is 2, so the complement is 9 − 2 = 7.</p>
-      <p>Is 7 in the dictionary? No, it is empty. So we store <code>2 → 0</code> and move on.</p>
-      <p>Nothing found yet, but the dictionary now knows where a 2 lives.</p>
+      <p>I start with an empty dictionary. At index <code>0</code>, the value is <code>2</code>, so the complement I need is <code>9 - 2 = 7</code>.</p>
+      <p>I check whether <code>7</code> is in the dictionary. It is not, because the dictionary is empty, so I store <code>2 → 0</code> and move on.</p>
+      <p>I have not found the answer yet, but I now know where the value <code>2</code> lives.</p>
     </section>
 
     <section class="step" data-state="t1">
       <div class="n">STEP 6</div>
       <h2>Trace it: index 1</h2>
-      <p>Next element is 7. The complement is 9 − 7 = 2.</p>
-      <p>Is 2 in the dictionary? <strong>Yes</strong>, it maps to index 0. That means the pair is the 2 at index 0 and the 7 at index 1.</p>
-      <p>We return <code>[seen[2], 1]</code>, which is <code>[0, 1]</code>. The earlier index comes first because it is the one we pulled out of the dictionary.</p>
-      <div class="callout">We never looked at 11 or 15. The loop stopped as soon as the answer appeared.</div>
+      <p>At index <code>1</code>, I see <code>7</code>. Its complement is <code>9 - 7 = 2</code>.</p>
+      <p>I check for <code>2</code>, and it is already in the dictionary at index <code>0</code>. That gives me the pair: <code>2</code> at index <code>0</code> and <code>7</code> at index <code>1</code>.</p>
+      <p>I return <code>[seen[2], 1]</code>, which becomes <code>[0, 1]</code>. The earlier index comes from the dictionary, so it naturally appears first.</p>
+      <div class="callout">I never need to look at <code>11</code> or <code>15</code>; the loop stops as soon as I find the answer.</div>
     </section>
 
     <section class="step" data-state="selfpair">
       <div class="n">STEP 7</div>
       <h2>Why check before storing</h2>
-      <p>The order of the two operations matters. Suppose <code>nums = [4, 1, 7]</code> and <code>target = 8</code>. At index 0 the value is 4 and the complement is also 4.</p>
-      <p>If we stored first and then checked, we would find our own 4 in the dictionary and return <code>[0, 0]</code>, using the same element twice. That is exactly what the problem forbids.</p>
-      <div class="callout warn">Check, <em>then</em> store. The dictionary should only ever contain elements that came <em>before</em> the current one.</div>
-      <p>With the correct order, the 4 finds nothing, gets stored, and the real answer 1 + 7 is found at index 2.</p>
+      <p>The order of my two operations matters. Suppose <code>nums = [4, 1, 7]</code> and <code>target = 8</code>. At index <code>0</code>, I have <code>4</code>, and its complement is also <code>4</code>.</p>
+      <p>If I stored first and checked second, I would find my own <code>4</code> in the dictionary and return <code>[0, 0]</code>. That reuses the same element twice, which the problem forbids.</p>
+      <div class="callout warn">I check first and store second, so the dictionary contains only elements from earlier positions.</div>
+      <p>With the correct order, I find nothing for the first <code>4</code>, store it, and later find the real answer because <code>1 + 7 = 8</code> at index <code>2</code>.</p>
     </section>
 
     <section class="step" data-state="complexity">
       <div class="n">STEP 8</div>
       <h2>Time and space</h2>
-      <p>The loop visits each element once. Inside the loop, the dictionary lookup and the dictionary insert are both O(1) on average. So the total is <strong>O(n) time</strong>.</p>
-      <p>The dictionary can grow to hold every element if the answer is at the very end, so it uses <strong>O(n) extra space</strong>.</p>
+      <p>I visit each element once. Inside the loop, both the dictionary lookup and dictionary insert take <code>O(1)</code> on average, so my final solution takes <strong>O(n) time</strong>.</p>
+      <p>If the answer appears at the end, my dictionary can hold every earlier element, so my final solution uses <strong>O(n) extra space</strong>.</p>
       <table>
         <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
         <tr><td>Brute force, all pairs</td><td>O(n²)</td><td>O(1)</td></tr>
         <tr><td>Hash map, one pass</td><td>O(n)</td><td>O(n)</td></tr>
       </table>
-      <p>This is the classic trade: spend memory to buy time. For n = 10,000 it turns fifty million checks into ten thousand.</p>
+      <p>I am trading memory for time. For <code>n = 10,000</code>, I replace roughly fifty million pair checks with one pass of ten thousand elements.</p>
     </section>
 
     <section class="step" data-state="final">
       <div class="n">STEP 9</div>
       <h2>The final solution</h2>
-      <p>Seven lines. Every one of them maps to a step above.</p>
+      <p>My final solution is seven lines, and every line comes directly from the reasoning above.</p>
       <ul>
-        <li><code>seen = {}</code> is the memory of values already passed.</li>
-        <li><code>complement = target - n</code> is the reframed question.</li>
-        <li><code>if complement in seen</code> is the O(1) check.</li>
-        <li><code>seen[n] = i</code> is the store, placed after the check on purpose.</li>
-        <li><code>return []</code> handles the case where nothing pairs up.</li>
+        <li><code>seen = {}</code> gives me a place to remember values I have already passed.</li>
+        <li><code>complement = target - n</code> calculates the partner I need for the current value.</li>
+        <li><code>if complement in seen</code> gives me the <code>O(1)</code> lookup.</li>
+        <li><code>seen[n] = i</code> stores the current value only after I check for its complement.</li>
+        <li><code>return []</code> covers the case where no pair appears.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>for each number, ask whether its complement has already been seen.</em></div>
+      <div class="callout">What I remember: <em>for each number, I ask whether I have already seen its complement.</em></div>
     </section>
 
     <div class="code-final">

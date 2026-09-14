@@ -218,7 +218,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Dynamic Programming · LeetCode #1143</div>
   <h1>Longest Common Subsequence, narrated</h1>
-  <p>Scroll through the thinking, from trying every subsequence to filling a table of prefix answers one cell at a time, with the state of the algorithm shown alongside.</p>
+  <p>I compare pairs of prefixes, carrying forward the best shared subsequence length for each pair.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">2-D prefix table: match extends the diagonal, mismatch takes the better neighbour</span></p>
 </header>
 
@@ -236,20 +236,21 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instinct: try every subsequence</h2>
-      <p>Every subsequence of <code>text1</code> is a choice of which characters to keep, so there are <code>2^m</code> of them. Generate each one and check whether it is a subsequence of <code>text2</code> with a single two-pointer scan.</p>
+<h2>First instinct: try every subsequence</h2>
+      <p>My first instinct is to generate every subsequence of <code>text1</code>, then check whether each is also a subsequence of <code>text2</code> with two pointers.</p>
       <pre class="code"><span class="ln">best = 0</span><span class="ln">for mask in range(1 &lt;&lt; m):</span><span class="ln">    sub = [text1[i] for i in range(m) if mask &gt;&gt; i &amp; 1]</span><span class="ln">    j = 0</span><span class="ln">    for ch in text2:</span><span class="ln">        if j &lt; len(sub) and sub[j] == ch:</span><span class="ln">            j += 1</span><span class="ln">    if j == len(sub):</span><span class="ln">        best = max(best, len(sub))</span></pre>
-      <p style="margin-top:14px">That is <strong>O(2^m · n)</strong>. At the constraint limit of 1000 characters, <code>2^1000</code> is not a number a computer will ever count to. The recursion that compares last characters, <code>lcs(i, j)</code> branching into <code>lcs(i-1, j)</code> and <code>lcs(i, j-1)</code>, has the same problem: it re-solves the same <code>(i, j)</code> pair an exponential number of times.</p>
+      <p style="margin-top:14px">Generating the subsequences and checking each one takes <strong>O(2^m · n) time</strong> and up to <strong>O(m) extra space</strong> for a candidate. At 1000 characters, <code>2^1000</code> is impossible.</p>
+      <p>The recursive version keeps re-solving the same <code>(i, j)</code> pair. I only need one answer for each pair of prefixes.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>The key idea: answers for prefixes, in a table</h2>
       <p>Only <code>(m + 1) × (n + 1)</code> different subproblems exist: "the LCS of the first <code>i</code> characters of <code>text1</code> and the first <code>j</code> characters of <code>text2</code>". Call that <code>dp[i][j]</code>. Solve each one exactly once, smallest prefixes first.</p>
-      <p>Look at the last character of each prefix, <code>text1[i - 1]</code> and <code>text2[j - 1]</code>:</p>
+      <p>I look at the last character of each prefix, <code>text1[i - 1]</code> and <code>text2[j - 1]</code>:</p>
       <ul>
         <li>If they are <strong>equal</strong>, pair them up as the last character of a common subsequence. Everything before them is a common subsequence of the two shorter prefixes, so <code>dp[i][j] = dp[i - 1][j - 1] + 1</code>.</li>
-        <li>If they <strong>differ</strong>, they cannot both be in the answer. Drop one of them: <code>dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])</code>.</li>
+        <li>If they <strong>differ</strong>, they cannot both be in the answer. I drop one with <code>dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])</code>.</li>
       </ul>
       <div class="callout">Row 0 and column 0 are the base case: a prefix of length 0 is empty and shares nothing, so those cells are 0. Building the table with an extra row and column means the recurrence never has to look outside the table.</div>
     </section>
@@ -271,7 +272,7 @@
       <div class="n">STEP 5</div>
       <h2>Trace it: the first row</h2>
       <p>Row 1 is the prefix <code>"a"</code>. Cell <code>dp[1][1]</code> compares <code>text1[0] = a</code> with <code>text2[0] = a</code>: a match, so <code>dp[1][1] = dp[0][0] + 1 = 0 + 1 = 1</code>.</p>
-      <p>Cell <code>dp[1][2]</code> compares <code>a</code> with <code>c</code>: mismatch, so it takes <code>max(dp[0][2], dp[1][1]) = max(0, 1) = 1</code>. The 1 carries to the right: once you have matched an <code>a</code>, adding more of <code>text2</code> never makes the answer smaller. <code>dp[1][3]</code> (<code>a</code> vs <code>e</code>) is 1 for the same reason.</p>
+      <p>Cell <code>dp[1][2]</code> compares <code>a</code> with <code>c</code>: mismatch, so I take <code>max(dp[0][2], dp[1][1]) = max(0, 1) = 1</code>. The 1 carries to the right: once I have matched an <code>a</code>, adding more of <code>text2</code> never makes the answer smaller. <code>dp[1][3]</code> (<code>a</code> vs <code>e</code>) is 1 for the same reason.</p>
       <p>Row 2, the prefix <code>"ab"</code>, has no <code>b</code> to match in <code>"ace"</code>, so every cell is a mismatch and copies the best of above and left: <code>1, 1, 1</code>.</p>
     </section>
 
@@ -280,7 +281,7 @@
       <h2>Trace it: the second match</h2>
       <p>Row 3 is the prefix <code>"abc"</code>. <code>dp[3][1]</code> compares <code>c</code> with <code>a</code>: mismatch, <code>max(dp[2][1], dp[3][0]) = max(1, 0) = 1</code>.</p>
       <p>Now <code>dp[3][2]</code> compares <code>text1[2] = c</code> with <code>text2[1] = c</code>. Match: <code>dp[3][2] = dp[2][1] + 1 = 1 + 1 = 2</code>. The diagonal cell <code>dp[2][1]</code> is the LCS of <code>"ab"</code> and <code>"a"</code>, which is the 1 from the earlier <code>a</code>; the <code>c</code> extends it to <code>"ac"</code>.</p>
-      <p>Notice the two matches sit in different columns of the two strings (<code>c</code> is index 2 in <code>text1</code>, index 1 in <code>text2</code>). The mismatch rule's <code>max</code> is what carried the 1 across the gap so that the diagonal could pick it up.</p>
+      <p>I can see the two matches sit in different columns of the strings (<code>c</code> is index 2 in <code>text1</code>, index 1 in <code>text2</code>). The mismatch rule’s <code>max</code> carries the 1 across the gap so the diagonal can pick it up.</p>
     </section>
 
     <section class="step" data-state="t3">
@@ -296,13 +297,13 @@
       <h2>Where this goes wrong: the mismatch rule</h2>
       <p><strong>Moving only along the diagonal.</strong> Writing the mismatch branch as <code>dp[i][j] = dp[i - 1][j - 1]</code> looks symmetric and tidy, but it means a cell can only inherit from the cell up-and-left. The 1 earned at <code>dp[1][1]</code> can then never reach <code>dp[2][1]</code>, so the <code>c</code> match at <code>dp[3][2]</code> starts from 0 instead of 1, and the whole table degrades into a diagonal of single matches. The final cell comes out as <strong>1, not 3</strong>. The <code>max(dp[i - 1][j], dp[i][j - 1])</code> is what lets the two strings skip different characters.</p>
       <p><strong>Indexing the strings with <code>i</code> instead of <code>i - 1</code>.</strong> Row <code>i</code> is the prefix of length <code>i</code>, and its last character is <code>text1[i - 1]</code>. Comparing <code>text1[i] == text2[j]</code> shifts every match by one cell and returns <strong>2</strong> on the running example (after a guard is added to stop the <code>IndexError</code> on the last row).</p>
-      <div class="callout warn">Two transitions, not one: a match extends the diagonal, a mismatch takes the better of the cell above and the cell to the left. Check with <code>"bl"</code>, <code>"yby"</code>: the answer must be 1, from a <code>b</code> in different positions.</div>
+      <div class="callout warn">I use two transitions: a match extends the diagonal, while a mismatch takes the better of the cell above and the cell to the left. With <code>"bl"</code> and <code>"yby"</code>, the answer is 1 from a <code>b</code> in different positions.</div>
     </section>
 
     <section class="step" data-state="complexity">
       <div class="n">STEP 9</div>
       <h2>Time and space</h2>
-      <p>The table has <code>(m + 1)(n + 1)</code> cells and each takes constant work, so <strong>O(m × n) time</strong>. At the limit that is a million cells, which is fine. The table is also <strong>O(m × n) space</strong>; since a row only reads the row above, two rows of length <code>n + 1</code> are enough for O(min(m, n)) space if you swap the strings so the shorter one runs along the columns.</p>
+      <p>The table has <code>(m + 1)(n + 1)</code> cells and each takes constant work, so I get <strong>O(m × n) time</strong>. At the limit that is a million cells, which is fine. The table is also <strong>O(m × n) space</strong>; because a row only reads the row above, I can use two rows of length <code>n + 1</code> for O(min(m, n)) space by putting the shorter string along the columns.</p>
       <table>
         <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
         <tr><td>Every subsequence of text1</td><td>O(2^m · n)</td><td>O(m)</td></tr>

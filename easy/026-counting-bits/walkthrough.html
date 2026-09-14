@@ -220,7 +220,7 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Bit Manipulation · LeetCode #338</div>
   <h1>Counting Bits, narrated</h1>
-  <p>Scroll through the popcount-per-number approach, the right-shift recurrence that reuses earlier answers, and a trace that fills the table for n = 5, with the table and bit patterns shown alongside.</p>
+  <p>I’ll first count each number’s bits from scratch, then reuse earlier counts with a right-shift recurrence.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/bit-manipulation.html">Bit Manipulation</a> <span class="how">Right-shifting removes a number's final bit. Its one-bit count is therefore the count of the shifted prefix plus that final bit.</span></p>
 </header>
 
@@ -238,16 +238,16 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: count each number from scratch</h2>
-      <p>You already know how to count the bits of one number: strip the lowest set bit with <code>x &amp;= x - 1</code> until it is zero, or test <code>x &amp; 1</code> and shift. So do that for every number in the range:</p>
-      <pre class="code"><span class="ln">counts = []</span><span class="ln">for value in range(n + 1):</span><span class="ln">    bits, x = 0, value</span><span class="ln">    while x:</span><span class="ln">        x &amp;= x - 1</span><span class="ln">        bits += 1</span><span class="ln">    counts.append(bits)</span></pre>
-      <p style="margin-top:14px">Each inner loop takes up to O(log n) rounds, because a number up to n has about log₂ n bits. Doing that n + 1 times is <strong>O(n log n)</strong>. It is correct, and for n = 5 it is instant, but it is not the O(n) the follow-up asks for.</p>
-      <p>The panel points at the waste. Counting <code>value = 3</code> (<code>0011</code>) examines both of its bits, but its upper bit, the <code>01</code> prefix, is the number 1, whose bit count was already computed two iterations earlier. Every number recounts a prefix that some smaller number already counted.</p>
+      <p>My first instinct is to count the bits of each number separately by repeatedly clearing its lowest set bit.</p>
+      <pre class="code"><span class="ln">counts = []</span><span class="ln">for value in range(n + 1):</span><span class="ln">    bits, x = 0, value</span><span class="ln">    while x:</span><span class="ln">        x &amp;= x - 1</span><span class="ln">        bits += 1</span><span class="ln">    counts.append(bits)</span><span class="ln">return counts</span></pre>
+      <p style="margin-top:14px">Each inner loop can take <code>O(log n)</code> rounds, so this baseline takes <strong>O(n log n) time</strong>. The output list has <code>n + 1</code> entries, so it uses <strong>O(n) space</strong>.</p>
+      <p>Counting <code>3</code> recounts the prefix <code>1</code>, whose answer I already computed. A table lets me reuse those smaller answers directly.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: drop the last bit and look it up</h2>
-      <p><code>value &gt;&gt; 1</code> shifts the number right by one place, which discards its last bit. The result is a smaller number, and it is smaller in a useful way: it is a number whose count is already in the table if you fill the table in increasing order.</p>
+      <p><code>value &gt;&gt; 1</code> shifts the number right by one place, which discards its last bit. The result is a smaller number whose count is already in my table when I fill it in increasing order.</p>
       <p>The panel shows it for 5. <code>value = 5</code> is <code>0101</code>. Its prefix <code>value &gt;&gt; 1 = 2</code> is <code>0010</code>, and the bit that was dropped is <code>value &amp; 1 = 1</code>. So the count of 5 is the count of 2, plus 1 for the dropped bit.</p>
       <div class="callout"><code>counts[value] = counts[value &gt;&gt; 1] + (value &amp; 1)</code>. The number of 1 bits in a number is the number of 1 bits in its prefix plus its last bit, and the prefix is always a smaller number.</div>
       <p>The same idea in words: 5 is "2, followed by a 1". 4 is "2, followed by a 0". Both share the prefix 2 and differ only in their final bit, so both can be answered from <code>counts[2]</code> in one step.</p>
@@ -286,10 +286,10 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the table, and operator precedence</h2>
-      <p>The panel shows why the table is worth having: <code>counts[5]</code> reused <code>counts[2]</code>, which reused <code>counts[1]</code>, which reused <code>counts[0]</code>. Every prefix is counted exactly once. Calling a standalone bit counter for each number is not a wrong answer, but it recounts those prefixes and turns O(n) into O(n log n), which is the exact thing the follow-up asks you to avoid.</p>
-      <p><strong>Allocating n entries instead of n + 1.</strong> Write <code>counts = [0] * n</code> and the range 0 through n needs one more slot than exists. For <code>n = 5</code> the loop reaches <code>value = 5</code> and <code>counts[5] = ...</code> raises <code>IndexError</code>. The output includes both endpoints, so the table has <code>n + 1</code> entries.</p>
+      <p>The panel shows why my table is worth having: <code>counts[5]</code> reused <code>counts[2]</code>, which reused <code>counts[1]</code>, which reused <code>counts[0]</code>. Every prefix is counted exactly once. Calling a standalone bit counter for each number is not wrong, but it recounts those prefixes and turns O(n) into O(n log n), which is the exact work I avoid.</p>
+      <p><strong>A table with n entries instead of n + 1.</strong> If I write <code>counts = [0] * n</code>, the range 0 through n needs one more slot than exists. For <code>n = 5</code> the loop reaches <code>value = 5</code> and <code>counts[5] = ...</code> raises <code>IndexError</code>. The output includes both endpoints, so the table has <code>n + 1</code> entries.</p>
       <p><strong>Dropping the parentheses around <code>value &amp; 1</code>.</strong> In Python <code>+</code> binds tighter than <code>&amp;</code>, so <code>counts[value &gt;&gt; 1] + value &amp; 1</code> means <code>(counts[value &gt;&gt; 1] + value) &amp; 1</code>. For the running example that produces <code>[0,1,1,0,1,0]</code>: <code>value = 3</code> computes <code>(1 + 3) &amp; 1 = 0</code> instead of 2. The parentheses in <code>+ (value &amp; 1)</code> are not decoration.</p>
-      <div class="callout warn">Check <code>n = 0</code> (answer <code>[0]</code>, the loop must not run) and one small n by hand. The precedence bug gives plausible-looking 0s and 1s, so compare against a hand count, not just against "it ran".</div>
+      <div class="callout warn">I check <code>n = 0</code> (answer <code>[0]</code>, so the loop must not run) and one small n by hand. The precedence bug gives plausible-looking 0s and 1s, so I compare against a hand count, not just against "it ran".</div>
     </section>
 
     <section class="step" data-state="complexity">

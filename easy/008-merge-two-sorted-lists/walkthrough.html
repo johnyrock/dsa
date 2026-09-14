@@ -192,8 +192,8 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Linked List · LeetCode #21</div>
   <h1>Merge Two Sorted Lists, narrated</h1>
-  <p>Scroll through the thinking, from dumping the values into a Python list and sorting to the one-pass merge with a dummy head, with the state of both lists shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/linked-list.html">Linked List</a> <span class="how">dummy head, pick the smaller head, attach the remainder</span></p>
+  <p>I’ll begin by collecting and sorting the values, then use the order already present in both lists to merge them in one pass.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/linked-list.html">Linked List</a> <span class="how">a dummy head, smaller-head selection, and a remainder attachment</span></p>
 </header>
 
 <div class="layout">
@@ -202,7 +202,7 @@
     <section class="step" data-state="problem">
       <div class="n">STEP 1</div>
       <h2>The problem</h2>
-      <p>You get the heads of two singly linked lists, <code>list1</code> and <code>list2</code>. Each one is already sorted in non-decreasing order. Return the head of one sorted list containing all the nodes.</p>
+      <p>Given the heads of two singly linked lists, <code>list1</code> and <code>list2</code>, return the head of one sorted list containing all their nodes. Each input list is already sorted in non-decreasing order.</p>
       <p>The nodes already exist. The job is to <em>relink</em> them into a single chain, not to build a new one.</p>
       <div class="callout">Running example: <code>list1 = 1 → 2 → 4</code> and <code>list2 = 1 → 3 → 4</code>. The answer is <code>1 → 1 → 2 → 3 → 4 → 4</code>.</div>
       <p>A linked list gives you only one move: from a node, follow <code>.next</code>. There is no indexing and no looking backwards, so any solution has to work by walking forwards.</p>
@@ -211,28 +211,29 @@
     <section class="step" data-state="naive">
       <div class="n">STEP 2</div>
       <h2>First instinct: collect, sort, rebuild</h2>
-      <p>The direct idea is to walk both lists, push every value into a Python list, sort it, then build a fresh chain of nodes from the sorted values.</p>
-      <pre class="code"><span class="ln">values = []</span><span class="ln">for head in (list1, list2):</span><span class="ln">    while head:</span><span class="ln">        values.append(head.val)</span><span class="ln">        head = head.next</span><span class="ln">values.sort()</span><span class="ln"># then rebuild a node for every value</span></pre>
+      <p>My first instinct is to walk both lists, collect every value in a Python list, sort that list, and build a fresh chain from the sorted values.</p>
+      <pre class="code"><span class="ln">values = []</span><span class="ln">for head in (list1, list2):</span><span class="ln">    while head:</span><span class="ln">        values.append(head.val)</span><span class="ln">        head = head.next</span><span class="ln">values.sort()</span><span class="ln">dummy = tail = ListNode()</span><span class="ln">for value in values:</span><span class="ln">    tail.next = ListNode(value); tail = tail.next</span><span class="ln">return dummy.next</span></pre>
       <p style="margin-top:14px">This works, and it is a fine thing to say out loud. But the sort costs <strong>O((n + m) log(n + m))</strong>, and the values list plus the new nodes cost <strong>O(n + m)</strong> extra space.</p>
-      <p>Something is being thrown away here. The sort treats the input as an unordered pile of numbers. What did we already know about it?</p>
+      <p>This baseline collects <code>n + m</code> values, sorts them, and builds new nodes, so it takes <strong>O((n + m) log(n + m)) time</strong> and <strong>O(n + m) extra space</strong>.</p>
+      <p>Sorting throws away information already present in the inputs. The smallest remaining node is always at one of the two list heads.</p>
     </section>
 
     <section class="step" data-state="reframe">
       <div class="n">STEP 3</div>
       <h2>Reframe: the inputs are already sorted</h2>
       <p>Both lists arrive sorted. Inside <code>list1</code>, nothing after the head is smaller than the head. The same holds for <code>list2</code>.</p>
-      <p>So the smallest value in the whole merge is not hiding somewhere in the middle. It is either <code>list1</code>'s head or <code>list2</code>'s head, and one comparison tells you which.</p>
-      <div class="callout">The next smallest node is always at one of the two heads. Take it, advance that list, and the same statement is true again.</div>
+      <p>So the smallest value in the whole merge is not hiding somewhere in the middle. It is either <code>list1</code>'s head or <code>list2</code>'s head, and one comparison tells me which.</p>
+      <div class="callout">The next smallest node is always at one of the two heads. I take it, advance that list, and the same statement is true again.</div>
       <p>That is the whole algorithm. No sort, and no need to look at a node more than once.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 4</div>
       <h2>The key idea: a dummy head and a tail pointer</h2>
-      <p>Repeatedly taking the smaller head means appending to the end of a growing result. To append in O(1) we keep <code>tail</code>, a pointer to the last node attached so far.</p>
-      <p>But the very first append has no last node to attach to, so a naive version needs a special case: "if the result is empty, set <code>head</code>, otherwise set <code>tail.next</code>." That branch is where off-by-one bugs live.</p>
+      <p>Because I repeatedly take the smaller head, I need to append to a growing result. I keep <code>tail</code>, the last node attached so far, to append in <code>O(1)</code>.</p>
+      <p>The very first append has no last node to attach to, so a naive version needs a special case for an empty result before setting <code>tail.next</code>. That branch is where off-by-one bugs live.</p>
       <ul>
-        <li><strong>The trick:</strong> start with a throwaway node, <code>dummy</code>, and set <code>tail = dummy</code>.</li>
+        <li><strong>The trick:</strong> I start with a throwaway node, <code>dummy</code>, and set <code>tail = dummy</code>.</li>
         <li>Now the result is never empty, so every append is the same line: <code>tail.next = node</code>.</li>
         <li>At the end the real head is <code>dummy.next</code>, and the dummy is discarded.</li>
       </ul>
@@ -242,7 +243,7 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: first comparison</h2>
-      <p>Both heads are 1. The test is <code>list1.val &lt;= list2.val</code>, so 1 ≤ 1 is true and we take from <code>list1</code>.</p>
+      <p>Both heads are 1. I test <code>list1.val &lt;= list2.val</code>; since 1 ≤ 1, I take from <code>list1</code>.</p>
       <p><code>tail.next = list1</code> hangs that node off the dummy, <code>list1 = list1.next</code> steps past it, and <code>tail = tail.next</code> moves the tail onto it.</p>
       <div class="callout">Using <code>&lt;=</code> rather than <code>&lt;</code> means ties go to <code>list1</code>, which keeps equal values in their original relative order. The merge is stable.</div>
     </section>
@@ -250,7 +251,7 @@
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: second comparison</h2>
-      <p>Now the heads are 2 from <code>list1</code> and 1 from <code>list2</code>. This time 2 ≤ 1 is false, so the <code>else</code> branch runs and we take from <code>list2</code>.</p>
+      <p>Now the heads are 2 from <code>list1</code> and 1 from <code>list2</code>. Since 2 ≤ 1 is false, I take from <code>list2</code>.</p>
       <p>The merged chain is <code>1 → 1</code>, and <code>list2</code> has advanced to 3.</p>
       <p>Nothing about the loop body changed. Only which of the two pointers moved.</p>
     </section>
@@ -283,7 +284,7 @@
         <tr><td>Collect values, sort, rebuild</td><td>O((n + m) log(n + m))</td><td>O(n + m)</td></tr>
         <tr><td>Two pointers with a dummy head</td><td>O(n + m)</td><td>O(1)</td></tr>
       </table>
-      <p>Sorting cannot beat this, because the sorted order was information we were handed for free.</p>
+      <p>Sorting cannot beat this, because the sorted order was information I received for free.</p>
     </section>
 
     <section class="step" data-state="final">

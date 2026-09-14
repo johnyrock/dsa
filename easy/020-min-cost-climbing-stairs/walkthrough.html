@@ -212,7 +212,7 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Dynamic Programming · LeetCode #746</div>
   <h1>Min Cost Climbing Stairs, narrated</h1>
-  <p>Scroll through the thinking, from the exponential recursion to two rolling totals, with the cost of each stair shown alongside.</p>
+  <p>I’ll start with the direct recursive recurrence, then keep only the two rolling costs that the next step needs.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">To reach a paid stair, arrive from one of the prior two positions and take the cheaper route. Only those two prior costs are needed.</span></p>
 </header>
 
@@ -229,18 +229,18 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: try every path</h2>
-      <p>Define <code>best(i)</code> as the cheapest way to <em>stand on</em> position <code>i</code>. You got there from <code>i - 1</code> or <code>i - 2</code>, so:</p>
-      <pre class="code"><span class="ln">def best(i):</span><span class="ln">    if i &lt;= 1:</span><span class="ln">        return 0</span><span class="ln">    return min(best(i - 1) + cost[i - 1],</span><span class="ln">               best(i - 2) + cost[i - 2])</span></pre>
-      <p style="margin-top:14px">Call <code>best(3)</code> for the top. It is correct, but each call spawns two more. The panel shows the shape: the top asks stair 2 and stair 1; stair 2 asks stair 1 and stair 0 again. Stair 1 is solved once directly and once inside stair 2's subtree, and on a longer staircase the duplication compounds at every level. That is <strong>O(2ⁿ)</strong> calls, with the same small subproblems re-solved on every path.</p>
-      <p>With <code>cost.length</code> up to 1000, this never finishes.</p>
+      <p>My first instinct is to define <code>best(i)</code> as the cheapest way to stand on position <code>i</code>. I can arrive from <code>i - 1</code> or <code>i - 2</code>.</p>
+      <pre class="code"><span class="ln">def best(i):</span><span class="ln">    if i &lt;= 1:</span><span class="ln">        return 0</span><span class="ln">    return min(best(i - 1) + cost[i - 1],</span><span class="ln">               best(i - 2) + cost[i - 2])</span><span class="ln">return best(len(cost))</span></pre>
+      <p style="margin-top:14px">The recurrence returns the right minimum, but each call branches into earlier calls. It takes <strong>O(2ⁿ) time</strong>, and its deepest recursive chain uses <strong>O(n) extra space</strong>.</p>
+      <p>The same small subproblems appear repeatedly. I only need the previous two minimum costs, so I can calculate upward without recomputing them.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: a stair only depends on the two below it</h2>
       <p>The recurrence is right; the recursion is a wasteful way to evaluate it. Ask the narrower question: to know the cheapest total for standing on stair 2, what do I need?</p>
-      <div class="callout">Exactly two numbers: the cheapest total for stair 0 and for stair 1. Stair 2 costs <code>20 + min(10, 15)</code>, its own price plus the cheaper of the two positions you could have jumped from. Nothing further back can matter, because you cannot jump more than 2.</div>
-      <p>So walk <em>up</em> the staircase instead of recursing down. Compute stair 0's total, then stair 1's, then stair 2's, each from the previous two. That is line 5 of the solution: <code>min(previous, current) + step_cost</code>. And since only the last two totals are ever read, you do not need a full table, just two variables that slide upward.</p>
+      <div class="callout">I need exactly two numbers: the cheapest total for stair 0 and for stair 1. Stair 2 costs <code>20 + min(10, 15)</code>, its own price plus the cheaper of the two positions I could have jumped from. Nothing further back can matter because I cannot jump more than 2.</div>
+      <p>So I walk <em>up</em> the staircase instead of recursing down. I compute stair 0's total, then stair 1's, then stair 2's, each from the previous two. That is line 5 of the solution: <code>min(previous, current) + step_cost</code>. Since I only read the last two totals, I do not need a full table, just two variables that slide upward.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -251,7 +251,7 @@
         <li><code>previous</code>: the cheapest total for the stair two positions back.</li>
         <li><code>current</code>: the cheapest total for the stair one position back.</li>
       </ul>
-      <p>Both start at 0, because you may stand on stair 0 or stair 1 without having paid anything yet; the price of a stair is paid when you step <em>off</em> it, which is why the loop adds <code>step_cost</code> as it leaves.</p>
+      <p>I start both at 0 because I may stand on stair 0 or stair 1 without paying anything yet; the price of a stair is paid when I step <em>off</em> it, which is why the loop adds <code>step_cost</code> as it leaves.</p>
       <p>Each turn of <code>for step_cost in cost</code> computes the next stair's total, <code>min(previous, current) + step_cost</code>, and slides the pair: the old <code>current</code> becomes the new <code>previous</code>. Python's tuple assignment on line 5 does both in one statement, evaluating the whole right side before rebinding either name.</p>
       <p>When the loop ends, <code>current</code> is the total for the last stair and <code>previous</code> is the total for the one before it. The top is reachable from either, so the answer is <code>min(previous, current)</code>.</p>
     </section>
@@ -259,14 +259,14 @@
     <section class="step" data-state="trace1">
       <div class="n">STEP 5</div>
       <h2>Trace it: before the first stair</h2>
-      <p>Line 3 sets <code>previous = 0</code> and <code>current = 0</code>. Read them as "the cost of having arrived at stair 0" and "the cost of having arrived at stair 1": both are free starting positions.</p>
+      <p>Line 3 sets <code>previous = 0</code> and <code>current = 0</code>. I read them as "the cost of having arrived at stair 0" and "the cost of having arrived at stair 1": both are free starting positions.</p>
       <p>Nothing has been paid and no stair total is known yet; the panel shows all three stairs as <code>?</code>. The only thing that exists is the pair of zeros. That is the entire state the algorithm will ever hold, so it is worth pausing on: two integers, not an array of size <code>n</code>.</p>
     </section>
 
     <section class="step" data-state="trace2">
       <div class="n">STEP 6</div>
       <h2>Trace it: stairs 0 and 1</h2>
-      <p>First turn, <code>step_cost = 10</code>. The new total is <code>min(0, 0) + 10 = 10</code>: to stand on stair 0 and leave it, you pay 10. Slide: <code>previous = 0</code>, <code>current = 10</code>.</p>
+      <p>On my first turn, <code>step_cost = 10</code>. The new total is <code>min(0, 0) + 10 = 10</code>: to stand on stair 0 and leave it, I pay 10. I slide to <code>previous = 0</code>, <code>current = 10</code>.</p>
       <p>Second turn, <code>step_cost = 15</code>. The new total is <code>min(0, 10) + 15 = 15</code>. The <code>min</code> picked 0, meaning "start directly on stair 1" beats "come from stair 0 for 10". Slide: <code>previous = 10</code>, <code>current = 15</code>.</p>
       <div class="callout">After two turns the pair is <code>previous = 10</code> (stair 0) and <code>current = 15</code> (stair 1). The panel shows those two totals filled in and stair 2 still unknown.</div>
     </section>
@@ -275,7 +275,7 @@
       <div class="n">STEP 7</div>
       <h2>Trace it: stair 2 and the top</h2>
       <p>Third turn, <code>step_cost = 20</code>. The new total is <code>min(10, 15) + 20 = 30</code>: the cheapest way to stand on stair 2 and leave it is via stair 0. Slide: <code>previous = 15</code>, <code>current = 30</code>. The loop is finished.</p>
-      <p>Now the top. It is one past stair 2, so you reach it either by stepping from stair 2 (total 30) or jumping from stair 1 (total 15). Line 6 returns <code>min(previous, current) = min(15, 30) = 15</code>.</p>
+      <p>At the top, I am one position past stair 2, so I reach it either by stepping from stair 2 (total 30) or jumping from stair 1 (total 15). Line 6 returns <code>min(previous, current) = min(15, 30) = 15</code>.</p>
       <div class="callout">The exponential recursion explored every path to arrive at 15. The loop did three <code>min</code>s and three additions.</div>
     </section>
 
@@ -284,7 +284,7 @@
       <h2>Where this goes wrong: returning the last stair</h2>
       <p><strong>Returning <code>current</code> alone.</strong> After the loop <code>current = 30</code> is the total for stair 2, and it is tempting to write <code>return current</code>. That forces the route through the last stair and reports <strong>30</strong> instead of 15. The top sits <em>after</em> the array, so the final stair can be skipped entirely with a 2-jump from the one before it. The answer needs <code>min(previous, current)</code>. The panel marks stair 2's 30 amber and stair 1's 15 green for exactly this reason.</p>
       <p><strong>Seeding with the first two costs.</strong> Some people start with <code>previous, current = cost[0], cost[1]</code> and loop from index 2. That can be made to work, but it is easy to then add <code>cost[i]</code> one time too many or forget that <code>cost.length</code> may be exactly 2. With the two-zeros seed the loop is uniform: every stair, including 0 and 1, is handled by the same line, and <code>[0, 0]</code> correctly returns 0.</p>
-      <div class="callout warn">The price of a stair is paid when you leave it, and the top is free. So the loop adds each stair's cost, and the return must consider both of the last two stairs.</div>
+      <div class="callout warn">I pay for a stair when I leave it, and the top is free. So my loop adds each stair's cost, and my return considers both of the last two stairs.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -308,7 +308,7 @@
       <ul>
         <li><code>previous, current = 0, 0</code> seeds the two free starting positions, stair 0 and stair 1.</li>
         <li><code>for step_cost in cost</code> visits every stair in order, including the first two.</li>
-        <li><code>previous, current = current, min(previous, current) + step_cost</code> is the recurrence and the slide in one statement: the new total is this stair's price plus the cheaper of the two positions you could have come from, and the window moves up one.</li>
+        <li><code>previous, current = current, min(previous, current) + step_cost</code> combines my recurrence and slide: the new total is this stair's price plus the cheaper of the two positions I could have come from, and the window moves up one.</li>
         <li><code>return min(previous, current)</code> because the top is one past the last stair and can be reached from either of the last two.</li>
       </ul>
       <div class="callout">One-line summary to remember: <em>each stair costs its price plus the cheaper of the two totals below it, and the top is the cheaper of the last two.</em></div>

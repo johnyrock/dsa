@@ -193,8 +193,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Linked List · LeetCode #146</div>
   <h1>LRU Cache, narrated</h1>
-  <p>Scroll through the thinking, from a dictionary with timestamps to a hash map pointing into a doubly linked list ordered by recency, with the state of the cache shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/hash-map.html">Hash Map</a> + <a href="../../concepts/linked-list.html">Linked List</a> <span class="how">dict of key -> node into a doubly linked list with head/tail sentinels; move to front on use, evict tail.prev</span></p>
+  <p>I’ll start with timestamps in a dictionary, then maintain recency directly with a hash map and doubly linked list.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/hash-map.html">Hash Map</a> + <a href="../../concepts/linked-list.html">Linked List</a> <span class="how">a key-to-node dictionary and a recency list with head/tail sentinels</span></p>
 </header>
 
 <div class="layout">
@@ -211,31 +211,32 @@
     <section class="step" data-state="naive">
       <div class="n">STEP 2</div>
       <h2>First instinct: a dictionary plus timestamps</h2>
-      <p>Keep <code>key → (value, last_used)</code> in a dictionary and a counter that ticks on every operation. <code>get</code> and <code>put</code> update the timestamp. On eviction, scan every entry for the smallest timestamp.</p>
-      <pre class="code"><span class="ln">def put(self, key, value):</span><span class="ln">    if key not in self.d and len(self.d) == self.cap:</span><span class="ln">        oldest = min(self.d, key=lambda k: self.d[k][1])</span><span class="ln">        del self.d[oldest]</span><span class="ln">    self.d[key] = (value, self.tick()); ...</span></pre>
-      <p style="margin-top:14px"><code>get</code> is O(1), but that <code>min</code> scan makes eviction <strong>O(n)</strong>. With 200,000 operations on a full cache of 3,000 entries that is hundreds of millions of comparisons. The requirement says O(1) for both.</p>
+      <p>My first workable version keeps <code>key → (value, last_used)</code> in a dictionary and gives every touch a later timestamp.</p>
+      <pre class="code"><span class="ln">def __init__(self, capacity):</span><span class="ln">    self.cap, self.d, self.time = capacity, {}, 0</span><span class="ln">def tick(self):</span><span class="ln">    self.time += 1; return self.time</span><span class="ln">def get(self, key):</span><span class="ln">    if key not in self.d: return -1</span><span class="ln">    value, _ = self.d[key]; self.d[key] = (value, self.tick())</span><span class="ln">    return value</span><span class="ln">def put(self, key, value):</span><span class="ln">    if key not in self.d and len(self.d) == self.cap:</span><span class="ln">        oldest = min(self.d, key=lambda k: self.d[k][1]); del self.d[oldest]</span><span class="ln">    self.d[key] = (value, self.tick())</span></pre>
+      <p style="margin-top:14px">The dictionary holds at most <strong>O(capacity) space</strong>. A hit in <code>get</code> is <strong>O(1) time</strong>; when the cache is full, <code>put</code> spends <strong>O(capacity) time</strong> finding the oldest timestamp.</p>
+      <p>The slow step is locating the eviction victim. Keeping recency in list order gives that victim a fixed position while the dictionary still finds its node in <code>O(1)</code>.</p>
     </section>
 
     <section class="step" data-state="reframe">
       <div class="n">STEP 3</div>
       <h2>Reframe: keep the entries in recency order</h2>
       <p>The scan exists because the dictionary has no order. Suppose instead the entries sit in a sequence sorted by last use: most recent at the front, least recent at the back. Then the eviction victim is always <em>the last element</em>, no search needed.</p>
-      <p>Maintaining that order costs one operation per touch: move the touched entry to the front. So we need a sequence that supports, in O(1):</p>
+      <p>Maintaining that order costs one operation per touch: I move the touched entry to the front. I need to perform three operations in O(1):</p>
       <ul>
-        <li>remove an element from the middle,</li>
-        <li>insert at the front,</li>
-        <li>remove from the back.</li>
+        <li>I remove an element from the middle,</li>
+        <li>I insert an element at the front,</li>
+        <li>I remove an element from the back.</li>
       </ul>
-      <p>A Python list fails the first one: removing from the middle is O(n). A <strong>doubly linked list</strong> does all three in O(1), <em>provided you already hold a reference to the node</em>.</p>
+      <p>A Python list fails the first one because middle removal is O(n). A <strong>doubly linked list</strong> does all three in O(1) once the dictionary has supplied the node reference.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 4</div>
       <h2>The key idea: the dictionary points at nodes</h2>
-      <p>Pair the two structures. The dictionary maps <code>key → node</code>, so a lookup lands directly on the node's position in the recency list. Unlink it (its <code>prev</code> and <code>next</code> are right there), push it to the front, done. The list gives order; the dictionary gives the "where is it" the list cannot.</p>
+      <p>I pair the two structures. The dictionary maps <code>key → node</code>, so a lookup lands directly on the node's position in the recency list. I unlink that node using its <code>prev</code> and <code>next</code>, then push it to the front. The list gives order; the dictionary gives the location the list cannot.</p>
       <ul>
         <li>Two <strong>sentinel</strong> nodes, <code>head</code> and <code>tail</code>, never removed. The most recent real node is <code>head.next</code>, the least recent is <code>tail.prev</code>, and no insert or unlink ever has to check for <code>None</code>.</li>
-        <li>Each node stores its <strong>key</strong> as well as its value, so when <code>tail.prev</code> is evicted we can also <code>del nodes[key]</code>.</li>
+        <li>Each node stores its <strong>key</strong> as well as its value, so when <code>tail.prev</code> is evicted I can also <code>del nodes[key]</code>.</li>
         <li>Two helpers, <code>_unlink</code> and <code>_push_front</code>, and every operation is a short composition of them.</li>
       </ul>
     </section>
@@ -243,14 +244,14 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: fill the cache, then a hit</h2>
-      <p><code>put(1,1)</code>: new key, size 0 &lt; 2, create node, index it, push front. List: <code>1</code>. <code>put(2,2)</code>: same. List: <code>2 → 1</code>, with 1 now at the back.</p>
-      <p><code>get(1)</code>: dictionary hit. Unlink node 1 from the back, push it to the front. List: <code>1 → 2</code>. Return 1. The read reordered the list, which is exactly the point: 1 is now safe, 2 is the next victim.</p>
+      <p>For <code>put(1,1)</code>, I create and index a node, then push it to the front. The list is <code>1</code>. I handle <code>put(2,2)</code> the same way, leaving <code>2 → 1</code> with 1 at the back.</p>
+      <p>On <code>get(1)</code>, I find node 1, unlink it from the back, and push it to the front. The list becomes <code>1 → 2</code>, and I return 1. The read makes 1 safe while 2 becomes the next victim.</p>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: eviction</h2>
-      <p><code>put(3,3)</code>: new key, and the size is already 2. <code>tail.prev</code> is node 2. Unlink it and delete key 2 from the dictionary, using the key stored on the node. Then create node 3 and push it front. List: <code>3 → 1</code>.</p>
+      <p>For <code>put(3,3)</code>, the cache is already full and <code>tail.prev</code> is node 2. I unlink it and delete key 2 from the dictionary using the stored key. I then create node 3 and push it to the front, giving <code>3 → 1</code>.</p>
       <p><code>get(2)</code> misses: −1. <code>put(4,4)</code> evicts 1 the same way. List: <code>4 → 3</code>. <code>get(1)</code> → −1, <code>get(3)</code> → 3 (list becomes <code>3 → 4</code>), <code>get(4)</code> → 4 (list becomes <code>4 → 3</code>).</p>
       <div class="callout">Every operation touched a constant number of pointers and one dictionary entry. Nothing was scanned.</div>
     </section>
@@ -258,8 +259,8 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 7</div>
       <h2>The pitfall: updating an existing key</h2>
-      <p><code>put</code> on a key that is already present must <em>update in place</em>: change the node's value, move it to the front, and return. It must not create a second node, and it must not run the eviction check, because the size does not change.</p>
-      <div class="callout warn">Check <code>key in nodes</code> <em>before</em> the capacity check. Evict first and you can throw out a live entry to make room for an update that needed no room. Insert a fresh node and the dictionary points at the new one while the old one lingers in the list, so the size count is wrong forever.</div>
+      <p>When <code>put</code> sees an existing key, I update the node in place, move it to the front, and return. I do not create a second node or run eviction because the size has not changed.</p>
+      <div class="callout warn">I check <code>key in nodes</code> <em>before</em> capacity. Evicting first can throw out a live entry for an update that needs no room; inserting a fresh node can leave the old node in the list and corrupt the size.</div>
       <p>Two more: a <code>get</code> hit that forgets to move the node to the front lets hot keys get evicted, and a node without a stored key cannot be removed from the dictionary when it falls off the tail.</p>
     </section>
 
@@ -274,7 +275,7 @@
         <tr><td>Dictionary + Python list for order</td><td>O(n)</td><td>O(n)</td><td>O(n)</td></tr>
         <tr><td>Dictionary → doubly linked list nodes</td><td>O(1)</td><td>O(1)</td><td>O(n)</td></tr>
       </table>
-      <p>Python's <code>OrderedDict</code> is this exact structure under the hood, with <code>move_to_end</code> and <code>popitem(last=False)</code>. Mention it, then show you can build it.</p>
+      <p>Python’s <code>OrderedDict</code> offers the same recency operations through <code>move_to_end</code> and <code>popitem(last=False)</code>. I still use the linked list here to show the underlying mechanism.</p>
     </section>
 
     <section class="step" data-state="final">

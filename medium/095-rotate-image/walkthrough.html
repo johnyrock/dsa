@@ -216,7 +216,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Matrix · LeetCode #48</div>
   <h1>Rotate Image, narrated</h1>
-  <p>Scroll through the thinking, from copying into a second matrix to the two-phase swap that rotates the image in place, with the state of the matrix shown alongside.</p>
+  <p>I’ll start by copying into a second matrix, then turn the rotation into two in-place moves.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/matrix.html">Matrix</a> <span class="how">a clockwise turn is a transpose followed by reversing every row</span></p>
 </header>
 
@@ -226,27 +226,27 @@
     <section class="step" data-state="problem">
       <div class="n">STEP 1</div>
       <h2>The problem</h2>
-      <p>You are given an <code>n × n</code> matrix representing an image. Turn it 90 degrees clockwise. The function returns nothing: the input list must be modified in place, without allocating a second matrix.</p>
+      <p>Given an <code>n × n</code> image matrix, rotate it 90 degrees clockwise in place. The function returns nothing and may not allocate a second matrix.</p>
       <div class="callout">Running example: <code>matrix = [[1,2,3],[4,5,6],[7,8,9]]</code>. After rotating, it must read <code>[[7,4,1],[8,5,2],[9,6,3]]</code>.</div>
-      <p>Look at what moved. The left column <code>1, 4, 7</code> became the top row, but read <em>bottom-up</em>: <code>7, 4, 1</code>. The top row <code>1, 2, 3</code> became the right column, read top-down. In general, cell <code>(r, c)</code> lands at <code>(c, n - 1 - r)</code>: its row index becomes its column index, and its column index is flipped.</p>
+      <p>The movement is visible in the example. The left column <code>1, 4, 7</code> became the top row, read <em>bottom-up</em>: <code>7, 4, 1</code>. The top row <code>1, 2, 3</code> became the right column, read top-down. In general, cell <code>(r, c)</code> lands at <code>(c, n - 1 - r)</code>: its row index becomes its column index, and its column index is flipped.</p>
       <p>The in-place requirement is the whole difficulty. Reading from a fresh copy is easy; the interesting question is how to move every cell to its destination while the destination is still holding a value that has not been moved yet.</p>
     </section>
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: build a second matrix</h2>
-      <p>The formula <code>(r, c) → (c, n - 1 - r)</code> translates directly into a copy loop:</p>
+      <p>My first instinct is to apply <code>(r, c) → (c, n - 1 - r)</code> directly with a copy loop.</p>
       <pre class="code"><span class="ln">rotated = [[0] * n for _ in range(n)]</span><span class="ln">for r in range(n):</span><span class="ln">    for c in range(n):</span><span class="ln">        rotated[c][n - 1 - r] = matrix[r][c]</span><span class="ln">matrix[:] = rotated</span></pre>
-      <p style="margin-top:14px">This is correct and O(n²) time, which is optimal since every cell has to move. But it allocates a whole second <code>n × n</code> matrix, so the space is O(n²), and the problem says not to do that. The final <code>matrix[:] = rotated</code> only copies the answer back; it does not make the algorithm in-place.</p>
-      <p>The fix is not to find a cleverer formula. It is to notice that the rotation can be split into moves that each swap two cells, and a swap never needs more than one temporary.</p>
+      <p style="margin-top:14px">Every cell moves once, so this takes <strong>O(n²) time</strong>. The second matrix takes <strong>O(n²) space</strong>, which breaks the in-place requirement.</p>
+      <p>I can split rotation into swaps, and each swap needs only one temporary value. That removes the second matrix.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: transpose, then reverse each row</h2>
-      <p>Compare the target <code>[[7,4,1],[8,5,2],[9,6,3]]</code> with the <strong>transpose</strong> of the input, <code>[[1,4,7],[2,5,8],[3,6,9]]</code>. Each row of the transpose is the same numbers as the row of the answer, just in the opposite order. Row 0 of the transpose is <code>1, 4, 7</code>; row 0 of the answer is <code>7, 4, 1</code>.</p>
+      <p>I compare the target <code>[[7,4,1],[8,5,2],[9,6,3]]</code> with the <strong>transpose</strong> of the input, <code>[[1,4,7],[2,5,8],[3,6,9]]</code>. Each row of the transpose contains the answer's row in the opposite order. Row 0 of the transpose is <code>1, 4, 7</code>; row 0 of the answer is <code>7, 4, 1</code>.</p>
       <div class="callout">A clockwise rotation is a transpose (swap <code>(r, c)</code> with <code>(c, r)</code>) followed by reversing every row. Both halves are pure swaps inside the matrix, so neither needs extra memory.</div>
-      <p>Why does it work? The transpose turns column <code>c</code> into row <code>c</code>, read top-to-bottom. The rotation also puts column <code>c</code> into row <code>c</code>, but read bottom-to-top. Reversing the row fixes exactly that difference. Composing the two moves: <code>(r, c) → (c, r) → (c, n - 1 - r)</code>, which is the rotation formula from step 1.</p>
+      <p>Why does it work? The transpose turns column <code>c</code> into row <code>c</code> in top-to-bottom order. The rotation also puts column <code>c</code> into row <code>c</code>, but in bottom-to-top order. When I reverse the row, I fix exactly that difference. Composing the two moves gives <code>(r, c) → (c, r) → (c, n - 1 - r)</code>, the rotation formula from step 1.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -272,9 +272,9 @@
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: transpose, row 1, and the phase ends</h2>
-      <p>With <code>r = 1</code> the inner loop is <code>range(2, 3)</code>, a single value <code>c = 2</code>. Swap <code>matrix[1][2]</code> (the 6) with <code>matrix[2][1]</code> (the 8). The matrix is now <code>[[1,4,7],[2,5,8],[3,6,9]]</code>, the full transpose.</p>
+      <p>With <code>r = 1</code> the inner loop is <code>range(2, 3)</code>, a single value <code>c = 2</code>. I swap <code>matrix[1][2]</code> (the 6) with <code>matrix[2][1]</code> (the 8). The matrix is now <code>[[1,4,7],[2,5,8],[3,6,9]]</code>, the full transpose.</p>
       <p>With <code>r = 2</code> the inner loop is <code>range(3, 3)</code>, which is empty. Nothing to do: the last row has no cells above the diagonal. Three swaps in total for a 3 × 3 matrix, which is <code>n(n - 1) / 2 = 3</code>.</p>
-      <div class="callout">Every original column is now a row, read top-to-bottom. Compare with the target: each row is the right numbers, backwards.</div>
+      <div class="callout">Every original column is now a row in top-to-bottom order. I compare with the target and see each row has the right numbers, backwards.</div>
     </section>
 
     <section class="step" data-state="t3">
@@ -282,16 +282,16 @@
       <h2>Trace it: reverse every row, the answer</h2>
       <p><code>row.reverse()</code> on row 0 turns <code>1, 4, 7</code> into <code>7, 4, 1</code>. Row 1: <code>2, 5, 8</code> becomes <code>8, 5, 2</code>. Row 2: <code>3, 6, 9</code> becomes <code>9, 6, 3</code>.</p>
       <p>The matrix now reads <code>[[7,4,1],[8,5,2],[9,6,3]]</code>, which is the expected output. Nothing is returned; the caller's list object was mutated through both phases, and at no point did a second matrix exist.</p>
-      <div class="callout">Check one cell against the formula: the 3 started at <code>(0, 2)</code>, and <code>(c, n - 1 - r) = (2, 2)</code>. It is in the bottom-right corner. Correct.</div>
+      <div class="callout">I check one cell against the formula: the 3 started at <code>(0, 2)</code>, and <code>(c, n - 1 - r) = (2, 2)</code>. It is in the bottom-right corner, as expected.</div>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong</h2>
       <p><strong>Transposing with <code>range(n)</code> instead of <code>range(r + 1, n)</code>.</strong> Now the loop visits <code>(0, 1)</code> and swaps it with <code>(1, 0)</code>, then later visits <code>(1, 0)</code> and swaps it with <code>(0, 1)</code> again. Every pair is swapped twice, which is no transpose at all. The matrix is unchanged going into the reverse phase, and the output is <code>[[3,2,1],[6,5,4],[9,8,7]]</code>: a mirror image, not a rotation. On the running example nothing crashes, so this passes a quick eyeball.</p>
-      <p><strong>Reversing the rows first, then transposing.</strong> The two phases do not commute. Reverse first and you get <code>[[3,2,1],[6,5,4],[9,8,7]]</code>, transpose that and you get <code>[[3,6,9],[2,5,8],[1,4,7]]</code>, which is the <em>counter</em>-clockwise rotation. Same for reversing columns instead of rows after the transpose.</p>
+      <p><strong>Reversing the rows first, then transposing.</strong> The two phases do not commute. If I reverse first, I get <code>[[3,2,1],[6,5,4],[9,8,7]]</code>, and transposing that gives <code>[[3,6,9],[2,5,8],[1,4,7]]</code>, the <em>counter</em>-clockwise rotation. Reversing columns instead of rows after the transpose has the same issue.</p>
       <p><strong>Returning a new list.</strong> <code>return [list(col)[::-1] for col in zip(*matrix)]</code> produces the right numbers, but the caller's <code>matrix</code> still holds the original. Any test that inspects the list it passed in sees <code>[[1,2,3],[4,5,6],[7,8,9]]</code>.</p>
-      <div class="callout warn">Each transpose swap must happen once, so only walk the cells above the diagonal. Transpose first, reverse rows second, for clockwise.</div>
+      <div class="callout warn">Each transpose swap happens once because I only visit cells above the diagonal. I transpose first, then reverse rows for a clockwise rotation.</div>
     </section>
 
     <section class="step" data-state="complexity">

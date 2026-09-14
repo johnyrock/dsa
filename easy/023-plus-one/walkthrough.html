@@ -220,7 +220,7 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Two Pointers · LeetCode #66</div>
   <h1>Plus One, narrated</h1>
-  <p>Scroll through the string-conversion shortcut, the carry that only disturbs trailing nines, and a right-to-left trace of the two-line loop, with the digit array shown alongside.</p>
+  <p>I’ll start by rebuilding the full integer, then follow the carry from right to left through only the digits it changes.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/two-pointers.html">Two Pointers</a> <span class="how">Addition starts at the least significant digit. A non-nine absorbs the carry; a nine becomes zero and passes the carry left.</span></p>
 </header>
 
@@ -238,16 +238,16 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: rebuild the integer</h2>
-      <p>The obvious shortcut is to glue the digits into a string, parse it, add one, and split the result back apart:</p>
+      <p>My first instinct is to join the digits into a string, parse the integer, add one, and split the result back apart.</p>
       <pre class="code"><span class="ln">value = int("".join(str(d) for d in digits))</span><span class="ln">return [int(c) for c in str(value + 1)]</span></pre>
-      <p style="margin-top:14px">For the running example this computes <code>int("129") + 1 = 130</code> and then splits 130 into <code>[1,3,0]</code>. It is correct in Python, where integers grow without bound, and it is O(n) time. But it walks every digit twice (once to join, once to split), allocates two strings and a new list, and in Java, C++ or Go a 100-digit input overflows the integer before the addition ever happens.</p>
-      <p>The deeper objection is that it ignores the structure of the problem. Adding one to 129 only changes the last two digits. Building the whole number from scratch to change two positions is wasted motion.</p>
+      <p style="margin-top:14px">This returns the right digits in Python. It takes <strong>O(n) time</strong> and allocates strings plus a result list, so it uses <strong>O(n) extra space</strong>.</p>
+      <p>Adding one only changes trailing nines and the first digit before them. I can update the existing array from right to left without rebuilding the number.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: only the trailing nines move</h2>
-      <p>Do the addition the way you would on paper. The carry enters at the least significant digit, <code>digits[2]</code> in the example. If that digit is below 9, it absorbs the carry (it goes up by one) and nothing to its left changes. If it is a 9, it becomes 0 and the carry moves one position left, where the same question is asked again.</p>
+      <p>I do the addition as I would on paper. The carry enters at the least significant digit, <code>digits[2]</code> in the example. If that digit is below 9, it absorbs the carry (it goes up by one) and nothing to its left changes. If it is a 9, it becomes 0 and the carry moves one position left, where I ask the same question again.</p>
       <div class="callout">The only digits that change are the trailing run of 9s (each becomes 0) and the first non-9 to their left (it goes up by one). Everything further left is untouched.</div>
       <p>That is why the code starts with <code>for index in range(len(digits) - 1, -1, -1)</code> and checks <code>if digits[index] &lt; 9</code>. The panel dims <code>digits[0]</code> and <code>digits[1]</code> because, until the carry reaches them, they are not part of the computation at all.</p>
     </section>
@@ -255,10 +255,10 @@
     <section class="step" data-state="approach">
       <div class="n">STEP 4</div>
       <h2>The approach: scan right to left, stop early</h2>
-      <p>Walk <code>index</code> over 2, 1, 0. At each position there are exactly two cases:</p>
+      <p>I walk <code>index</code> over 2, 1, 0. At each position I have exactly two cases:</p>
       <ul>
         <li><code>digits[index] &lt; 9</code>: do <code>digits[index] += 1</code> and <code>return digits</code> immediately. The carry has been absorbed and the answer is complete.</li>
-        <li>Otherwise the digit is a 9: set <code>digits[index] = 0</code> and let the loop continue leftward, carrying the one.</li>
+        <li>For a digit of 9, I set <code>digits[index] = 0</code> and let the loop continue leftward with the carry.</li>
       </ul>
       <p>If the loop finishes without returning, every digit was a 9 and the carry fell off the left edge. The last line, <code>return [1] + digits</code>, prepends it. The array is modified in place, so the common case needs no allocation at all.</p>
     </section>
@@ -267,7 +267,7 @@
       <div class="n">STEP 5</div>
       <h2>Trace it: index 2, a nine becomes zero</h2>
       <p>The loop starts at <code>index = 2</code>, where <code>digits[2] = 9</code>. The test <code>digits[2] &lt; 9</code> is false, so the branch that increments and returns is skipped. Instead <code>digits[index] = 0</code> runs, and the array is now <code>[1,2,0]</code>.</p>
-      <p>The carry has not been absorbed. The loop continues to <code>index = 1</code>, still carrying the one. Notice that this is the only line in the loop body that runs for a 9: there is no explicit <code>carry</code> variable, because "the loop is still running" <em>is</em> the carry.</p>
+      <p>The carry has not been absorbed, so I continue to <code>index = 1</code>. This is the only line in the loop body that runs for a 9: there is no explicit <code>carry</code> variable because the continuing loop <em>is</em> the carry.</p>
     </section>
 
     <section class="step" data-state="trace2">
@@ -282,7 +282,7 @@
       <div class="n">STEP 7</div>
       <h2>Trace it: the answer</h2>
       <p>The function returned <code>[1,3,0]</code>, which reads as 130, and 129 + 1 = 130. Only two of the three digits were examined, and only two were modified: <code>digits[2]</code> went 9 → 0 and <code>digits[1]</code> went 2 → 3.</p>
-      <p>Compare with the string approach, which would have touched all three digits twice. The difference is small at n = 3 and large at n = 100 when only the last digit needs to change.</p>
+      <p>I compare this with the string approach, which would touch all three digits twice. The difference is small at n = 3 and large at n = 100 when only the last digit needs to change.</p>
     </section>
 
     <section class="step" data-state="pitfall">
@@ -290,7 +290,7 @@
       <h2>Where this goes wrong: the carry that nobody absorbs</h2>
       <p>The panel shows the case that breaks most first drafts: <code>digits = [9,9]</code>. Both iterations hit the 9 branch, so after the loop <code>digits</code> is <code>[0,0]</code> and the function has not returned. The correct answer is <code>[1,0,0]</code>.</p>
       <p><strong>Forgetting the fallback.</strong> If the function ends with <code>return digits</code> after the loop instead of <code>return [1] + digits</code>, it returns <code>[0,0]</code> for <code>[9,9]</code>. Every all-nines input (<code>[9]</code>, <code>[9,9]</code>, <code>[9,9,9]</code>) comes back as all zeros, which is the number 0, not 10, 100, 1000. The <code>[1] +</code> is the only place the array ever grows.</p>
-      <p><strong>Dropping the early return.</strong> Write the increment branch as just <code>digits[index] += 1</code> with no <code>return</code>, thinking the loop will "finish naturally". It does not stop: for <code>[1,2,9]</code> it turns the 9 into 0, then increments the 2 to 3, then keeps going and increments the 1 to 2, and finally hits the fallback and returns <code>[1,2,3,0]</code>. Every digit to the left of the first non-9 gets an unwanted +1 and a spurious leading 1 appears.</p>
+      <p><strong>No early return.</strong> If I write the increment branch as just <code>digits[index] += 1</code> with no <code>return</code>, the loop does not finish naturally. For <code>[1,2,9]</code> it turns the 9 into 0, then increments the 2 to 3, then keeps going and increments the 1 to 2, and finally hits the fallback and returns <code>[1,2,3,0]</code>. Every digit to the left of the first non-9 gets an unwanted +1 and a spurious leading 1 appears.</p>
       <div class="callout warn">Test three inputs before calling this done: a plain case like <code>[1,2,3]</code>, one trailing nine like <code>[1,2,9]</code>, and the all-nines case <code>[9,9]</code>. Each exercises a different line.</div>
     </section>
 
@@ -318,7 +318,7 @@
         <li><code>digits[index] = 0</code> is the only line reached for a 9: the digit wraps to zero and the loop continuing is the carry moving left.</li>
         <li><code>return [1] + digits</code> runs only if every digit was a 9. The carry fell off the left end, so the number gains a new leading 1.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>scan from the right; the first digit below 9 absorbs the carry and you return, every 9 before it becomes 0, and if there was no such digit, prepend a 1.</em></div>
+      <div class="callout">One-line summary: <em>I scan from the right; the first digit below 9 absorbs the carry and I return, every 9 before it becomes 0, and if there was no such digit, I prepend a 1.</em></div>
     </section>
 
     <div class="code-final">

@@ -204,7 +204,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Binary Search · LeetCode #153</div>
   <h1>Find Minimum in Rotated Sorted Array, narrated</h1>
-  <p>Scroll through the thinking, from a linear scan to a binary search that decides which half holds the rotation point, with the state of the algorithm shown alongside.</p>
+  <p>I will scan for the rotation point first, then I use comparisons with the right edge to discard half the array at a time.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/binary-search.html">Binary Search</a> <span class="how">compare nums[mid] with nums[hi] to pick the half that contains the drop</span></p>
 </header>
 
@@ -222,10 +222,10 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: scan for the drop</h2>
-      <p>Walk the array once and return the first element that is smaller than its predecessor. If there is no such element, the array is not rotated and the answer is <code>nums[0]</code>:</p>
-      <pre class="code"><span class="ln">for i in range(1, len(nums)):</span><span class="ln">    if nums[i] &lt; nums[i - 1]:</span><span class="ln">        return nums[i]</span><span class="ln">return nums[0]</span></pre>
-      <p style="margin-top:14px">Or simply <code>min(nums)</code>. Both are <strong>O(n)</strong>, and both are correct — the problem does not forbid them, it just asks for better. With n up to 5000 a scan is fast in practice, but the whole point of the exercise is to use the fact that the array is <em>almost</em> sorted and pay only <strong>O(log n)</strong>.</p>
-      <p>On the running example the scan checks 5 &gt; 4, 6 &gt; 5, 7 &gt; 6, then finds 0 &lt; 7 and returns 0 after four comparisons. Binary search will do it in three probes and would do a million-element array in twenty.</p>
+      <p>I can walk from left to right and return the first value smaller than the one before it. If that drop never appears, the first value is the minimum.</p>
+      <pre class="code"><span class="ln">def findMin(nums):</span><span class="ln">    for i in range(1, len(nums)):</span><span class="ln">        if nums[i] &lt; nums[i - 1]:</span><span class="ln">            return nums[i]</span><span class="ln">    return nums[0]</span></pre>
+      <p style="margin-top:14px">This is correct. In the worst case, an unrotated array reaches the final check, so its time complexity is O(n). It uses O(1) extra space.</p>
+      <p>I use the fact that one half of any search range is still sorted. Comparing its middle with the right edge tells me whether the rotation point is in that half or the other one.</p>
     </section>
 
     <section class="step" data-state="idea">
@@ -241,10 +241,10 @@
       <h2>The approach, line by line</h2>
       <ul>
         <li><code>lo, hi = 0, len(nums) - 1</code> — the whole array, with <code>hi</code> inclusive because <code>nums[hi]</code> is the anchor.</li>
-        <li><code>while lo &lt; hi</code> — narrow until one index is left. No <code>&lt;=</code>: we are finding a boundary, not matching a target.</li>
+        <li><code>while lo &lt; hi</code> — narrow until one index is left. No <code>&lt;=</code>: I am finding a boundary, not matching a target.</li>
         <li><code>mid = (lo + hi) // 2</code> — rounds down, so <code>mid &lt; hi</code> whenever the loop runs, and <code>lo = mid + 1</code> always makes progress.</li>
         <li><code>if nums[mid] &gt; nums[hi]: lo = mid + 1</code> — <code>mid</code> is in the big left run, so it and everything left of it are out.</li>
-        <li><code>else: hi = mid</code> — <code>mid</code> through <code>hi</code> is sorted, so its smallest value is <code>nums[mid]</code>; keep <code>mid</code>, drop everything right of it.</li>
+        <li><code>else: hi = mid</code> — <code>mid</code> through <code>hi</code> is sorted, so its smallest value is <code>nums[mid]</code>; I keep <code>mid</code>, I drop everything right of it.</li>
         <li><code>return nums[lo]</code> — <code>lo == hi</code> now, and that index is the minimum.</li>
       </ul>
       <p>The invariant: <strong>the minimum's index is always inside <code>[lo, hi]</code></strong>. The first branch removes only elements proven larger than <code>nums[hi]</code>; the second removes only elements to the right of a smaller <code>nums[mid]</code>. Neither can remove the minimum.</p>
@@ -253,7 +253,7 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: mid = 3, value 7</h2>
-      <p>Start with <code>lo = 0</code>, <code>hi = 6</code>. Then <code>mid = (0 + 6) // 2 = 3</code>, and <code>nums[3] = 7</code>. Compare with the right anchor: <code>7 &gt; nums[6] = 2</code>, so <code>mid</code> is in the left run.</p>
+      <p>I start with <code>lo = 0</code>, <code>hi = 6</code>. Then <code>mid = (0 + 6) // 2 = 3</code>, and <code>nums[3] = 7</code>. I compare with the right anchor: <code>7 &gt; nums[6] = 2</code>, so <code>mid</code> is in the left run.</p>
       <p>That means indices 0 through 3 — the values 4, 5, 6, 7 — are all part of the run that sits <em>above</em> the drop. None of them can be the minimum. <code>lo = mid + 1 = 4</code>.</p>
       <p>One probe has thrown away four of the seven candidates. The surviving range is <code>[4, 6]</code>, the values <code>[0, 1, 2]</code>.</p>
     </section>
@@ -261,26 +261,26 @@
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: mid = 5, value 1</h2>
-      <p>Now <code>lo = 4</code>, <code>hi = 6</code>, so <code>mid = (4 + 6) // 2 = 5</code>, and <code>nums[5] = 1</code>. Compare: <code>1 &gt; nums[6] = 2</code> is false, so we are in the else branch. Indices 5 through 6 form a sorted run <code>[1, 2]</code>, and its smallest value is at <code>mid</code>. The minimum is at index 5 or somewhere to its left.</p>
-      <p><code>hi = mid = 5</code>. Notice that 5 stays inside the range: the value 1 <em>could</em> have been the minimum, so we must not discard it. Only the first branch skips <code>mid</code>.</p>
+      <p>Now <code>lo = 4</code>, <code>hi = 6</code>, so <code>mid = (4 + 6) // 2 = 5</code>, and <code>nums[5] = 1</code>. I compare: <code>1 &gt; nums[6] = 2</code> is false, so I am in the else branch. Indices 5 through 6 form a sorted run <code>[1, 2]</code>, and its smallest value is at <code>mid</code>. The minimum is at index 5 or somewhere to its left.</p>
+      <p><code>hi = mid = 5</code>. I see that 5 stays inside the range: the value 1 <em>could</em> have been the minimum, so I must not discard it. Only the first branch skips <code>mid</code>.</p>
       <p>Two candidates remain: indices 4 and 5, values 0 and 1.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: mid = 4, value 0, the answer</h2>
-      <p><code>lo = 4</code>, <code>hi = 5</code>, so <code>mid = (4 + 5) // 2 = 4</code>, and <code>nums[4] = 0</code>. Compare: <code>0 &gt; nums[5] = 1</code> is false, so <code>hi = mid = 4</code>.</p>
-      <p>Now <code>lo == hi == 4</code>. The loop condition <code>lo &lt; hi</code> fails, and we <code>return nums[4]</code>, which is <strong>0</strong>.</p>
+      <p><code>lo = 4</code>, <code>hi = 5</code>, so <code>mid = (4 + 5) // 2 = 4</code>, and <code>nums[4] = 0</code>. I compare: <code>0 &gt; nums[5] = 1</code> is false, so <code>hi = mid = 4</code>.</p>
+      <p>Now <code>lo == hi == 4</code>. The loop condition <code>lo &lt; hi</code> fails, and I <code>return nums[4]</code>, which is <strong>0</strong>.</p>
       <div class="callout">Three probes, three comparisons. Each one used the right anchor to decide which run <code>mid</code> was in, and each halved what was left.</div>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the wrong anchor and the wrong shrink</h2>
-      <p><strong>Comparing with the left end.</strong> Write <code>if nums[mid] &gt; nums[lo]: lo = mid + 1</code>. On the running example the first probe still works (7 &gt; 4, so <code>lo = 4</code>). But the second probe compares <code>nums[5] = 1</code> with <code>nums[lo] = nums[4] = 0</code>: 1 &gt; 0, so the code decides <code>mid</code> is "in the left run" and moves <code>lo = 6</code>. The loop ends and returns <code>nums[6]</code>, which is <strong>2</strong>, not 0. The left anchor cannot tell "left run" apart from "already sorted".</p>
-      <p><strong>Discarding <code>mid</code> in the else branch.</strong> Write <code>hi = mid - 1</code> the way an exact-match search would. On <code>[3, 1, 2]</code> the first probe is <code>mid = 1</code>, value 1, which is the minimum; <code>1 &gt; nums[2] = 2</code> is false, so <code>hi = 0</code>, and the function returns <code>nums[0] = 3</code>. The else branch only knows the minimum is at <code>mid</code> <em>or to its left</em>, so <code>mid</code> has to stay.</p>
+      <p><strong>Comparing with the left end.</strong> I write <code>if nums[mid] &gt; nums[lo]: lo = mid + 1</code>. On the running example the first probe still works (7 &gt; 4, so <code>lo = 4</code>). But the second probe compares <code>nums[5] = 1</code> with <code>nums[lo] = nums[4] = 0</code>: 1 &gt; 0, so the code decides <code>mid</code> is "in the left run" and moves <code>lo = 6</code>. The loop ends and returns <code>nums[6]</code>, which is <strong>2</strong>, not 0. The left anchor cannot tell "left run" apart from "already sorted".</p>
+      <p><strong>Discarding <code>mid</code> in the else branch.</strong> I write <code>hi = mid - 1</code> the way an exact-match search would. On <code>[3, 1, 2]</code> the first probe is <code>mid = 1</code>, value 1, which is the minimum; <code>1 &gt; nums[2] = 2</code> is false, so <code>hi = 0</code>, and the function returns <code>nums[0] = 3</code>. The else branch only knows the minimum is at <code>mid</code> <em>or to its left</em>, so <code>mid</code> has to stay.</p>
       <p><strong>Using <code>while lo &lt;= hi</code>.</strong> Once <code>lo == hi</code>, <code>mid == hi</code> and <code>hi = mid</code> changes nothing, so the loop spins forever.</p>
-      <div class="callout warn">Anchor on <code>nums[hi]</code>, keep <code>mid</code> when it might be the answer (<code>hi = mid</code>), skip it when it cannot be (<code>lo = mid + 1</code>), and stop at <code>lo == hi</code>.</div>
+      <div class="callout warn">Anchor on <code>nums[hi]</code>, I keep <code>mid</code> when it might be the answer (<code>hi = mid</code>), I skip it when it cannot be (<code>lo = mid + 1</code>), and stop at <code>lo == hi</code>.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -304,11 +304,11 @@
         <li><code>lo, hi = 0, len(nums) - 1</code> brackets the whole array with an inclusive right anchor.</li>
         <li><code>while lo &lt; hi</code> runs until exactly one index survives.</li>
         <li><code>mid = (lo + hi) // 2</code> picks the probe, rounding down so the first branch always advances.</li>
-        <li><code>if nums[mid] &gt; nums[hi]: lo = mid + 1</code> — the left run, skip <code>mid</code> and everything before it.</li>
-        <li><code>else: hi = mid</code> — the right run, keep <code>mid</code> and drop everything after it.</li>
+        <li><code>if nums[mid] &gt; nums[hi]: lo = mid + 1</code> — the left run, I skip <code>mid</code> and everything before it.</li>
+        <li><code>else: hi = mid</code> — the right run, I keep <code>mid</code> and drop everything after it.</li>
         <li><code>return nums[lo]</code> is the value at the rotation point.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>a rotated sorted array is two ascending runs; compare the middle with the right end to learn which run it is in, and squeeze toward the boundary.</em></div>
+      <div class="callout">One-line summary to remember: <em>a rotated sorted array is two ascending runs; I compare the middle with the right end to learn which run it is in, and squeeze toward the boundary.</em></div>
     </section>
 
     <div class="code-final">

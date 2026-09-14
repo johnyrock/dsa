@@ -195,8 +195,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Linked List · LeetCode #2</div>
   <h1>Add Two Numbers, narrated</h1>
-  <p>Scroll through the thinking, from converting to integers and back to a single pass of schoolbook addition with a carry, with the state of the algorithm shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/linked-list.html">Linked List</a> <span class="how">dummy head, walk both lists with a carry, loop while anything is left</span></p>
+  <p>I’ll start by converting both lists to integers, then keep their digits in list form and add them with one carry-aware pass.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/linked-list.html">Linked List</a> <span class="how">a dummy head, two advancing list pointers, and a carry</span></p>
 </header>
 
 <div class="layout">
@@ -213,17 +213,18 @@
     <section class="step" data-state="naive">
       <div class="n">STEP 2</div>
       <h2>First instinct: turn them into integers</h2>
-      <p>Walk each list, rebuild the integer, add them with <code>+</code>, then split the result back into digits and link them up.</p>
-      <pre class="code"><span class="ln">a = 0; mult = 1</span><span class="ln">while l1: a += l1.val * mult; mult *= 10; l1 = l1.next</span><span class="ln"># same for b, then total = a + b</span><span class="ln"># then peel digits off total with % 10 and // 10</span></pre>
-      <p style="margin-top:14px">In Python this passes, because integers never overflow. It is still the wrong answer in an interview: it throws away the structure the question is about, it does three passes where one will do, and in most languages a 100-digit number does not fit in any integer type.</p>
+      <p>My first instinct is to rebuild both values, add them, and peel the result back into a reversed linked list.</p>
+      <pre class="code"><span class="ln">def value(node):</span><span class="ln">    total = place = 0</span><span class="ln">    place = 1</span><span class="ln">    while node: total += node.val * place; place *= 10; node = node.next</span><span class="ln">    return total</span><span class="ln">total = value(l1) + value(l2)</span><span class="ln">dummy = tail = ListNode()</span><span class="ln">while total or tail is dummy:</span><span class="ln">    total, digit = divmod(total, 10); tail.next = ListNode(digit); tail = tail.next</span><span class="ln">return dummy.next</span></pre>
+      <p style="margin-top:14px">In Python, this takes <strong>O(n + m) time</strong> and creates the result list, using <strong>O(n + m) extra space</strong>.</p>
+      <p>Rebuilding giant integers makes this approach less portable. I instead add the linked-list digits directly, one position and one carry at a time.</p>
     </section>
 
     <section class="step" data-state="reframe">
       <div class="n">STEP 3</div>
       <h2>Reframe: do it the way you learned in school</h2>
-      <p>Column by column from the right: add the two digits and the carry from the previous column. Write down the ones digit, carry the tens digit to the next column.</p>
-      <p>Because the lists are stored least-significant first, "the next column" is simply <code>.next</code> on both lists. Walk them together, one node each per step, and each step is one column of the addition.</p>
-      <div class="callout">Column: <code>total = carry + l1.val + l2.val</code>. Keep <code>total % 10</code>, carry <code>total // 10</code>. Both come from one call to <code>divmod</code>.</div>
+      <p>I add the two digits and the carry one column at a time. The ones digit becomes the result digit, while the tens digit becomes the next carry.</p>
+      <p>Because the lists are stored least-significant first, the next column is simply <code>.next</code> on both lists. I walk them together, one node per step, and each step handles one column.</p>
+      <div class="callout">For each column, I compute <code>total = carry + l1.val + l2.val</code>. I keep <code>total % 10</code> and carry <code>total // 10</code>; one call to <code>divmod</code> gives both.</div>
     </section>
 
     <section class="step" data-state="idea">
@@ -231,9 +232,9 @@
       <h2>The key idea: one loop that survives unequal lengths and the last carry</h2>
       <p>Three details make the loop clean:</p>
       <ul>
-        <li>A <strong>dummy head</strong> in front of the result, so appending the first digit is not a special case. Return <code>dummy.next</code> at the end.</li>
-        <li>Loop <code>while l1 or l2 or carry</code>. When one list runs out it just stops contributing, as if padded with zeros. When both run out but a carry remains, one more iteration emits it.</li>
-        <li>Guard each list with <code>if l1:</code> before reading its value or advancing it.</li>
+        <li>I use a <strong>dummy head</strong> in front of the result, so the first digit is not special, then return <code>dummy.next</code>.</li>
+        <li>I loop <code>while l1 or l2 or carry</code>. A finished list contributes zero, and a remaining carry produces one final digit.</li>
+        <li>I guard each list with <code>if l1:</code> before reading its value or advancing it.</li>
       </ul>
       <p>That is the whole algorithm. No pre-pass to measure lengths, no padding, no post-loop fix-up.</p>
     </section>
@@ -241,24 +242,24 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: the first two columns</h2>
-      <p>Column 1: carry 0 + 2 + 5 = 7. <code>divmod(7, 10)</code> is (0, 7). Append 7, carry stays 0.</p>
-      <p>Column 2: carry 0 + 4 + 6 = 10. <code>divmod(10, 10)</code> is (1, 0). Append 0, and now <strong>carry = 1</strong>.</p>
+      <p>In column 1, carry 0 + 2 + 5 = 7. <code>divmod(7, 10)</code> is (0, 7), so I append 7 and keep carry at 0.</p>
+      <p>In column 2, carry 0 + 4 + 6 = 10. <code>divmod(10, 10)</code> is (1, 0), so I append 0 and set <strong>carry = 1</strong>.</p>
       <p>The result so far is <code>7 → 0</code>, and the two list pointers have each moved twice.</p>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: the last column and the exit</h2>
-      <p>Column 3: carry 1 + 3 + 4 = 8. <code>divmod(8, 10)</code> is (0, 8). Append 8, carry back to 0.</p>
-      <p>Now <code>l1</code> and <code>l2</code> are both <code>None</code> and <code>carry</code> is 0, so the loop condition is false and we stop. <code>dummy.next</code> is <code>7 → 0 → 8</code>: 807.</p>
+      <p>In column 3, carry 1 + 3 + 4 = 8. <code>divmod(8, 10)</code> is (0, 8), so I append 8 and return carry to 0.</p>
+      <p>Now <code>l1</code> and <code>l2</code> are both <code>None</code> and <code>carry</code> is 0, so the loop condition is false and I stop. <code>dummy.next</code> is <code>7 → 0 → 8</code>: 807.</p>
       <div class="callout">Three nodes in, three iterations, three nodes out. The loop never asked how long either list was.</div>
     </section>
 
     <section class="step" data-state="carry">
       <div class="n">STEP 7</div>
       <h2>The pitfall: stopping before the last carry</h2>
-      <p>Take <code>l1 = [9, 9]</code> and <code>l2 = [1]</code>, which is 99 + 1 = 100. Column 1: 9 + 1 = 10, append 0, carry 1. Column 2: <code>l2</code> is gone, so 1 + 9 = 10, append 0, carry 1. Both lists are now empty.</p>
-      <div class="callout warn">A loop that runs only <code>while l1 or l2</code> stops here and returns <code>[0, 0]</code>. The carry is the hundreds digit. Including <code>carry</code> in the condition gives one more iteration: 1 + nothing = 1, append 1, carry 0, done: <code>[0, 0, 1]</code>.</div>
+      <p>I test <code>l1 = [9, 9]</code> and <code>l2 = [1]</code>, which is 99 + 1 = 100. The first column gives 10, so I append 0 and carry 1. The second does the same after <code>l2</code> is gone. Both lists are now empty.</p>
+      <div class="callout warn">A loop limited to <code>while l1 or l2</code> stops here and returns <code>[0, 0]</code>. I include <code>carry</code> in the condition, producing one more digit, 1, and therefore <code>[0, 0, 1]</code>.</div>
       <p>The same condition handles the two-lists-of-different-lengths case: once <code>l2</code> runs out, <code>l1</code> keeps the loop alive on its own.</p>
     </section>
 
@@ -286,7 +287,7 @@
         <li><code>tail.next = ListNode(digit); tail = tail.next</code> appends in least-significant-first order.</li>
         <li><code>return dummy.next</code> skips the dummy.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>walk both lists in step, one column per node, and loop while anything is left, including the carry.</em></div>
+      <div class="callout">I remember this as: <em>I walk both lists in step, one column per node, while either list or the carry remains.</em></div>
     </section>
 
     <div class="code-final">

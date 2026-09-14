@@ -217,7 +217,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Matrix · LeetCode #73</div>
   <h1>Set Matrix Zeroes, narrated</h1>
-  <p>Scroll through the thinking, from a full copy to two flag lists to storing the flags inside the first row and column, with the state of the matrix shown alongside.</p>
+  <p>I’ll start with a full copy, then move the row and column flags into the first row and column.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/matrix.html">Matrix</a> <span class="how">row 0 and column 0 double as the "zero this line" flags; two booleans remember their own fate</span></p>
 </header>
 
@@ -236,16 +236,16 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: a copy, then two flag lists</h2>
-      <p>The safest version reads from an untouched copy and writes into the original, so written zeros can never be mistaken for original ones:</p>
+      <p>My first instinct is to read from an untouched copy and write into the original, so I never mistake a written zero for an original one.</p>
       <pre class="code"><span class="ln">snapshot = [row[:] for row in matrix]</span><span class="ln">for r in range(rows):</span><span class="ln">    for c in range(cols):</span><span class="ln">        if snapshot[r][c] == 0:</span><span class="ln">            for cc in range(cols): matrix[r][cc] = 0</span><span class="ln">            for rr in range(rows): matrix[rr][c] = 0</span></pre>
-      <p style="margin-top:14px">That is O(m × n) extra space for the snapshot, and its inner loops make it O(m × n × (m + n)) time in the worst case. The obvious refinement: a zero at <code>(r, c)</code> only says two things, "row r goes" and "column c goes". Record those in <code>zero_rows</code> and <code>zero_cols</code> sets during one scan, then do a second scan that zeroes any cell whose row or column is in a set.</p>
-      <p>That is O(m × n) time and O(m + n) space. For the running example the sets are <code>zero_rows = {1}</code> and <code>zero_cols = {1}</code>. The only remaining question is where to keep those flags without allocating them.</p>
+      <p style="margin-top:14px">The snapshot takes <strong>O(m × n) space</strong>. My initial scan takes <strong>O(m × n) time</strong>, then clearing a row and column for each zero can reach <strong>O(mn(m+n)) time</strong> in the worst case.</p>
+      <p>A zero only marks one row and one column. I first collect those flags, then store them without allocating extra sets.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: the flags can live in row 0 and column 0</h2>
-      <p>The flag for row <code>r</code> needs one bit. The cell <code>matrix[r][0]</code> is already there, one per row. The flag for column <code>c</code> needs one bit, and <code>matrix[0][c]</code> is there, one per column. So: when an interior zero is found at <code>(r, c)</code>, write <code>0</code> into <code>matrix[r][0]</code> and <code>matrix[0][c]</code>.</p>
+      <p>The flag for row <code>r</code> needs one bit, and <code>matrix[r][0]</code> already provides one cell per row. The same holds for column <code>c</code> and <code>matrix[0][c]</code>. When I find an interior zero at <code>(r, c)</code>, I write <code>0</code> into both marker cells.</p>
       <div class="callout">Overwriting a header cell with <code>0</code> loses no information that matters. If the header cell was going to be zeroed anyway, fine. If it was not, its own row or column is being zeroed, so it becomes 0 regardless.</div>
       <p>There is one catch. Row 0 and column 0 are now storage, so their <em>own</em> flags cannot be stored in themselves. Whether row 0 needs clearing and whether column 0 needs clearing are checked first and saved in two plain booleans, <code>first_row_zero</code> and <code>first_col_zero</code>, before any marking happens.</p>
     </section>
@@ -267,7 +267,7 @@
       <h2>Trace it: save the booleans, then pass 1</h2>
       <p>Row 0 is <code>1, 1, 1</code> and column 0 is <code>1, 1, 1</code>, so <code>first_row_zero = False</code> and <code>first_col_zero = False</code>. Neither header will be cleared at the end.</p>
       <p>Pass 1 scans <code>(1,1), (1,2), (2,1), (2,2)</code>. Only <code>matrix[1][1]</code> is 0. So <code>matrix[1][0] = 0</code> (flag: row 1 goes) and <code>matrix[0][1] = 0</code> (flag: column 1 goes). The matrix is now <code>[[1,0,1],[0,0,1],[1,1,1]]</code>.</p>
-      <p>Those two written zeros sit in the header line, where pass 1 never looks, so they cannot trigger anything. Compare with the set version: <code>zero_rows = {1}</code> is exactly "<code>matrix[1][0]</code> is 0", and <code>zero_cols = {1}</code> is "<code>matrix[0][1]</code> is 0".</p>
+      <p>Those two written zeros sit in the header line, where pass 1 never looks, so they cannot trigger anything. I can compare this with the set version: <code>zero_rows = {1}</code> corresponds to <code>matrix[1][0] == 0</code>, and <code>zero_cols = {1}</code> corresponds to <code>matrix[0][1] == 0</code>.</p>
     </section>
 
     <section class="step" data-state="t2">
@@ -288,8 +288,8 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong</h2>
-      <p><strong>Zeroing as you go.</strong> Scan the matrix and, on seeing a 0, immediately zero its row and column. The zeros you just wrote are then found later in the same scan. On the running example, <code>(1,1)</code> clears row 1 and column 1; the scan then reaches <code>(1,2)</code>, now 0, and clears column 2; then <code>(2,1)</code>, now 0, and clears row 2. Output: <code>[[1,0,0],[0,0,0],[0,0,0]]</code> instead of <code>[[1,0,1],[0,0,0],[1,0,1]]</code>. On a bigger matrix it cascades to all zeros.</p>
-      <p><strong>One shared boolean for both headers.</strong> Using <code>matrix[0][0]</code> as the flag for row 0 <em>and</em> column 0 conflates two different facts. On <code>[[1,2],[0,4]]</code> the zero at <code>(1,0)</code> is in column 0, so the shared cell becomes 0 and row 0 gets wiped too: <code>[[0,0],[0,0]]</code> instead of <code>[[0,2],[0,0]]</code>. Two separate booleans, read before any marking, are required.</p>
+      <p><strong>Zeroing as I go.</strong> If I see a 0 and immediately zero its row and column, the zeros I write are found later in the same scan. On the running example, <code>(1,1)</code> clears row 1 and column 1; the scan then reaches <code>(1,2)</code>, now 0, and clears column 2; then <code>(2,1)</code>, now 0, and clears row 2. Output: <code>[[1,0,0],[0,0,0],[0,0,0]]</code> instead of <code>[[1,0,1],[0,0,0],[1,0,1]]</code>. On a bigger matrix it cascades to all zeros.</p>
+      <p><strong>One shared boolean for both headers.</strong> If I use <code>matrix[0][0]</code> for both row 0 and column 0, I conflate two different facts. On <code>[[1,2],[0,4]]</code>, the zero at <code>(1,0)</code> is in column 0, so the shared cell becomes 0 and row 0 is wiped too: <code>[[0,0],[0,0]]</code> instead of <code>[[0,2],[0,0]]</code>.</p>
       <p><strong>Clearing the headers before pass 2.</strong> If <code>first_row_zero</code> is applied between pass 1 and pass 2, every column flag reads 0 and the entire interior is zeroed. The header loops must be the last thing that runs.</p>
       <div class="callout warn">Separate "find the triggers" from "apply them". Only original zeros are triggers; the flags are read only after all of them are written, and the flag storage is cleared last.</div>
     </section>
@@ -318,7 +318,7 @@
         <li><code>if first_row_zero:</code> clear row 0; <code>if first_col_zero:</code> clear column 0 — last, from the booleans.</li>
         <li>No <code>return</code>: the mutation is the result.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>save the headers' fate in two booleans, mark flags into row 0 / column 0, apply them to the interior, then clear the headers.</em></div>
+      <div class="callout">My summary: <em>I save the headers' fate in two booleans, mark flags in row 0 and column 0, apply them to the interior, then clear the headers.</em></div>
     </section>
 
     <div class="code-final">

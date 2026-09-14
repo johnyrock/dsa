@@ -220,7 +220,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Bit Manipulation · LeetCode #371</div>
   <h1>Sum of Two Integers, narrated</h1>
-  <p>Scroll through the thinking, from counting up one at a time to the XOR / AND-shift loop that adds without +, with the bit rows of a, b, a ^ b and the carry shown for every round, and the 32-bit mask Python needs.</p>
+  <p>I’ll start by incrementing one step at a time, then use XOR and shifted carries to add all bits together.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/bit-manipulation.html">Bit Manipulation</a> <span class="how">a ^ b is the sum without carries, (a &amp; b) &lt;&lt; 1 is the carries; repeat until the carry is 0</span></p>
 </header>
 
@@ -239,17 +239,18 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: increment one at a time</h2>
-      <p>You cannot write <code>a + 1</code> either, but incrementing has a bitwise form: flip the trailing 1s to 0 and the first 0 to 1. Then add <code>b</code> by incrementing <code>a</code> that many times.</p>
+      <p>Incrementing has a bitwise form: I flip trailing 1s to 0 and the first 0 to 1. My first instinct is to add <code>b</code> by incrementing <code>a</code> that many times.</p>
       <pre class="code"><span class="ln">def increment(x):</span><span class="ln">    mask = 1</span><span class="ln">    while x &amp; mask:</span><span class="ln">        x ^= mask</span><span class="ln">        mask &lt;&lt;= 1</span><span class="ln">    return x | mask</span><span class="ln"></span><span class="ln">for _ in range(b):</span><span class="ln">    a = increment(a)</span></pre>
-      <p style="margin-top:14px">For <code>b = 3</code> that is three increments, fine. But it is <strong>O(|b|)</strong> rounds, it needs a separate decrement path when <code>b</code> is negative, and it never uses the fact that all 32 bit positions can be processed at once. Addition on hardware is not a loop over <code>b</code>; it is a loop over carries.</p>
+      <p style="margin-top:14px">For <code>b = 3</code>, I do three increments. This takes <strong>O(|b|) time</strong> and <strong>O(1) space</strong>, and it needs a matching decrement path when <code>b</code> is negative.</p>
+      <p>All 32 bit positions can be processed together. I treat addition as a loop over carries, not a loop over <code>b</code>.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>Key insight: a sum is XOR plus carries</h2>
-      <p>Look at one bit position. Adding two bits gives <code>0 + 0 = 0</code>, <code>0 + 1 = 1</code>, <code>1 + 0 = 1</code>, and <code>1 + 1 = 0 carry 1</code>. The result bit is exactly <code>a ^ b</code>. The carry bit is exactly <code>a &amp; b</code>, and it belongs one position to the left, so the carries as a number are <code>(a &amp; b) &lt;&lt; 1</code>.</p>
+      <p>I look at one bit position. Adding two bits gives <code>0 + 0 = 0</code>, <code>0 + 1 = 1</code>, <code>1 + 0 = 1</code>, and <code>1 + 1 = 0 carry 1</code>. The result bit is exactly <code>a ^ b</code>. The carry bit is exactly <code>a &amp; b</code>, and it belongs one position to the left, so the carries as a number are <code>(a &amp; b) &lt;&lt; 1</code>.</p>
       <div class="callout">So <code>a + b = (a ^ b) + ((a &amp; b) &lt;&lt; 1)</code>. That still has a <code>+</code> in it, but the two terms are themselves just numbers, so apply the same identity to them, and again, until the carry term is 0.</div>
-      <p>On the example: <code>5 ^ 3 = 6</code> (<code>101 ^ 011 = 110</code>) and <code>(5 &amp; 3) &lt;&lt; 1 = 1 &lt;&lt; 1 = 2</code>. Sure enough <code>6 + 2 = 8</code>. Now add 6 and 2 the same way.</p>
+      <p>On the example: <code>5 ^ 3 = 6</code> (<code>101 ^ 011 = 110</code>) and <code>(5 &amp; 3) &lt;&lt; 1 = 1 &lt;&lt; 1 = 2</code>. Sure enough, <code>6 + 2 = 8</code>. I then add 6 and 2 the same way.</p>
       <p>Why does it terminate? Every round shifts the carry left by at least one bit. In a 32-bit register the carry falls off the top after at most 32 rounds. That last clause is the catch for Python, which is the subject of Step 7.</p>
     </section>
 
@@ -271,7 +272,7 @@
       <h2>Trace it: round 1, a = 5, b = 3</h2>
       <p>Bit by bit: <code>00000101 ^ 00000011 = 00000110</code>, which is <code>6</code>. Only bit 0 is set in both, so <code>00000101 &amp; 00000011 = 00000001</code>, and shifting left gives <code>00000010</code>, which is <code>2</code>.</p>
       <p>After the assignment <code>a = 6</code>, <code>b = 2</code>. The masks change nothing here because every value is far below 2³².</p>
-      <p>Check the invariant: <code>a + b</code> is still <code>6 + 2 = 8</code>. Each round rewrites the pair without changing its sum; only the carry term gets smaller in the sense that it moves left.</p>
+      <p>I check the invariant: <code>a + b</code> is still <code>6 + 2 = 8</code>. Each round rewrites the pair without changing its sum; only the carry term gets smaller in the sense that it moves left.</p>
     </section>
 
     <section class="step" data-state="trace2">
@@ -289,13 +290,13 @@
       <p>In Java or C++ an <code>int</code> is 32 bits, so a carry shifted past bit 31 simply disappears and the loop always ends. Python integers are unbounded: <code>-3</code> is conceptually an infinite string of 1s followed by <code>...11101</code>. Shift a carry left forever and it never falls off, so <code>b</code> never becomes 0.</p>
       <p><code>&amp; MASK</code> fixes that by chopping every value to its low 32 bits. Trace <code>a = -3</code>, <code>b = 1</code>: masked, <code>a</code> is <code>0xFFFFFFFD</code> (low 8 bits <code>11111101</code>). Round 1: XOR gives <code>11111100</code>, the carry is <code>00000010</code>. Round 2: XOR gives <code>11111110</code>, carry <code>0</code>. Done, with <code>a = 0xFFFFFFFE</code>.</p>
       <p>But <code>0xFFFFFFFE</code> is <code>4294967294</code> as a Python int, not −2. Bit 31 is set, which in two's complement means negative, so the register value must be translated back. <code>a &gt; MAX_INT</code> detects it, and <code>~(a ^ MASK)</code> does the conversion: <code>a ^ MASK</code> flips the 32 bits to <code>00000001</code>, and <code>~1</code> is <code>-2</code>.</p>
-      <div class="callout">Two jobs for the mask: keep the loop finite on negative inputs, and mark the answer as a 32-bit register value that the last line reads back as signed.</div>
+      <div class="callout">The mask has two jobs: I keep the loop finite on negative inputs, and I mark the answer as a 32-bit register value that the last line reads back as signed.</div>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the shift, the mask, the unmask</h2>
-      <p><strong>Forgetting <code>&lt;&lt; 1</code> on the carry.</strong> Write <code>b = (a &amp; b) &amp; MASK</code> and the carry is added back into the same bit it came from. On the example, round 1 gives <code>a = 6, b = 1</code>, round 2 gives <code>a = 7, b = 0</code>, and the function returns <strong>7 instead of 8</strong>.</p>
+      <p><strong>Forgetting <code>&lt;&lt; 1</code> on the carry.</strong> If I write <code>b = (a &amp; b) &amp; MASK</code>, the carry is added back into the same bit it came from. On the example, round 1 gives <code>a = 6, b = 1</code>, round 2 gives <code>a = 7, b = 0</code>, and the function returns <strong>7 instead of 8</strong>.</p>
       <p><strong>Dropping <code>&amp; MASK</code>.</strong> Every positive test passes, then <code>get_sum(-2, 3)</code> hangs: the carry <code>1 &lt;&lt; 32</code>, <code>1 &lt;&lt; 33</code>, … never reaches 0 in an unbounded integer.</p>
       <p><strong>Returning <code>a</code> unconditionally.</strong> <code>get_sum(-3, 1)</code> returns <strong>4294967294</strong>, the unsigned reading of <code>0xFFFFFFFE</code>, instead of −2.</p>
       <div class="callout warn">Carries move left, so the shift is not optional. Mask both terms every round, and read the final register back as signed with <code>~(a ^ MASK)</code>, which uses no <code>-</code>.</div>

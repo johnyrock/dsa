@@ -218,8 +218,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Matrix · LeetCode #54</div>
   <h1>Spiral Matrix, narrated</h1>
-  <p>Scroll through the thinking, from steering a cursor with a visited set to four bounds that shrink after every walk, with the state of the matrix and the output shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/matrix.html">Matrix</a> <span class="how">peel the outer layer with four walks, move the four bounds inward, repeat until they cross</span></p>
+  <p>I’ll start by steering a cursor with a visited set, then replace that set with four shrinking boundaries.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/matrix.html">Matrix</a> <span class="how">I peel the outer layer with four walks, move the four bounds inward, and repeat until they cross</span></p>
 </header>
 
 <div class="layout">
@@ -237,10 +237,10 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: steer a cursor and remember where you have been</h2>
-      <p>Simulate the walk literally. Keep a position <code>(r, c)</code>, a direction from the cycle right → down → left → up, and a <code>visited</code> set. Step forward; if the next cell is out of bounds or already visited, turn clockwise and try again:</p>
+      <p>My first instinct is to simulate the walk. I keep <code>(r, c)</code>, a direction, and a <code>visited</code> set; when the next cell is invalid or visited, I turn clockwise.</p>
       <pre class="code"><span class="ln">dirs = [(0, 1), (1, 0), (0, -1), (-1, 0)]</span><span class="ln">r = c = d = 0</span><span class="ln">for _ in range(m * n):</span><span class="ln">    result.append(matrix[r][c]); visited.add((r, c))</span><span class="ln">    nr, nc = r + dirs[d][0], c + dirs[d][1]</span><span class="ln">    if not (0 &lt;= nr &lt; m and 0 &lt;= nc &lt; n) or (nr, nc) in visited:</span><span class="ln">        d = (d + 1) % 4</span><span class="ln">        nr, nc = r + dirs[d][0], c + dirs[d][1]</span><span class="ln">    r, c = nr, nc</span></pre>
-      <p style="margin-top:14px">This works and runs in O(m × n) time, which is optimal. Its cost is the <code>visited</code> set: O(m × n) extra memory for information that is entirely predictable. The cursor never needs to <em>discover</em> that a cell is taken; the shape of a spiral tells you in advance that after the top row is done, the top row is gone.</p>
-      <p>A common in-place variant overwrites visited cells with a sentinel value, which saves the set but destroys the input. Neither is necessary.</p>
+      <p style="margin-top:14px">I visit each cell once, so this takes <strong>O(m × n) time</strong>. The <code>visited</code> set takes <strong>O(m × n) space</strong>.</p>
+      <p>The spiral itself tells me which edge is already used, so I shrink the remaining rectangle instead of recording every visited cell.</p>
     </section>
 
     <section class="step" data-state="insight">
@@ -257,8 +257,8 @@
       <ul>
         <li><code>for c in range(left, right + 1): result.append(matrix[top][c])</code> then <code>top += 1</code> — top row, left to right.</li>
         <li><code>for r in range(top, bottom + 1): result.append(matrix[r][right])</code> then <code>right -= 1</code> — right column, top to bottom, starting below the row just done.</li>
-        <li><code>if top &lt;= bottom:</code> walk <code>range(right, left - 1, -1)</code> along <code>matrix[bottom]</code>, then <code>bottom -= 1</code> — bottom row, right to left.</li>
-        <li><code>if left &lt;= right:</code> walk <code>range(bottom, top - 1, -1)</code> down <code>matrix[r][left]</code>, then <code>left += 1</code> — left column, bottom to top.</li>
+        <li>When <code>top &lt;= bottom</code>, I walk <code>range(right, left - 1, -1)</code> along <code>matrix[bottom]</code>, then do <code>bottom -= 1</code> — bottom row, right to left.</li>
+        <li>When <code>left &lt;= right</code>, I walk <code>range(bottom, top - 1, -1)</code> down <code>matrix[r][left]</code>, then do <code>left += 1</code> — left column, bottom to top.</li>
       </ul>
       <p>The two <code>if</code> guards are not decoration. After <code>top += 1</code> and <code>right -= 1</code>, the rectangle may already be empty in one dimension. If only one row remained, the top walk read it, and an unguarded bottom walk would read the same row a second time, backwards. The guard checks the bound <em>after</em> the shrink, so it sees the rectangle as it really is.</p>
     </section>
@@ -293,7 +293,7 @@
       <p><strong>Dropping <code>if top &lt;= bottom</code>.</strong> On the second lap of the running example, after the top walk reads <code>6, 7</code> and <code>top</code> becomes 2, the bottom walk runs on <code>matrix[bottom] = matrix[1]</code> from <code>right = 1</code> down to <code>left = 1</code>: it appends <code>6</code> again. The output is <code>[1,2,3,4,8,12,11,10,9,5,6,7,6]</code>, thirteen values for a twelve-cell matrix. On a one-row input <code>[[1,2,3]]</code> the same bug returns <code>[1,2,3,2,1]</code>.</p>
       <p><strong>Dropping <code>if left &lt;= right</code>.</strong> Symmetric: on a one-column input <code>[[1],[2],[3]]</code> the right walk reads <code>1, 2, 3</code>, <code>right</code> becomes −1, and the unguarded left walk reads the column again upward, giving <code>[1,2,3,2,1]</code>.</p>
       <p><strong>Stopping one short on the reverse walks.</strong> <code>range(right, left, -1)</code> never visits <code>left</code>, so the bottom-left corner <code>9</code> is skipped; <code>range(bottom, top, -1)</code> skips the cell at <code>top</code> on the left column. The <code>- 1</code> in both stop values is deliberate.</p>
-      <div class="callout warn">Check a bound <em>after</em> it has shrunk, before the walk that depends on it. A single leftover row or column is read by one walk, never two.</div>
+      <div class="callout warn">I check a bound <em>after</em> it has shrunk, before the walk that depends on it. A single leftover row or column is read by one walk, never two.</div>
     </section>
 
     <section class="step" data-state="complexity">

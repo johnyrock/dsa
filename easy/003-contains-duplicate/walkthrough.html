@@ -183,7 +183,7 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Hash Set · LeetCode #217</div>
   <h1>Contains Duplicate, narrated</h1>
-  <p>Scroll through the thinking, from all-pairs comparison through sorting to the one-pass hash set, with the state of the algorithm shown alongside.</p>
+  <p>I’ll begin by comparing pairs, then turn the repeated membership check into a one-pass hash-set lookup.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/hash-map.html">Hash Set</a> <span class="how">early exit on first repeat</span></p>
 </header>
 
@@ -193,49 +193,49 @@
     <section class="step" data-state="problem">
       <div class="n">STEP 1</div>
       <h2>The problem</h2>
-      <p>You get an array of integers <code>nums</code>. Return <code>True</code> if any value appears at least twice, and <code>False</code> if every element is distinct.</p>
-      <p>That is the whole question. You do not have to say <em>which</em> value repeats, or where it repeats, or how many times. One bit of information comes back.</p>
+      <p>Given an array of integers <code>nums</code>, return <code>True</code> when any value appears at least twice, and <code>False</code> when every value is distinct.</p>
+      <p>Only a yes-or-no answer is needed. The repeated value, its positions, and its total count do not need to be returned.</p>
       <div class="callout">Running example: <code>nums = [1, 2, 3, 1]</code>. The answer is <code>True</code> because the 1 at index 0 shows up again at index 3.</div>
-      <p>Notice how little the answer asks for. A yes/no question can often be answered without doing the full bookkeeping a richer question would need.</p>
+      <p>The small output requirement means the solution only needs enough information to detect one repeat.</p>
     </section>
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instincts: every pair, then sorting</h2>
-      <p>The most direct idea is to take every possible pair of positions and check whether the two values are equal. For each element, compare it against every element after it.</p>
-      <pre class="code"><span class="ln">for i in range(len(nums)):</span><span class="ln">    for j in range(i + 1, len(nums)):</span><span class="ln">        if nums[i] == nums[j]:</span><span class="ln">            return True</span></pre>
-      <p style="margin-top:14px">This is correct, and it is a fine first answer to say out loud. But with n elements there are roughly n² / 2 pairs, so the running time is <strong>O(n²)</strong>. At n = 100,000 that is about five billion comparisons.</p>
-      <p>The obvious improvement is to sort first. Once the array is in order, equal values sit next to each other, so one sweep comparing each element to its neighbour is enough.</p>
+      <h2>First instinct: compare every pair</h2>
+      <p>My first instinct is to check every pair of positions. For each element, I compare it with every element after it and return as soon as two values match.</p>
+      <pre class="code"><span class="ln">for i in range(len(nums)):</span><span class="ln">    for j in range(i + 1, len(nums)):</span><span class="ln">        if nums[i] == nums[j]:</span><span class="ln">            return True</span><span class="ln">return False</span></pre>
+      <p style="margin-top:14px">The pair scan checks roughly <code>n² / 2</code> pairs, so it takes <strong>O(n²) time</strong> and uses <strong>O(1) extra space</strong>.</p>
+      <p>The wasted work is rechecking a long tail for every new value. A set answers the membership question directly without rearranging the input.</p>
       <pre class="code"><span class="ln">nums.sort()</span><span class="ln">for i in range(1, len(nums)):</span><span class="ln">    if nums[i] == nums[i - 1]:</span><span class="ln">        return True</span></pre>
-      <p style="margin-top:14px">That is <strong>O(n log n)</strong> time and O(1) extra space, which is the right answer if memory is tight. But the sort dominates, and it destroys the original order unless you copy the list first.</p>
+      <p style="margin-top:14px">That alternative is <strong>O(n log n)</strong> time and <code>O(1)</code> extra space when sorting in place, but sorting still dominates and changes the input order.</p>
       <div class="callout warn">Sorting to find duplicates does far more work than the question needs. It puts <em>everything</em> in order just to learn whether <em>any</em> two things match. And the brute force rescans the whole tail to answer one small question. What is that question?</div>
     </section>
 
     <section class="step" data-state="reframe">
       <div class="n">STEP 3</div>
       <h2>Reframe: what am I actually asking?</h2>
-      <p>Stand at one element <code>n</code>. The only thing you need to know is: <em>"have I already walked past this exact value?"</em></p>
-      <p>That is a membership question, not a comparison. The brute force answers it by scanning, which costs O(n) each time. Sorting answers it by rearranging, which costs O(n log n) once.</p>
-      <div class="callout">If we could answer "have I seen this value before?" in O(1), the whole thing would collapse to a single pass.</div>
-      <p>And unlike Two Sum, we do not need to remember <em>where</em> a value was. Only that it happened.</p>
+      <p>At one element <code>n</code>, I only need to ask: <em>“Have I already walked past this exact value?”</em></p>
+      <p>That is a membership question, not a comparison. My brute-force version answers it by scanning, while sorting answers it by rearranging the array.</p>
+      <div class="callout">If I can answer “have I seen this value before?” in <code>O(1)</code>, I only need one pass.</div>
+      <p>Unlike Two Sum, I do not need to remember <em>where</em> a value appeared. I only need to know that it appeared.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 4</div>
       <h2>The key idea: a set of what you have seen</h2>
-      <p>A set answers "is this value in here?" in O(1) on average, the same hashing trick a dictionary uses. Since we do not need an index, a set is the right shape: keys with no values attached.</p>
-      <p>So we walk the array and, at every element, do two things in this order:</p>
+      <p>I use a set because it answers “is this value here?” in <code>O(1)</code> average time. Since I do not need an index, a set has exactly the right shape.</p>
+      <p>As I walk the array, I do two things at every element in this order:</p>
       <ul>
-        <li><strong>Check</strong> whether the value is already in the set. If it is, we have found a repeat and can return <code>True</code> straight away.</li>
-        <li><strong>Add</strong> the current value, so a later element can match against it.</li>
+        <li>I check whether the value is already in the set. If it is, I have found a repeat and return <code>True</code>.</li>
+        <li>I add the current value, so a later element can match against it.</li>
       </ul>
-      <p>Check before add. If you add first, every element finds itself in the set and the answer is always <code>True</code>.</p>
+      <p>I check before adding. If I add first, every element finds itself in the set and the answer is always <code>True</code>.</p>
     </section>
 
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: indices 0, 1, 2</h2>
-      <p>Start with an empty set. The first value is 1. Is 1 in the set? No, it is empty, so we add it and move on.</p>
+      <p>I start with an empty set. The first value is 1, so I add it and move on.</p>
       <p>The value 2 is not in the set either, so it gets added. Same for the 3 at index 2.</p>
       <p>The set now holds <code>{1, 2, 3}</code>. Each of those checks cost O(1), no matter how big the set has grown. A run of misses is the normal case: the set just keeps growing until a match appears or the array runs out.</p>
     </section>
@@ -243,8 +243,8 @@
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: index 3, the hit</h2>
-      <p>The last value is 1. Is 1 in the set? <strong>Yes</strong> — we put it there back at index 0.</p>
-      <p>That settles the question, so we return <code>True</code> immediately. We never add this second 1, and we never look at anything after it.</p>
+      <p>The last value is 1. It is already in the set because I added it at index 0.</p>
+      <p>That settles the question, so I return <code>True</code> immediately. I do not add this second 1 or examine anything after it.</p>
       <div class="callout">This early exit is why the explicit loop can beat the one-liner. On <code>[7, 7, …a million more…]</code> the loop stops after two elements; <code>len(set(nums)) != len(nums)</code> builds the entire set first.</div>
     </section>
 
@@ -268,7 +268,7 @@
         <tr><td>Sort, then scan neighbours</td><td>O(n log n)</td><td>O(1)</td></tr>
         <tr><td>Hash set, one pass</td><td>O(n)</td><td>O(n)</td></tr>
       </table>
-      <p>The usual trade: spend memory to buy time. The sorting row is the one to keep in your pocket for when the interviewer says "now do it in O(1) space".</p>
+      <p>I am trading memory for time. I keep the sorting alternative in mind when an <code>O(1)</code>-space constraint matters.</p>
     </section>
 
     <section class="step" data-state="final">
@@ -282,8 +282,8 @@
         <li><code>seen.add(n)</code> is the store, placed after the check on purpose.</li>
         <li><code>return False</code> is the answer when the loop finishes untouched.</li>
       </ul>
-      <p>In real Python you would often just write <code>return len(set(nums)) != len(nums)</code>. It is the same idea compressed: build the set of distinct values, and if fewer came out than went in, something collapsed. It is always O(n) time and O(n) space, with no early exit — so it is the better one-liner and the worse loop.</p>
-      <div class="callout">One-line summary to remember: <em>walk once, and ask the set whether this value has already gone by.</em></div>
+      <p>In compact Python, I could write <code>return len(set(nums)) != len(nums)</code>. It builds all distinct values first, so it has no early exit even though it is still <code>O(n)</code> time and <code>O(n)</code> space.</p>
+      <div class="callout">I remember this as: <em>I walk once and ask the set whether this value has already gone by.</em></div>
     </section>
 
     <div class="code-final">

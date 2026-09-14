@@ -204,8 +204,8 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Backtracking · LeetCode #40</div>
   <h1>Combination Sum II, narrated</h1>
-  <p>Scroll through the thinking, from testing every subset to a sorted recursion that skips duplicate values and stops early, with the state of the algorithm shown alongside.</p>
-  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/backtracking.html">Backtracking</a> <span class="how">sort, choose from <code>start</code> onward, recurse with <code>i + 1</code>, skip equal neighbours at the same level</span></p>
+  <p>I will first test every subset and deduplicate the matching sums, then prune overshoots and skip repeated values at the same choice level.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/backtracking.html">Backtracking</a> <span class="how">sort, I choose from <code>start</code> onward, recurse with <code>i + 1</code>, I skip equal neighbours at the same level</span></p>
 </header>
 
 <div class="layout">
@@ -222,21 +222,21 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>Brute force: every subset, then deduplicate</h2>
-      <p>Seven candidates means <code>2^7 = 128</code> subsets. Generate every one with a bitmask, keep those whose sum is 8, sort each survivor, and drop it into a set to squash duplicates.</p>
-      <pre class="code"><span class="ln">seen = set()</span><span class="ln">for mask in range(1 &lt;&lt; len(candidates)):</span><span class="ln">    chosen = [candidates[i] for i in range(len(candidates)) if mask &gt;&gt; i &amp; 1]</span><span class="ln">    if sum(chosen) == target:</span><span class="ln">        seen.add(tuple(sorted(chosen)))</span><span class="ln">return [list(t) for t in seen]</span></pre>
-      <p style="margin-top:14px">It is correct, and it takes <strong>O(2ⁿ · n)</strong> time regardless of the target. At the upper constraint of 100 candidates that is <code>2^100</code> masks, which never finishes. Almost all of that work is wasted: most subsets overshoot 8 within their first few elements, and the deduplication happens after the fact instead of being avoided.</p>
-      <p>The two fixes we want are: stop extending a partial sum the moment it cannot reach <code>target</code>, and never generate the second copy of a combination at all.</p>
+      <h2>First instinct: every subset, then deduplicate</h2>
+      <p>I can use a bitmask to select each subset, retain subsets whose sum equals <code>target</code>, and use sorted tuples to remove duplicates.</p>
+      <pre class="code"><span class="ln">def combinationSum2(candidates, target):</span><span class="ln">    seen = set()</span><span class="ln">    for mask in range(1 &lt;&lt; len(candidates)):</span><span class="ln">        chosen = [candidates[i] for i in range(len(candidates)) if mask &gt;&gt; i &amp; 1]</span><span class="ln">        if sum(chosen) == target: seen.add(tuple(sorted(chosen)))</span><span class="ln">    return [list(combination) for combination in seen]</span></pre>
+      <p style="margin-top:14px">This is correct. It checks <code>2ⁿ</code> subsets and sums up to <code>n</code> values per subset, so the time complexity is O(n · 2ⁿ). The set has O(n · 2ⁿ) space complexity in the worst case.</p>
+      <p>I sort candidates and build the sum gradually. A branch can end as soon as it exceeds <code>target</code>, and equal values can be skipped at the same recursion level.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>Key insight: sort, then walk forward with two prunes</h2>
-      <p>Sort the candidates: <code>[1,1,2,5,6,7,10]</code>. Now build every combination in ascending order by choosing an index <code>i</code> and only ever recursing on indices <em>after</em> it. That one rule, <code>backtrack(i + 1, …)</code>, guarantees no position is reused and that <code>[2,6]</code> and <code>[6,2]</code> cannot both appear, because only the ascending one is ever built.</p>
+      <p>I sort the candidates: <code>[1,1,2,5,6,7,10]</code>. I build every combination in ascending order by choosing an index <code>i</code> and only ever recursing on indices <em>after</em> it. That one rule, <code>backtrack(i + 1, …)</code>, guarantees no position is reused and that <code>[2,6]</code> and <code>[6,2]</code> cannot both appear, because only the ascending one is ever built.</p>
       <p>Sorting also unlocks two prunes in the loop:</p>
       <ul>
         <li><code>if candidates[i] &gt; remaining: break</code> — every later value is at least as big, so nothing past this index can fit. This is a <code>break</code>, not a <code>continue</code>.</li>
-        <li><code>if i &gt; start and candidates[i] == candidates[i - 1]: continue</code> — a value equal to its left neighbour, at the same level of the recursion, would rebuild exactly the combinations the neighbour already built. Skip it.</li>
+        <li><code>if i &gt; start and candidates[i] == candidates[i - 1]: continue</code> — a value equal to its left neighbour, at the same level of the recursion, would rebuild exactly the combinations the neighbour already built. I skip it.</li>
       </ul>
       <div class="callout">The <code>i &gt; start</code> half is the subtle part. When <code>i == start</code>, the equal value is the <em>first</em> option at this level, so it must be allowed even if it equals the value chosen one level up. That is what lets <code>[1,1,6]</code> exist while <code>[1,7]</code> appears once.</div>
     </section>
@@ -247,10 +247,10 @@
       <ul>
         <li><code>candidates.sort()</code> puts equal values side by side and in ascending order.</li>
         <li><code>backtrack(start, remaining)</code> means: extend <code>path</code> using indices from <code>start</code> onward, with <code>remaining</code> still to fill.</li>
-        <li><code>if remaining == 0</code>: record <code>path[:]</code> (a copy, since <code>path</code> keeps changing) and return.</li>
+        <li><code>if remaining == 0</code>: I record <code>path[:]</code> (a copy, since <code>path</code> keeps changing) and return.</li>
         <li>Loop <code>i</code> from <code>start</code>; <code>break</code> if <code>candidates[i] &gt; remaining</code>; <code>continue</code> on an equal neighbour when <code>i &gt; start</code>.</li>
-        <li>Choose: <code>path.append(candidates[i])</code>, recurse with <code>backtrack(i + 1, remaining - candidates[i])</code>, undo with <code>path.pop()</code>.</li>
-        <li>Start from <code>backtrack(0, target)</code> and return <code>result</code>.</li>
+        <li>I choose: <code>path.append(candidates[i])</code>, recurse with <code>backtrack(i + 1, remaining - candidates[i])</code>, undo with <code>path.pop()</code>.</li>
+        <li>I start from <code>backtrack(0, target)</code> and return <code>result</code>.</li>
       </ul>
       <p>The panel shows the sorted candidates on top, the current <code>path</code> below, and the answers collected so far. Green cells are chosen; the blue cell is the index being considered.</p>
     </section>
@@ -258,23 +258,23 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace: the first answer, [1, 1, 6]</h2>
-      <p>From the root, <code>start = 0</code>, <code>remaining = 8</code>. Index 0 holds <code>1</code>: choose it, recurse with <code>start = 1</code>, <code>remaining = 7</code>. Index 1 holds another <code>1</code>; here <code>i == start</code>, so the duplicate skip does not fire and we choose it too: <code>path = [1, 1]</code>, <code>remaining = 6</code>.</p>
-      <p>Now index 2 (<code>2</code>): <code>path = [1, 1, 2]</code>, <code>remaining = 4</code>. The next value is <code>5 &gt; 4</code>, so the loop breaks at once and we pop the <code>2</code>. Index 3 (<code>5</code>): <code>remaining = 1</code>, then <code>6 &gt; 1</code> breaks it. Pop. Index 4 (<code>6</code>): <code>6 - 6 = 0</code>.</p>
+      <p>From the root, <code>start = 0</code>, <code>remaining = 8</code>. Index 0 holds <code>1</code>: I choose it, recurse with <code>start = 1</code>, <code>remaining = 7</code>. Index 1 holds another <code>1</code>; here <code>i == start</code>, so the duplicate skip does not fire and I choose it too: <code>path = [1, 1]</code>, <code>remaining = 6</code>.</p>
+      <p>Now index 2 (<code>2</code>): <code>path = [1, 1, 2]</code>, <code>remaining = 4</code>. The next value is <code>5 &gt; 4</code>, so the loop breaks at once and I pop the <code>2</code>. Index 3 (<code>5</code>): <code>remaining = 1</code>, then <code>6 &gt; 1</code> breaks it. I pop. Index 4 (<code>6</code>): <code>6 - 6 = 0</code>.</p>
       <div class="callout"><code>remaining == 0</code>, so <code>[1, 1, 6]</code> is copied into <code>result</code>. Back in the <code>[1, 1]</code> loop, index 5 holds <code>7 &gt; 6</code>: break.</div>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace: [1, 2, 5] and [1, 7]</h2>
-      <p>The second <code>1</code> is popped and we are back at <code>path = [1]</code>, <code>remaining = 7</code>, scanning from index 2. Choose <code>2</code>: <code>remaining = 5</code>. Then index 3 holds <code>5</code>, and <code>5 - 5 = 0</code>: record <code>[1, 2, 5]</code>. Index 4 is <code>6 &gt; 5</code>, break, pop the <code>2</code>.</p>
-      <p>Index 3 alone: <code>[1, 5]</code> leaves <code>remaining = 2</code>, and <code>6 &gt; 2</code> breaks. Index 4: <code>[1, 6]</code> leaves <code>1</code>, and <code>7 &gt; 1</code> breaks. Index 5: <code>[1, 7]</code> gives <code>7 - 7 = 0</code>, record it. Index 6 is <code>10 &gt; 7</code>, break.</p>
-      <p>Notice how short each dead end is. Because the values are sorted, every failed branch dies on its very next comparison rather than scanning to the end of the list.</p>
+      <p>The second <code>1</code> is popped and I am back at <code>path = [1]</code>, <code>remaining = 7</code>, scanning from index 2. I choose <code>2</code>: <code>remaining = 5</code>. Then index 3 holds <code>5</code>, and <code>5 - 5 = 0</code>: I record <code>[1, 2, 5]</code>. Index 4 is <code>6 &gt; 5</code>, break, I pop the <code>2</code>.</p>
+      <p>Index 3 alone: <code>[1, 5]</code> leaves <code>remaining = 2</code>, and <code>6 &gt; 2</code> breaks. Index 4: <code>[1, 6]</code> leaves <code>1</code>, and <code>7 &gt; 1</code> breaks. Index 5: <code>[1, 7]</code> gives <code>7 - 7 = 0</code>, I record it. Index 6 is <code>10 &gt; 7</code>, break.</p>
+      <p>I keep each dead end short. Because the values are sorted, every failed branch stops on its next comparison rather than scanning to the end of the list.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace: the duplicate skip, then [2, 6]</h2>
-      <p>Pop the first <code>1</code>. We are at the root loop with <code>i = 1</code>, <code>start = 0</code>. <code>candidates[1] == candidates[0]</code> and <code>1 &gt; 0</code>, so <code>continue</code>. Everything that starts with the second <code>1</code> is a repeat of what the first <code>1</code> already produced, and we skip it in one comparison.</p>
+      <p>I pop the first <code>1</code>. I am at the root loop with <code>i = 1</code>, <code>start = 0</code>. <code>candidates[1] == candidates[0]</code> and <code>1 &gt; 0</code>, so <code>continue</code>. Everything that starts with the second <code>1</code> is a repeat of what the first <code>1</code> already produced, and I skip it in one comparison.</p>
       <p>Index 2 (<code>2</code>): <code>remaining = 6</code>. Choosing <code>5</code> leaves <code>1</code> and breaks; choosing <code>6</code> leaves <code>0</code>, so <code>[2, 6]</code> is recorded; <code>7 &gt; 6</code> breaks. Then <code>[5]</code>, <code>[6]</code> and <code>[7]</code> each die on their next value, and <code>10 &gt; 8</code> ends the root loop.</p>
       <div class="callout">Seventeen calls to <code>backtrack</code> in total, against 128 subsets for the brute force, and no deduplication pass at the end.</div>
     </section>
@@ -313,7 +313,7 @@
         <li><code>path.append(…)</code>, <code>backtrack(i + 1, remaining - candidates[i])</code>, <code>path.pop()</code> — choose, recurse, undo.</li>
         <li><code>backtrack(0, target)</code> and <code>return result</code>.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>sort, choose forward from <code>start</code>, break when a value is too big, and skip a value equal to its left neighbour unless it is the first choice at this level.</em></div>
+      <div class="callout">One-line summary to remember: <em>I sort, I choose forward from <code>start</code>, break when a value is too big, and skip a value equal to its left neighbour unless it is the first choice at this level.</em></div>
     </section>
 
     <div class="code-final">

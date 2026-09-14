@@ -204,7 +204,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Binary Search · LeetCode #875</div>
   <h1>Koko Eating Bananas, narrated</h1>
-  <p>Scroll through the thinking, from testing every speed one by one to binary searching the answer itself, with the state of the algorithm shown alongside.</p>
+  <p>I will test candidate eating speeds one by one first, then I use the fact that a speed being feasible stays feasible as it increases.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/binary-search.html">Binary Search</a> <span class="how">on the answer: feasibility is monotonic in the speed, so search the speed range</span></p>
 </header>
 
@@ -223,19 +223,19 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: try every speed from 1 upward</h2>
-      <p>The speed is an integer between 1 and <code>max(piles)</code>. So walk up from 1, compute the hours each speed needs, and stop at the first one that fits in <code>h</code>:</p>
-      <pre class="code"><span class="ln">for k in range(1, max(piles) + 1):</span><span class="ln">    hours = sum(math.ceil(p / k) for p in piles)</span><span class="ln">    if hours &lt;= h:</span><span class="ln">        return k</span></pre>
-      <p style="margin-top:14px">This is correct and it is a fine thing to say first in an interview. It is also far too slow: with <code>piles[i]</code> up to 10⁹ the loop can run a billion times, and each iteration scans all n piles. That is <strong>O(n · max(piles))</strong>.</p>
-      <p>On the running example it tests <code>k = 1</code> (27 hours), <code>k = 2</code> (12 hours), <code>k = 3</code> (10 hours), <code>k = 4</code> (8 hours) and stops. Four probes here, but potentially a billion in general.</p>
+      <p>I can test every integer speed from 1 through the largest pile and return the first speed that finishes within <code>h</code> hours.</p>
+      <pre class="code"><span class="ln">def minEatingSpeed(piles, h):</span><span class="ln">    for k in range(1, max(piles) + 1):</span><span class="ln">        hours = sum((pile + k - 1) // k for pile in piles)</span><span class="ln">        if hours &lt;= h:</span><span class="ln">            return k</span></pre>
+      <p style="margin-top:14px">This is correct. It can test <code>max(piles)</code> speeds and scan every pile for each one, so the time complexity is O(n · max(piles)). It uses O(1) extra space.</p>
+      <p>A passing speed makes every larger speed feasible too. That monotonic result lets me binary search the answer instead of checking every possible speed.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>The key idea: feasibility is monotonic, so binary search the speed</h2>
-      <p>Look at what the brute force actually discovered: speeds 1, 2, 3 fail, then 4 passes — and every speed above 4 passes too, because eating faster can only reduce the hours. Laid out over the range, feasibility looks like <code>[fail, fail, fail, pass, pass, …, pass]</code>.</p>
-      <p>A sorted-looking boolean array is exactly what binary search wants. The trick is that we are not searching for a value <em>in</em> an array; we are searching the <em>answer space</em> — the candidate speeds from <code>lo = 1</code> to <code>hi = max(piles)</code> — for the first candidate that passes a test.</p>
+      <p>I look at what the brute force actually discovered: speeds 1, 2, 3 fail, then 4 passes — and every speed above 4 passes too, because eating faster can only reduce the hours. Laid out over the range, feasibility looks like <code>[fail, fail, fail, pass, pass, …, pass]</code>.</p>
+      <p>A sorted-looking boolean array is exactly what binary search wants. The trick is that I am not searching for a value <em>in</em> an array; I am searching the <em>answer space</em> — the candidate speeds from <code>lo = 1</code> to <code>hi = max(piles)</code> — for the first candidate that passes a test.</p>
       <div class="callout">The feasibility test is <code>hours = sum((pile + mid - 1) // mid for pile in piles)</code>, then <code>hours &lt;= h</code>. The expression <code>(pile + mid - 1) // mid</code> is ceiling division in integers: for pile 7 and speed 4 it gives <code>(7 + 3) // 4 = 2</code>, not <code>7 // 4 = 1</code>.</div>
-      <p>Because the test is monotonic, one probe rules out half the remaining speeds at once. Instead of up to a billion probes we need about <code>log₂(10⁹) ≈ 30</code>.</p>
+      <p>Because the test is monotonic, one probe rules out half the remaining speeds at once. Instead of up to a billion probes I need about <code>log₂(10⁹) ≈ 30</code>.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -246,17 +246,17 @@
         <li><code>while lo &lt; hi</code> — keep going while more than one candidate is left. This is the "find the first passing value" shape, not the "find an exact match" shape, so there is no <code>&lt;=</code>.</li>
         <li><code>mid = (lo + hi) // 2</code> — probe the middle speed.</li>
         <li><code>hours = sum((pile + mid - 1) // mid for pile in piles)</code> — how many hours speed <code>mid</code> needs.</li>
-        <li><code>if hours &lt;= h: hi = mid</code> — feasible, so the answer is <code>mid</code> or slower. Keep <code>mid</code>; it might be the answer.</li>
+        <li><code>if hours &lt;= h: hi = mid</code> — feasible, so the answer is <code>mid</code> or slower. I keep <code>mid</code>; it might be the answer.</li>
         <li><code>else: lo = mid + 1</code> — infeasible, so <code>mid</code> and everything slower are out.</li>
         <li><code>return lo</code> — when the loop stops, <code>lo == hi</code> and it is the smallest speed never rejected.</li>
       </ul>
-      <p>The invariant to hold in your head: <strong><code>hi</code> always works, and everything below <code>lo</code> never does.</strong> Every branch preserves it, and the loop ends when the two meet.</p>
+      <p>The invariant to hold in my head: <strong><code>hi</code> always works, and everything below <code>lo</code> never does.</strong> Every branch preserves it, and the loop ends when the two meet.</p>
     </section>
 
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: probe 6, then probe 3</h2>
-      <p>Start with <code>lo = 1</code>, <code>hi = 11</code>. The first probe is <code>mid = (1 + 11) // 2 = 6</code>. Hours at speed 6: pile 3 takes 1, pile 6 takes 1, pile 7 takes 2, pile 11 takes 2 — <code>1 + 1 + 2 + 2 = 6</code>, which is within the budget of 8. So <code>hi = 6</code>: the answer is 6 or something slower.</p>
+      <p>I start with <code>lo = 1</code>, <code>hi = 11</code>. The first probe is <code>mid = (1 + 11) // 2 = 6</code>. Hours at speed 6: pile 3 takes 1, pile 6 takes 1, pile 7 takes 2, pile 11 takes 2 — <code>1 + 1 + 2 + 2 = 6</code>, which is within the budget of 8. So <code>hi = 6</code>: the answer is 6 or something slower.</p>
       <p>Second probe: <code>mid = (1 + 6) // 2 = 3</code>. Hours at speed 3: <code>1 + 2 + 3 + 4 = 10</code>, more than 8. Speed 3 fails, and so does everything slower, so <code>lo = 4</code>.</p>
       <p>Two probes have narrowed eleven candidates down to three: 4, 5, or 6. The panel shows the second probe, with the surviving range highlighted and the per-pile hour counts under each pile.</p>
     </section>
@@ -273,15 +273,15 @@
       <div class="n">STEP 7</div>
       <h2>Trace it: probe 4, the answer</h2>
       <p><code>lo = 4</code>, <code>hi = 5</code>, so <code>mid = (4 + 5) // 2 = 4</code>. Hours at speed 4: <code>1 + 2 + 2 + 3 = 8</code> again — pile 11 needs <code>(11 + 3) // 4 = 3</code> hours, since 4 + 4 + 3 is three hours of eating. That passes, so <code>hi = 4</code>.</p>
-      <p>Now <code>lo == hi == 4</code>, the loop condition <code>lo &lt; hi</code> is false, and we <code>return lo</code>, which is <strong>4</strong>.</p>
+      <p>Now <code>lo == hi == 4</code>, the loop condition <code>lo &lt; hi</code> is false, and I <code>return lo</code>, which is <strong>4</strong>.</p>
       <div class="callout">The brute force needed four probes for this tiny input and could need a billion for a big one. The binary search needed four probes here and never needs more than about thirty.</div>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: floor division and the shrinking rule</h2>
-      <p><strong>Rounding the hours down.</strong> Write the check as <code>hours = sum(pile // mid for pile in piles)</code> and every partial pile is under-counted. On the running example speed 3 now appears to take <code>1 + 2 + 2 + 3 = 8</code> hours, so the search accepts it and moves down: it probes 2 (12 hours, fails) and returns <strong>3</strong>. But at speed 3 the pile of 7 really takes 3 hours and the pile of 11 takes 4, for 10 hours total. Koko gets caught. The ceiling is the whole point of the "one pile per hour" rule.</p>
-      <p><strong>Discarding a passing speed.</strong> Write <code>hi = mid - 1</code> on the feasible branch, as you would in an exact-match search. Now the loop can end on a speed that was never tested: with <code>lo = 4</code>, <code>hi = 5</code>, probing 4 passes and sets <code>hi = 3</code>, the loop exits with <code>lo = 4</code> — right answer here, by luck. On <code>piles = [2, 2]</code>, <code>h = 4</code> it probes 1 (passes, <code>hi = 0</code>) and then returns <code>lo = 1</code>, also by luck; but pair the same off-by-one with <code>while lo &lt;= hi</code> and you return <code>lo</code> after it has walked past the answer. The safe pairing is <code>lo &lt; hi</code> with <code>hi = mid</code>.</p>
+      <p><strong>Rounding the hours down.</strong> I write the check as <code>hours = sum(pile // mid for pile in piles)</code> and every partial pile is under-counted. On the running example speed 3 now appears to take <code>1 + 2 + 2 + 3 = 8</code> hours, so the search accepts it and moves down: it probes 2 (12 hours, fails) and returns <strong>3</strong>. But at speed 3 the pile of 7 really takes 3 hours and the pile of 11 takes 4, for 10 hours total. Koko gets caught. The ceiling is the whole point of the "one pile per hour" rule.</p>
+      <p><strong>Discarding a passing speed.</strong> I write <code>hi = mid - 1</code> on the feasible branch, as I would in an exact-match search. Now the loop can end on a speed that was never tested: with <code>lo = 4</code>, <code>hi = 5</code>, probing 4 passes and sets <code>hi = 3</code>, the loop exits with <code>lo = 4</code> — right answer here, by luck. On <code>piles = [2, 2]</code>, <code>h = 4</code> it probes 1 (passes, <code>hi = 0</code>) and then returns <code>lo = 1</code>, also by luck; but pair the same off-by-one with <code>while lo &lt;= hi</code> and I return <code>lo</code> after it has walked past the answer. The safe pairing is <code>lo &lt; hi</code> with <code>hi = mid</code>.</p>
       <p><strong>Starting at <code>lo = 0</code>.</strong> Speed 0 is not a legal speed, and the moment <code>mid</code> lands on 0 the check divides by zero.</p>
       <div class="callout warn">Two rules: the feasibility test uses ceiling division, and a passing <code>mid</code> stays in the range (<code>hi = mid</code>) while a failing one leaves it (<code>lo = mid + 1</code>).</div>
     </section>

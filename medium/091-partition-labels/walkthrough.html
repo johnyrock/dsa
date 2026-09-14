@@ -216,7 +216,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Greedy · LeetCode #763</div>
   <h1>Partition Labels, narrated</h1>
-  <p>Scroll through the thinking, from testing every cut against every letter to one pass that carries a "must reach" boundary, with the string and the running boundary shown alongside.</p>
+  <p>I’ll start by testing cuts directly, then carry one “must reach” boundary as I trace the string.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/greedy.html">Greedy</a> <span class="how">extend end to the last index of every letter seen; cut the moment i reaches it</span></p>
 </header>
 
@@ -226,7 +226,7 @@
     <section class="step" data-state="problem">
       <div class="n">STEP 1</div>
       <h2>The problem</h2>
-      <p>You get a string <code>s</code> of lowercase letters. Cut it into contiguous pieces so that no letter shows up in two different pieces, and make as many pieces as you can. Return the piece sizes, in order.</p>
+      <p>Given a lowercase string <code>s</code>, cut it into contiguous pieces so no letter appears in two pieces. Return as many piece sizes as possible, in order.</p>
       <div class="callout">Running example: <code>s = "ababcbacadefegdehijhklij"</code>, 24 letters. The answer is <strong>[9, 7, 8]</strong>: <code>"ababcbaca"</code>, <code>"defegde"</code>, <code>"hijhklij"</code>. Every <code>a</code>, <code>b</code> and <code>c</code> lives in the first piece, every <code>d</code>, <code>e</code>, <code>f</code>, <code>g</code> in the second, and so on.</div>
       <p>Two things are fixed by the statement. The pieces are contiguous and in order, so the only freedom is <em>where to cut</em>. And "as many as possible" means that whenever a cut is legal we should take it; a legal cut never becomes illegal by cutting elsewhere as well.</p>
       <p>What makes a cut after index <code>i</code> legal? No letter may appear both at or before <code>i</code> and after <code>i</code>. Put differently: every letter seen so far in the current piece must have already had its last appearance.</p>
@@ -235,16 +235,17 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: test every cut point against every letter</h2>
-      <p>For each candidate cut after index <code>i</code>, take the letters of the current piece and check that none of them occurs later in the string:</p>
+      <p>My first instinct is to test each candidate cut after index <code>i</code>: I collect the current piece’s letters and check that none occurs later in the string.</p>
       <pre class="code"><span class="ln">sizes, start = [], 0</span><span class="ln">for i in range(len(s)):</span><span class="ln">    piece = set(s[start:i + 1])</span><span class="ln">    if not any(ch in piece for ch in s[i + 1:]):</span><span class="ln">        sizes.append(i - start + 1)</span><span class="ln">        start = i + 1</span></pre>
-      <p style="margin-top:14px">Correct: it takes every legal cut, and it takes it as early as possible. But every candidate <code>i</code> rebuilds the piece's letter set and rescans the whole tail, so it is <strong>O(n²)</strong>. On the 24-letter example that is a few hundred operations; on the 500-letter limit it is a quarter of a million, and the waste is that we re-answer the same question, "does this letter appear later?", at every single index.</p>
+      <p style="margin-top:14px">This takes every legal cut as early as possible. Rebuilding the set and scanning the tail at every index costs <strong>O(n²) time</strong> and <strong>O(n) space</strong> for the current set.</p>
+      <p>I keep re-answering “does this letter appear later?” Recording each letter’s last index once lets me reuse that answer.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: precompute each letter's last index, then carry one boundary</h2>
-      <p>"Does <code>ch</code> appear after <code>i</code>?" has a one-number answer: compare <code>i</code> with the last index of <code>ch</code>. So build that once, <code>last = {ch: i for i, ch in enumerate(s)}</code>. Iterating left to right and overwriting means each letter ends up mapped to its final position. The panel shows the entries that matter for the first piece: <code>a → 8</code>, <code>b → 5</code>, <code>c → 7</code>.</p>
-      <p>Now the cut test collapses. As we walk the piece, keep <code>end = max(end, last[ch])</code>, the furthest index any letter in the piece still needs to reach. The piece cannot close before <code>end</code>, and once <code>i == end</code> every letter in it is fully spent, so it <em>must</em> close there to keep the count maximal.</p>
+      <p>"Does <code>ch</code> appear after <code>i</code>?" has a one-number answer: I compare <code>i</code> with the last index of <code>ch</code>. I build that once with <code>last = {ch: i for i, ch in enumerate(s)}</code>. Iterating left to right and overwriting means each letter ends up mapped to its final position. The panel shows the entries that matter for the first piece: <code>a → 8</code>, <code>b → 5</code>, <code>c → 7</code>.</p>
+      <p>Now the cut test collapses. As I walk the piece, I keep <code>end = max(end, last[ch])</code>, the furthest index any letter in the piece still needs to reach. The piece cannot close before <code>end</code>, and once <code>i == end</code> every letter in it is fully spent, so it <em>must</em> close there to keep the count maximal.</p>
       <div class="callout">The piece is exactly the merged interval of <code>[first, last]</code> spans of the letters it contains. <code>end</code> is that merged interval's right edge, and the walk is the same sweep as Merge Intervals.</div>
     </section>
 
@@ -254,7 +255,7 @@
       <ul>
         <li><code>last = {ch: i for i, ch in enumerate(s)}</code>: the last index of each letter, built in one pass.</li>
         <li><code>end = size = 0</code>: the boundary the current piece must reach, and how many letters it holds so far.</li>
-        <li><code>for i, ch in enumerate(s)</code>: walk the string once.</li>
+        <li><code>for i, ch in enumerate(s)</code>: I walk the string once.</li>
         <li><code>size += 1</code>: this letter is in the current piece no matter what.</li>
         <li><code>end = max(end, last[ch])</code>: stretch the boundary if this letter reappears further on.</li>
         <li><code>if i == end</code>: the boundary has been reached, so <code>sizes.append(size)</code> and reset <code>size = 0</code>.</li>
@@ -268,14 +269,14 @@
       <h2>Trace it: the first piece stretches to 8</h2>
       <p><code>i = 0</code>, <code>ch = 'a'</code>: <code>size = 1</code>, <code>end = max(0, last['a']) = max(0, 8) = 8</code>. Already the piece is committed to reaching index 8. <code>i = 1</code>, <code>'b'</code>: <code>size = 2</code>, <code>end = max(8, 5) = 8</code>. <code>i = 4</code>, <code>'c'</code>: <code>end = max(8, 7) = 8</code>. Nothing pushes past 8.</p>
       <p>The panel is paused at <code>i = 4</code> with <code>size = 5</code>. The <code>b</code> at index 5 and the <code>c</code> at index 7 are the last of their kind, but the piece still cannot close because <code>a</code> has an occurrence at 8 that is not yet consumed.</p>
-      <p>At <code>i = 8</code>, <code>ch = 'a'</code>: <code>size = 9</code>, <code>end = max(8, 8) = 8</code>, and now <code>i == end</code>. Append <strong>9</strong> and reset <code>size = 0</code>.</p>
+      <p>At <code>i = 8</code>, <code>ch = 'a'</code>: <code>size = 9</code>, <code>end = max(8, 8) = 8</code>, and now <code>i == end</code>. I append <strong>9</strong> and reset <code>size = 0</code>.</p>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: the second piece, <code>"defegde"</code></h2>
       <p><code>i = 9</code>, <code>'d'</code>: <code>size = 1</code>, <code>end = max(8, last['d']) = max(8, 14) = 14</code>. Note that <code>end</code> was never reset; it did not need to be, because the next letter's <code>last</code> is necessarily greater than the old boundary, so the <code>max</code> replaces it.</p>
-      <p><code>i = 10</code>, <code>'e'</code>: <code>end = max(14, 15) = 15</code>. <code>i = 11</code>, <code>'f'</code>: <code>last['f'] = 11</code>, so <code>end</code> stays 15. <code>'e'</code>, <code>'g'</code> (<code>last = 13</code>), <code>'d'</code> at 14: still 15. <code>i = 15</code>, <code>'e'</code>: <code>i == end</code>, <code>size = 7</code>. Append <strong>7</strong>.</p>
+      <p><code>i = 10</code>, <code>'e'</code>: <code>end = max(14, 15) = 15</code>. <code>i = 11</code>, <code>'f'</code>: <code>last['f'] = 11</code>, so <code>end</code> stays 15. <code>'e'</code>, <code>'g'</code> (<code>last = 13</code>), <code>'d'</code> at 14: still 15. <code>i = 15</code>, <code>'e'</code>: <code>i == end</code>, <code>size = 7</code>. I append <strong>7</strong>.</p>
       <div class="callout">The boundary moved twice, 14 then 15, and each move was decided by one dictionary lookup.</div>
     </section>
 
@@ -283,7 +284,7 @@
       <div class="n">STEP 7</div>
       <h2>Trace it: the last piece runs to the end of the string</h2>
       <p><code>i = 16</code>, <code>'h'</code>: <code>end = max(15, 19) = 19</code>. <code>i = 17</code>, <code>'i'</code>: <code>end = 22</code>. <code>i = 18</code>, <code>'j'</code>: <code>end = 23</code>. From here <code>'h'</code>, <code>'k'</code> (<code>last = 20</code>), <code>'l'</code> (<code>last = 21</code>), <code>'i'</code>, <code>'j'</code> all have last indices at or below 23, so the boundary is pinned at 23.</p>
-      <p><code>i = 23</code>, <code>'j'</code>: <code>size = 8</code>, <code>i == end</code>. Append <strong>8</strong>. The loop ends and <code>sizes = [9, 7, 8]</code>, which sums to 24, the whole string.</p>
+      <p><code>i = 23</code>, <code>'j'</code>: <code>size = 8</code>, <code>i == end</code>. I append <strong>8</strong>. The loop ends and <code>sizes = [9, 7, 8]</code>, which sums to 24, the whole string.</p>
       <p>The last piece always closes at <code>len(s) - 1</code>: the final letter's <code>last</code> is that index, so <code>end</code> reaches it and <code>i</code> meets it. No trailing letters are ever left unreported.</p>
     </section>
 
@@ -292,7 +293,7 @@
       <h2>Where this goes wrong: comparing against the wrong boundary</h2>
       <p><strong>Testing <code>if i == last[ch]</code> instead of <code>if i == end</code>.</strong> This checks only whether the <em>current</em> letter is done, ignoring earlier letters in the piece that still need to reach further. On the running example the <code>b</code> at index 5 is the last <code>b</code>, so the piece closes there with size 6, cutting the <code>a</code> at index 8 away from the <code>a</code>s before it. The panel shows that first wrong cut; the full output is twelve pieces, <code>[6, 2, 1, 3, 2, 1, 1, 4, 1, 1, 1, 1]</code>, not <code>[9, 7, 8]</code>. Writing <code>end = last[ch]</code> without the <code>max</code> is the same bug.</p>
       <p><strong>Forgetting to reset <code>size</code>.</strong> Leave out <code>size = 0</code> after the append and each entry is a running total: <code>[9, 16, 24]</code>. Sums to far more than 24, which is the tell.</p>
-      <p><strong>Storing the first index instead of the last.</strong> Build the map with <code>setdefault</code> and <code>end</code> never gets past index 1 on <code>"abab"</code>: the output is <code>[1, 1]</code>, two pieces covering two of four letters.</p>
+      <p><strong>Storing the first index instead of the last.</strong> If I build the map with <code>setdefault</code>, <code>end</code> never gets past index 1 on <code>"abab"</code>: the output is <code>[1, 1]</code>, two pieces covering two of four letters.</p>
       <div class="callout warn">The cut condition is about the whole piece, not the current letter: <code>i == end</code>, where <code>end</code> is the max of every <code>last</code> seen since the previous cut.</div>
     </section>
 
@@ -321,7 +322,7 @@
         <li><code>sizes.append(size)</code> and <code>size = 0</code> record the piece and start the next.</li>
         <li><code>return sizes</code>.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>a piece must reach the last index of every letter it contains, so track that max and cut the instant you arrive.</em></div>
+      <div class="callout">My rule is: <em>a piece reaches the last index of every letter it contains, so I track that maximum and cut when I arrive.</em></div>
     </section>
 
     <div class="code-final">

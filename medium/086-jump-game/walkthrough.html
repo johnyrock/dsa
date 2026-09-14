@@ -204,7 +204,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Greedy · LeetCode #55</div>
   <h1>Jump Game, narrated</h1>
-  <p>Scroll through the thinking, from exploring every possible jump to a single frontier swept left to right, with the state of the algorithm shown alongside.</p>
+  <p>I sweep a reachable frontier across the array, extending it only from indices I can actually stand on.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/greedy.html">Greedy</a> <span class="how">keep the farthest reachable index; an index beyond it is unreachable forever</span></p>
 </header>
 
@@ -222,19 +222,19 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>Brute force: explore every jump</h2>
-      <p>The literal approach is a search. From index <code>i</code>, try every jump length from 1 to <code>nums[i]</code> and recurse; succeed when any call reaches the last index.</p>
+<h2>First instinct: explore every jump</h2>
+      <p>My first instinct is to search from index <code>i</code>, try every jump length from 1 to <code>nums[i]</code>, and succeed when one call reaches the last index.</p>
       <pre class="code"><span class="ln">def can_jump(nums, i=0):</span><span class="ln">    if i &gt;= len(nums) - 1:</span><span class="ln">        return True</span><span class="ln">    for step in range(1, nums[i] + 1):</span><span class="ln">        if can_jump(nums, i + step):</span><span class="ln">            return True</span><span class="ln">    return False</span></pre>
-      <p style="margin-top:14px">From index 0 in the example you can land on 1 or 2; from 1 on 2, 3 or 4; from 2 on 3, and so on. The call tree branches at every index and re-explores the same suffixes many times, so this is <strong>O(2ⁿ)</strong> in the worst case. Memoising <code>i</code> brings it to O(n²), since each index tries up to n jump lengths.</p>
-      <p>That is a lot of work to answer a yes/no question, and the waste is specific: the search keeps asking "can I reach index 3?" from different places when one fact would settle it.</p>
+      <p style="margin-top:14px">The call tree can branch at every index, so this uses <strong>O(2ⁿ) time</strong> and <strong>O(n) space</strong> for the call stack in the worst case.</p>
+      <p>I keep asking whether index 3 is reachable from different paths, but one reachability fact for each frontier is enough.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: reachable indices form a prefix</h2>
-      <p>Suppose you can reach index 4 somehow. Then you can also reach index 3, because the jump that landed on 4 could have been one shorter. And index 2, and so on down. So the set of reachable indices is never scattered; it is always <code>0 .. reach</code> for some frontier <code>reach</code>.</p>
+      <p>If I can reach index 4 somehow, I can also reach index 3 because the jump that landed on 4 could have been one shorter, and likewise index 2. The reachable indices are never scattered; they are always <code>0 .. reach</code> for some frontier <code>reach</code>.</p>
       <div class="callout">One integer describes everything reachable. After processing index 0 of the example, <code>reach = 0 + 2 = 2</code>: indices 0, 1, 2 are reachable and 3, 4 are not (yet).</div>
-      <p>The frontier only ever moves right, and each index <code>i</code> pushes it to <code>max(reach, i + nums[i])</code>, but only if <code>i</code> is itself reachable. That gives the whole algorithm: sweep <code>i</code> from left to right, refuse to stand on any <code>i &gt; reach</code>, and update the frontier from every index you do stand on.</p>
+      <p>The frontier only moves right, and each reachable index <code>i</code> can push it to <code>max(reach, i + nums[i])</code>. I sweep <code>i</code> from left to right, stop at any <code>i &gt; reach</code>, and update the frontier from every index I can stand on.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -245,7 +245,7 @@
         <li><code>for i, n in enumerate(nums)</code>: visit each index with its jump length.</li>
         <li><code>if i &gt; reach: return False</code>: nothing to the left could carry us here, so nothing ever will.</li>
         <li><code>reach = max(reach, i + n)</code>: standing on <code>i</code> lets us land anywhere up to <code>i + n</code>.</li>
-        <li><code>return True</code>: the sweep survived to the end, so the last index was inside the frontier when we got there.</li>
+        <li><code>return True</code>: my sweep reached the end, so the last index was inside the frontier.</li>
       </ul>
       <p>The panel colours the current index blue, every index inside the frontier green, and everything past <code>reach</code> dimmed. Watch the dimmed region shrink.</p>
     </section>
@@ -253,7 +253,7 @@
     <section class="step" data-state="t0">
       <div class="n">STEP 5</div>
       <h2>Trace it: index 0</h2>
-      <p><code>i = 0</code>, <code>n = 2</code>. Is <code>0 &gt; reach</code>? <code>reach</code> is 0, so no: we may stand here. The frontier becomes <code>max(0, 0 + 2) = 2</code>.</p>
+      <p><code>i = 0</code>, <code>n = 2</code>. I test <code>0 &gt; reach</code>; <code>reach</code> is 0, so I can stand here. The frontier becomes <code>max(0, 0 + 2) = 2</code>.</p>
       <p>Indices 1 and 2 turn green: they are reachable with a single jump. Indices 3 and 4 stay dimmed. Nothing has been decided about them, but nothing so far can get there either.</p>
     </section>
 
@@ -268,15 +268,15 @@
       <div class="n">STEP 7</div>
       <h2>Trace it: indices 2, 3 and 4</h2>
       <p><code>i = 2</code>: <code>2 &gt; 4</code> is false; <code>max(4, 2 + 1) = 4</code>. <code>i = 3</code>: <code>max(4, 3 + 1) = 4</code>. <code>i = 4</code>: <code>4 &gt; 4</code> is false, so the last index is reachable; <code>max(4, 4 + 4) = 8</code> pushes the frontier past the array, which is harmless.</p>
-      <p>The loop ends and we <code>return True</code>. On <code>[3,2,1,0,4]</code> the same sweep would stall at <code>reach = 3</code> after indices 0 to 3, and at <code>i = 4</code> the test <code>4 &gt; 3</code> fires and returns <code>False</code> without ever using the 4.</p>
+      <p>The loop ends and I <code>return True</code>. On <code>[3,2,1,0,4]</code> the same sweep stalls at <code>reach = 3</code> after indices 0 to 3, and at <code>i = 4</code> the test <code>4 &gt; 3</code> fires and returns <code>False</code> without using the 4.</p>
       <div class="callout">The search tried every combination of jumps. The sweep did four comparisons and four <code>max</code> calls.</div>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the frontier test and the max</h2>
-      <p><strong>Off by one on the guard.</strong> Write <code>if i &gt;= reach: return False</code> and the very first iteration fails: <code>i = 0</code>, <code>reach = 0</code>, <code>0 &gt;= 0</code> is true. The function returns <strong>false</strong> for <code>[2,3,1,1,4]</code>, and in fact for every input. Standing exactly on the frontier is fine; only indices strictly beyond it are unreachable.</p>
-      <p><strong>Overwriting instead of maxing.</strong> Write <code>reach = i + n</code> and the frontier can move backwards. On <code>[2,0,0]</code> it goes 2, then 1, and at <code>i = 2</code> the test <code>2 &gt; 1</code> returns false, though index 0 could have jumped straight to index 2. The frontier is a record of the best jump seen so far, and records never regress.</p>
+      <p><strong>Off by one on the guard.</strong> If I write <code>if i &gt;= reach: return False</code>, the very first iteration fails: <code>i = 0</code>, <code>reach = 0</code>, and <code>0 &gt;= 0</code> is true. The function returns <strong>false</strong> for every input.</p>
+      <p><strong>Overwriting instead of maxing.</strong> If I write <code>reach = i + n</code>, the frontier can move backwards. On <code>[2,0,0]</code> it goes 2, then 1, and the test fails at <code>i = 2</code> even though index 0 could jump straight there.</p>
       <div class="callout warn">Two comparisons carry the whole algorithm: <code>i &gt; reach</code> with a strict inequality, and <code>max(reach, i + n)</code> so the frontier only grows.</div>
     </section>
 
@@ -303,7 +303,7 @@
         <li><code>reach = max(reach, i + n)</code> extends the frontier from every reachable index.</li>
         <li><code>return True</code> is only reached if the last index passed the guard.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>reachable indices are always a prefix, so track its right edge and fail the moment the sweep steps past it.</em></div>
+      <div class="callout">My rule is: <em>reachable indices form a prefix, so I track its right edge and stop when the sweep steps past it.</em></div>
     </section>
 
     <div class="code-final">

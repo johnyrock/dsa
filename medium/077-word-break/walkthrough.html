@@ -208,7 +208,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Dynamic Programming · LeetCode #139</div>
   <h1>Word Break, narrated</h1>
-  <p>Scroll through the thinking, from the backtracking that re-explores the same suffixes to a boolean table over prefixes, with the state of the algorithm shown alongside.</p>
+  <p>I follow the possible word boundaries, then reuse the answer for each suffix instead of exploring it again.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">dp[i] = any(dp[j] and s[j:i] in words), table over prefixes</span></p>
 </header>
 
@@ -218,7 +218,7 @@
     <section class="step" data-state="problem">
       <div class="n">STEP 1</div>
       <h2>The problem</h2>
-      <p>You get a string <code>s</code> and a dictionary of words. Decide whether <code>s</code> can be cut into pieces, left to right, so that every piece is a dictionary word and nothing is left over. Words may be reused as often as you like.</p>
+      <p>Given a string <code>s</code> and a dictionary of words, decide whether <code>s</code> can be cut into dictionary words from left to right with nothing left over. Words may be reused.</p>
       <div class="callout">Running example: <code>s = "leetcode"</code>, <code>word_dict = ["leet", "code"]</code>. The answer is <strong>True</strong>: cut after the 4th character and both halves are words.</div>
       <p>The answer is a yes/no. We never have to return the cuts themselves, only whether a valid set of cuts exists — and that is a hint that a table of booleans, not a list of segmentations, is enough.</p>
       <p>The catch is that the first word you spot is not always the right one. In <code>"cars"</code> with <code>["car", "ca", "rs"]</code>, grabbing <code>"car"</code> strands the <code>"s"</code>; the real split is <code>"ca" + "rs"</code>. Any correct method has to be willing to back up.</p>
@@ -226,11 +226,11 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instinct: backtracking over every cut</h2>
-      <p>Try every dictionary word at the current position. If it matches, recurse on the rest of the string. Succeed if any branch reaches the end.</p>
+<h2>First instinct: backtracking over every cut</h2>
+      <p>My first instinct is to try every dictionary word at the current position. When one matches, I recurse on the rest of the string and succeed if any branch reaches the end.</p>
       <pre class="code"><span class="ln">def can_break(rest):</span><span class="ln">    if rest == "":</span><span class="ln">        return True</span><span class="ln">    for w in words:</span><span class="ln">        if rest.startswith(w) and can_break(rest[len(w):]):</span><span class="ln">            return True</span><span class="ln">    return False</span></pre>
-      <p style="margin-top:14px">This is correct, and it handles the <code>"cars"</code> trap because the loop keeps going when <code>"car"</code> dead-ends. But it is exponential: <code>"aaaaaaab"</code> with <code>["a", "aa", "aaa"]</code> reaches the same suffix <code>"aab"</code> through dozens of different cut sequences and re-solves it every time. Roughly <strong>O(2ⁿ)</strong> branches in the worst case.</p>
-      <p>The waste has a name: the answer for a suffix does not depend on how you got there. <code>can_break("code")</code> is the same question whether the prefix was cut as <code>"leet"</code> or as <code>"le" + "et"</code>.</p>
+      <p style="margin-top:14px">This handles the <code>"cars"</code> trap because I keep going when <code>"car"</code> dead-ends. In the worst case it takes <strong>O(2ⁿ) time</strong>; the recursion stack uses <strong>O(n) space</strong>.</p>
+      <p>The answer for a suffix does not depend on how I reached it. <code>can_break("code")</code> is the same question after <code>"leet"</code> as it is after <code>"le" + "et"</code>, so I solve that subproblem once.</p>
     </section>
 
     <section class="step" data-state="idea">
@@ -262,7 +262,7 @@
       <p><code>i = 1</code>: the only cut is <code>j = 0</code>. <code>dp[0]</code> is True but <code>s[0:1] = "l"</code> is not a word. <code>dp[1]</code> stays False.</p>
       <p><code>i = 2</code>: <code>j = 0</code> gives <code>"le"</code>, not a word; <code>j = 1</code> has <code>dp[1] = False</code>, so the slice is not even checked. <code>dp[2]</code> stays False.</p>
       <p><code>i = 3</code>: <code>"lee"</code> is not a word, and <code>dp[1]</code>, <code>dp[2]</code> are False. <code>dp[3]</code> stays False.</p>
-      <p>Notice that only cut points with <code>dp[j] = True</code> ever cost a slice. So far that is just <code>j = 0</code>.</p>
+      <p>I only pay for a slice at cut points with <code>dp[j] = True</code>. So far, that is just <code>j = 0</code>.</p>
     </section>
 
     <section class="step" data-state="t2">

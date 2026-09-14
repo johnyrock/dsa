@@ -204,7 +204,7 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Dynamic Programming · LeetCode #70</div>
   <h1>Climbing Stairs, narrated</h1>
-  <p>Scroll through the thinking, from the exponential recursion to a loop with two variables, with the state of the algorithm shown alongside.</p>
+  <p>I’ll start with the direct recursive recurrence, then remove its repeated work with a loop that keeps only the last two counts.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">f(n) = f(n-1) + f(n-2), Fibonacci with two variables</span></p>
 </header>
 
@@ -217,17 +217,16 @@
       <p>A staircase has <code>n</code> steps. Every move takes you up either 1 step or 2 steps. Count the distinct sequences of moves that land exactly on the top.</p>
       <p>Order matters: climbing 1 then 2 is a different climb from 2 then 1, even though both cover 3 stairs.</p>
       <div class="callout">Running example: <code>n = 5</code>. The answer is <strong>8</strong>. Listing them by hand is possible but tedious, which is a hint that we want a formula rather than an enumeration.</div>
-      <p>Notice we are asked for a <em>count</em>, not for the sequences themselves. We never have to build a climb — only add up how many exist.</p>
+      <p>The result is a <em>count</em>, not a list of sequences. Only the number of climbs needs to be computed.</p>
     </section>
 
     <section class="step" data-state="recursion">
       <div class="n">STEP 2</div>
       <h2>First instinct: recursion</h2>
-      <p>Think about the very last move you make. It was either a 1-step or a 2-step. If it was a 1-step, you were standing on step <code>n - 1</code> before it; if it was a 2-step, you were on step <code>n - 2</code>. There is no third option.</p>
-      <p>So the number of climbs splits cleanly in two, and we can write it down directly:</p>
+      <p>My first instinct is to look at the final move. It must be a 1-step from <code>n - 1</code> or a 2-step from <code>n - 2</code>, so I can express the answer as those two smaller answers.</p>
       <pre class="code"><span class="ln">def climb_stairs(n):</span><span class="ln">    if n &lt;= 2:</span><span class="ln">        return n</span><span class="ln">    return climb_stairs(n - 1) + climb_stairs(n - 2)</span></pre>
-      <p style="margin-top:14px">This is correct, and it is a good thing to say out loud in an interview. It is also unusably slow. Each call spawns two more calls, so the call tree roughly doubles at every level: <strong>O(2ⁿ)</strong>.</p>
-      <p>The waste is easy to name. <code>climb_stairs(5)</code> calls <code>climb_stairs(4)</code> and <code>climb_stairs(3)</code> — and <code>climb_stairs(4)</code> calls <code>climb_stairs(3)</code> all over again, from scratch. The same subproblems are recomputed thousands of times. At <code>n = 45</code> this never finishes.</p>
+      <p style="margin-top:14px">The recurrence gives the right count, but its call tree doubles through the levels, so it takes <strong>O(2ⁿ) time</strong>. The deepest chain of calls has <code>n</code> frames, so it uses <strong>O(n) extra space</strong>.</p>
+      <p><code>climb_stairs(5)</code> reaches <code>climb_stairs(3)</code> through more than one branch. I only need each smaller count once, so I can build upward instead of recomputing it.</p>
     </section>
 
     <section class="step" data-state="reframe">
@@ -236,29 +235,29 @@
       <p>The recurrence <code>f(n) = f(n-1) + f(n-2)</code> is right. The recursion is just a bad way to evaluate it, because it walks <em>down</em> from n and rediscovers the bottom of the staircase over and over.</p>
       <p>So ask the narrower question: <em>"To compute the answer for step n, what do I actually need in hand?"</em></p>
       <div class="callout">Exactly two numbers: the count for step <code>n - 1</code> and the count for step <code>n - 2</code>. Nothing below them ever matters again.</div>
-      <p>One fix is <strong>memoization</strong>: keep the same recursion but cache each <code>f(k)</code> in a dict the first time it is computed. Every subproblem is then solved once, which drops the time to O(n) — but it still holds n cached values and an n-deep call stack.</p>
-      <p>If we only ever need the last two counts, though, we do not need the cache at all. We can start at the bottom and walk <em>up</em>.</p>
+      <p>One fix is <strong>memoization</strong>: I keep the same recursion but cache each <code>f(k)</code> the first time it is computed. Every subproblem is then solved once, which drops the time to O(n) but still holds n cached values and an n-deep call stack.</p>
+      <p>Because I only need the last two counts, I do not need the cache at all. I can start at the bottom and walk <em>up</em>.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 4</div>
       <h2>The key idea: build upward with two variables</h2>
-      <p>Start from what we can count on our fingers. Step 1 has 1 way (a single 1-step). Step 2 has 2 ways (1+1, or one 2-step). Those are the base cases, and they are the seed of everything above.</p>
+      <p>I begin with values I can count by hand. Step 1 has 1 way (a single 1-step). Step 2 has 2 ways (1+1, or one 2-step). Those base cases seed everything above.</p>
       <p>Hold them in two variables:</p>
       <ul>
-        <li><code>two_back</code> — the count for the step two below the one we are computing.</li>
+        <li><code>two_back</code> — the count for the step two below the one I am computing.</li>
         <li><code>one_back</code> — the count for the step directly below it.</li>
       </ul>
       <p>Then for each step from 3 up to n, the new count is <code>two_back + one_back</code>, and both variables shift up one: the old <code>one_back</code> becomes the new <code>two_back</code>.</p>
-      <div class="callout">Look at the counts as they appear: 1, 2, 3, 5, 8, 13 … This is the Fibonacci sequence, shifted by one position. <code>ways(n) = Fib(n + 1)</code>. Recognising that is a nice sanity check, but the reasoning above is what you should be able to rebuild.</div>
+      <div class="callout">I see the counts 1, 2, 3, 5, 8, 13 …: the Fibonacci sequence shifted by one position. <code>ways(n) = Fib(n + 1)</code> is a useful sanity check.</div>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 5</div>
       <h2>Trace it: step 3</h2>
-      <p>We enter the loop with <code>two_back = 1</code> (step 1) and <code>one_back = 2</code> (step 2).</p>
-      <p>The count for step 3 is <code>2 + 1 = 3</code>. Check it by hand: 1+1+1, 1+2, 2+1. Three climbs, as promised.</p>
-      <p>Now slide the window. <code>two_back</code> becomes 2 (step 2) and <code>one_back</code> becomes 3 (step 3). The value for step 1 is dropped, and we will never want it again.</p>
+      <p>I enter the loop with <code>two_back = 1</code> (step 1) and <code>one_back = 2</code> (step 2).</p>
+      <p>The count for step 3 is <code>2 + 1 = 3</code>. I can check it by hand: 1+1+1, 1+2, and 2+1 make three climbs.</p>
+      <p>I slide the window: <code>two_back</code> becomes 2 (step 2) and <code>one_back</code> becomes 3 (step 3). I no longer need the value for step 1.</p>
     </section>
 
     <section class="step" data-state="t4">
@@ -266,14 +265,14 @@
       <h2>Trace it: step 4</h2>
       <p>Same move, one stair higher. The count for step 4 is <code>3 + 2 = 5</code>.</p>
       <p>Slide again: <code>two_back = 3</code>, <code>one_back = 5</code>.</p>
-      <p>Notice what the panel is <em>not</em> doing. The dimmed cells are drawn so you can see the shape of the table, but the code never allocated an array. Only two integers exist at any moment.</p>
+      <p>The dimmed cells only show the table shape. My code never allocates an array; it holds two integers at any moment.</p>
     </section>
 
     <section class="step" data-state="t5">
       <div class="n">STEP 7</div>
       <h2>Trace it: step 5, the answer</h2>
       <p>The count for step 5 is <code>5 + 3 = 8</code>. That was the last iteration, because the loop runs up to and including n.</p>
-      <p>When the loop exits, <code>one_back</code> holds the count for step n. That is what we return.</p>
+      <p>When the loop exits, <code>one_back</code> holds the count for step <code>n</code>. I return it.</p>
       <div class="callout">The exponential recursion made thousands of calls to reach this number. The loop made three additions.</div>
     </section>
 
@@ -282,7 +281,7 @@
       <h2>Where this goes wrong: base cases and the loop bounds</h2>
       <p>Two specific bugs live here, and both pass a casual eyeball.</p>
       <p><strong>Dropping the base-case guard.</strong> Without <code>if n &lt;= 2: return n</code>, call it with <code>n = 1</code>. The loop <code>range(3, 2)</code> is empty, so nothing runs, and the function returns the seeded <code>one_back = 2</code>. But there is only <strong>1</strong> way to climb a single stair. The seed values are answers for steps 1 and 2, so those two inputs must be handled before the loop, not by it.</p>
-      <p><strong>Starting the loop at the wrong index.</strong> Write <code>range(2, n + 1)</code> instead of <code>range(3, n + 1)</code> and the loop runs one extra time. For <code>n = 5</code> it computes step 6 and returns <strong>13</strong> instead of 8 — a plausible-looking number from the same sequence, which is what makes it nasty.</p>
+      <p><strong>Starting the loop at the wrong index.</strong> If I write <code>range(2, n + 1)</code> instead of <code>range(3, n + 1)</code>, the loop runs one extra time. For <code>n = 5</code> it computes step 6 and returns <strong>13</strong> instead of 8.</p>
       <div class="callout warn">The seeds already cover steps 1 and 2, so the loop's job starts at step 3. Count the iterations for <code>n = 3</code>: it should run exactly once.</div>
     </section>
 
@@ -306,11 +305,11 @@
       <ul>
         <li><code>if n &lt;= 2: return n</code> handles the two base cases the loop cannot produce.</li>
         <li><code>two_back, one_back = 1, 2</code> seeds the window with steps 1 and 2.</li>
-        <li><code>range(3, n + 1)</code> is the loop bound: start above the seeds, finish on n.</li>
+        <li><code>range(3, n + 1)</code> is my loop bound, starting above the seeds and finishing on n.</li>
         <li><code>two_back, one_back = one_back, two_back + one_back</code> is the recurrence and the slide, in one statement. The right-hand side is evaluated before either name is rebound, so no temporary is needed.</li>
         <li><code>return one_back</code> — after the last iteration, that is the count for step n.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>the ways to reach step n are the ways to reach n−1 plus the ways to reach n−2, so keep only the last two counts.</em></div>
+      <div class="callout">I remember this as: <em>the ways to reach step n are the ways to reach n−1 plus n−2, so I keep only the last two counts.</em></div>
     </section>
 
     <div class="code-final">

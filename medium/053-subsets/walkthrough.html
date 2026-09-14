@@ -216,7 +216,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Backtracking · LeetCode #78</div>
   <h1>Subsets, narrated</h1>
-  <p>Scroll through the thinking, from counting in binary to a recursion that grows one subset at a time, with the path, the recursion tree, and the growing answer list shown alongside.</p>
+  <p>I will first use binary masks to choose every subset, then show the backtracking form that adapts when the subset rules change.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/backtracking.html">Backtracking</a> <span class="how">choose an element, recurse on the indices after it, undo; every node of the tree is an answer</span></p>
 </header>
 
@@ -229,25 +229,25 @@
       <p>You are given an array <code>nums</code> of distinct integers. Return every possible subset of it, the <em>power set</em>: every way of picking some, none, or all of the elements. The order of subsets in the output does not matter, and the order inside a subset does not matter either, but no subset may appear twice.</p>
       <div class="callout">Running example: <code>nums = [1, 2, 3]</code>. The answer is the eight lists <code>[]</code>, <code>[1]</code>, <code>[1,2]</code>, <code>[1,2,3]</code>, <code>[1,3]</code>, <code>[2]</code>, <code>[2,3]</code>, <code>[3]</code>.</div>
       <p>The count is fixed before you start: each element is either in or out, so there are exactly <code>2^n</code> subsets. For <code>n = 3</code> that is 8; for the largest allowed input, <code>n = 10</code>, it is 1024. Since the output itself has that many entries, no algorithm can beat O(2ⁿ) work. The goal is to spend nothing beyond what it takes to write the answers down, and to never write the same one twice.</p>
-      <p>Notice that <code>[1, 2]</code> and <code>[2, 1]</code> are the same subset. Whatever we build must produce only one of them, and the cleanest way to guarantee that is to always list elements in increasing index order.</p>
+      <p><code>[1, 2]</code> and <code>[2, 1]</code> represent the same subset, so only one should appear. Listing elements in increasing index order prevents the duplicate arrangement.</p>
     </section>
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: count in binary</h2>
-      <p>Three elements, each in or out, is a 3-bit number. Count from <code>0</code> to <code>7</code>, and for each number keep <code>nums[j]</code> whenever bit <code>j</code> is set:</p>
-      <pre class="code"><span class="ln">result = []</span><span class="ln">for mask in range(1 &lt;&lt; len(nums)):</span><span class="ln">    subset = []</span><span class="ln">    for j in range(len(nums)):</span><span class="ln">        if mask &gt;&gt; j &amp; 1:</span><span class="ln">            subset.append(nums[j])</span><span class="ln">    result.append(subset)</span></pre>
-      <p style="margin-top:14px">This is correct and it is O(n · 2ⁿ), which is optimal. Mask <code>5 = 101</code> gives <code>[1, 3]</code>, mask <code>0</code> gives <code>[]</code>, mask <code>7</code> gives <code>[1, 2, 3]</code>. Each subset is rebuilt from scratch, bit by bit, even though mask <code>101</code> and mask <code>111</code> share their first two decisions.</p>
-      <p>The reason to learn the recursive version anyway is that the bitmask trick stops working the moment the problem changes shape: subsets with duplicate values, combinations of a fixed size, subsets that must hit a target sum. Backtracking handles all of those with a one-line change, and it is the version interviewers expect you to reach for.</p>
+      <p>I can treat each bit of a number as the decision to include or exclude the value at that index.</p>
+      <pre class="code"><span class="ln">def subsets(nums):</span><span class="ln">    result = []</span><span class="ln">    for mask in range(1 &lt;&lt; len(nums)):</span><span class="ln">        subset = []</span><span class="ln">        for j in range(len(nums)):</span><span class="ln">            if mask &gt;&gt; j &amp; 1: subset.append(nums[j])</span><span class="ln">        result.append(subset)</span><span class="ln">    return result</span></pre>
+      <p style="margin-top:14px">This is correct and optimal for producing all answers. It visits <code>2ⁿ</code> masks and can copy <code>n</code> values for each, so the time complexity is O(n · 2ⁿ). The result space complexity is O(n · 2ⁿ).</p>
+      <p>I represent the choices directly, even though I cannot avoid output-size work. Backtracking retains a partial subset and adapts directly to restrictions such as a target sum or duplicate values.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>Key insight: every prefix is an answer, and the next pick must come later</h2>
-      <p>Build a subset in a shared list <code>path</code>, one element at a time. Two observations turn that into a complete algorithm.</p>
+      <p>I build a subset in a shared list <code>path</code>, one element at a time. Two observations turn that into a complete algorithm.</p>
       <ul>
-        <li><strong>Every state of <code>path</code> is itself a subset.</strong> Unlike permutations or parentheses, there is no "complete" check: the moment you enter a call, <code>path</code> is a valid answer, so record it immediately with <code>result.append(path[:])</code>.</li>
-        <li><strong>Only pick from indices after the last pick.</strong> The call carries a <code>start</code> index and loops <code>for i in range(start, len(nums))</code>. Once <code>2</code> is in the path, <code>1</code> is never offered again, so <code>[2, 1]</code> cannot be built and <code>[1, 2]</code> is produced exactly once.</li>
+        <li><strong>Every state of <code>path</code> is itself a subset.</strong> Unlike permutations or parentheses, there is no "complete" check: the moment I enter a call, <code>path</code> is a valid answer, so I record it immediately with <code>result.append(path[:])</code>.</li>
+        <li><strong>I only pick from indices after the last pick.</strong> The call carries a <code>start</code> index and loops <code>for i in range(start, len(nums))</code>. Once <code>2</code> is in my path, I never offer <code>1</code> again, so I cannot build <code>[2, 1]</code> and produce <code>[1, 2]</code> exactly once.</li>
       </ul>
       <div class="callout">The recursion tree has exactly one node per subset. Its root is <code>[]</code>, the children of any node are that subset extended by one later element, and reading the tree in preorder gives the output in order.</div>
       <p>The panel is standing on the node <code>[1, 2]</code>: it was recorded on entry, and its only child is <code>[1, 2, 3]</code> because <code>start = 2</code> leaves just one candidate.</p>
@@ -260,8 +260,8 @@
         <li><code>result = []</code> and <code>path = []</code>: the answers, and the one subset under construction.</li>
         <li><code>backtrack(start)</code> extends <code>path</code> using only <code>nums[start:]</code>.</li>
         <li>On entry, <code>result.append(path[:])</code>: the current prefix is an answer. The <code>[:]</code> copy matters, because <code>path</code> will be mutated after this line.</li>
-        <li><code>for i in range(start, len(nums))</code>: try each later element as the next member.</li>
-        <li>Choose with <code>path.append(nums[i])</code>, recurse with <code>backtrack(i + 1)</code>, undo with <code>path.pop()</code>.</li>
+        <li><code>for i in range(start, len(nums))</code>: I try each later element as the next member.</li>
+        <li>I choose with <code>path.append(nums[i])</code>, recurse with <code>backtrack(i + 1)</code>, undo with <code>path.pop()</code>.</li>
         <li>Kick off with <code>backtrack(0)</code> and return <code>result</code>.</li>
       </ul>
       <p>The three-line choose / recurse / undo block is the whole backtracking pattern. The <code>i + 1</code> is what makes the loop an "index after" rule rather than a "any index" rule.</p>
@@ -270,7 +270,7 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: down the leftmost branch to <code>[1, 2, 3]</code></h2>
-      <p><code>backtrack(0)</code> records <code>[]</code>. Its loop starts at <code>i = 0</code>: push <code>1</code>, call <code>backtrack(1)</code>. That records <code>[1]</code> and starts its own loop at <code>i = 1</code>: push <code>2</code>, call <code>backtrack(2)</code>, which records <code>[1, 2]</code>. Its loop starts at <code>i = 2</code>: push <code>3</code>, call <code>backtrack(3)</code>.</p>
+      <p><code>backtrack(0)</code> records <code>[]</code>. Its loop starts at <code>i = 0</code>: I push <code>1</code>, call <code>backtrack(1)</code>. That records <code>[1]</code> and starts its own loop at <code>i = 1</code>: I push <code>2</code>, call <code>backtrack(2)</code>, which records <code>[1, 2]</code>. Its loop starts at <code>i = 2</code>: I push <code>3</code>, call <code>backtrack(3)</code>.</p>
       <p>That call records <code>[1, 2, 3]</code>, then its loop is <code>range(3, 3)</code>, which is empty. Nothing to try, so it returns. Four subsets are in <code>result</code> after four calls, and every one of them was recorded on the way <em>down</em>, before any loop ran.</p>
       <p>The panel shows the path filled in all three slots and the recursion tree grown one node per call, straight down the left edge.</p>
     </section>
@@ -279,15 +279,15 @@
       <div class="n">STEP 6</div>
       <h2>Trace it: undo and take the other child, <code>[1, 3]</code></h2>
       <p>Back in <code>backtrack(2)</code>, the line after the recursive call is <code>path.pop()</code>, so <code>3</code> comes off and <code>path</code> is <code>[1, 2]</code> again. Its loop is finished (it started at 2 and there are only three elements), so it returns. Back in <code>backtrack(1)</code>, another pop takes <code>2</code> off: <code>path = [1]</code>, and the loop continues with <code>i = 2</code>.</p>
-      <p>Push <code>3</code>, call <code>backtrack(3)</code>: it records <code>[1, 3]</code> and its loop is empty. Pop, and <code>backtrack(1)</code> has exhausted <code>i = 1, 2</code>, so it returns. Pop again in <code>backtrack(0)</code>: <code>path</code> is <code>[]</code>, ready for <code>i = 1</code>.</p>
-      <p>Look at where <code>[1, 3]</code> hangs in the tree: it is a sibling of <code>[1, 2]</code>, a child of <code>[1]</code>. There is no <code>[1, 2]</code> → <code>[1, 3]</code> edge, because from <code>[1, 2]</code> the only candidate is index 2. The pop is what moves us up a level before we branch again.</p>
+      <p>I push <code>3</code>, call <code>backtrack(3)</code>: it records <code>[1, 3]</code> and its loop is empty. I pop, and <code>backtrack(1)</code> has exhausted <code>i = 1, 2</code>, so it returns. I pop again in <code>backtrack(0)</code>: <code>path</code> is <code>[]</code>, ready for <code>i = 1</code>.</p>
+      <p>I look at where <code>[1, 3]</code> hangs in the tree: it is a sibling of <code>[1, 2]</code>, a child of <code>[1]</code>. There is no <code>[1, 2]</code> → <code>[1, 3]</code> edge, because from <code>[1, 2]</code> the only candidate is index 2. The pop is what moves us up a level before I branch again.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: the rest of the tree, <code>[2]</code>, <code>[2, 3]</code>, <code>[3]</code></h2>
-      <p>With <code>path = []</code> and <code>i = 1</code>, push <code>2</code> and call <code>backtrack(2)</code>: record <code>[2]</code>, then its loop offers only index 2, so push <code>3</code>, record <code>[2, 3]</code>, empty loop, pop. Back at the root with <code>i = 2</code>: push <code>3</code>, <code>backtrack(3)</code> records <code>[3]</code> and returns at once.</p>
-      <p>The root's loop is done. <code>result</code> holds exactly the eight subsets, in the order they were entered: <code>[]</code>, <code>[1]</code>, <code>[1,2]</code>, <code>[1,2,3]</code>, <code>[1,3]</code>, <code>[2]</code>, <code>[2,3]</code>, <code>[3]</code>. Notice that <code>1</code> never appears after <code>2</code>, and <code>2</code> never after <code>3</code>: the <code>start</code> index kept every subset in increasing order.</p>
+      <p>With <code>path = []</code> and <code>i = 1</code>, I push <code>2</code> and call <code>backtrack(2)</code>: I record <code>[2]</code>, then its loop offers only index 2, so I push <code>3</code>, I record <code>[2, 3]</code>, empty loop, I pop. Back at the root with <code>i = 2</code>: I push <code>3</code>, <code>backtrack(3)</code> records <code>[3]</code> and returns at once.</p>
+      <p>The root's loop is done. <code>result</code> holds exactly the eight subsets, in the order they were entered: <code>[]</code>, <code>[1]</code>, <code>[1,2]</code>, <code>[1,2,3]</code>, <code>[1,3]</code>, <code>[2]</code>, <code>[2,3]</code>, <code>[3]</code>. I never place <code>1</code> after <code>2</code>, or <code>2</code> after <code>3</code>: the <code>start</code> index keeps every subset in increasing order.</p>
       <div class="callout">Eight calls, eight answers. The tree is the output.</div>
     </section>
 
@@ -295,9 +295,9 @@
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the copy, the start, and the <code>i + 1</code></h2>
       <p><strong>Appending <code>path</code> instead of <code>path[:]</code>.</strong> Every entry in <code>result</code> is then the <em>same</em> list object, the one that keeps being appended to and popped from. By the time the function returns, that list is empty again, so the answer is <strong>eight copies of <code>[]</code></strong>. The panel shows exactly that. Copy on record, always.</p>
-      <p><strong>Looping from <code>0</code> instead of <code>start</code>.</strong> Write <code>for i in range(len(nums))</code> and the call for <code>[1]</code> pushes <code>1</code> again, then <code>1</code> again … the path grows forever and Python stops it with a <code>RecursionError</code>. The <code>start</code> bound is not just about ordering; it is also what makes the recursion terminate.</p>
+      <p><strong>Looping from <code>0</code> instead of <code>start</code>.</strong> I write <code>for i in range(len(nums))</code> and the call for <code>[1]</code> pushes <code>1</code> again, then <code>1</code> again … the path grows forever and Python stops it with a <code>RecursionError</code>. The <code>start</code> bound is not just about ordering; it is also what makes the recursion terminate.</p>
       <p><strong>Recursing with <code>backtrack(i)</code> instead of <code>backtrack(i + 1)</code>.</strong> The same element becomes available again in the child, so <code>[1, 1]</code>, <code>[1, 1, 1]</code> … are built and the recursion never bottoms out. That variant is correct for Combination Sum, where reuse is allowed; here it is a bug.</p>
-      <div class="callout warn">Record a copy, and hand the child <code>i + 1</code>. The child may only see what comes after the element you just placed.</div>
+      <div class="callout warn">I record a copy, and hand the child <code>i + 1</code>. The child may only see what comes after the element I just placed.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -321,10 +321,10 @@
         <li><code>result = []</code>, <code>path = []</code>: answers and the working subset.</li>
         <li><code>result.append(path[:])</code> on entry: every node of the tree is a subset.</li>
         <li><code>for i in range(start, len(nums))</code>: only elements after the last pick.</li>
-        <li><code>path.append(nums[i])</code>, <code>backtrack(i + 1)</code>, <code>path.pop()</code>: choose, recurse past it, undo.</li>
+        <li><code>path.append(nums[i])</code>, <code>backtrack(i + 1)</code>, <code>path.pop()</code>: I choose, recurse past it, undo.</li>
         <li><code>backtrack(0)</code> starts from the empty subset; <code>return result</code>.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>record the path on entry, then extend it with each later element and undo.</em></div>
+      <div class="callout">One-line summary to remember: <em>I record the path on entry, then extend it with each later element and undo.</em></div>
     </section>
 
     <div class="code-final">

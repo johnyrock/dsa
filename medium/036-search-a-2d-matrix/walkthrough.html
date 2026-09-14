@@ -217,7 +217,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Binary Search · LeetCode #74</div>
   <h1>Search a 2D Matrix, narrated</h1>
-  <p>Scroll through the thinking, from scanning every cell to one binary search over a flat index that is translated back to a row and column, with the state of the algorithm shown alongside.</p>
+  <p>I will first scan every cell, then I use the matrix's global ordering to search its flattened indices.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/binary-search.html">Binary Search</a> <span class="how">treat the matrix as one sorted array; mid // cols and mid % cols pick the cell</span></p>
 </header>
 
@@ -236,10 +236,10 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: check every cell</h2>
-      <p>Two nested loops, compare each cell with <code>target</code>, return as soon as one matches.</p>
-      <pre class="code"><span class="ln">for row in matrix:</span><span class="ln">    for value in row:</span><span class="ln">        if value == target:</span><span class="ln">            return True</span><span class="ln">return False</span></pre>
-      <p style="margin-top:14px">This is <strong>O(m · n)</strong> and ignores the sorting entirely. A slightly better version scans down the first column to find the only row that could contain <code>target</code>, then scans that row: O(m + n). Still linear, and the problem asks for logarithmic.</p>
-      <p>Both versions keep asking "is this it?" one cell at a time. Sorting lets us ask "is it before or after here?" and throw away half the candidates per question.</p>
+      <p>I can compare <code>target</code> with each cell and return as soon as one matches.</p>
+      <pre class="code"><span class="ln">def searchMatrix(matrix, target):</span><span class="ln">    for row in matrix:</span><span class="ln">        for value in row:</span><span class="ln">            if value == target:</span><span class="ln">                return True</span><span class="ln">    return False</span></pre>
+      <p style="margin-top:14px">This is correct. For <code>m</code> rows and <code>n</code> columns, its time complexity is O(m · n), and it uses O(1) extra space.</p>
+      <p>I treat all cells as one sorted sequence. A comparison at the middle tells me which half of the remaining cells cannot contain <code>target</code>.</p>
     </section>
 
     <section class="step" data-state="idea">
@@ -248,7 +248,7 @@
       <p>Number the cells row by row from 0. With <code>cols = 4</code>, cell <code>(r, c)</code> gets flat index <code>r · cols + c</code>: <code>(0, 0)</code> is 0, <code>(0, 3)</code> is 3, <code>(1, 0)</code> is 4, <code>(2, 3)</code> is 11. Going the other way, flat index <code>k</code> lives at row <code>k // cols</code> and column <code>k % cols</code>.</p>
       <div class="callout">Because the flat order is sorted, an ordinary binary search on indices <code>0 .. rows · cols − 1</code> works unchanged. The only new line is the translation <code>matrix[mid // cols][mid % cols]</code>.</div>
       <p>Nothing is actually flattened. The "array" is a formula, so there is no copy and no extra memory.</p>
-      <p>Check the translation on the example: flat index 5 is row <code>5 // 4 = 1</code>, column <code>5 % 4 = 1</code>, and <code>matrix[1][1] = 11</code>, which is indeed the sixth number in the sorted reading.</p>
+      <p>I check the translation on the example: flat index 5 is row <code>5 // 4 = 1</code>, column <code>5 % 4 = 1</code>, and <code>matrix[1][1] = 11</code>, which is indeed the sixth number in the sorted reading.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -257,11 +257,11 @@
       <ul>
         <li><code>rows, cols = len(matrix), len(matrix[0])</code>: the shape.</li>
         <li><code>lo, hi = 0, rows * cols − 1</code>: an inclusive window over flat indices.</li>
-        <li><code>while lo &lt;= hi</code>: keep going while at least one candidate remains.</li>
+        <li><code>while lo &lt;= hi</code>: I keep going while at least one candidate remains.</li>
         <li><code>mid = (lo + hi) // 2</code>, then <code>value = matrix[mid // cols][mid % cols]</code>.</li>
-        <li><code>value == target</code>: found, return <code>True</code>.</li>
+        <li><code>value == target</code>: found, I return <code>True</code>.</li>
         <li><code>value &lt; target</code>: the answer is to the right, <code>lo = mid + 1</code>. Otherwise <code>hi = mid − 1</code>.</li>
-        <li>Window empty: return <code>False</code>.</li>
+        <li>Window empty: I return <code>False</code>.</li>
       </ul>
       <p>For the running example the window starts as <code>lo = 0</code>, <code>hi = 11</code>: twelve candidates.</p>
     </section>
@@ -279,14 +279,14 @@
       <h2>Trace it: second probe, flat index 2</h2>
       <p><code>mid = (0 + 4) // 2 = 2</code>. Row <code>2 // 4 = 0</code>, column <code>2 % 4 = 2</code>, so <code>value = matrix[0][2] = 5</code>.</p>
       <p><code>5 &lt; 3</code> is false, so again go left: <code>hi = 1</code>. The window is now flat indices 0 and 1, the first two cells of row 0.</p>
-      <p>Notice that the window crossed a row boundary without any special handling. Flat indices do not know about rows; only the translation does.</p>
+      <p>I see that the window crossed a row boundary without any special handling. Flat indices do not know about rows; only the translation does.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: indices 0 and 1, then the hit</h2>
       <p><code>mid = (0 + 1) // 2 = 0</code>. <code>matrix[0][0] = 1</code>, and <code>1 &lt; 3</code>, so go right: <code>lo = mid + 1 = 1</code>.</p>
-      <p>Now <code>lo = hi = 1</code>. The condition <code>lo &lt;= hi</code> still holds, so one more probe: <code>mid = 1</code>, row <code>1 // 4 = 0</code>, column <code>1 % 4 = 1</code>, <code>matrix[0][1] = 3</code>. That equals <code>target</code>: return <strong>True</strong>.</p>
+      <p>Now <code>lo = hi = 1</code>. The condition <code>lo &lt;= hi</code> still holds, so one more probe: <code>mid = 1</code>, row <code>1 // 4 = 0</code>, column <code>1 % 4 = 1</code>, <code>matrix[0][1] = 3</code>. That equals <code>target</code>: I return <strong>True</strong>.</p>
       <div class="callout">Four probes for twelve cells. The brute force would have needed two comparisons here, but for a 100 × 100 matrix the binary search needs at most 14 probes against up to 10,000.</div>
     </section>
 
@@ -294,7 +294,7 @@
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the loop condition and the divisor</h2>
       <p><strong><code>while lo &lt; hi</code>.</strong> The window is inclusive, so <code>lo == hi</code> is a live candidate. With <code>&lt;</code>, the trace above stops as soon as <code>lo = hi = 1</code>, never examines cell 1, and returns <strong>False</strong> for <code>target = 3</code> even though it is right there. Any target that ends up as the last survivor of the window is missed, including the last cell, 60.</p>
-      <p><strong>Dividing by <code>rows</code> instead of <code>cols</code>.</strong> The row length is what you divide by. With <code>matrix[mid // rows][mid % rows]</code> on this 3 × 4 matrix, flat index 5 becomes <code>(1, 2)</code> and reads 16 instead of 11; the probes land on the wrong cells and the search is no longer over a sorted sequence. On a 1 × 6 matrix it indexes row 5 and raises <code>IndexError</code>.</p>
+      <p><strong>Dividing by <code>rows</code> instead of <code>cols</code>.</strong> The row length is what I divide by. With <code>matrix[mid // rows][mid % rows]</code> on this 3 × 4 matrix, flat index 5 becomes <code>(1, 2)</code> and reads 16 instead of 11; the probes land on the wrong cells and the search is no longer over a sorted sequence. On a 1 × 6 matrix it indexes row 5 and raises <code>IndexError</code>.</p>
       <p><strong><code>hi = rows * cols</code>.</strong> An exclusive upper bound with an inclusive loop: searching for 61 pushes <code>lo</code> up until <code>mid = 12</code>, and <code>matrix[3]</code> does not exist.</p>
       <div class="callout warn">Inclusive window, <code>&lt;=</code> in the loop, <code>mid ± 1</code> when moving a bound, and divide by <code>cols</code>.</div>
     </section>

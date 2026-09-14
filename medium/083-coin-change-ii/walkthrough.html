@@ -205,7 +205,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Dynamic Programming · LeetCode #518</div>
   <h1>Coin Change II, narrated</h1>
-  <p>Scroll through the thinking, from listing every multiset of coins to a single dp row filled one coin at a time, with the state of the algorithm shown alongside.</p>
+  <p>I build combination counts one coin at a time, so each amount carries forward the choices already available.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">unbounded knapsack: coins outside, amounts upward, dp[a] += dp[a - coin]</span></p>
 </header>
 
@@ -223,16 +223,17 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instinct: enumerate every multiset</h2>
-      <p>Decide how many of the first coin to use (0, 1, 2, … while it fits), then recurse on the remaining amount with the remaining coins. Because each coin is decided once and never revisited, every multiset is generated exactly once.</p>
+<h2>First instinct: enumerate every multiset</h2>
+      <p>My first instinct is to choose how many of the first coin I use, then recurse on the remaining amount and coins. That visits each multiset once.</p>
       <pre class="code"><span class="ln">def count(i, remaining):</span><span class="ln">    if remaining == 0:</span><span class="ln">        return 1</span><span class="ln">    if i == len(coins) or remaining &lt; 0:</span><span class="ln">        return 0</span><span class="ln">    return count(i, remaining - coins[i]) + count(i + 1, remaining)</span></pre>
-      <p style="margin-top:14px">The branch <code>count(i, remaining - coins[i])</code> takes one more of coin <code>i</code>; <code>count(i + 1, remaining)</code> stops using it. Correct, but the number of leaves is the number of multisets of bounded sum, which grows roughly like <strong>O(amount^len(coins))</strong>. The same <code>(i, remaining)</code> pair is re-solved from every path that reaches it.</p>
+      <p style="margin-top:14px">This correctly counts combinations, but it takes roughly <strong>O(amount^len(coins)) time</strong> in the worst case and <strong>O(amount) space</strong> for the call stack.</p>
+      <p><code>count(i, remaining)</code> is the same subproblem whenever I reach it. I keep its answer in a table indexed by amount.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>The key idea: one row, one coin at a time</h2>
-      <p>Only <code>amount + 1</code> distinct sub-amounts exist. Keep a row <code>dp[a]</code> meaning "combinations that make <code>a</code> using only the coins processed so far", and process the coins <em>one at a time</em>, updating the whole row before moving on to the next coin.</p>
+      <p>Only <code>amount + 1</code> distinct sub-amounts exist. I use a row <code>dp[a]</code> meaning "combinations that make <code>a</code> using only the coins processed so far", and I process the coins <em>one at a time</em>, updating the whole row before moving on to the next coin.</p>
       <p>When coin <code>c</code> is introduced, every combination that makes <code>a − c</code> becomes a combination that makes <code>a</code> by adding one more <code>c</code>. So <code>dp[a] += dp[a − c]</code>.</p>
       <div class="callout">The outer loop over coins is what kills the ordering problem. A combination is only ever built in coin order (all the 1s, then all the 2s, then the 5s), so <code>{1, 2}</code> is counted exactly once, when the 2 is processed, and never again as <code>{2, 1}</code>.</div>
       <p>The inner loop over amounts runs <em>upward</em>. When <code>dp[a]</code> reads <code>dp[a − c]</code>, that cell has already been updated for this same coin, which is exactly what lets a combination contain several copies of <code>c</code>.</p>
@@ -254,8 +255,8 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: coin 1</h2>
-      <p>Start from <code>dp = [1, 0, 0, 0, 0, 0]</code>. With coin 1, walk <code>a</code> from 1 to 5: <code>dp[1] += dp[0]</code> gives 1, <code>dp[2] += dp[1]</code> gives 1, and so on. Every amount gets exactly one combination, all 1s.</p>
-      <p>After coin 1: <code>dp = [1, 1, 1, 1, 1, 1]</code>. Notice how the upward walk chained the 1 along the row: <code>dp[2]</code> read <code>dp[1]</code> after it had already been set, which is how "two 1s" got counted.</p>
+      <p>I start from <code>dp = [1, 0, 0, 0, 0, 0]</code>. With coin 1, I walk <code>a</code> from 1 to 5: <code>dp[1] += dp[0]</code> gives 1, <code>dp[2] += dp[1]</code> gives 1, and so on. Every amount gets exactly one combination, all 1s.</p>
+      <p>After coin 1, I have <code>dp = [1, 1, 1, 1, 1, 1]</code>. I can see the upward walk chain the 1 along the row: <code>dp[2]</code> reads <code>dp[1]</code> after it is set, which counts “two 1s”.</p>
     </section>
 
     <section class="step" data-state="t2">
@@ -269,17 +270,17 @@
       <div class="n">STEP 7</div>
       <h2>Trace it: coin 5, the answer</h2>
       <p>Coin 5 only touches <code>a = 5</code>: <code>dp[5] += dp[0]</code>, so <code>3 + 1 = 4</code>. The one new combination is the single coin <code>5</code>.</p>
-      <p>Final row: <code>dp = [1, 1, 2, 2, 3, 4]</code>. Return <code>dp[5] = 4</code>.</p>
-      <div class="callout">Read the row as a history: each cell was bumped once per coin that fits into it, and every bump added a whole family of combinations at once.</div>
+      <p>The final row is <code>dp = [1, 1, 2, 2, 3, 4]</code>. I return <code>dp[5] = 4</code>.</p>
+      <div class="callout">I read the row as a history: each cell was bumped once per coin that fits into it, and every bump added a whole family of combinations at once.</div>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: loop order and loop direction</h2>
-      <p><strong>Swapping the loops.</strong> Put amounts outside and coins inside, <code>for a in range(1, amount + 1): for coin in coins: dp[a] += dp[a - coin]</code>, and each cell now sums over "which coin came last". That counts ordered sequences: <code>1+2</code> and <code>2+1</code> both contribute. On the running example the row becomes <code>[1, 1, 2, 3, 5, 9]</code> and the function returns <strong>9, not 4</strong>. That is a real problem (Combination Sum IV), just not this one.</p>
+      <p><strong>Swapping the loops.</strong> If I place amounts outside and coins inside, <code>for a in range(1, amount + 1): for coin in coins: dp[a] += dp[a - coin]</code>, each cell now sums over "which coin came last". That counts ordered sequences: <code>1+2</code> and <code>2+1</code> both contribute. On the running example the row becomes <code>[1, 1, 2, 3, 5, 9]</code> and the function returns <strong>9, not 4</strong>. That is a real problem (Combination Sum IV), just not this one.</p>
       <p><strong>Walking the amounts downward.</strong> <code>for a in range(amount, coin - 1, -1)</code> means <code>dp[a − coin]</code> is still the value from before this coin was introduced, so each coin can appear at most once. The running example then returns <strong>1</strong>: only the single 5 survives, because <code>2 + 2 + 1</code> needs two 2s. (Downward is right for the each-item-once version, Target Sum.)</p>
       <p><strong>Seeding <code>dp[0] = 0</code>.</strong> Nothing ever becomes nonzero and every answer is 0.</p>
-      <div class="callout warn">Coins outside so order does not count; amounts upward so a coin can repeat. Check with <code>amount = 3</code>, <code>coins = [1, 2]</code>: the answer is 2, and a 3 means you are counting sequences.</div>
+      <div class="callout warn">I keep coins outside so order does not count, and amounts upward so a coin can repeat. With <code>amount = 3</code>, <code>coins = [1, 2]</code>, the answer is 2; a 3 means I counted sequences.</div>
     </section>
 
     <section class="step" data-state="complexity">

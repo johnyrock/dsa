@@ -225,7 +225,7 @@
   <a class="home" href="../../index.html#easy">← All walkthroughs</a>
   <div class="tag">Easy · Heap · LeetCode #703</div>
   <h1>Kth Largest Element in a Stream, narrated</h1>
-  <p>Scroll from re-sorting the whole stream to a min-heap capped at k, with the heap’s layout shown alongside after every push and pop.</p>
+  <p>I’ll start by re-sorting the full stream, then keep only the top <code>k</code> values in a capped min-heap.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/heap.html">Heap</a> <span class="how">Keep only the k largest values seen so far. The smallest of those kept values is exactly the k-th largest overall.</span></p>
 </header>
 
@@ -236,30 +236,30 @@
       <h2>The problem</h2>
       <p>Design a class <code>KthLargest</code>. It is constructed with an integer <code>k</code> and an initial list <code>nums</code>. Then values arrive one at a time through <code>add(val)</code>, and after each one you must return the <code>k</code>-th largest value seen so far, counting duplicates as separate values (the 3rd largest of <code>[5, 5, 8]</code> is 5).</p>
       <div class="callout">Running example: <code>k = 3</code>, <code>nums = [4, 5, 8, 2]</code>. Then <code>add(3)</code> returns <strong>4</strong>, <code>add(5)</code> returns <strong>5</strong>, and <code>add(10)</code> returns <strong>5</strong>.</div>
-      <p>Check the first one by hand. After adding 3 the values seen are <code>{2, 3, 4, 5, 8}</code>. Sorted descending: 8, 5, 4, … so the 3rd largest is 4. The question is not "what is the answer once" but "how do I keep answering it cheaply as the stream grows".</p>
+      <p>After adding 3, the values seen are <code>{2, 3, 4, 5, 8}</code>. In descending order they are 8, 5, 4, …, so the 3rd largest is 4. The challenge is answering cheaply as the stream grows, rather than finding the answer once.</p>
     </section>
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: keep everything sorted</h2>
-      <p>Store every value in a list. On each <code>add</code>, append the new value, sort the list, and return the element at index <code>-k</code>:</p>
-      <pre class="code"><span class="ln">def add(self, val):</span><span class="ln">    self.values.append(val)</span><span class="ln">    self.values.sort()</span><span class="ln">    return self.values[-self.k]</span></pre>
-      <p style="margin-top:14px">It is correct. The panel shows it after <code>add(3)</code>: the list is <code>[2, 3, 4, 5, 8]</code> and index <code>-3</code> holds 4. But the sort touches all <code>n</code> values every time, so each <code>add</code> is <strong>O(n log n)</strong>, and the list holds the whole stream, <strong>O(n)</strong> memory, even though 2 will never again be one of the top three.</p>
-      <p>You can shave it with <code>bisect.insort</code> (O(n) per add because of the shift), but the real waste is elsewhere: you are storing and ordering values that can never affect the answer again.</p>
+      <p>My first instinct is to store every value. On each <code>add</code>, I append, sort the full list, and return index <code>-k</code>.</p>
+      <pre class="code"><span class="ln">def __init__(self, k, nums):</span><span class="ln">    self.k, self.values = k, nums[:]</span><span class="ln">def add(self, val):</span><span class="ln">    self.values.append(val)</span><span class="ln">    self.values.sort()</span><span class="ln">    return self.values[-self.k]</span></pre>
+      <p style="margin-top:14px">Sorting returns the right k-th value, but it touches all <code>n</code> values every time, so each <code>add</code> takes <strong>O(n log n) time</strong>; storing the whole stream uses <strong>O(n) extra space</strong>.</p>
+      <p><code>bisect.insort</code> would still shift <code>O(n)</code> values. I avoid that work by dropping values that can never affect the top <code>k</code>.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: only the k largest matter</h2>
       <p>Values can only arrive, never leave. So once a value is outside the top <code>k</code>, every future stream makes it fall further. In the example, once <code>{4, 5, 8}</code> are the three largest, the 2 is permanently irrelevant and can be dropped.</p>
-      <div class="callout">If you keep exactly the <code>k</code> largest values seen so far, then the <em>smallest</em> of those kept values is exactly the <code>k</code>-th largest overall. For <code>kept = {4, 5, 8}</code>, <code>min(kept) = 4</code>, which is the answer.</div>
-      <p>So the structure you want answers "what is my minimum?" quickly and lets you evict that minimum when something bigger arrives. That is a <strong>min-heap</strong>: the smallest element is always at the root, <code>self.heap[0]</code>, which is why line 13 can simply <code>return self.heap[0]</code>.</p>
+      <div class="callout">When I keep exactly the <code>k</code> largest values seen so far, the <em>smallest</em> of those kept values is exactly the <code>k</code>-th largest overall. For <code>kept = {4, 5, 8}</code>, <code>min(kept) = 4</code>, which is the answer.</div>
+      <p>I need a structure that answers "what is my minimum?" quickly and lets me evict that minimum when something bigger arrives. That is a <strong>min-heap</strong>: the smallest element is always at the root, <code>self.heap[0]</code>, which is why line 13 can simply <code>return self.heap[0]</code>.</p>
     </section>
 
     <section class="step" data-state="approach">
       <div class="n">STEP 4</div>
       <h2>The approach: heapify, then trim to k</h2>
-      <p>In <code>__init__</code>, copy the input with <code>nums[:]</code> so the caller's list is untouched, then <code>heapq.heapify(self.heap)</code>. Python's <code>heapq</code> is a min-heap, which is exactly the structure we want. For <code>[4, 5, 8, 2]</code> heapify rearranges the list in place to <code>[2, 4, 8, 5]</code>: the root is the smallest, and each child is no smaller than its parent.</p>
+      <p>In <code>__init__</code>, I copy the input with <code>nums[:]</code> so the caller's list stays untouched, then call <code>heapq.heapify(self.heap)</code>. Python's <code>heapq</code> is a min-heap, exactly what I need. For <code>[4, 5, 8, 2]</code>, heapify rearranges the list in place to <code>[2, 4, 8, 5]</code>: the root is the smallest, and each child is no smaller than its parent.</p>
       <p>Then trim: <code>while len(self.heap) &gt; k: heapq.heappop(self.heap)</code>. The size is 4 and <code>k = 3</code>, so one pop removes the root, 2. The panel marks that root amber, about to be popped.</p>
       <ul>
         <li><code>add(val)</code> pushes <code>val</code>, and if the size is now <code>k + 1</code>, pops the smallest.</li>
@@ -272,29 +272,29 @@
       <div class="n">STEP 5</div>
       <h2>Trace it: the state after <code>__init__</code></h2>
       <p>Popping 2 from <code>[2, 4, 8, 5]</code> works the way <code>heapq</code> always does: the last element, 5, moves to the root, then sifts down past the smaller child 4. The result is <code>[4, 5, 8]</code>.</p>
-      <p>Now <code>len(self.heap) == 3</code>, which equals <code>k</code>, so the while loop on lines 6 to 7 stops. The three values kept are the three largest of <code>{2, 4, 5, 8}</code>, and the root <code>self.heap[0] = 4</code> is the 3rd largest. The panel highlights it green: this is already a correct answer, before any <code>add</code> has happened.</p>
+      <p>Now <code>len(self.heap) == 3</code>, which equals <code>k</code>, so the while loop on lines 6 to 7 stops. The three values I keep are the three largest of <code>{2, 4, 5, 8}</code>, and the root <code>self.heap[0] = 4</code> is the 3rd largest. The panel highlights it green: this is already a correct answer, before any <code>add</code> has happened.</p>
     </section>
 
     <section class="step" data-state="trace2">
       <div class="n">STEP 6</div>
       <h2>Trace it: <code>add(3)</code></h2>
       <p><code>heapq.heappush(self.heap, 3)</code> appends 3 and sifts it up. It is smaller than its parent 5, then smaller than the root 4, so it climbs all the way: the list becomes <code>[3, 4, 8, 5]</code>. The panel colours 3 blue for "just pushed".</p>
-      <p>Now <code>len(self.heap)</code> is 4, which is greater than <code>self.k = 3</code>, so line 11 pops. The smallest value is the root, 3, the very thing we just inserted. It leaves immediately and the heap is <code>[4, 5, 8]</code> again.</p>
-      <div class="callout">Return <code>self.heap[0] = 4</code>. Adding a value that is not among the top <code>k</code> costs one push and one pop, and changes nothing. That is the invariant doing its job.</div>
+      <p>Now <code>len(self.heap)</code> is 4, which is greater than <code>self.k = 3</code>, so line 11 pops. The smallest value is the root, 3, the very thing I just inserted. It leaves immediately and the heap is <code>[4, 5, 8]</code> again.</p>
+      <div class="callout">I return <code>self.heap[0] = 4</code>. Adding a value that is not among the top <code>k</code> costs one push and one pop, and changes nothing. That is the invariant doing its job.</div>
     </section>
 
     <section class="step" data-state="trace3">
       <div class="n">STEP 7</div>
       <h2>Trace it: <code>add(5)</code>, then <code>add(10)</code></h2>
-      <p>Push 5: the list is <code>[4, 5, 8, 5]</code>, and the new 5 stays put because its parent 5 is not larger. The size is 4 again, so pop the root 4. The last element 5 takes the root's place and the heap settles as <code>[5, 5, 8]</code>. The new root is 5, so <code>add(5)</code> returns <strong>5</strong>. Two fives are kept on purpose: duplicates count separately.</p>
-      <p>Then <code>add(10)</code>: push gives <code>[5, 5, 8, 10]</code>, pop removes a 5 and sifts 10 down to <code>[5, 10, 8]</code>. The root is still 5, so it returns <strong>5</strong>. A big value went in, a small one came out, and the answer moved only when the set of top three actually changed.</p>
+      <p>When I push 5, the list is <code>[4, 5, 8, 5]</code>. Its size reaches 4, so I pop root 4; the heap settles as <code>[5, 5, 8]</code> and <code>add(5)</code> returns <strong>5</strong>. The two fives remain because duplicates count separately.</p>
+      <p>For <code>add(10)</code>, I push to get <code>[5, 5, 8, 10]</code>, then pop a 5 and sift 10 down to <code>[5, 10, 8]</code>. The root remains 5, so it returns <strong>5</strong>.</p>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the wrong heap, or no trim</h2>
-      <p><strong>Using a max-heap of everything.</strong> "K-th largest" tempts you to push negated values so the largest is on top: <code>heapq.heappush(self.heap, -val)</code>. But then the largest is at the root and the <code>k</code>-th largest is <code>k</code> pops deep. The panel shows it for the example: to reach 4 you must pop 8 and 5 first, then push them back. Every <code>add</code> costs <code>k</code> pops plus <code>k</code> pushes, <strong>O(k log n)</strong>, and the heap keeps all <code>n</code> values. It returns the right number, slowly, which is why it feels fine on small tests.</p>
-      <p><strong>Forgetting the trim in <code>add</code>.</strong> Drop lines 10 to 11 and just <code>heappush</code> then <code>return self.heap[0]</code>. After <code>add(3)</code> the heap is <code>[3, 4, 8, 5]</code> and the root is <strong>3</strong>, not 4: the "k-th largest" has silently become "the smallest ever seen".</p>
+      <p><strong>Using a max-heap of everything.</strong> "K-th largest" tempts me to push negated values so the largest is on top: <code>heapq.heappush(self.heap, -val)</code>. But then the largest is at the root and the <code>k</code>-th largest is <code>k</code> pops deep. The panel shows it for the example: to reach 4, I must pop 8 and 5 first, then push them back. Every <code>add</code> costs <code>k</code> pops plus <code>k</code> pushes, <strong>O(k log n)</strong>, and the heap keeps all <code>n</code> values. It returns the right number slowly, which is why it feels fine on small tests.</p>
+      <p><strong>Forgetting the trim in <code>add</code>.</strong> Without lines 10 to 11, I only <code>heappush</code> before returning <code>self.heap[0]</code>. After <code>add(3)</code>, the heap is <code>[3, 4, 8, 5]</code> and its root is <strong>3</strong>, not 4.</p>
       <div class="callout warn">Min-heap, capped at <code>k</code>. The root answers the question only while the size is exactly <code>k</code>, so every push must be paired with a conditional pop.</div>
     </section>
 
@@ -324,7 +324,7 @@
         <li><code>if len(self.heap) &gt; self.k: heapq.heappop(self.heap)</code> evicts the smallest if the cap is exceeded, which may be the value just pushed.</li>
         <li><code>return self.heap[0]</code>: the root of a min-heap holding the <code>k</code> largest values is the <code>k</code>-th largest.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>keep the k largest values in a min-heap; its root is the k-th largest, and each add is push, then pop if over k.</em></div>
+      <div class="callout">I remember this as: <em>I keep the k largest values in a min-heap; its root is the k-th largest, and each add trims back to k.</em></div>
     </section>
 
     <div class="code-final">

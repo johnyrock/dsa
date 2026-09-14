@@ -204,7 +204,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Dynamic Programming · LeetCode #152</div>
   <h1>Maximum Product Subarray, narrated</h1>
-  <p>Scroll through the thinking, from multiplying out every subarray to a single pass that carries both the largest and the smallest product ending at each index, with the state of the algorithm shown alongside.</p>
+  <p>I trace how a negative value can turn the smallest running product into the next best answer.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/dynamic-programming.html">Dynamic Programming</a> <span class="how">Kadane with two running values, because a negative turns the worst product into the best</span></p>
 </header>
 
@@ -214,17 +214,18 @@
     <section class="step" data-state="problem">
       <div class="n">STEP 1</div>
       <h2>The problem</h2>
-      <p>You get an integer array <code>nums</code>. Among all contiguous, non-empty subarrays, find the one whose elements multiply to the largest value, and return that product. Negatives and zeros are allowed.</p>
+      <p>Given an integer array <code>nums</code>, find the largest product from any contiguous, non-empty subarray. Negatives and zeros are allowed.</p>
       <div class="callout">Running example: <code>nums = [2, 3, -2, 4]</code>. The answer is <strong>6</strong>, from <code>[2, 3]</code>. Extending to the −2 gives −12, the 4 alone gives 4, and there is no way to reach the 4 without passing through the −2.</div>
       <p>Products behave differently from sums: a negative flips the sign of everything before it, and a zero wipes it out. A single-element subarray always counts, so with <code>[-2]</code> the answer is −2, not 0.</p>
     </section>
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instinct: multiply out every subarray</h2>
-      <p>Fix a start, extend the end one element at a time, multiply as you go, and keep the largest product seen.</p>
+<h2>First instinct: multiply out every subarray</h2>
+      <p>My first instinct is to fix a start, extend the end one element at a time, and keep the largest product I see.</p>
       <pre class="code"><span class="ln">best = nums[0]</span><span class="ln">for i in range(n):</span><span class="ln">    product = 1</span><span class="ln">    for j in range(i, n):</span><span class="ln">        product *= nums[j]</span><span class="ln">        best = max(best, product)</span></pre>
-      <p style="margin-top:14px">There are <code>n(n + 1) / 2</code> subarrays and each extension costs one multiplication, so this is <strong>O(n²)</strong>. On <code>[2, 3, -2, 4]</code> it evaluates 10 products: 2, 6, −12, −48, 3, −6, −24, −2, −8, 4. At <code>n = 2 · 10⁴</code> that is 2 · 10⁸ multiplications, too slow.</p>
+      <p style="margin-top:14px">There are <code>n(n + 1) / 2</code> subarrays, and each extension costs one multiplication, so this takes <strong>O(n²) time</strong> and <strong>O(1) extra space</strong>. On <code>[2, 3, -2, 4]</code>, I evaluate 10 products.</p>
+      <p>Adjacent subarrays share nearly all of their work. I keep the useful product information from the previous position instead of multiplying each one from scratch.</p>
     </section>
 
     <section class="step" data-state="reframe">
@@ -277,7 +278,7 @@
       <p><strong>Tracking only <code>cur_max</code>.</strong> <code>cur = max(x, x * cur)</code> is Kadane with a product. On <code>[2, 3, −2, 4]</code> it happens to return 6, which is why this bug survives a casual test. On <code>[−2, 3, −4]</code> it returns <strong>3</strong>, not 24: at the 3 the running value becomes <code>max(3, −6) = 3</code>, the −6 is discarded, and the final −4 has nothing negative to cancel against. The panel shows that run.</p>
       <p><strong>Seeding with 0 or 1.</strong> <code>best = 0</code> with <code>cur_max = cur_min = 1</code> and a loop over all of <code>nums</code> returns 0 for <code>[−2]</code>, but the only subarray is <code>[−2]</code> and the answer is −2. Seed with <code>nums[0]</code> and loop from index 1.</p>
       <p><strong>Updating in two statements.</strong> <code>cur_max = max(...)</code> followed by <code>cur_min = min(x, x * cur_max, x * cur_min)</code> reads the <em>new</em> <code>cur_max</code>. Both extremes must come from the same old pair; the tuple assignment guarantees it.</p>
-      <div class="callout warn">A negative number makes the smallest product the most valuable one. Keep both, and take both from the same three candidates.</div>
+      <div class="callout warn">A negative number can make the smallest product most valuable, so I retain both extremes from the same three candidates.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -300,7 +301,7 @@
       <ul>
         <li><code>best = cur_max = cur_min = nums[0]</code> seeds all three with the only subarray ending at index 0.</li>
         <li><code>for x in nums[1:]</code> scans the rest once.</li>
-        <li><code>candidates = (x, x * cur_max, x * cur_min)</code>: start fresh, extend the best, or extend the worst.</li>
+        <li><code>candidates = (x, x * cur_max, x * cur_min)</code>: I consider a fresh start, an extension of the best, and an extension of the worst.</li>
         <li><code>cur_max, cur_min = max(candidates), min(candidates)</code> keeps both extremes from the same old pair.</li>
         <li><code>best = max(best, cur_max)</code> tracks the global answer.</li>
         <li><code>return best</code>.</li>

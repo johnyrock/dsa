@@ -202,7 +202,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Graph · LeetCode #994</div>
   <h1>Rotting Oranges, narrated</h1>
-  <p>Scroll through the thinking, from simulating the grid minute by minute to a breadth-first search seeded with every rotten orange, where each queue level is one minute, with the state of the algorithm shown alongside.</p>
+  <p>I will first rescan the entire grid for each minute, then process only the oranges that can affect the next minute.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/graph-traversal.html">Graph Traversal</a> <span class="how">multi-source BFS by levels: one level of the queue is one minute</span></p>
 </header>
 
@@ -218,20 +218,19 @@
       <p>Two answers are asked for at once: <em>how long</em>, and <em>whether it finishes at all</em>. The second needs a way to notice an orange that no wave ever reaches.</p>
     </section>
 
-    <section class="step" data-state="naive">
-      <div class="n">STEP 2</div>
-      <h2>First instinct: simulate the whole grid every minute</h2>
-      <p>The rules describe a simulation, so simulate. Each minute, scan the entire grid, collect every fresh orange next to a rotten one, and rot them all together after the scan (not during it, or a single minute would chain across the row):</p>
-      <pre class="code"><span class="ln">while True:</span><span class="ln">    to_rot = [(r, c) for every fresh (r, c) with a rotten neighbour]</span><span class="ln">    if not to_rot: break</span><span class="ln">    for r, c in to_rot: grid[r][c] = 2</span><span class="ln">    minutes += 1</span></pre>
-      <p style="margin-top:14px">It is correct and, at 10 × 10, it is fast enough. But every minute rescans all <code>m × n</code> cells to find the handful that changed, and there can be up to <code>m × n</code> minutes on a snake-shaped path: <strong>O((m × n)²)</strong>.</p>
-      <div class="callout warn">The waste is the rescan. The only cells that can rot next minute are the neighbours of the cells that rotted <em>this</em> minute. Everything else is either already rotten, empty, or too far away.</div>
+    <section class="step" data-state="reframe">
+      <div class="n">STEP 2</div><h2>First instinct: simulate the whole grid every minute</h2>
+      <p>I can scan the grid each minute, collect fresh oranges next to rotten ones, then rot that collected group together.</p>
+      <pre class="code"><span class="ln">def orangesRotting(grid):</span><span class="ln">    minutes = 0</span><span class="ln">    while True:</span><span class="ln">        to_rot = [(r, c) for r in range(len(grid)) for c in range(len(grid[0])) if grid[r][c] == 1 and any(0 &lt;= r+dr &lt; len(grid) and 0 &lt;= c+dc &lt; len(grid[0]) and grid[r+dr][c+dc] == 2 for dr, dc in ((1,0),(-1,0),(0,1),(0,-1)))]</span><span class="ln">        if not to_rot: break</span><span class="ln">        for r, c in to_rot: grid[r][c] = 2</span><span class="ln">        minutes += 1</span><span class="ln">    return minutes if all(cell != 1 for row in grid for cell in row) else -1</span></pre>
+      <p style="margin-top:14px">This is correct. A scan costs O(m · n) and there can be O(m · n) minutes, giving O((m · n)²) time complexity. The collected group uses O(m · n) space.</p>
+      <p>Queuing the oranges that just became rotten focuses each minute on the only cells that can change next: their neighbours.</p>
     </section>
 
     <section class="step" data-state="reframe">
       <div class="n">STEP 3</div>
       <h2>Reframe: minutes are BFS levels</h2>
       <p>Cells are nodes and orthogonal adjacency is an edge. "Rots at minute <code>t</code>" means "is <code>t</code> steps from the nearest rotten orange". That is a shortest-path distance, and breadth-first search computes shortest paths on an unweighted graph by visiting nodes level by level: all nodes at distance 1, then all at distance 2, and so on.</p>
-      <p>There may be several rotten oranges at the start. Put all of them in the queue before the first pop and they form level 0 together, so a fresh orange is reached by whichever source is closest, at exactly the minute the simulation would rot it.</p>
+      <p>There may be several rotten oranges at the start. I put all of them in the queue before the first pop, forming level 0 together, so the closest source reaches each fresh orange at exactly the minute the simulation would rot it.</p>
       <div class="callout">The answer is the number of levels the BFS runs while there is still something to rot. The queue never rescans anything: it holds exactly the cells that rotted last minute.</div>
     </section>
 
@@ -240,8 +239,8 @@
       <h2>The key idea: level-by-level BFS with a fresh counter</h2>
       <ul>
         <li>One scan: every <code>2</code> goes into <code>queue</code>, every <code>1</code> adds one to <code>fresh</code>.</li>
-        <li><code>while queue and fresh</code>: run a minute only if there is a frontier and something left to rot.</li>
-        <li><code>for _ in range(len(queue))</code>: pop exactly the oranges that were rotten at the start of the minute. <code>len(queue)</code> is read once, so the appends made during the minute wait for the next one.</li>
+        <li><code>while queue and fresh</code>: I run a minute only if there is a frontier and something left to rot.</li>
+        <li><code>for _ in range(len(queue))</code>: I pop exactly the oranges that were rotten at the start of the minute. <code>len(queue)</code> is read once, so appends made during the minute wait for the next one.</li>
         <li>For each popped orange, every in-bounds neighbour equal to <code>1</code> is set to <code>2</code>, <code>fresh -= 1</code>, and appended.</li>
         <li>After the inner loop, <code>minutes += 1</code>.</li>
         <li><code>return -1 if fresh else minutes</code>.</li>
@@ -252,23 +251,23 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: minute 1</h2>
-      <p>The scan finds one rotten orange, so <code>queue = [(0, 0)]</code>, and six fresh ones, so <code>fresh = 6</code>. Both are non-zero, so the first minute runs. <code>len(queue)</code> is 1: pop <code>(0, 0)</code>.</p>
-      <p>Below, <code>(1, 0)</code>, is fresh: set to 2, <code>fresh = 5</code>, append. Above is out of bounds. Right, <code>(0, 1)</code>, is fresh: set to 2, <code>fresh = 4</code>, append. Left is out of bounds.</p>
+      <p>I find one rotten orange, so <code>queue = [(0, 0)]</code>, and six fresh ones, so <code>fresh = 6</code>. With both non-zero, I begin minute one by popping <code>(0, 0)</code>.</p>
+      <p>I rot and append the fresh oranges at <code>(1, 0)</code> and <code>(0, 1)</code>, leaving <code>fresh = 4</code>. The other two neighbours are out of bounds.</p>
       <p>The inner loop ends after that single pop, so <code>minutes = 1</code>. The queue is <code>[(1, 0), (0, 1)]</code>: the two oranges that rotted this minute, and nothing else. The panel highlights them as the wave.</p>
     </section>
 
     <section class="step" data-state="t2">
       <div class="n">STEP 6</div>
       <h2>Trace it: minute 2</h2>
-      <p><code>len(queue)</code> is 2, so this minute pops two oranges. Pop <code>(1, 0)</code>: below, <code>(2, 0)</code>, is empty, skipped; above is already rotten; right, <code>(1, 1)</code>, is fresh: rot it, <code>fresh = 3</code>, append. Pop <code>(0, 1)</code>: below is <code>(1, 1)</code>, rotten a moment ago, so the <code>== 1</code> test skips it and it is not appended a second time; right, <code>(0, 2)</code>, is fresh: rot it, <code>fresh = 2</code>, append.</p>
-      <p><code>minutes = 2</code>, <code>queue = [(1, 1), (0, 2)]</code>. Notice the order of the queue is the order of discovery, and both were discovered in the same minute, so their order relative to each other does not matter.</p>
+      <p>With <code>len(queue) = 2</code>, I pop two oranges this minute. From <code>(1, 0)</code>, I rot and append <code>(1, 1)</code>, leaving <code>fresh = 3</code>. From <code>(0, 1)</code>, that cell is already rotten, so I skip it and rot and append <code>(0, 2)</code>, leaving <code>fresh = 2</code>.</p>
+      <p><code>minutes = 2</code>, <code>queue = [(1, 1), (0, 2)]</code>. The queue follows discovery order, and both oranges were discovered in the same minute, so their relative order does not matter.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: minutes 3 and 4, the answer</h2>
-      <p>Minute 3, two pops. <code>(1, 1)</code>: below, <code>(2, 1)</code>, is fresh: rot, <code>fresh = 1</code>, append; right, <code>(1, 2)</code>, is empty. <code>(0, 2)</code>: below is that same empty cell; everything else is rotten or out of bounds. <code>minutes = 3</code>, <code>queue = [(2, 1)]</code>. The empty cell at <code>(1, 2)</code> is why <code>(2, 2)</code> is not rotten yet: the only way to it goes through <code>(2, 1)</code>.</p>
-      <p>Minute 4, one pop. <code>(2, 1)</code>: right, <code>(2, 2)</code>, is fresh: rot, <code>fresh = 0</code>, append. <code>minutes = 4</code>.</p>
+      <p>In minute 3, I pop two oranges. From <code>(1, 1)</code>, I rot and append <code>(2, 1)</code>, leaving <code>fresh = 1</code>; <code>(1, 2)</code> is empty. The other pop finds no new orange. Now <code>minutes = 3</code> and <code>queue = [(2, 1)]</code>, and the empty cell at <code>(1, 2)</code> explains why <code>(2, 2)</code> must wait.</p>
+      <p>In minute 4, I pop <code>(2, 1)</code>, rot and append <code>(2, 2)</code>, and reach <code>fresh = 0</code>. Now <code>minutes = 4</code>.</p>
       <p>Back at the top of the loop, <code>queue</code> still holds <code>(2, 2)</code>, but <code>fresh</code> is 0, so <code>while queue and fresh</code> stops. <code>fresh</code> is falsy, so <code>return minutes</code> gives <strong>4</strong>.</p>
     </section>
 
@@ -276,9 +275,9 @@
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: the extra minute</h2>
       <p><strong><code>while queue:</code> without <code>and fresh</code>.</strong> After minute 4 the queue is <code>[(2, 2)]</code>. The loop runs again, pops <code>(2, 2)</code>, finds nothing fresh, and still does <code>minutes += 1</code>. The function returns <strong>5</strong> instead of 4. The panel shows that fifth, empty wave. The tempting patch <code>return minutes - 1</code> then breaks <code>[[0, 2]]</code>, which never enters the loop and must return 0, not -1; the honest fix is to stop as soon as nothing is fresh.</p>
-      <p><strong>Ticking the clock per pop.</strong> Move <code>minutes += 1</code> inside the inner loop and it counts oranges instead of waves: 6 on this example. One minute is one level of the queue, however many oranges are in it.</p>
-      <p><strong>Forgetting the <code>-1</code>.</strong> Return <code>minutes</code> unconditionally and a grid with a walled-off orange reports the time the reachable ones took, as if the job were done. <code>fresh</code> is the evidence that it is not.</p>
-      <div class="callout warn">Count the level, not the pop; stop when nothing is fresh; and let the leftover <code>fresh</code> count be the impossibility check.</div>
+      <p><strong>Ticking the clock per pop.</strong> If I move <code>minutes += 1</code> into the inner loop, I count oranges instead of waves and get 6 on this example. One minute is one queue level, however many oranges it contains.</p>
+      <p><strong>Forgetting the <code>-1</code>.</strong> If I return <code>minutes</code> unconditionally, a grid with a walled-off orange reports only the reachable time. The remaining <code>fresh</code> count tells me the job is unfinished.</p>
+      <div class="callout warn">I count levels instead of pops, stop when nothing is fresh, and use leftover <code>fresh</code> as the impossibility check.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -291,7 +290,7 @@
         <tr><td>BFS from each rotten orange separately, keeping the min time</td><td>O(k × m × n)</td><td>O(m × n)</td></tr>
         <tr><td>One BFS seeded with all rotten oranges, by levels</td><td>O(m × n)</td><td>O(m × n)</td></tr>
       </table>
-      <p>With <code>m, n &lt;= 10</code> the simulation also passes. The level-by-level BFS is what an interviewer expects because it shows you recognise "spreads one step per tick from many sources" as a multi-source shortest path.</p>
+      <p>With <code>m, n &lt;= 10</code> the simulation also passes. I prefer the level-by-level BFS because it recognises “spreads one step per tick from many sources” as a multi-source shortest path.</p>
     </section>
 
     <section class="step" data-state="final">
@@ -307,7 +306,7 @@
         <li><code>minutes += 1</code> after the inner loop ticks once per wave.</li>
         <li><code>return -1 if fresh else minutes</code> reports impossibility or the time.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>seed the queue with every rotten orange, pop one level per minute, and stop the moment nothing is fresh.</em></div>
+      <div class="callout">My summary: <em>I seed the queue with every rotten orange, pop one level per minute, and stop when nothing is fresh.</em></div>
     </section>
 
     <div class="code-final">

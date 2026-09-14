@@ -229,7 +229,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Fast &amp; Slow Pointers · LeetCode #287</div>
   <h1>Find the Duplicate Number, narrated</h1>
-  <p>Scroll through the thinking, from sorting and hash sets to reading the array as a linked list and running Floyd's cycle detection on it, with the state of the algorithm shown alongside.</p>
+  <p>I will begin with a legal pairwise comparison, then I use the array's value range to view it as a linked list with a cycle.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/fast-slow-pointers.html">Fast &amp; Slow Pointers</a> <span class="how">i → nums[i] is a linked list; the duplicate is the cycle's entrance</span></p>
 </header>
 
@@ -247,21 +247,20 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instinct: sort, or a set</h2>
-      <p>Sort a copy and scan for two equal neighbours:</p>
-      <pre class="code"><span class="ln">s = sorted(nums)          # [1, 2, 2, 3, 4]</span><span class="ln">for i in range(1, len(s)):</span><span class="ln">    if s[i] == s[i - 1]:</span><span class="ln">        return s[i]</span></pre>
-      <p style="margin-top:14px">That is <strong>O(n log n)</strong> time and, because we must not modify <code>nums</code>, <strong>O(n)</strong> space for the copy. A hash set is faster — walk once, return the first value already seen — at <strong>O(n)</strong> time but still <strong>O(n)</strong> space. Both break the space rule.</p>
-      <p>The only fully legal brute force is the nested loop: for each <code>i</code>, scan every <code>j &gt; i</code> for <code>nums[j] == nums[i]</code>. O(1) space, but <strong>O(n²)</strong> time, which at <code>n = 10⁵</code> is ten billion comparisons.</p>
-      <p>So we want O(n) time <em>and</em> O(1) space without touching the array. That combination only falls out of the structure of the input.</p>
+      <h2>First instinct: compare every pair</h2>
+      <p>I can compare each value with every later value and return as soon as two positions contain the same number.</p>
+      <pre class="code"><span class="ln">def findDuplicate(nums):</span><span class="ln">    for i in range(len(nums)):</span><span class="ln">        for j in range(i + 1, len(nums)):</span><span class="ln">            if nums[i] == nums[j]:</span><span class="ln">                return nums[i]</span></pre>
+      <p style="margin-top:14px">This is correct and does not modify <code>nums</code>. Its nested loops take O(n²) time, and it uses O(1) extra space.</p>
+      <p>I follow indices as pointers without using a set: <code>i → nums[i]</code>. Since two indices share the duplicate value, that pointer structure must contain a cycle whose entrance is the duplicate.</p>
     </section>
 
     <section class="step" data-state="idea">
       <div class="n">STEP 3</div>
       <h2>The key idea: the array is a linked list in disguise</h2>
-      <p>Read each index as a node and each value as a <code>next</code> pointer: node <code>i</code> points to node <code>nums[i]</code>. Every value is in <code>[1, n]</code>, so every pointer lands on a valid index, and starting from index 0 you can follow pointers forever.</p>
+      <p>I read each index as a node and each value as a <code>next</code> pointer: node <code>i</code> points to node <code>nums[i]</code>. Every value is in <code>[1, n]</code>, so every pointer lands on a valid index, and starting from index 0 I can follow pointers forever.</p>
       <p>On the example: <code>0 → nums[0] = 1</code>, <code>1 → nums[1] = 3</code>, <code>3 → nums[3] = 2</code>, <code>2 → nums[2] = 4</code>, <code>4 → nums[4] = 2</code>. And 2 again: <strong>a cycle</strong>. The panel draws exactly this graph.</p>
       <div class="callout">A node has two arrows coming <em>into</em> it precisely when two indices hold its value — that is, when the value is the duplicate. Here both index 3 and index 4 hold 2, so node 2 has two incoming arrows, and it is where the path from 0 first re-enters itself. <strong>The duplicate is the entrance of the cycle.</strong></div>
-      <p>Index 0 can never be pointed at, since values are ≥ 1, so 0 is always in the "tail" before the cycle. That matters: Floyd's algorithm needs to start outside the cycle. From here the problem is <a href="../../easy/012-linked-list-cycle/walkthrough.html">Linked List Cycle</a> plus "find the entrance", on a list we never build.</p>
+      <p>Index 0 can never be pointed at, since values are ≥ 1, so 0 is always in the "tail" before the cycle. That matters: Floyd's algorithm needs to start outside the cycle. From here the problem is <a href="../../easy/012-linked-list-cycle/walkthrough.html">Linked List Cycle</a> plus "find the entrance", on a list I never build.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -270,18 +269,18 @@
       <ul>
         <li><code>slow = fast = 0</code> — both start at node 0, which is outside the cycle.</li>
         <li>Phase 1: <code>slow = nums[slow]</code> (one hop) and <code>fast = nums[nums[fast]]</code> (two hops), repeated until <code>slow == fast</code>. They meet somewhere on the cycle.</li>
-        <li>Phase 2: <code>slow2 = 0</code>; then while <code>slow != slow2</code>, move <em>both</em> one hop. They meet at the entrance.</li>
+        <li>Phase 2: <code>slow2 = 0</code>; then while <code>slow != slow2</code>, I move <em>both</em> one hop. They meet at the entrance.</li>
         <li><code>return slow</code> — the entrance index, which equals the duplicate value.</li>
       </ul>
-      <p>Why phase 2 works: if the tail has length <code>t</code> and the cycle has length <code>c</code>, then when they meet in phase 1 the slow pointer has taken <code>k</code> hops and fast <code>2k</code>, so the extra <code>k</code> hops are a whole number of laps. The meeting point is therefore <code>t</code> hops short of a lap boundary, exactly as far from the entrance as node 0 is. Walk both at the same speed and they arrive together.</p>
+      <p>Why phase 2 works: if the tail has length <code>t</code> and the cycle has length <code>c</code>, then when they meet in phase 1 the slow pointer has taken <code>k</code> hops and fast <code>2k</code>, so the extra <code>k</code> hops are a whole number of laps. The meeting point is therefore <code>t</code> hops short of a lap boundary, exactly as far from the entrance as node 0 is. I walk both at the same speed and they arrive together.</p>
     </section>
 
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: phase 1, hops 1 and 2</h2>
-      <p>Hop 1: <code>slow = nums[0] = 1</code>. <code>fast = nums[nums[0]] = nums[1] = 3</code>. Not equal, keep going.</p>
+      <p>Hop 1: <code>slow = nums[0] = 1</code>. <code>fast = nums[nums[0]] = nums[1] = 3</code>. Not equal, I keep going.</p>
       <p>Hop 2: <code>slow = nums[1] = 3</code>. <code>fast = nums[nums[3]] = nums[2] = 4</code>. Not equal.</p>
-      <p>Notice how <code>fast</code> is computed: the inner <code>nums[fast]</code> is one hop, the outer one is the second. It is the same as <code>fast.next.next</code> on a real list. The array is never written, only read twice per iteration.</p>
+      <p>I see how <code>fast</code> is computed: the inner <code>nums[fast]</code> is one hop, and the outer lookup is the second. It matches <code>fast.next.next</code> on a real list. I leave the array unchanged and read it twice per iteration.</p>
     </section>
 
     <section class="step" data-state="t2">
@@ -289,13 +288,13 @@
       <h2>Trace it: phase 1, hops 3 and 4, they meet</h2>
       <p>Hop 3: <code>slow = nums[3] = 2</code>. <code>fast = nums[nums[4]] = nums[2] = 4</code>. Still different.</p>
       <p>Hop 4: <code>slow = nums[2] = 4</code>. <code>fast = nums[nums[4]] = nums[2] = 4</code>. <strong>Equal.</strong> Break out of the loop.</p>
-      <p>They met at node 4, which is on the cycle (2 → 4 → 2). But 4 is not the answer — the array has one 4, not two. The meeting point is only a foothold on the cycle; the entrance is what we want, and phase 2 finds it.</p>
+      <p>They met at node 4, which is on the cycle (2 → 4 → 2). But 4 is not the answer — the array has one 4, not two. The meeting point is only a foothold on the cycle; the entrance is what I want, and phase 2 finds it.</p>
     </section>
 
     <section class="step" data-state="t3">
       <div class="n">STEP 7</div>
       <h2>Trace it: phase 2, walk to the entrance</h2>
-      <p>Put <code>slow2 = 0</code> at the start; <code>slow</code> stays at 4. They differ, so both hop once.</p>
+      <p>I put <code>slow2 = 0</code> at the start; <code>slow</code> stays at 4. They differ, so both hop once.</p>
       <p>Hop 1: <code>slow = nums[4] = 2</code>, <code>slow2 = nums[0] = 1</code>. Hop 2: <code>slow = nums[2] = 4</code>, <code>slow2 = nums[1] = 3</code>. Hop 3: <code>slow = nums[4] = 2</code>, <code>slow2 = nums[3] = 2</code>. <strong>Equal at 2.</strong></p>
       <div class="callout">Both pointers took exactly 3 hops: <code>slow2</code> walked the tail 0 → 1 → 3 → 2, and <code>slow</code> went around from the meeting point 4 → 2 → 4 → 2. Same distance, same arrival. <code>return 2</code>, which is the duplicate.</div>
     </section>
@@ -306,7 +305,7 @@
       <p><strong>A pre-checked loop.</strong> The natural translation of "until they meet" is <code>while slow != fast:</code>. But <code>slow</code> and <code>fast</code> are <em>both 0</em> before the first hop, so the condition is false immediately and phase 1 does nothing. Phase 2 then sets <code>slow2 = 0</code>, sees <code>slow == slow2</code> at once, and returns <strong>0</strong> — a value that is not even in the array. The loop must run at least once: <code>while True: … if slow == fast: break</code>.</p>
       <p><strong>Returning the phase-1 meeting point.</strong> On the example that is node 4, and the function reports <strong>4</strong> instead of 2. The meeting point is on the cycle but is the entrance only by coincidence.</p>
       <p><strong>Restarting phase 2 from the wrong place.</strong> <code>slow2 = slow</code> (both on the cycle) or <code>slow2 = nums[0]</code> breaks the equal-distance argument. Only index 0 is guaranteed to be outside the cycle.</p>
-      <div class="callout warn">Phase 1 is a do-while, not a while: hop first, compare second. Phase 2 always restarts from 0 and moves both pointers one hop.</div>
+      <div class="callout warn">Phase 1 is a do-while, not a while: hop first, I compare second. Phase 2 always restarts from 0 and moves both pointers one hop.</div>
     </section>
 
     <section class="step" data-state="complexity">
@@ -334,7 +333,7 @@
         <li><code>slow = nums[slow]</code> / <code>fast = nums[nums[fast]]</code> — one hop and two hops through the implicit list.</li>
         <li><code>if slow == fast: break</code> — met somewhere on the cycle.</li>
         <li><code>slow2 = 0</code> — second pointer restarts at the head.</li>
-        <li><code>while slow != slow2:</code> move both one hop — same distance to the entrance.</li>
+        <li><code>while slow != slow2:</code> I move both one hop — same distance to the entrance.</li>
         <li><code>return slow</code> — the entrance, which is the duplicate value.</li>
       </ul>
       <div class="callout">One-line summary to remember: <em>index → value is a linked list; the duplicate is the node with two incoming edges, i.e. the cycle entrance, found by Floyd's two phases.</em></div>

@@ -229,7 +229,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Tree · LeetCode #105</div>
   <h1>Construct Binary Tree from Preorder and Inorder Traversal, narrated</h1>
-  <p>Scroll from slicing both arrays at every call to a single preorder cursor plus an inorder index map, with the tree growing node by node alongside.</p>
+  <p>I will first rebuild the tree by slicing both traversals, then I avoid the repeated scans and copied arrays with an index map and one preorder cursor.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/tree-traversal.html">Tree</a> <span class="how">The next preorder value is always the root of the current inorder window; its inorder position splits the window into left and right.</span></p>
 </header>
 
@@ -247,17 +247,17 @@
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
       <h2>First instinct: slice both arrays and recurse</h2>
-      <p>The classic textbook version. The root is <code>preorder[0]</code>. Find it in <code>inorder</code> with <code>index</code>; say it lands at position <code>mid</code>. Then the left subtree has <code>mid</code> nodes, so its preorder is the next <code>mid</code> values and its inorder is everything before <code>mid</code>; the right subtree gets the rest of both arrays:</p>
-      <pre class="code"><span class="ln">def build_tree(preorder, inorder):</span><span class="ln">    if not preorder:</span><span class="ln">        return None</span><span class="ln">    root = TreeNode(preorder[0])</span><span class="ln">    mid = inorder.index(preorder[0])</span><span class="ln">    root.left = build_tree(preorder[1:mid + 1], inorder[:mid])</span><span class="ln">    root.right = build_tree(preorder[mid + 1:], inorder[mid + 1:])</span><span class="ln">    return root</span></pre>
-      <p style="margin-top:14px">It is correct and short, and it is worth knowing. But every call does two O(n) things: <code>inorder.index</code> scans the list, and the four slices copy it. On a chain of 3000 nodes the windows shrink by one each level, so the total is 3000 + 2999 + … = <strong>O(n²)</strong> time and the same again in copied memory.</p>
-      <p>The panel marks the scan: on the running example the root 3 is found at inorder index 1, and both arrays are then cut into a 1-element left part and a 3-element right part. That cut is the right idea; the copying and scanning are the waste.</p>
+      <p>I can use the first preorder value as the root, I find that root in inorder, and recursively build the two sliced traversal ranges.</p>
+      <pre class="code"><span class="ln">def buildTree(preorder, inorder):</span><span class="ln">    if not preorder: return None</span><span class="ln">    root = TreeNode(preorder[0])</span><span class="ln">    mid = inorder.index(preorder[0])</span><span class="ln">    root.left = buildTree(preorder[1:mid + 1], inorder[:mid])</span><span class="ln">    root.right = buildTree(preorder[mid + 1:], inorder[mid + 1:])</span><span class="ln">    return root</span></pre>
+      <p style="margin-top:14px">This is correct because the root splits both traversals into matching left and right subtrees. Repeated <code>index</code> calls and array slices make the time complexity O(n²). The copied slices and recursion use O(n²) space in the worst case.</p>
+      <p>I look up each inorder position once and pass index boundaries instead of copied lists. A single preorder cursor then supplies each subtree root in order.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: one cursor and one map replace all the slicing</h2>
-      <p>Two observations remove both costs. First, the scan: build a dict <code>index_of = {val: i for i, val in enumerate(inorder)}</code> once, and finding <code>mid</code> becomes an O(1) lookup. Values are distinct, so the map is unambiguous.</p>
-      <p>Second, the slicing. Notice which preorder value each recursive call consumes: the first call takes <code>preorder[0]</code>, the left-subtree call takes <code>preorder[1]</code>, its left call takes <code>preorder[2]</code>, and so on. Because preorder lists the whole left subtree before the right, and the recursion builds left before right, <em>the calls happen in preorder order</em>. A single cursor <code>next_pre</code> that advances by one per call always points at the correct root.</p>
+      <p>Two observations remove both costs. First, the scan: I build a dict <code>index_of = {val: i for i, val in enumerate(inorder)}</code> once, and finding <code>mid</code> becomes an O(1) lookup. Values are distinct, so the map is unambiguous.</p>
+      <p>Second, I track which preorder value each recursive call consumes: the first call takes <code>preorder[0]</code>, the left-subtree call takes <code>preorder[1]</code>, its left call takes <code>preorder[2]</code>, and so on. Because preorder lists the whole left subtree before the right, and the recursion builds left before right, <em>the calls happen in preorder order</em>. A single cursor <code>next_pre</code> that advances by one per call always points at the correct root.</p>
       <div class="callout">So a call never needs its own copy of <code>preorder</code>: it takes <code>preorder[next_pre]</code> and increments. And it never needs a copy of <code>inorder</code>: it just needs the window bounds <code>lo..hi</code>, which it splits at <code>mid = index_of[val]</code> into <code>lo..mid-1</code> and <code>mid+1..hi</code>.</div>
       <p>The panel shows the cursor sitting on <code>3</code> and the map's answer: <code>index_of[3] = 1</code>.</p>
     </section>
@@ -280,15 +280,15 @@
     <section class="step" data-state="trace1">
       <div class="n">STEP 5</div>
       <h2>Trace it: the root</h2>
-      <p>Call <code>build(0, 4)</code>. The window is all of inorder. The cursor is at 0, so <code>val = preorder[0] = 3</code> and the cursor moves to 1. Look it up: <code>mid = index_of[3] = 1</code>.</p>
-      <p>That splits the window into <code>lo..mid-1 = 0..0</code>, holding just <code>[9]</code>, and <code>mid+1..hi = 2..4</code>, holding <code>[15, 20, 7]</code>. So the root 3 will have a one-node left subtree and a three-node right subtree, which matches the answer we expect.</p>
+      <p>Call <code>build(0, 4)</code>. The window is all of inorder. The cursor is at 0, so <code>val = preorder[0] = 3</code> and the cursor moves to 1. I look it up: <code>mid = index_of[3] = 1</code>.</p>
+      <p>That splits the window into <code>lo..mid-1 = 0..0</code>, holding just <code>[9]</code>, and <code>mid+1..hi = 2..4</code>, holding <code>[15, 20, 7]</code>. So the root 3 will have a one-node left subtree and a three-node right subtree, which matches the answer I expect.</p>
       <p>The node 3 is created and the panel draws it at the top. The next thing that happens is <code>node.left = build(0, 0)</code>, and it is important that this comes before the right call: the cursor currently points at <code>9</code>, and 9 belongs on the left.</p>
     </section>
 
     <section class="step" data-state="trace2">
       <div class="n">STEP 6</div>
       <h2>Trace it: the left subtree</h2>
-      <p>Inside <code>build(0, 0)</code>: the window is not empty, so take <code>val = preorder[1] = 9</code> and advance the cursor to 2. The map says <code>mid = index_of[9] = 0</code>.</p>
+      <p>Inside <code>build(0, 0)</code>: the window is not empty, so I take <code>val = preorder[1] = 9</code> and advance the cursor to 2. The map says <code>mid = index_of[9] = 0</code>.</p>
       <p>Both sub-windows are empty: the left is <code>build(0, -1)</code> and the right is <code>build(1, 0)</code>, and in each <code>lo &gt; hi</code> so they return <code>None</code> immediately without touching the cursor. Node 9 is a leaf, and it is attached as <code>3.left</code>.</p>
       <p>Back in the root's call, the cursor stands at 2, pointing at <code>20</code>. Everything preorder listed for the left subtree has been consumed, which is exactly why the next value is the right subtree's root.</p>
     </section>
@@ -296,7 +296,7 @@
     <section class="step" data-state="trace3">
       <div class="n">STEP 7</div>
       <h2>Trace it: the right subtree, and the answer</h2>
-      <p>Now <code>node.right = build(2, 4)</code>. Take <code>val = preorder[2] = 20</code>, cursor to 3, <code>mid = index_of[20] = 3</code>. The window splits into <code>2..2</code> (just <code>[15]</code>) and <code>4..4</code> (just <code>[7]</code>).</p>
+      <p>Now <code>node.right = build(2, 4)</code>. I take <code>val = preorder[2] = 20</code>, cursor to 3, <code>mid = index_of[20] = 3</code>. The window splits into <code>2..2</code> (just <code>[15]</code>) and <code>4..4</code> (just <code>[7]</code>).</p>
       <p>The left call <code>build(2, 2)</code> takes <code>preorder[3] = 15</code>, cursor to 4, and both of its sub-windows are empty, so 15 is a leaf. Then <code>build(4, 4)</code> takes <code>preorder[4] = 7</code>, cursor to 5, another leaf. Node 20 gets <code>left = 15</code> and <code>right = 7</code> and is attached as <code>3.right</code>.</p>
       <div class="callout">The cursor ends at 5, the length of preorder, having handed out every value exactly once, in order. The returned tree is <code>[3,9,20,null,null,15,7]</code>.</div>
     </section>
@@ -304,8 +304,8 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong</h2>
-      <p><strong>Building the right subtree first.</strong> Swap the two recursive lines so <code>node.right = build(mid + 1, hi)</code> runs before the left. The cursor does not know which window asked for a value, so the right window <code>2..4</code> is handed <code>preorder[1] = 9</code>, a value that is not even inside it. Every level after that is misaligned: 9 becomes the "root" of <code>[15,20,7]</code>, then 20, 15, 7 are consumed as a chain of right children, and when the deferred left calls finally run, <code>preorder[5]</code> does not exist: <strong><code>IndexError: list index out of range</code></strong>. The left-before-right order is not a style choice; it is what makes the cursor correct.</p>
-      <p><strong>Leaving the root in the left window.</strong> Write <code>build(lo, mid)</code> instead of <code>build(lo, mid - 1)</code>. The left window now includes the root's own value, so it is one element too wide at every level and consumes one preorder value too many; the cursor again runs off the end with the same <code>IndexError</code>.</p>
+      <p><strong>Building the right subtree first.</strong> I swap the two recursive lines so <code>node.right = build(mid + 1, hi)</code> runs before the left. The cursor does not know which window asked for a value, so the right window <code>2..4</code> is handed <code>preorder[1] = 9</code>, a value that is not even inside it. Every level after that is misaligned: 9 becomes the "root" of <code>[15,20,7]</code>, then 20, 15, 7 are consumed as a chain of right children, and when the deferred left calls finally run, <code>preorder[5]</code> does not exist: <strong><code>IndexError: list index out of range</code></strong>. The left-before-right order is not a style choice; it is what makes the cursor correct.</p>
+      <p><strong>Leaving the root in the left window.</strong> I write <code>build(lo, mid)</code> instead of <code>build(lo, mid - 1)</code>. The left window now includes the root's own value, so it is one element too wide at every level and consumes one preorder value too many; the cursor again runs off the end with the same <code>IndexError</code>.</p>
       <p><strong>Dropping <code>nonlocal</code>.</strong> Without <code>nonlocal next_pre</code>, the <code>next_pre += 1</code> makes the name local to <code>build</code>, and Python raises <code>UnboundLocalError</code> at the first <code>preorder[next_pre]</code>.</p>
       <div class="callout warn">Left before right, and the left window stops at <code>mid - 1</code>. Both mistakes surface as the cursor overrunning <code>preorder</code>, so an <code>IndexError</code> here almost always means the windows and the cursor have fallen out of step.</div>
     </section>
@@ -331,13 +331,13 @@
         <li><code>index_of = {val: i for i, val in enumerate(inorder)}</code> — O(1) lookup of where each value sits in inorder.</li>
         <li><code>next_pre = 0</code> — the cursor into preorder, shared by every call via <code>nonlocal</code>.</li>
         <li><code>if lo &gt; hi: return None</code> — empty window, empty subtree.</li>
-        <li><code>val = preorder[next_pre]; next_pre += 1</code> — this call's root, then advance.</li>
+        <li><code>val = preorder[next_pre]; next_pre += 1</code> — I take this call's root, then advance the cursor.</li>
         <li><code>mid = index_of[val]</code> — where the root splits the inorder window.</li>
         <li><code>node.left = build(lo, mid - 1)</code> — left first, so it consumes its preorder values first.</li>
         <li><code>node.right = build(mid + 1, hi)</code> — then the right, from wherever the cursor now is.</li>
         <li><code>return build(0, len(inorder) - 1)</code> — the whole tree spans the whole inorder list.</li>
       </ul>
-      <div class="callout">One-line summary to remember: <em>the next preorder value is the root of the current inorder window; split the window at that value, build left, then right.</em></div>
+      <div class="callout">One-line summary to remember: <em>the next preorder value is the root of the current inorder window; split the window at that value, I build left, then right.</em></div>
     </section>
 
     <div class="code-final">

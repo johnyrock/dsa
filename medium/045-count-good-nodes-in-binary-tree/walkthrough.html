@@ -229,7 +229,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Tree · LeetCode #1448</div>
   <h1>Count Good Nodes in Binary Tree, narrated</h1>
-  <p>Scroll from re-walking every root-to-node path to a single depth-first pass that carries the path maximum downward, with the running maximum and each node's verdict shown alongside.</p>
+  <p>I will first carry and rescan a copied root-to-node path, then I keep only the one value from that path that matters: its maximum.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/tree-traversal.html">Tree</a> <span class="how">Pass the largest ancestor value down as a parameter; a node is good when it is at least that large.</span></p>
 </header>
 
@@ -246,17 +246,17 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>First instinct: re-walk the path for every node</h2>
-      <p>Take the definition literally. For every node, find the path from the root to it, take the maximum value along that path, and compare. Since a tree has no parent pointers, the easy way to get each path is a DFS that keeps the current path in a list:</p>
-      <pre class="code"><span class="ln">def brute(root):</span><span class="ln">    count = 0</span><span class="ln">    def walk(node, path):</span><span class="ln">        nonlocal count</span><span class="ln">        if node is None:</span><span class="ln">            return</span><span class="ln">        if node.val &gt;= max(path + [node.val]):</span><span class="ln">            count += 1</span><span class="ln">        walk(node.left, path + [node.val])</span><span class="ln">        walk(node.right, path + [node.val])</span><span class="ln">    walk(root, [])</span><span class="ln">    return count</span></pre>
-      <p style="margin-top:14px">This gives the right answer, but look at what each call does: it copies the path list (<code>path + [node.val]</code>) and then re-scans the whole list with <code>max</code>. For a node at depth <code>d</code> that is O(d) work, and on a chain-shaped tree the depths run 1, 2, 3, … n, so the total is 1 + 2 + … + n = <strong>O(n²)</strong>. With 10⁵ nodes that is around five billion list operations for a question that needs one comparison per node.</p>
-      <p>The panel's <code>[3,1]</code> badge on the deeper 3 is the list this version would rebuild and re-scan just to answer "is anything above me bigger than 3?".</p>
+      <h2>First instinct: copy and scan the path at every node</h2>
+      <p>I can carry a list for the root-to-current-node path. At each node, I append its value, I scan the path for its maximum, and recurse with copied paths.</p>
+      <pre class="code"><span class="ln">def goodNodes(root):</span><span class="ln">    def walk(node, path):</span><span class="ln">        if not node: return 0</span><span class="ln">        path = path + [node.val]</span><span class="ln">        good = 1 if node.val == max(path) else 0</span><span class="ln">        return good + walk(node.left, path) + walk(node.right, path)</span><span class="ln">    return walk(root, [])</span></pre>
+      <p style="margin-top:14px">This is correct because a node is good exactly when it equals the maximum value on its path. On a chain, copied paths and repeated maximum scans make the time complexity O(n²). The space complexity is O(n²) for the copied paths across the traversal.</p>
+      <p>I pass the path maximum as one number. Each child only needs to compare its value with that maximum and pass the larger value onward.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: the path collapses to one number</h2>
-      <p>The brute force keeps the entire path only to call <code>max</code> on it. But the maximum of a path is easy to maintain incrementally: when you step from a parent to a child, the new maximum is <code>max(old_max, child.val)</code>. You never need the list, only its running maximum.</p>
+      <p>The brute force keeps the entire path only to call <code>max</code> on it. But the maximum of a path is easy to maintain incrementally: when I step from a parent to a child, the new maximum is <code>max(old_max, child.val)</code>. I never need the list, only its running maximum.</p>
       <div class="callout">Carry one integer, <code>max_so_far</code>, down the recursion as a parameter. A node is good when <code>node.val &gt;= max_so_far</code>. Before recursing into the children, raise it: <code>max_so_far = max(max_so_far, node.val)</code>.</div>
       <p>Because it is a <em>parameter</em>, not a shared variable, each branch of the recursion gets its own copy. Raising it on the way into the left subtree does nothing to what the right subtree sees, which is exactly the "paths, not subtrees" rule from step 1. The panel shows the value each child will receive: both children of the root get <code>3</code>.</p>
       <p>The root itself has no ancestors. Seeding the parameter with <code>float("-inf")</code> makes the root's comparison <code>3 &gt;= -inf</code> succeed automatically, and it keeps working if every value in the tree is negative.</p>
@@ -297,13 +297,13 @@
       <h2>Trace it: summing up</h2>
       <p>The root has everything it needs: its own <code>count = 1</code>, <code>1</code> from the left subtree (the deeper 3), and <code>2</code> from the right subtree (the 4 and the 5). It returns <code>1 + 1 + 2 = 4</code>, and <code>good_nodes</code> returns that as the answer.</p>
       <div class="callout">Seven nodes, seven calls to <code>dfs</code> (plus the trivial <code>None</code> base cases), one comparison and one <code>max</code> each. The brute force from step 2 would have built and scanned a path list at every one of those seven nodes.</div>
-      <p>Compare against the hand check from step 1: good nodes 3, 3, 4, 5 and bad nodes 1, 1. The recursion agreed at every node, which is what you would expect since it evaluates the same definition, only without rebuilding the path.</p>
+      <p>I compare against the hand check from step 1: good nodes 3, 3, 4, 5 and bad nodes 1, 1. The recursion agreed at every node, which is what I would expect since it evaluates the same definition, only without rebuilding the path.</p>
     </section>
 
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong</h2>
-      <p><strong>Using a strict comparison.</strong> Write <code>node.val &gt; max_so_far</code> instead of <code>&gt;=</code> and the deeper 3 fails its check: <code>3 &gt; 3</code> is false. The root still counts because <code>3 &gt; -inf</code>, but the answer drops to <strong>3</strong> instead of 4. The problem statement says "no node with a value <em>greater than</em>", and ties are not greater.</p>
+      <p><strong>Using a strict comparison.</strong> I write <code>node.val &gt; max_so_far</code> instead of <code>&gt;=</code> and the deeper 3 fails its check: <code>3 &gt; 3</code> is false. The root still counts because <code>3 &gt; -inf</code>, but the answer drops to <strong>3</strong> instead of 4. The problem statement says "no node with a value <em>greater than</em>", and ties are not greater.</p>
       <p><strong>Seeding with 0.</strong> <code>dfs(root, 0)</code> looks harmless on this example, since every value is positive. On a tree like <code>[-1,-2,-3]</code> the root compares <code>-1 &gt;= 0</code>, fails, and the function returns <strong>0</strong>. The root is always good, so 0 is never a valid answer for a non-empty tree. Seed with <code>float("-inf")</code>, or with <code>root.val</code>.</p>
       <p><strong>Sharing the maximum instead of passing it.</strong> Keeping <code>max_so_far</code> as a single <code>nonlocal</code> variable that is raised but never lowered means the bar set in the left subtree leaks into the right one. On <code>[1,10,2]</code> the 10 raises the bar, and then the 2 is compared against 10 and fails, giving <strong>2</strong> instead of 3. Passing the value as a parameter makes each path independent for free.</p>
       <div class="callout warn">The bar a node is measured against must come only from its own ancestors. Decide the node with the inherited value, <em>then</em> raise it for the children, and let the parameter scoping handle the rest.</div>

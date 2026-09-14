@@ -204,7 +204,7 @@
   <a class="home" href="../../index.html#medium">← All walkthroughs</a>
   <div class="tag">Medium · Greedy · LeetCode #846</div>
   <h1>Hand of Straights, narrated</h1>
-  <p>Scroll through the thinking, from repeatedly pulling runs out of a sorted list to a count map swept from the smallest value upward, with the state of the algorithm shown alongside.</p>
+  <p>I always place the smallest remaining card first, because it forces the consecutive group that must begin there.</p>
   <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/greedy.html">Greedy</a> <span class="how">the smallest remaining card can only start a group, so open its groups and consume the run</span></p>
 </header>
 
@@ -222,19 +222,19 @@
 
     <section class="step" data-state="brute">
       <div class="n">STEP 2</div>
-      <h2>Brute force: pull runs out of a sorted list</h2>
-      <p>Sort the hand, take the first card, and try to remove <code>card + 1</code>, <code>card + 2</code>, ... from the list one at a time; repeat until the list is empty or a removal fails.</p>
+<h2>First instinct: pull runs out of a sorted list</h2>
+      <p>My first instinct is to sort the hand, take the first card, and remove <code>card + 1</code>, <code>card + 2</code>, and so on. I repeat until the list is empty or a removal fails.</p>
       <pre class="code"><span class="ln">cards = sorted(hand)</span><span class="ln">while cards:</span><span class="ln">    first = cards.pop(0)</span><span class="ln">    for c in range(first + 1, first + group_size):</span><span class="ln">        if c not in cards:</span><span class="ln">            return False</span><span class="ln">        cards.remove(c)</span><span class="ln">return True</span></pre>
-      <p style="margin-top:14px">On the sorted example <code>[1,2,2,3,3,4,6,7,8]</code> this pulls 1, removes 2 and 3, pulls 2, removes 3 and 4, pulls 6, removes 7 and 8: true. The reasoning is already right; the cost is not. Each <code>in</code> and <code>remove</code> scans the list, so every card costs O(n) to place and the whole thing is <strong>O(n²)</strong>.</p>
-      <p>What the list is doing badly is answering "how many copies of value <code>c</code> do I have left?" A counter answers that in O(1).</p>
+      <p style="margin-top:14px">On the sorted example, I form <code>[1,2,3]</code>, <code>[2,3,4]</code>, and <code>[6,7,8]</code>. Each <code>in</code> and <code>remove</code> scans the list, so this takes <strong>O(n²) time</strong> and <strong>O(n) space</strong> for the sorted copy.</p>
+      <p>The list repeatedly answers “how many copies of <code>c</code> remain?” A counter answers that in constant time.</p>
     </section>
 
     <section class="step" data-state="insight">
       <div class="n">STEP 3</div>
       <h2>The key insight: the smallest card has no choice</h2>
-      <p>Look at the smallest value still unplaced. It cannot be the second or third card of any group, because that would need a smaller card in front of it, and there is none. So it <em>must</em> start a group, and that group must be <code>card, card + 1, ..., card + groupSize - 1</code>. There is nothing to decide.</p>
+      <p>I look at the smallest value still unplaced. It cannot be the second or third card of any group, because that would need a smaller card in front of it, and there is none. It <em>must</em> start a group: <code>card, card + 1, ..., card + groupSize - 1</code>. There is nothing to decide.</p>
       <div class="callout">In the example the smallest value is 1. Its only possible group is <code>[1,2,3]</code>. After removing that, the smallest value is 2, whose only possible group is <code>[2,3,4]</code>. And so on.</div>
-      <p>Two refinements make it fast. Keep a <code>Counter</code> instead of a list, and walk the distinct values in ascending order with <code>sorted(count)</code>. If a value has <code>need</code> copies left, all <code>need</code> of them must start groups, so consume <code>need</code> copies of each of the next <code>groupSize</code> values in one go. If any of those values has fewer than <code>need</code> copies, some group cannot be finished, and no other arrangement could have rescued it: <code>False</code>.</p>
+      <p>Two refinements make it fast. I use a <code>Counter</code> instead of a list, and I walk the distinct values in ascending order with <code>sorted(count)</code>. If a value has <code>need</code> copies left, all <code>need</code> of them must start groups, so I consume <code>need</code> copies of each of the next <code>groupSize</code> values in one go. If any of those values has fewer than <code>need</code> copies, some group cannot be finished, and no other arrangement could have rescued it: <code>False</code>.</p>
     </section>
 
     <section class="step" data-state="approach">
@@ -244,7 +244,7 @@
         <li><code>if len(hand) % group_size: return False</code>: the cards must divide evenly into groups.</li>
         <li><code>count = Counter(hand)</code>: copies of each value still to place.</li>
         <li><code>for card in sorted(count)</code>: visit distinct values smallest first.</li>
-        <li><code>need = count[card]</code>; if it is 0 the value was already consumed as the tail of earlier groups, so skip it.</li>
+        <li><code>need = count[card]</code>; if it is 0, I have already consumed the value as the tail of earlier groups.</li>
         <li><code>for c in range(card, card + group_size)</code>: the run each new group needs.</li>
         <li><code>if count[c] &lt; need: return False</code>, otherwise <code>count[c] -= need</code>.</li>
         <li><code>return True</code>: every card was placed.</li>
@@ -255,7 +255,7 @@
     <section class="step" data-state="t1">
       <div class="n">STEP 5</div>
       <h2>Trace it: card = 1</h2>
-      <p><code>9 % 3 == 0</code>, so we continue. The counter is <code>{1: 1, 2: 2, 3: 2, 4: 1, 6: 1, 7: 1, 8: 1}</code> and <code>sorted(count)</code> is <code>[1, 2, 3, 4, 6, 7, 8]</code>.</p>
+      <p><code>9 % 3 == 0</code>, so I continue. The counter is <code>{1: 1, 2: 2, 3: 2, 4: 1, 6: 1, 7: 1, 8: 1}</code> and <code>sorted(count)</code> is <code>[1, 2, 3, 4, 6, 7, 8]</code>.</p>
       <p><code>card = 1</code>, <code>need = 1</code>. The run is <code>range(1, 4)</code> = 1, 2, 3. Each has at least 1 copy, so subtract 1 from each: the counter becomes <code>{1: 0, 2: 1, 3: 1, 4: 1, ...}</code>, and the first group <code>[1,2,3]</code> is formed.</p>
     </section>
 
@@ -277,10 +277,10 @@
     <section class="step" data-state="pitfall">
       <div class="n">STEP 8</div>
       <h2>Where this goes wrong: direction and the size of the bite</h2>
-      <p><strong>Sweeping from the largest card but still building upward.</strong> Write <code>sorted(count, reverse=True)</code> and the first card examined is 8, whose "group" would be 8, 9, 10. <code>count[9]</code> is 0, which is less than <code>need = 1</code>, so the function returns <strong>false</strong> for a hand that clearly works. The argument that a card has no choice only holds for the <em>smallest</em> remaining card when groups extend upward.</p>
-      <p><strong>Subtracting 1 instead of <code>need</code>.</strong> Write <code>count[c] -= 1</code> and multiple groups opened from the same value are under-counted. On <code>[1,1,2,2,3,3]</code> with <code>groupSize = 3</code> the two 1s open two groups but only one 2 and one 3 are consumed; a 1, a 2 and a 3 remain unplaced, the sweep reaches <code>card = 2</code> with <code>need = 1</code>, cannot find a 4 and returns false. The answer is true.</p>
+      <p><strong>Sweeping from the largest card but still building upward.</strong> If I write <code>sorted(count, reverse=True)</code>, the first card examined is 8, whose "group" would be 8, 9, 10. <code>count[9]</code> is 0, which is less than <code>need = 1</code>, so the function returns <strong>false</strong> for a hand that clearly works. The argument that a card has no choice only holds for the <em>smallest</em> remaining card when groups extend upward.</p>
+      <p><strong>Subtracting 1 instead of <code>need</code>.</strong> If I write <code>count[c] -= 1</code>, multiple groups opened from the same value are under-counted. On <code>[1,1,2,2,3,3]</code> with <code>groupSize = 3</code> the two 1s open two groups but only one 2 and one 3 are consumed; a 1, a 2 and a 3 remain unplaced, the sweep reaches <code>card = 2</code> with <code>need = 1</code>, cannot find a 4 and returns false. The answer is true.</p>
       <p><strong>Testing <code>count[c] == 0</code> instead of <code>count[c] &lt; need</code>.</strong> A value with one copy when two groups need it slips through, its count goes negative, and on <code>[1,1,2,3,4,4]</code> with <code>groupSize = 2</code> the function returns true instead of false.</p>
-      <div class="callout warn">Smallest first, run upward, consume <code>need</code> copies of every value in the run, and compare against <code>need</code>, not zero.</div>
+      <div class="callout warn">I start with the smallest value, run upward, consume <code>need</code> copies of every value in the run, and compare against <code>need</code>, not zero.</div>
     </section>
 
     <section class="step" data-state="complexity">
