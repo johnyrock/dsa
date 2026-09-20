@@ -52,6 +52,7 @@ Move the pointer that can still improve the answer. In 3Sum that is decided by t
 | [easy/023 Plus One](../easy/023-plus-one/) | Easy | Propagate the carry from the rightmost digit. |
 | [medium/029 Two Sum II - Input Array Is Sorted](../medium/029-two-sum-ii-input-array-is-sorted/) | Medium | Because the array is sorted, the pair `(numbers[left], numbers[right])` with `left` at… |
 | [medium/041 Remove Nth Node From End of List](../medium/041-remove-nth-node-from-end-of-list/) | Medium | Two pointers that start together and are separated by exactly `n` steps stay `n` apart… |
+| [medium/103 String Compression III](../medium/103-string-compression-iii/) | Medium | same-direction: `i` marks the run start, `j` walks while `word[j] == word[i]` and `j - i < 9` |
 ## Common mistakes
 
 - Advancing both pointers when only one should move.

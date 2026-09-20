@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>String Compression III Walkthrough</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --panel: #ffffff;
+    --ink: #1f2328;
+    --muted: #6b7280;
+    --line: #e5e2db;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --ok: #16a34a;
+    --ok-soft: #dcfce7;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --code-bg: #f3f1ec;
+    --code-hl: #fde68a;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a;
+      --panel: #1c1f24;
+      --ink: #e6e6e6;
+      --muted: #9aa0a6;
+      --line: #2c3037;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --ok: #4ade80;
+      --ok-soft: #14532d;
+      --warn: #fbbf24;
+      --warn-soft: #713f12;
+      --code-bg: #23262d;
+      --code-hl: #5b4a0a;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; font-size: 0.92em; }
+
+  header {
+    max-width: 1100px; margin: 0 auto; padding: 56px 24px 8px;
+  }
+  header .tag { color: var(--muted); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  header .pattern-used { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+  header .pattern-used .lbl { font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; margin-right: 6px; }
+  header .pattern-used a { font-weight: 600; text-decoration: none; }
+  header .pattern-used a:hover { text-decoration: underline; }
+  header .pattern-used .how::before { content: "·"; margin: 0 8px 0 4px; }
+  header h1 { margin: 6px 0 8px; font-size: 2.2rem; line-height: 1.15; }
+  header p { margin: 0; color: var(--muted); max-width: 640px; }
+  header .home { display: inline-block; margin-bottom: 18px; color: var(--accent); text-decoration: none; font-size: 0.9rem; font-weight: 600; }
+  header .home:hover { text-decoration: underline; }
+
+  .layout {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 48px;
+    align-items: start;
+  }
+  .steps { padding-bottom: 40vh; }
+  .step {
+    min-height: 60vh; padding: 12vh 0;
+    border-left: 3px solid transparent; padding-left: 20px; margin-left: -23px;
+    opacity: 0.45; transition: opacity 0.3s, border-color 0.3s;
+  }
+  .step.active { opacity: 1; border-left-color: var(--accent); }
+  .step h2 { margin: 0 0 12px; font-size: 1.45rem; line-height: 1.25; }
+  .step .n { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.05em; }
+  .step p { margin: 0 0 14px; }
+  .step ul { margin: 0 0 14px; padding-left: 22px; }
+  .step li { margin-bottom: 6px; }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 12px 16px; border-radius: 6px; margin: 16px 0;
+  }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+
+  .panel-wrap { position: sticky; top: 24px; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    /* Sticky panels can't grow past the viewport, so scroll inside instead of clipping long items. */
+    max-height: calc(100vh - 48px); overflow-y: auto;
+  }
+  .panel h3 { margin: 0 0 4px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .panel .block { margin-bottom: 18px; }
+  .panel .block:last-child { margin-bottom: 0; }
+
+  .caption { font-size: 0.95rem; min-height: 3.2em; margin-bottom: 14px; color: var(--ink); }
+
+  .array { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .cell {
+    flex: 1; text-align: center; border: 2px solid var(--line); border-radius: 8px;
+    padding: 10px 0 6px; background: var(--bg); transition: all 0.25s;
+    font-family: ui-monospace, Menlo, monospace; font-size: 1.15rem;
+  }
+  .cell .idx { display: block; font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .cell.cur { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-3px); }
+  .cell.hit { border-color: var(--ok); background: var(--ok-soft); }
+  .cell.dim { opacity: 0.5; }
+  .fig { display: block; width: 100%; height: auto; margin: 4px 0 6px; }
+  .fig .lbl { fill: var(--muted); font-size: 11px; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .val { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; font-family: ui-monospace, Menlo, monospace; }
+  .fig .bar { fill: var(--line); stroke: none; transition: fill 0.25s, opacity 0.25s; }
+  .fig .bar.cur { fill: var(--accent); }
+  .fig .bar.hit { fill: var(--ok); }
+  .fig .bar.dim { opacity: 0.35; }
+  .fig .cur-txt { fill: var(--accent); }
+  .fig .hit-txt { fill: var(--ok); }
+  .fig .span { stroke: var(--ok); stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; animation: dash 1s linear infinite; }
+  .fig .head { fill: var(--ok); }
+  .fig .stair { fill: var(--bg); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s, opacity 0.25s; }
+  .fig .stair.cur { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 3; }
+  .fig .stair.hit { fill: var(--ok-soft); stroke: var(--ok); }
+  .fig .stair.dim { opacity: 0.35; }
+  .fig .ground { stroke: var(--line); stroke-width: 2; }
+  .fig .box { fill: var(--panel); stroke: var(--line); stroke-width: 2; transition: fill 0.25s, stroke 0.25s; }
+  .fig .box.new { stroke: var(--accent); fill: var(--accent-soft); }
+  .fig .box.found { stroke: var(--ok); fill: var(--ok-soft); }
+  .fig .wall { stroke: var(--muted); stroke-width: 2.5; fill: none; }
+  @keyframes dash { to { stroke-dashoffset: -20; } }
+  .meta { font-size: 0.9rem; color: var(--muted); min-height: 1.5em; }
+  .meta b { color: var(--ink); }
+
+  .dict {
+    font-family: ui-monospace, Menlo, monospace; font-size: 0.95rem;
+    background: var(--code-bg); border-radius: 8px; padding: 10px 12px; min-height: 2.6em;
+  }
+  .dict .kv { display: inline-block; margin-right: 12px; padding: 2px 8px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); }
+  .dict .kv.new { border-color: var(--accent); }
+  .dict .kv.found { border-color: var(--ok); background: var(--ok-soft); }
+  .dict .empty { color: var(--muted); }
+
+  pre.code {
+    margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0;
+    font-size: 0.86rem; line-height: 1.55; overflow-x: auto;
+  }
+  pre.code .ln { display: block; padding: 0 14px; white-space: pre; }
+  pre.code .ln.hl { background: var(--code-hl); }
+
+  .big {
+    font-size: 1.6rem; font-weight: 700; text-align: center; padding: 14px 0 4px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
+  .big small { display: block; font-size: 0.8rem; font-weight: 400; color: var(--muted); font-family: inherit; }
+
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .code-final { display: none; }
+  footer { max-width: 1100px; margin: 0 auto; padding: 24px 24px 64px; color: var(--muted); font-size: 0.9rem; }
+  footer a { color: var(--accent); }
+
+  .panel h3 .lit { text-transform: none; }
+  .array.wide { gap: 3px; }
+  .array.wide .cell { font-size: 0.95rem; }
+
+  @media (max-width: 860px) {
+    header { padding: 20px 16px 4px; }
+    header h1 { font-size: 1.6rem; }
+    .layout { grid-template-columns: 1fr; gap: 0; padding: 12px 16px 24px; }
+
+    /* State panel: sticky at the top, but compact so the narration keeps most of the screen. */
+    .panel-wrap { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 6px 0 10px; order: -1; }
+    .panel { padding: 10px 12px; max-height: 50vh; overflow-y: auto; }
+    .panel h3 { font-size: 0.7rem; margin-bottom: 2px; }
+    .panel .block { margin-bottom: 8px; }
+    .panel .block:has(pre.code) { display: none; }
+    pre.code { display: none; }
+    .caption { min-height: 0; font-size: 0.88rem; line-height: 1.4; margin-bottom: 6px; }
+    .meta { font-size: 0.8rem; line-height: 1.35; min-height: 0; }
+    .array { flex-wrap: wrap; gap: 4px; }
+    .cell { min-width: 30px; padding: 5px 0 3px; font-size: 1rem; }
+    .cell .idx { font-size: 0.62rem; }
+    .dict { font-size: 0.85rem; padding: 8px 10px; min-height: 0; }
+    .dict .kv { margin-bottom: 4px; }
+    .big { font-size: 1.2rem; padding: 6px 0 0; }
+    .big small { font-size: 0.72rem; }
+
+    .code-final { display: block; margin: 4px 0 8px; }
+    .code-final h3 { margin: 0 0 6px; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .code-final pre.code { display: block; }
+
+    .step { min-height: auto; padding: 28px 0 28px 14px; margin-left: -17px; opacity: 1; }
+    .step h2 { font-size: 1.25rem; }
+    table { font-size: 0.88rem; }
+    th, td { padding: 6px 8px; }
+    footer { padding: 16px 16px 48px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="home" href="../../index.html#medium">← All walkthroughs</a>
+  <div class="tag">Medium · Two Pointers · LeetCode #3163</div>
+  <h1>String Compression III, narrated</h1>
+  <p>I’ll start by doing literally what the statement says, slicing prefixes off a shrinking string, then replace the slicing with two pointers that measure each run where it sits.</p>
+  <p class="pattern-used"><span class="lbl">Pattern used</span> <a href="../../concepts/two-pointers.html">Two Pointers</a> <span class="how">same-direction: i marks the run start, j walks to its end</span></p>
+</header>
+
+<div class="layout">
+  <div class="steps">
+
+    <section class="step" data-state="problem">
+      <div class="n">STEP 1</div>
+      <h2>The problem</h2>
+      <p>I am given a string <code>word</code> of lowercase letters and asked to compress it. The rule is mechanical: while the string is not empty, remove the longest prefix made of one repeated character, but never more than 9 copies at once, and append the prefix's length followed by that character to the result.</p>
+      <p>So this is run-length encoding with two twists. The count comes <em>before</em> the character, and every count is a single digit, because a run longer than 9 is cut into pieces of 9 with a remainder.</p>
+      <div class="callout">Running example: <code>word = "aabbdd"</code>. The runs are <code>"aa"</code>, <code>"bb"</code>, <code>"dd"</code>, so the answer is <strong><code>"2a2b2d"</code></strong>.</div>
+      <p>A run of length 1 still gets written with its count: <code>"abcde"</code> becomes <code>"1a1b1c1d1e"</code>. The output is the compressed string itself, not its length.</p>
+    </section>
+
+    <section class="step" data-state="brute">
+      <div class="n">STEP 2</div>
+      <h2>First instinct: do what the statement says</h2>
+      <p>The statement describes a loop, so my first version is that loop. Count how many copies of <code>word[0]</code> sit at the front, capped at 9, append the piece, and slice the prefix off.</p>
+      <pre class="code"><span class="ln">def compressed_string(word):</span><span class="ln">    comp = ""</span><span class="ln">    while word:</span><span class="ln">        k = 0</span><span class="ln">        while k &lt; len(word) and k &lt; 9 and word[k] == word[0]:</span><span class="ln">            k += 1</span><span class="ln">        comp += str(k) + word[0]</span><span class="ln">        word = word[k:]</span><span class="ln">    return comp</span></pre>
+      <p style="margin-top:14px">It returns the right string. The cost is hidden in <code>word = word[k:]</code>: every slice copies the whole remainder. On <code>"aabbdd"</code> that is copies of length 4, then 2, then 0. On a string with no repeated neighbours it is n copies of average length n/2, so the loop is <strong>O(n²) time</strong>. Building <code>comp</code> with <code>+=</code> can copy the growing result too.</p>
+      <p>The counting part was already right. Only the slicing is wasteful, because I do not need to move the string to remember where the next run starts.</p>
+    </section>
+
+    <section class="step" data-state="idea">
+      <div class="n">STEP 3</div>
+      <h2>The key insight: measure the run in place with two pointers</h2>
+      <p>Instead of trimming the string, I keep an index <code>i</code> for where the current run starts and a second index <code>j</code> that walks forward while <code>word[j] == word[i]</code>. When it stops, the run is <code>word[i:j]</code> and its length is <code>j - i</code>.</p>
+      <p>The cap of 9 becomes one more condition on the inner loop: <code>j - i &lt; 9</code>. When a run reaches 9, the loop stops early, I emit the piece, and the next run starts at <code>j</code> with the same character. That is exactly what "remove at most 9 at a time" asks for, without a special case.</p>
+      <div class="callout">Both pointers only move forward, and <code>j</code> visits every index once. The whole scan is one pass.</div>
+      <p>For the output I collect the pieces in a list <code>parts</code> and call <code>"".join(parts)</code> once at the end, so building the result is linear too.</p>
+    </section>
+
+    <section class="step" data-state="approach">
+      <div class="n">STEP 4</div>
+      <h2>The approach, line by line</h2>
+      <ul>
+        <li><code>parts = []</code> and <code>i = 0</code>: no pieces yet, first run starts at index 0.</li>
+        <li><code>while i &lt; len(word)</code>: one iteration per emitted piece.</li>
+        <li><code>j = i</code>, then <code>while j &lt; len(word) and word[j] == word[i] and j - i &lt; 9: j += 1</code>: extend the run while in bounds, same character, and fewer than 9 so far.</li>
+        <li><code>parts.append(str(j - i) + word[i])</code>: count first, then the character.</li>
+        <li><code>i = j</code>: the next run starts where this one stopped.</li>
+        <li><code>return "".join(parts)</code>.</li>
+      </ul>
+      <p>The bounds check <code>j &lt; len(word)</code> comes first in the condition, so <code>word[j]</code> is never read past the end.</p>
+    </section>
+
+    <section class="step" data-state="t1">
+      <div class="n">STEP 5</div>
+      <h2>Trace it: the run of a's</h2>
+      <p>I start with <code>i = 0</code> and <code>j = 0</code>. <code>word[0]</code> is <code>'a'</code>, which equals <code>word[i]</code>, and <code>j - i = 0 &lt; 9</code>, so <code>j</code> becomes 1. <code>word[1]</code> is also <code>'a'</code> and <code>1 &lt; 9</code>, so <code>j</code> becomes 2. <code>word[2]</code> is <code>'b'</code>, which is not <code>'a'</code>, so the inner loop stops.</p>
+      <p>The run is <code>word[0:2] = "aa"</code>, length <code>j - i = 2 - 0 = 2</code>. I append <code>str(2) + 'a' = "2a"</code> to <code>parts</code> and set <code>i = j = 2</code>.</p>
+      <p>Nothing was copied. The two a's are still in the string; I just know I am done with them.</p>
+    </section>
+
+    <section class="step" data-state="t2">
+      <div class="n">STEP 6</div>
+      <h2>Trace it: b's, d's, and the answer</h2>
+      <p>Now <code>i = 2</code>, <code>word[i] = 'b'</code>. <code>j</code> walks from 2 to 4 over the two b's and stops at <code>word[4] = 'd'</code>. Length <code>4 - 2 = 2</code>, piece <code>"2b"</code>, then <code>i = 4</code>.</p>
+      <p>From <code>i = 4</code>, <code>j</code> walks over the two d's and reaches 6, which equals <code>len(word)</code>, so the bounds check ends the inner loop. Length <code>6 - 4 = 2</code>, piece <code>"2d"</code>, then <code>i = 6</code>.</p>
+      <p>The outer loop's test <code>i &lt; len(word)</code> is now <code>6 &lt; 6</code>, false. <code>parts</code> holds <code>["2a", "2b", "2d"]</code>, and the join returns <strong><code>"2a2b2d"</code></strong>.</p>
+    </section>
+
+    <section class="step" data-state="t3">
+      <div class="n">STEP 7</div>
+      <h2>Trace it: a run longer than 9</h2>
+      <p>The cap only shows up on a long run, so switch to <code>word = "aaaaaaaaaaaaaabb"</code>: fourteen a's and two b's. From <code>i = 0</code>, <code>j</code> walks over a's until <code>j = 9</code>. Then <code>word[9]</code> is still <code>'a'</code>, but <code>j - i = 9</code>, so <code>9 &lt; 9</code> is false and the loop stops early.</p>
+      <p>I emit <code>"9a"</code> and set <code>i = 9</code>. The character at <code>i</code> is <code>'a'</code> again, so the next run is the remaining five a's: <code>j</code> walks to 14 and stops at <code>'b'</code>, giving <code>"5a"</code>. The last run is <code>"2b"</code>.</p>
+      <div class="callout">Result: <code>"9a5a2b"</code>. Cutting at 9 needed no extra code path, only the third condition in the inner <code>while</code>.</div>
+    </section>
+
+    <section class="step" data-state="pitfall">
+      <div class="n">STEP 8</div>
+      <h2>Where this goes wrong: the order, the cap, and the reset</h2>
+      <p>Three small mistakes, each easy to type and easy to miss.</p>
+      <p><strong>Writing the character first.</strong> LeetCode's String Compression I writes <code>"a2"</code>, so the habit is strong. With <code>parts.append(word[i] + str(j - i))</code> the running example returns <strong><code>"a2b2d2"</code></strong> instead of <code>"2a2b2d"</code>. Every test with a repeated character fails.</p>
+      <p><strong>Dropping the cap.</strong> Without <code>j - i &lt; 9</code>, fourteen a's come out as <code>"14a"</code>, so <code>"aaaaaaaaaaaaaabb"</code> returns <strong><code>"14a2b"</code></strong> instead of <code>"9a5a2b"</code>. The close cousin <code>j - i &lt;= 9</code> allows runs of 10 and returns <code>"10a4a2b"</code>.</p>
+      <p><strong>Forgetting <code>i = j</code>.</strong> Then <code>i</code> stays at 0, the inner loop re-measures the same run forever, and the function never returns.</p>
+      <div class="callout warn">Say the piece out loud before typing it: <em>count, then character</em>. And check the cap with a run of exactly 9, exactly 10, and 18.</div>
+    </section>
+
+    <section class="step" data-state="complexity">
+      <div class="n">STEP 9</div>
+      <h2>Time and space</h2>
+      <p><code>j</code> moves forward on every inner-loop step and never moves back, and <code>i</code> jumps to <code>j</code>, so together they touch each index a constant number of times. That is <strong>O(n) time</strong>. The pieces list holds at most one two-character string per run, so <strong>O(n) space</strong> for the output, and nothing else grows.</p>
+      <table>
+        <tr><th>Approach</th><th>Time</th><th>Space</th></tr>
+        <tr><td>Slice the prefix off each run</td><td>O(n²)</td><td>O(n) copies</td></tr>
+        <tr><td>Two pointers, <code>comp += piece</code></td><td>O(n²) worst case</td><td>O(n)</td></tr>
+        <tr><td>Two pointers, list + one join</td><td>O(n)</td><td>O(n) output</td></tr>
+      </table>
+      <p>The middle row usually runs fast in CPython because <code>+=</code> on a string with one reference is resized in place, but that is an implementation detail. The list and single <code>join</code> are linear by contract.</p>
+    </section>
+
+    <section class="step" data-state="final">
+      <div class="n">STEP 10</div>
+      <h2>The final solution</h2>
+      <p>Nine lines inside the method. Each one maps to a step above.</p>
+      <ul>
+        <li><code>parts = []</code> collects the pieces so the result is built once.</li>
+        <li><code>i = 0</code> is the start of the current run.</li>
+        <li><code>while i &lt; len(word)</code> runs once per piece and stops when the runs are used up.</li>
+        <li><code>j = i</code> starts the second pointer at the run's first character.</li>
+        <li><code>while j &lt; len(word) and word[j] == word[i] and j - i &lt; 9: j += 1</code> extends the run: in bounds, same character, fewer than 9.</li>
+        <li><code>parts.append(str(j - i) + word[i])</code> writes the count, then the character.</li>
+        <li><code>i = j</code> hands the next iteration the start of the next run.</li>
+        <li><code>return "".join(parts)</code>.</li>
+      </ul>
+      <div class="callout">I remember this as: <em>i marks the run, j measures it, and the cap of 9 is just a third condition on j.</em></div>
+    </section>
+
+    <div class="code-final">
+      <h3>Full solution</h3>
+      <pre class="code" id="code-final"></pre>
+    </div>
+  </div>
+
+  <div class="panel-wrap">
+    <div class="panel">
+      <div class="caption" id="caption"></div>
+
+      <div class="block">
+        <h3>word · "<span class="lit" id="word-lbl">aabbdd</span>"</h3>
+        <div class="array" id="array"></div>
+        <div class="meta" id="meta"></div>
+      </div>
+
+      <div class="block">
+        <h3>parts · pieces emitted so far</h3>
+        <div class="dict" id="out"></div>
+      </div>
+
+      <div class="block">
+        <h3>pointers</h3>
+        <div class="dict" id="dict"></div>
+      </div>
+
+      <div class="block" id="bigwrap" hidden>
+        <div class="big" id="big"></div>
+      </div>
+
+      <div class="block">
+        <h3>Code</h3>
+        <pre class="code" id="code"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Source files: <a href="string_compression_iii.py">string_compression_iii.py</a> · <a href="string_compression_iii_annotated.py">string_compression_iii_annotated.py</a> · <a href="test_string_compression_iii.py">test_string_compression_iii.py</a> · <a href="../../md.html?f=medium/103-string-compression-iii/notes.md">notes.md</a> · <a href="../../index.html#medium">All walkthroughs</a>
+</footer>
+
+<script>
+(function () {
+  var CODE = [
+    "class Solution:",
+    "    def compressed_string(self, word: str) -> str:",
+    "        parts = []",
+    "        i = 0",
+    "        while i < len(word):",
+    "            j = i",
+    "            while j < len(word) and word[j] == word[i] and j - i < 9:",
+    "                j += 1",
+    "            parts.append(str(j - i) + word[i])",
+    "            i = j",
+    "        return \"\".join(parts)"
+  ];
+
+  var W = "aabbdd";
+  var LONG = "aaaaaaaaaaaaaabb";
+
+  // Each state describes what the sticky panel shows for one step.
+  // i = run start, j = one past the run end (cells in [i, j) are the current run, cells before i are consumed).
+  var STATES = {
+    problem: {
+      caption: "Compress \"aabbdd\": each run becomes its length followed by its character.",
+      word: W, i: -1, j: -1, parts: [], vars: [],
+      meta: "Runs: \"aa\", \"bb\", \"dd\" → answer <b>\"2a2b2d\"</b>. Counts are capped at 9.", hl: []
+    },
+    brute: {
+      caption: "The literal loop counts the prefix, appends the piece, then slices the prefix off and copies the rest.",
+      word: W, i: 0, j: 2, parts: ["2a"], vars: [["k", 2]],
+      meta: "<b>word = word[2:]</b> copies the remaining 4 characters. Next round copies 2, then 0.", hl: [],
+      big: "O(n²)", bigNote: "one copy of the remainder per run"
+    },
+    idea: {
+      caption: "Keep the string still. i marks where the run starts; j walks forward while word[j] == word[i].",
+      word: W, i: 0, j: 2, parts: [], vars: [["i", 0], ["j", 2, "new"], ["j - i", 2]],
+      meta: "The run is <b>word[i:j]</b> and its length is <b>j - i</b>. Nothing is sliced.", hl: [5, 6, 7]
+    },
+    approach: {
+      caption: "Outer loop: one piece per run. Inner loop: extend j while in bounds, same character, and fewer than 9.",
+      word: W, i: 0, j: 0, parts: [], vars: [["i", 0], ["j", 0]],
+      meta: "Start: <b>parts = []</b>, <b>i = 0</b>, and j is reset to i at the top of each run.", hl: [2, 3, 4, 5, 6, 7, 8, 9, 10]
+    },
+    t1: {
+      caption: "Run of a's: j stops at index 2 because word[2] is 'b'. Length 2 − 0 = 2, piece \"2a\".",
+      word: W, i: 0, j: 2, parts: ["2a"], vars: [["i", 0], ["j", 2], ["j - i", 2, "new"]],
+      meta: "parts.append(str(2) + 'a') → <b>\"2a\"</b>, then <b>i = j = 2</b>.", hl: [6, 7, 8, 9]
+    },
+    t2: {
+      caption: "Run of d's: j reaches 6 = len(word), so the bounds check stops it. Piece \"2d\", and i = 6 ends the outer loop.",
+      word: W, i: 4, j: 6, parts: ["2a", "2b", "2d"], vars: [["i", 4], ["j", 6], ["j - i", 2, "new"]],
+      meta: "\"2b\" was emitted the same way from i = 2. Now <b>i = 6</b>, so <b>6 &lt; 6</b> is false.", hl: [8, 9, 10],
+      big: "\"2a2b2d\"", bigNote: "\"\".join([\"2a\", \"2b\", \"2d\"])"
+    },
+    t3: {
+      caption: "Fourteen a's: j stops at 9 because j − i < 9 fails, not because the character changed. Piece \"9a\", then a fresh run from i = 9.",
+      word: LONG, wide: true, i: 0, j: 9, parts: ["9a"], vars: [["i", 0], ["j", 9], ["j - i", 9, "new"]],
+      meta: "word[9] is still 'a', but the run is already 9 long. Next: five a's → <b>\"5a\"</b>, then <b>\"2b\"</b>. Answer <b>\"9a5a2b\"</b>.", hl: [6, 7, 8, 9]
+    },
+    pitfall: {
+      caption: "word[i] + str(j − i) writes the character first, the String Compression I format.",
+      word: W, i: 4, j: 6, parts: ["a2", "b2", "d2"], vars: [["i", 4], ["j", 6], ["j - i", 2]],
+      meta: "Count first, then character: <b>str(j - i) + word[i]</b>.", hl: [8],
+      big: "\"a2b2d2\", not \"2a2b2d\"", bigNote: "the pieces are right, the order inside each piece is wrong"
+    },
+    complexity: {
+      caption: "One forward pass: j visits each index once, and i only jumps to j.",
+      word: W, i: 6, j: 6, parts: ["2a", "2b", "2d"], vars: [["i", 6], ["j", 6]],
+      meta: "Every index was read once by j; every run produced one two-character piece.", hl: [4, 6, 7],
+      big: "O(n) time · O(n) output", bigNote: "versus O(n²) for slicing the prefix off each run"
+    },
+    final: {
+      caption: "The whole solution.",
+      word: W, i: 6, j: 6, parts: ["2a", "2b", "2d"], vars: [["i", 6], ["j", 6]],
+      meta: "", hl: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function render(name) {
+    var s = STATES[name];
+    if (!s) return;
+
+    $("caption").textContent = s.caption;
+    $("word-lbl").textContent = s.word;
+    $("meta").innerHTML = s.meta;
+
+    var arr = "";
+    for (var k = 0; k < s.word.length; k++) {
+      var cls = "cell";
+      if (k === s.i) cls += " cur";
+      else if (s.i >= 0 && k > s.i && k < s.j) cls += " hit";
+      else if (s.i >= 0 && k < s.i) cls += " dim";
+      var lbl = String(k);
+      if (k === s.i && k === s.j) lbl += " i,j";
+      else if (k === s.i) lbl += " i";
+      else if (k === s.j) lbl += " j";
+      arr += '<div class="' + cls + '">' + s.word[k] + '<span class="idx">' + lbl + '</span></div>';
+    }
+    $("array").innerHTML = arr;
+    $("array").className = "array" + (s.wide ? " wide" : "");
+
+    if (s.parts.length === 0) {
+      $("out").innerHTML = '<span class="empty">[]</span>';
+    } else {
+      var o = "";
+      for (var p = 0; p < s.parts.length; p++) {
+        o += '<span class="kv' + (p === s.parts.length - 1 ? " new" : "") + '">"' + s.parts[p] + '"</span>';
+      }
+      $("out").innerHTML = o;
+    }
+
+    if (s.vars.length === 0) {
+      $("dict").innerHTML = '<span class="empty">not started</span>';
+    } else {
+      var d = "";
+      for (var v = 0; v < s.vars.length; v++) {
+        var e = s.vars[v];
+        d += '<span class="kv' + (e[2] ? " " + e[2] : "") + '">' + e[0] + " = " + e[1] + "</span>";
+      }
+      $("dict").innerHTML = d;
+    }
+
+    if (s.big) {
+      $("bigwrap").hidden = false;
+      $("big").innerHTML = s.big + '<small>' + (s.bigNote || "") + '</small>';
+    } else {
+      $("bigwrap").hidden = true;
+    }
+
+    var c = "";
+    for (var l = 0; l < CODE.length; l++) {
+      c += '<span class="ln' + (s.hl.indexOf(l) !== -1 ? " hl" : "") + '">' + CODE[l] + "</span>";
+    }
+    $("code").innerHTML = c;
+  }
+
+  // Vertical reference line used to pick the active step. On narrow screens the
+  // state panel is sticky at the top, so measure from its bottom edge, not from 0.
+  var panelWrap = document.querySelector(".panel-wrap");
+  function refLine() {
+    var top = 0;
+    if (panelWrap && window.matchMedia("(max-width: 860px)").matches) {
+      top = Math.max(0, panelWrap.getBoundingClientRect().bottom);
+    }
+    return top + (window.innerHeight - top) * 0.45;
+  }
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+
+  function activate(el) {
+    steps.forEach(function (st) { st.classList.toggle("active", st === el); });
+    render(el.getAttribute("data-state"));
+  }
+
+  if ("IntersectionObserver" in window) {
+    var obs = new IntersectionObserver(function (entries) {
+      // Pick the visible step closest to the vertical centre of the viewport.
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best) activate(best);
+    }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+    steps.forEach(function (st) { obs.observe(st); });
+    window.addEventListener("scroll", function () {
+      var best = null, bestDist = Infinity;
+      steps.forEach(function (st) {
+        var r = st.getBoundingClientRect();
+        var mid = r.top + r.height / 2;
+        var dist = Math.abs(mid - refLine());
+        if (r.bottom > 0 && r.top < window.innerHeight && dist < bestDist) { best = st; bestDist = dist; }
+      });
+      if (best && !best.classList.contains("active")) activate(best);
+    }, { passive: true });
+  }
+
+  activate(steps[0]);
+
+  // Narrow screens hide the panel's code block, so the full solution is shown inline after the last step.
+  var codeFinal = document.getElementById("code-final");
+  if (codeFinal) {
+    codeFinal.innerHTML = CODE.map(function (l) { return '<span class="ln">' + l + "</span>"; }).join("");
+  }
+})();
+</script>
+</body>
+</html>

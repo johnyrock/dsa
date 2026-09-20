@@ -165,6 +165,7 @@ Problems are chosen by interview frequency: the easy and medium tiers of the Bli
 | medium/094 | [Meeting Rooms II](medium/094-meeting-rooms-ii/) | Medium | [intervals](patterns/intervals.md) · [explained](concepts/intervals.html) | - | - | not yet solved |
 | medium/098 | [Pow(x, n)](medium/098-powx-n/) | Medium | [math](patterns/math.md) · [explained](concepts/math.html) | - | - | not yet solved |
 | medium/102 | [Reverse Integer](medium/102-reverse-integer/) | Medium | [math](patterns/math.md) · [explained](concepts/math.html) | - | - | not yet solved |
+| medium/103 | [String Compression III](medium/103-string-compression-iii/) | Medium | [two-pointers](patterns/two-pointers.md) · [explained](concepts/two-pointers.html) | - | - | not yet solved |
 
 ## Due for review
 
@@ -192,7 +193,7 @@ Beginner explainers under `concepts/`, one per pattern. Suggested reading order,
 | [hash-set](patterns/hash-set.md) · [explained](concepts/hash-map.html) | easy/003, medium/027, medium/028 |
 | [stack](patterns/stack.md) · [explained](concepts/stack.html) | easy/004, medium/031, medium/032, medium/034, medium/035 |
 | [sliding-window](patterns/sliding-window.md) · [explained](concepts/sliding-window.html) | easy/005, medium/003, medium/013, medium/030 |
-| [two-pointers](patterns/two-pointers.md) · [explained](concepts/two-pointers.html) | easy/006, medium/004, medium/005, medium/012, easy/023, medium/029, medium/041 |
+| [two-pointers](patterns/two-pointers.md) · [explained](concepts/two-pointers.html) | easy/006, medium/004, medium/005, medium/012, easy/023, medium/029, medium/041, medium/103 |
 | [linked-list](patterns/linked-list.md) · [explained](concepts/linked-list.html) | easy/007, easy/008, medium/006, medium/011, medium/040 |
 | [binary-search](patterns/binary-search.md) · [explained](concepts/binary-search.html) | easy/009, medium/021, medium/036, medium/037, medium/038, medium/039 |
 | [dynamic-programming](patterns/dynamic-programming.md) · [explained](concepts/dynamic-programming.html) | easy/010, medium/007, medium/008, easy/020, medium/072, medium/073, medium/074, medium/075, medium/076, medium/077, medium/078, medium/079, medium/080, medium/081, medium/082, medium/083, medium/084, medium/085 |
